@@ -3,7 +3,13 @@
   entities: {
     0: (
       components: {
-        "bevy_render::view::visibility::Visibility": Inherited,
+        "bevy_transform::components::transform::Transform": (
+          translation: (0.0, -300.0, 0.0),
+        ),
+        "bevy_sprite::sprite::Sprite": (
+          color: Srgba(Srgba(red: 0.824, green: 0.412, blue: 0.118, alpha: 1.0)),
+          custom_size: Some((32.0, 32.0)),
+        ),
       },
     ),
   },
