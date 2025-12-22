@@ -12,5 +12,6 @@ impl Plugin for PortalsPlugin {
 }
 
 fn spawn_portals(mut scene_spawner: ResMut<SceneSpawner>, game_assets: Res<GameAssets>) {
+    info!("spawning portal");
     scene_spawner.spawn_dynamic(game_assets.portal_scene.clone());
 }

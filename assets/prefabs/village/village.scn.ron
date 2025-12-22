@@ -1,7 +1,7 @@
 (
   resources: {},
   entities: {
-    0: (
+    1: (
       components: {
         "bevy_transform::components::transform::Transform": (
           translation: (0.0, -300.0, 0.0),

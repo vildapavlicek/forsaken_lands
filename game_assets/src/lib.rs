@@ -6,7 +6,7 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameAssets>()
-            .add_systems(OnEnter(GameState::Loading), start_loading)
+            .add_systems(Startup, start_loading)
             .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)));
     }
 }
@@ -18,6 +18,7 @@ pub struct GameAssets {
 }
 
 fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>) {
+    info!("started loading assets");
     assets.portal_scene = asset_server.load("prefabs/portals/portal.scn.ron");
     assets.village_scene = asset_server.load("prefabs/village/village.scn.ron");
 }
@@ -31,6 +32,7 @@ fn check_assets(
     let village_loaded = asset_server.is_loaded_with_dependencies(&game_assets.village_scene);
 
     if portal_loaded && village_loaded {
+        info!("assets loaded");
         next_state.set(GameState::Running);
     }
 }
