@@ -2321,6 +2321,7 @@ name = "forsaken_lands"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "core",
 ]
 
 [[package]]

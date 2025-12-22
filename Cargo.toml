@@ -8,3 +8,4 @@ members= ["wallet", "core"]
 
 [dependencies]
 bevy = "0.17"
+core = { path = "core" }
