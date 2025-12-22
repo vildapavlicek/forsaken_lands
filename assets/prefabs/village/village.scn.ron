@@ -1,0 +1,10 @@
+(
+  resources: {},
+  entities: {
+    0: (
+      components: {
+        "bevy_render::view::visibility::Visibility": Inherited,
+      },
+    ),
+  },
+)
