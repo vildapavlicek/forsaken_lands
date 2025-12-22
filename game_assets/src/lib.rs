@@ -7,20 +7,20 @@ impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameAssets>()
             .add_systems(Startup, start_loading)
-            .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)));
+            .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)))
+            .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
+            .add_systems(OnExit(GameState::Loading), cleanup_loading_ui);
     }
 }
 
 #[derive(Resource, Default)]
 pub struct GameAssets {
-    pub portal_scene: Handle<DynamicScene>,
-    pub village_scene: Handle<DynamicScene>,
+    pub startup_scene: Handle<DynamicScene>,
 }
 
 fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>) {
     info!("started loading assets");
-    assets.portal_scene = asset_server.load("prefabs/portals/portal.scn.ron");
-    assets.village_scene = asset_server.load("prefabs/village/village.scn.ron");
+    assets.startup_scene = asset_server.load("startup.scn.ron");
 }
 
 fn check_assets(
@@ -28,11 +28,37 @@ fn check_assets(
     game_assets: Res<GameAssets>,
     asset_server: Res<AssetServer>,
 ) {
-    let portal_loaded = asset_server.is_loaded_with_dependencies(&game_assets.portal_scene);
-    let village_loaded = asset_server.is_loaded_with_dependencies(&game_assets.village_scene);
-
-    if portal_loaded && village_loaded {
+    if asset_server.is_loaded_with_dependencies(&game_assets.startup_scene) {
         info!("assets loaded");
         next_state.set(GameState::Running);
+    }
+}
+
+#[derive(Component)]
+struct LoadingUi;
+
+fn setup_loading_ui(mut commands: Commands) {
+    info!("spawning loading ui");
+    commands.spawn((
+        Text::new("Loading..."),
+        TextFont {
+            font_size: 40.0,
+            ..default()
+        },
+        TextColor(Color::WHITE),
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(20.0),
+            right: Val::Px(20.0),
+            ..default()
+        },
+        LoadingUi,
+    ));
+}
+
+fn cleanup_loading_ui(mut commands: Commands, query: Query<Entity, With<LoadingUi>>) {
+    info!("cleaning up loading ui");
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }
