@@ -1822,6 +1822,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "portals",
+ "states",
  "village",
  "wallet",
 ]
@@ -2325,6 +2326,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "core",
+ "states",
 ]
 
 [[package]]
@@ -3626,6 +3628,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "portal_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "portals"
 version = "0.1.0"
 dependencies = [
@@ -4183,6 +4192,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "states"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4614,6 +4630,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "village_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "walkdir"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4625,6 +4648,13 @@ dependencies = [
 
 [[package]]
 name = "wallet"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "wallet_components"
 version = "0.1.0"
 dependencies = [
  "bevy",

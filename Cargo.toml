@@ -4,11 +4,22 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members= ["wallet", "core", "village", "portals"]
+members= [
+  "wallet",
+  "core",
+  "village",
+  "portals",
+  "components/wallet_components",
+  "components/portal_components",
+  "components/village_components",
+  "states",
+]
 
 [workspace.dependencies]
 bevy = "0.17"
+states = { path = "states" }
 
 [dependencies]
 bevy.workspace = true
+states.workspace = true
 core = { path = "core" }
