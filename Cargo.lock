@@ -1824,6 +1824,7 @@ dependencies = [
  "game_assets",
  "portals",
  "states",
+ "system_schedule",
  "village",
  "wallet",
 ]
@@ -4271,6 +4272,13 @@ dependencies = [
  "objc2-core-foundation",
  "objc2-io-kit",
  "windows 0.61.3",
+]
+
+[[package]]
+name = "system_schedule"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

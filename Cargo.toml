@@ -14,12 +14,14 @@ members= [
   "components/village_components",
   "states",
   "game_assets",
+  "system_schedule",
 ]
 
 [workspace.dependencies]
 bevy = "0.17"
 states = { path = "states" }
 game_assets = { path = "game_assets" }
+system_schedule = { path = "system_schedule" }
 
 [dependencies]
 bevy.workspace = true
