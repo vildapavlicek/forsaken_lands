@@ -6,6 +6,9 @@ edition = "2024"
 [workspace]
 members= ["wallet", "core", "village", "portals"]
 
-[dependencies]
+[workspace.dependencies]
 bevy = "0.17"
+
+[dependencies]
+bevy.workspace = true
 core = { path = "core" }
