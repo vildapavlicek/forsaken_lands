@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-pub struct WalletPlugin;
+pub struct VillagePlugin;
 
-impl Plugin for WalletPlugin {
+impl Plugin for VillagePlugin {
     fn build(&self, _app: &mut App) {
         // Empty for now
     }

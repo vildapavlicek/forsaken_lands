@@ -1821,6 +1821,9 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "portals",
+ "village",
+ "wallet",
 ]
 
 [[package]]
@@ -3623,6 +3626,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "portals"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "pp-rs"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4597,6 +4607,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
+name = "village"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "walkdir"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4609,6 +4626,9 @@ dependencies = [
 [[package]]
 name = "wallet"
 version = "0.1.0"
+dependencies = [
+ "bevy",
+]
 
 [[package]]
 name = "wasip2"

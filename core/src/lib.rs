@@ -1,9 +1,12 @@
 use bevy::prelude::*;
+use village::VillagePlugin;
+use portals::PortalsPlugin;
+use wallet::WalletPlugin;
 
 pub struct CorePlugin;
 
 impl Plugin for CorePlugin {
-    fn build(&self, _app: &mut App) {
-        // Empty for now
+    fn build(&self, app: &mut App) {
+        app.add_plugins((VillagePlugin, PortalsPlugin, WalletPlugin));
     }
 }
