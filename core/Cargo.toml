@@ -9,3 +9,4 @@ states.workspace = true
 village = { path = "../village" }
 portals = { path = "../portals" }
 wallet = { path = "../wallet" }
+game_assets.workspace = true

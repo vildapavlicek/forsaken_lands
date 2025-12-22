@@ -1,0 +1,8 @@
+[package]
+name = "game_assets"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true }
+states = { workspace = true }

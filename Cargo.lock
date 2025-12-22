@@ -1821,6 +1821,7 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_assets",
  "portals",
  "states",
  "village",
@@ -2361,6 +2362,14 @@ dependencies = [
  "futures-io",
  "parking",
  "pin-project-lite",
+]
+
+[[package]]
+name = "game_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "states",
 ]
 
 [[package]]
@@ -3639,6 +3648,9 @@ name = "portals"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_assets",
+ "portal_components",
+ "states",
 ]
 
 [[package]]
@@ -4627,6 +4639,9 @@ name = "village"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "game_assets",
+ "states",
+ "village_components",
 ]
 
 [[package]]

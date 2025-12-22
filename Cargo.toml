@@ -13,11 +13,13 @@ members= [
   "components/portal_components",
   "components/village_components",
   "states",
+  "game_assets",
 ]
 
 [workspace.dependencies]
 bevy = "0.17"
 states = { path = "states" }
+game_assets = { path = "game_assets" }
 
 [dependencies]
 bevy.workspace = true

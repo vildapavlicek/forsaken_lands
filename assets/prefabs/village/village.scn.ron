@@ -10,6 +10,7 @@
           color: Srgba(Srgba(red: 0.824, green: 0.412, blue: 0.118, alpha: 1.0)),
           custom_size: Some((32.0, 32.0)),
         ),
+        "village_components::Village": (),
       },
     ),
   },
