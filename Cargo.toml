@@ -22,8 +22,15 @@ bevy = "0.17"
 states = { path = "states" }
 game_assets = { path = "game_assets" }
 system_schedule = { path = "system_schedule" }
+core = { path = "core" }
+village = { path = "village" }
+portals = { path = "portals" }
+wallet = { path = "wallet" }
+portal_components = { path = "components/portal_components" }
+village_components = { path = "components/village_components" }
+wallet_components = { path = "components/wallet_components" }
 
 [dependencies]
 bevy.workspace = true
 states.workspace = true
-core = { path = "core" }
+core.workspace = true

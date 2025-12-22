@@ -5,6 +5,6 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-portal_components = { path = "../components/portal_components" }
-game_assets = { path = "../game_assets" }
-states = { path = "../states" }
+portal_components.workspace = true
+game_assets.workspace = true
+states.workspace = true
