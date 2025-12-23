@@ -11,6 +11,15 @@
           custom_size: Some((16.0, 32.0)),
         ),
         "portal_components::Portal": (),
+        "portal_components::SpawnTimer": (
+             (
+                stopwatch: ( elapsed: ( secs: 6, nanos: 0 ), is_paused: false ),
+                duration: ( secs: 3, nanos: 0 ),
+                mode: Repeating,
+                finished: true,
+                times_finished_this_tick: 1,
+            ),
+        ),
       },
     ),
     2: (
