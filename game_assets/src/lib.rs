@@ -16,11 +16,13 @@ impl Plugin for AssetsPlugin {
 #[derive(Resource, Default)]
 pub struct GameAssets {
     pub startup_scene: Handle<DynamicScene>,
+    pub goblin_prefab: Handle<DynamicScene>,
 }
 
 fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>) {
     info!("started loading assets");
     assets.startup_scene = asset_server.load("startup.scn.ron");
+    assets.goblin_prefab = asset_server.load("prefabs/enemies/goblin.scn.ron");
 }
 
 fn check_assets(
@@ -28,7 +30,9 @@ fn check_assets(
     game_assets: Res<GameAssets>,
     asset_server: Res<AssetServer>,
 ) {
-    if asset_server.is_loaded_with_dependencies(&game_assets.startup_scene) {
+    if asset_server.is_loaded_with_dependencies(&game_assets.startup_scene)
+        && asset_server.is_loaded_with_dependencies(&game_assets.goblin_prefab)
+    {
         info!("assets loaded");
         next_state.set(GameState::Running);
     }

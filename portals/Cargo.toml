@@ -8,3 +8,4 @@ bevy.workspace = true
 game_assets.workspace = true
 portal_components.workspace = true
 states.workspace = true
+enemy_components.workspace = true

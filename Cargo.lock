@@ -3656,6 +3656,7 @@ name = "portals"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "enemy_components",
  "game_assets",
  "portal_components",
  "states",
