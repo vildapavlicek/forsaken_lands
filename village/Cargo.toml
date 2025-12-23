@@ -5,6 +5,6 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-village_components.workspace = true
 game_assets.workspace = true
 states.workspace = true
+village_components.workspace = true

@@ -5,33 +5,33 @@ edition = "2024"
 
 [workspace]
 members = [
-  "wallet",
-  "core",
-  "village",
-  "portals",
-  "components/wallet_components",
+  "components/enemy_components",
   "components/portal_components",
   "components/village_components",
-  "components/enemy_components",
-  "states",
+  "components/wallet_components",
+  "core",
   "game_assets",
+  "portals",
+  "states",
   "system_schedule",
+  "village",
+  "wallet",
 ]
 
 [workspace.dependencies]
 bevy = "0.17"
-states = { path = "states" }
-game_assets = { path = "game_assets" }
-system_schedule = { path = "system_schedule" }
 core = { path = "core" }
-village = { path = "village" }
-portals = { path = "portals" }
-wallet = { path = "wallet" }
+game_assets = { path = "game_assets" }
 portal_components = { path = "components/portal_components" }
+portals = { path = "portals" }
+states = { path = "states" }
+system_schedule = { path = "system_schedule" }
+village = { path = "village" }
 village_components = { path = "components/village_components" }
+wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
 
 [dependencies]
 bevy.workspace = true
-states.workspace = true
 core.workspace = true
+states.workspace = true
