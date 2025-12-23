@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members= [
+members = [
   "wallet",
   "core",
   "village",
@@ -12,6 +12,7 @@ members= [
   "components/wallet_components",
   "components/portal_components",
   "components/village_components",
+  "components/enemy_components",
   "states",
   "game_assets",
   "system_schedule",

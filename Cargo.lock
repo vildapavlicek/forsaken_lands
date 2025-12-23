@@ -2152,6 +2152,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "enemy_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
