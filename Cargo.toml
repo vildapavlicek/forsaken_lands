@@ -12,6 +12,7 @@ members = [
   "core",
   "game_assets",
   "portals",
+  "resources/enemy_resources",
   "states",
   "system_schedule",
   "village",
@@ -31,6 +32,7 @@ village = { path = "village" }
 village_components = { path = "components/village_components" }
 wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
+enemy_resources = { path = "resources/enemy_resources" }
 
 [dependencies]
 bevy.workspace = true
