@@ -2672,6 +2672,7 @@ dependencies = [
  "bevy",
  "enemy_components",
  "hero_components",
+ "messages",
  "system_schedule",
 ]
 
