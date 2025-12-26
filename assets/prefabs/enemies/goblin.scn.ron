@@ -14,6 +14,10 @@
         "enemy_components::MovementSpeed": (150.0),
         "enemy_components::RewardCoefficient": (1.0),
         "enemy_components::NeedsHydration": (),
+        "enemy_components::Health": (
+          current: 10.0,
+          max: 10.0,
+        ),
         "enemy_components::Lifetime": (
              (
                 stopwatch: ( elapsed: ( secs: 0, nanos: 0 ), is_paused: false ),

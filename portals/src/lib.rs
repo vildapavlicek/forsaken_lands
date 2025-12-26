@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Enemy, Lifetime, MovementSpeed, NeedsHydration, RewardCoefficient},
+    enemy_components::{Enemy, Health, Lifetime, MovementSpeed, NeedsHydration, RewardCoefficient},
     game_assets::GameAssets,
     portal_components::{Portal, SpawnTimer},
     system_schedule::GameSchedule,
@@ -18,12 +18,13 @@ impl Plugin for PortalsPlugin {
         app.register_type::<RewardCoefficient>();
         app.register_type::<NeedsHydration>();
         app.register_type::<Lifetime>();
+        app.register_type::<Health>();
 
         app.add_systems(Update, enemy_spawn_system);
         app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));
         app.add_systems(
             Update,
-            despawn_expired_enemies.in_set(GameSchedule::FrameEnd),
+            (despawn_expired_enemies, despawn_dead_enemies).in_set(GameSchedule::FrameEnd),
         );
     }
 }
@@ -50,6 +51,14 @@ fn despawn_expired_enemies(
     for (entity, mut lifetime) in query.iter_mut() {
         if lifetime.0.tick(time.delta()).just_finished() {
             commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn despawn_dead_enemies(mut commands: Commands, query: Query<(Entity, &Health), With<Enemy>>) {
+    for (entity, health) in query.iter() {
+        if health.current <= 0.0 {
+            commands.entity(entity).remove::<(Sprite, Transform)>();
         }
     }
 }

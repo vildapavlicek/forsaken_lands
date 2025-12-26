@@ -19,3 +19,10 @@ pub struct NeedsHydration;
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Lifetime(pub Timer);
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Health {
+    pub current: f32,
+    pub max: f32,
+}
