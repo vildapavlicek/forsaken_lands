@@ -19,6 +19,7 @@ members = [
   "system_schedule",
   "village",
   "wallet",
+  "messages",
 ]
 
 [workspace.dependencies]
@@ -37,6 +38,7 @@ village_components = { path = "components/village_components" }
 wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
 enemy_resources = { path = "resources/enemy_resources" }
+messages = { path = "messages" }
 
 [dependencies]
 bevy.workspace = true

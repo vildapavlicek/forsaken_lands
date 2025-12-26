@@ -5,6 +5,7 @@ use wallet::WalletPlugin;
 use states::GameState;
 use game_assets::AssetsPlugin;
 use heroes::HeroesPlugin;
+use messages::MessagesPlugin;
 use system_schedule::GameSchedule::*;
 
 mod systems;
@@ -25,7 +26,14 @@ impl Plugin for CorePlugin {
                 )
                     .chain(),
             )
-            .add_plugins((VillagePlugin, PortalsPlugin, WalletPlugin, AssetsPlugin, HeroesPlugin))
+            .add_plugins((
+                VillagePlugin,
+                PortalsPlugin,
+                WalletPlugin,
+                AssetsPlugin,
+                HeroesPlugin,
+                MessagesPlugin,
+            ))
             .add_systems(Startup, setup_camera)
             .add_systems(OnEnter(GameState::Running), systems::spawn_starting_scene);
     }

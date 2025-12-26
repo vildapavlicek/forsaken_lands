@@ -12,3 +12,4 @@ system_schedule.workspace = true
 village.workspace = true
 wallet.workspace = true
 heroes.workspace = true
+messages.workspace = true

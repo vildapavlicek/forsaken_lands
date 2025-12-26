@@ -1823,6 +1823,7 @@ dependencies = [
  "bevy",
  "game_assets",
  "heroes",
+ "messages",
  "portals",
  "states",
  "system_schedule",
@@ -2986,6 +2987,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "744133e4a0e0a658e1374cf3bf8e415c4052a15a111acd372764c55b4177d490"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "messages"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
