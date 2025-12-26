@@ -32,11 +32,25 @@
           custom_size: Some((32.0, 32.0)),
         ),
         "village_components::Village": (),
+        "bevy_ecs::hierarchy::Children": ([3]),
       },
     ),
     3: (
       components: {
-        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_ecs::hierarchy::ChildOf": (2),
+        "hero_components::Hero": (),
+        "hero_components::Damage": (1.0),
+        "hero_components::AttackRange": (150.0),
+        "hero_components::AttackSpeed": (
+          timer:
+             (
+                stopwatch: ( elapsed: ( secs: 6, nanos: 0 ), is_paused: false ),
+                duration: ( secs: 3, nanos: 0 ),
+                mode: Repeating,
+                finished: true,
+                times_finished_this_tick: 1,
+            ),
+         ),
       },
     ),
   },
