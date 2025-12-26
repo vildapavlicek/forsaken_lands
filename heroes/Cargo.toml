@@ -1,0 +1,10 @@
+[package]
+name = "heroes"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+hero_components.workspace = true
+enemy_components.workspace = true
+system_schedule.workspace = true

@@ -1822,6 +1822,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "game_assets",
+ "heroes",
  "portals",
  "states",
  "system_schedule",
@@ -2661,6 +2662,16 @@ name = "hero_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "heroes"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "enemy_components",
+ "hero_components",
+ "system_schedule",
 ]
 
 [[package]]
