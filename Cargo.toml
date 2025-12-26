@@ -6,6 +6,7 @@ edition = "2024"
 [workspace]
 members = [
   "components/enemy_components",
+  "components/hero_components",
   "components/portal_components",
   "components/village_components",
   "components/wallet_components",
@@ -24,6 +25,7 @@ bevy = "0.17"
 core = { path = "core" }
 enemy_components = { path = "components/enemy_components" }
 game_assets = { path = "game_assets" }
+hero_components = { path = "components/hero_components" }
 portal_components = { path = "components/portal_components" }
 portals = { path = "portals" }
 states = { path = "states" }
