@@ -1,8 +1,9 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Enemy, MovementSpeed, NeedsHydration, RewardCoefficient},
+    enemy_components::{Enemy, Lifetime, MovementSpeed, NeedsHydration, RewardCoefficient},
     game_assets::GameAssets,
     portal_components::{Portal, SpawnTimer},
+    system_schedule::GameSchedule,
 };
 
 pub struct PortalsPlugin;
@@ -16,8 +17,14 @@ impl Plugin for PortalsPlugin {
         app.register_type::<MovementSpeed>();
         app.register_type::<RewardCoefficient>();
         app.register_type::<NeedsHydration>();
+        app.register_type::<Lifetime>();
 
         app.add_systems(Update, enemy_spawn_system);
+        app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));
+        app.add_systems(
+            Update,
+            despawn_expired_enemies.in_set(GameSchedule::FrameEnd),
+        );
     }
 }
 
@@ -31,6 +38,29 @@ fn enemy_spawn_system(
         if timer.0.tick(time.delta()).just_finished() {
             info!("spawning monster");
             scene_spawner.spawn_dynamic(game_assets.goblin_prefab.clone());
+        }
+    }
+}
+
+fn despawn_expired_enemies(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Lifetime), With<Enemy>>,
+) {
+    for (entity, mut lifetime) in query.iter_mut() {
+        if lifetime.0.tick(time.delta()).just_finished() {
+            commands.entity(entity).despawn();
+        }
+    }
+}
+
+fn move_enemy(time: Res<Time>, mut query: Query<(&mut Transform, &MovementSpeed), With<Enemy>>) {
+    for (mut transform, speed) in query.iter_mut() {
+        if transform.translation.y > -250.0 {
+            transform.translation.y -= speed.0 * time.delta_secs();
+            if transform.translation.y < -250.0 {
+                transform.translation.y = -250.0;
+            }
         }
     }
 }

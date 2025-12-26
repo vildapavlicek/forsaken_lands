@@ -1,6 +1,6 @@
-use bevy::prelude::*;
+use bevy::{ecs::schedule::ScheduleLabel, prelude::*};
 
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
+#[derive(SystemSet, ScheduleLabel, Debug, Hash, PartialEq, Eq, Clone)]
 pub enum GameSchedule {
     FrameStart,
     ResolveIntent,

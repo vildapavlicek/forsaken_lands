@@ -15,3 +15,7 @@ pub struct RewardCoefficient(pub f32);
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct NeedsHydration;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Lifetime(pub Timer);
