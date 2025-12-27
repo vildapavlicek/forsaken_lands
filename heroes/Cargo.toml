@@ -9,3 +9,5 @@ hero_components.workspace = true
 enemy_components.workspace = true
 system_schedule.workspace = true
 messages.workspace = true
+village_components.workspace = true
+states.workspace = true

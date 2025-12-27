@@ -1,12 +1,14 @@
 use {
-    bevy::{ecs::relationship::Relationship, prelude::*},
+    bevy::prelude::*,
     enemy_components::{Enemy, Health},
     hero_components::{
         AttackRange, AttackSpeed, Damage, Hero, Projectile, ProjectileDamage, ProjectileSpeed,
-        ProjectileTarget,
+        ProjectileTarget, Weapon,
     },
     messages::{AttackIntent, ProjectileHit},
+    states::GameState,
     system_schedule::GameSchedule,
+    village_components::Village,
 };
 
 pub struct HeroesPlugin;
@@ -14,6 +16,7 @@ pub struct HeroesPlugin;
 impl Plugin for HeroesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Hero>()
+            .register_type::<Weapon>()
             .register_type::<Damage>()
             .register_type::<AttackRange>()
             .register_type::<AttackSpeed>()
@@ -34,7 +37,8 @@ impl Plugin for HeroesPlugin {
                     .in_set(GameSchedule::PerformAction)
                     .chain(),
                 apply_damage_system.in_set(GameSchedule::Effect),
-            ),
+            )
+                .run_if(in_state(GameState::Running)),
         );
     }
 }
@@ -42,37 +46,40 @@ impl Plugin for HeroesPlugin {
 fn hero_attack_intent_system(
     time: Res<Time>,
     mut attack_intent_writer: MessageWriter<AttackIntent>,
-    mut heroes: Query<(Entity, &ChildOf, &AttackRange, &mut AttackSpeed), With<Hero>>,
-    enemies: Query<(Entity, &Transform), With<Enemy>>,
-    transforms: Query<&Transform>,
+    mut weapons: Query<(Entity, &AttackRange, &mut AttackSpeed), With<Weapon>>,
+    enemies: Query<(Entity, &Transform), (With<Enemy>, Without<Village>)>,
+    villages: Query<&Transform, With<Village>>,
 ) {
-    for (hero_entity, parent, range, mut attack_speed) in heroes.iter_mut() {
-        if let Ok(hero_transform) = transforms.get(parent.get()) {
-            if attack_speed.timer.tick(time.delta()).just_finished() {
-                let mut closest_enemy: Option<(Entity, f32)> = None;
+    let Ok(village_transform) = villages.single() else {
+        error!("village without transform");
+        return;
+    };
 
-                for (enemy_entity, enemy_transform) in enemies.iter() {
-                    let distance = hero_transform
-                        .translation
-                        .distance(enemy_transform.translation);
+    for (weapon_entity, range, mut attack_speed) in weapons.iter_mut() {
+        if attack_speed.timer.tick(time.delta()).just_finished() {
+            let mut closest_enemy: Option<(Entity, f32)> = None;
 
-                    if distance <= range.0 {
-                        if let Some((_, closest_distance)) = closest_enemy {
-                            if distance < closest_distance {
-                                closest_enemy = Some((enemy_entity, distance));
-                            }
-                        } else {
+            for (enemy_entity, enemy_transform) in enemies.iter() {
+                let distance = village_transform
+                    .translation
+                    .distance(enemy_transform.translation);
+
+                if distance <= range.0 {
+                    if let Some((_, closest_distance)) = closest_enemy {
+                        if distance < closest_distance {
                             closest_enemy = Some((enemy_entity, distance));
                         }
+                    } else {
+                        closest_enemy = Some((enemy_entity, distance));
                     }
                 }
+            }
 
-                if let Some((enemy_entity, _)) = closest_enemy {
-                    attack_intent_writer.write(AttackIntent {
-                        attacker: hero_entity,
-                        target: enemy_entity,
-                    });
-                }
+            if let Some((enemy_entity, _)) = closest_enemy {
+                attack_intent_writer.write(AttackIntent {
+                    attacker: weapon_entity,
+                    target: enemy_entity,
+                });
             }
         }
     }
@@ -81,25 +88,28 @@ fn hero_attack_intent_system(
 fn hero_projectile_spawn_system(
     mut commands: Commands,
     mut attack_intent_reader: MessageReader<AttackIntent>,
-    heroes: Query<(&ChildOf, &Damage), With<Hero>>,
-    transforms: Query<&Transform>,
+    weapons: Query<&Damage, With<Weapon>>,
+    villages: Query<&Transform, With<Village>>,
 ) {
+    let Ok(village_transform) = villages.single() else {
+        error!("village without transform");
+        return;
+    };
+
     for intent in attack_intent_reader.read() {
-        if let Ok((parent, damage)) = heroes.get(intent.attacker) {
-            if let Ok(hero_transform) = transforms.get(parent.get()) {
-                commands.spawn((
-                    Sprite {
-                        color: Color::srgb(1.0, 1.0, 0.0),
-                        custom_size: Some(Vec2::new(10.0, 10.0)),
-                        ..default()
-                    },
-                    Transform::from_translation(hero_transform.translation),
-                    Projectile,
-                    ProjectileTarget(intent.target),
-                    ProjectileSpeed(400.0),
-                    ProjectileDamage(damage.0),
-                ));
-            }
+        if let Ok(damage) = weapons.get(intent.attacker) {
+            commands.spawn((
+                Sprite {
+                    color: Color::srgb(1.0, 1.0, 0.0),
+                    custom_size: Some(Vec2::new(10.0, 10.0)),
+                    ..default()
+                },
+                Transform::from_translation(village_transform.translation),
+                Projectile,
+                ProjectileTarget(intent.target),
+                ProjectileSpeed(400.0),
+                ProjectileDamage(damage.0),
+            ));
         }
     }
 }

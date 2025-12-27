@@ -5,6 +5,10 @@ use bevy::prelude::*;
 pub struct Hero;
 
 #[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Weapon;
+
+#[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
 pub struct Damage(pub f32);
 

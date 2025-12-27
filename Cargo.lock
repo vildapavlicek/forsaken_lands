@@ -2673,7 +2673,9 @@ dependencies = [
  "enemy_components",
  "hero_components",
  "messages",
+ "states",
  "system_schedule",
+ "village_components",
 ]
 
 [[package]]

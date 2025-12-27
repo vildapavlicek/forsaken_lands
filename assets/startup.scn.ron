@@ -39,6 +39,13 @@
       components: {
         "hero_components::Hero": (),
         "bevy_ecs::hierarchy::ChildOf": (2),
+        "bevy_ecs::hierarchy::Children": ([4]),
+      },
+    ),
+    4: (
+      components: {
+        "hero_components::Weapon": (),
+        "bevy_ecs::hierarchy::ChildOf": (3),
         "hero_components::Damage": (1.0),
         "hero_components::AttackRange": (150.0),
         "hero_components::AttackSpeed": (
