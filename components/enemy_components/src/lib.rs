@@ -26,3 +26,13 @@ pub struct Health {
     pub current: f32,
     pub max: f32,
 }
+
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Component)]
+pub struct ResourceRewards(pub Vec<Reward>);
+
+#[derive(Reflect, Default, Debug, Clone)]
+pub struct Reward {
+    pub id: String,
+    pub value: u32,
+}

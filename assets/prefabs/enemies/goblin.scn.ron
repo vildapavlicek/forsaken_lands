@@ -27,6 +27,10 @@
                 times_finished_this_tick: 0,
             ),
         ),
+        "enemy_components::ResourceRewards": ([
+          (id: "bones", value: 10),
+          (id: "wood", value: 2),
+        ]),
       },
     ),
   },

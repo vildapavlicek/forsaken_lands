@@ -1,6 +1,9 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Enemy, Health, Lifetime, MovementSpeed, NeedsHydration, RewardCoefficient},
+    enemy_components::{
+        Enemy, Health, Lifetime, MovementSpeed, NeedsHydration, ResourceRewards, Reward,
+        RewardCoefficient,
+    },
     game_assets::GameAssets,
     portal_components::{Portal, SpawnTimer},
     system_schedule::GameSchedule,
@@ -19,6 +22,8 @@ impl Plugin for PortalsPlugin {
         app.register_type::<NeedsHydration>();
         app.register_type::<Lifetime>();
         app.register_type::<Health>();
+        app.register_type::<ResourceRewards>();
+        app.register_type::<Reward>();
 
         app.add_systems(Update, enemy_spawn_system);
         app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));
