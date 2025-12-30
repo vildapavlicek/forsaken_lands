@@ -6,6 +6,10 @@ pub struct Enemy;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+pub struct Dead;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
 pub struct MovementSpeed(pub f32);
 
 #[derive(Component, Reflect, Default)]

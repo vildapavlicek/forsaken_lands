@@ -5,3 +5,6 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+enemy_components.workspace = true
+messages.workspace = true
+system_schedule.workspace = true

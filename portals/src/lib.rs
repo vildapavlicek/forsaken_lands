@@ -1,10 +1,11 @@
 use {
     bevy::prelude::*,
     enemy_components::{
-        Enemy, Health, Lifetime, MovementSpeed, NeedsHydration, ResourceRewards, Reward,
+        Dead, Enemy, Health, Lifetime, MovementSpeed, NeedsHydration, ResourceRewards, Reward,
         RewardCoefficient,
     },
     game_assets::GameAssets,
+    messages::EnemyKilled,
     portal_components::{Portal, SpawnTimer},
     system_schedule::GameSchedule,
 };
@@ -24,6 +25,7 @@ impl Plugin for PortalsPlugin {
         app.register_type::<Health>();
         app.register_type::<ResourceRewards>();
         app.register_type::<Reward>();
+        app.register_type::<Dead>();
 
         app.add_systems(Update, enemy_spawn_system);
         app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));
@@ -60,10 +62,15 @@ fn despawn_expired_enemies(
     }
 }
 
-fn despawn_dead_enemies(mut commands: Commands, query: Query<(Entity, &Health), With<Enemy>>) {
+fn despawn_dead_enemies(
+    mut commands: Commands,
+    mut enemy_killed_writer: MessageWriter<EnemyKilled>,
+    query: Query<(Entity, &Health), (With<Enemy>, Without<Dead>)>,
+) {
     for (entity, health) in query.iter() {
         if health.current <= 0.0 {
-            commands.entity(entity).remove::<(Sprite, Transform)>();
+            enemy_killed_writer.write(EnemyKilled { entity });
+            commands.entity(entity).insert(Dead).remove::<(Sprite, Transform)>();
         }
     }
 }

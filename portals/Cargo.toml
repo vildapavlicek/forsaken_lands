@@ -10,3 +10,4 @@ portal_components.workspace = true
 states.workspace = true
 system_schedule.workspace = true
 enemy_components.workspace = true
+messages.workspace = true

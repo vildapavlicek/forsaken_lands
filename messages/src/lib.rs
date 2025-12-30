@@ -6,8 +6,24 @@ impl Plugin for MessagesPlugin {
     fn build(&self, app: &mut App) {
         app.add_message::<AttackIntent>()
             .add_message::<ProjectileHit>()
+            .add_message::<EnemyKilled>()
             .register_type::<AttackIntent>()
-            .register_type::<ProjectileHit>();
+            .register_type::<ProjectileHit>()
+            .register_type::<EnemyKilled>();
+    }
+}
+
+#[derive(Message, Reflect)]
+#[reflect(Default)]
+pub struct EnemyKilled {
+    pub entity: Entity,
+}
+
+impl Default for EnemyKilled {
+    fn default() -> Self {
+        Self {
+            entity: Entity::PLACEHOLDER,
+        }
     }
 }
 

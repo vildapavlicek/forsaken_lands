@@ -15,7 +15,7 @@
         "enemy_components::RewardCoefficient": (1.0),
         "enemy_components::NeedsHydration": (),
         "enemy_components::Health": (
-          current: 5.0,
+          current: 1.0,
           max: 5.0,
         ),
         "enemy_components::Lifetime": (
