@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use states::GameState;
+use {bevy::prelude::*, states::GameState};
 
 pub struct AssetsPlugin;
 

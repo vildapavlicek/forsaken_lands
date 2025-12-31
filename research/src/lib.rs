@@ -1,6 +1,8 @@
-use bevy::{platform::collections::HashMap, prelude::*};
-use serde::{Deserialize, Serialize};
-use system_schedule::GameSchedule;
+use {
+    bevy::{platform::collections::HashMap, prelude::*},
+    serde::{Deserialize, Serialize},
+    system_schedule::GameSchedule,
+};
 
 pub mod systems;
 

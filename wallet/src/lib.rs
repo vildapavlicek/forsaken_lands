@@ -1,9 +1,6 @@
 use {
-    bevy::prelude::*,
-    enemy_components::ResourceRewards,
-    messages::EnemyKilled,
-    std::collections::HashMap,
-    system_schedule::GameSchedule,
+    bevy::prelude::*, enemy_components::ResourceRewards, messages::EnemyKilled,
+    std::collections::HashMap, system_schedule::GameSchedule,
 };
 
 #[derive(Resource, Reflect, Default, Debug, Clone)]

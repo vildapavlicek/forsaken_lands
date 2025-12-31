@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use village_components::Village;
+use {bevy::prelude::*, village_components::Village};
 
 pub struct VillagePlugin;
 

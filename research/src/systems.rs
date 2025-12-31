@@ -1,6 +1,8 @@
-use crate::{ResearchLibrary, ResearchState, StartResearchRequest};
-use bevy::prelude::*;
-use wallet::Wallet;
+use {
+    crate::{ResearchLibrary, ResearchState, StartResearchRequest},
+    bevy::prelude::*,
+    wallet::Wallet,
+};
 
 pub fn start_research(
     mut events: MessageReader<StartResearchRequest>,

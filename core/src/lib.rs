@@ -1,14 +1,9 @@
-use bevy::prelude::*;
-use village::VillagePlugin;
-use portals::PortalsPlugin;
-use wallet::WalletPlugin;
-use states::GameState;
-use game_assets::AssetsPlugin;
-use heroes::HeroesPlugin;
-use messages::MessagesPlugin;
-use resources_ui::ResourcesUiPlugin;
-use research::ResearchPlugin;
-use system_schedule::GameSchedule::*;
+use {
+    bevy::prelude::*, game_assets::AssetsPlugin, heroes::HeroesPlugin, messages::MessagesPlugin,
+    portals::PortalsPlugin, research::ResearchPlugin, resources_ui::ResourcesUiPlugin,
+    states::GameState, system_schedule::GameSchedule::*, village::VillagePlugin,
+    wallet::WalletPlugin,
+};
 
 mod systems;
 
@@ -19,14 +14,7 @@ impl Plugin for CorePlugin {
         app.init_state::<GameState>()
             .configure_sets(
                 Update,
-                (
-                    FrameStart,
-                    ResolveIntent,
-                    PerformAction,
-                    Effect,
-                    FrameEnd,
-                )
-                    .chain(),
+                (FrameStart, ResolveIntent, PerformAction, Effect, FrameEnd).chain(),
             )
             .add_plugins((
                 VillagePlugin,

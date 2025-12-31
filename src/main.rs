@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use core::CorePlugin;
+use {bevy::prelude::*, core::CorePlugin};
 
 fn main() {
     App::new()

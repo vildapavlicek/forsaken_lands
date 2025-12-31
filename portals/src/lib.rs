@@ -70,7 +70,10 @@ fn despawn_dead_enemies(
     for (entity, health) in query.iter() {
         if health.current <= 0.0 {
             enemy_killed_writer.write(EnemyKilled { entity });
-            commands.entity(entity).insert(Dead).remove::<(Sprite, Transform)>();
+            commands
+                .entity(entity)
+                .insert(Dead)
+                .remove::<(Sprite, Transform)>();
         }
     }
 }
