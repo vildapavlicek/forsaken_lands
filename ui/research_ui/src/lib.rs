@@ -157,27 +157,29 @@ fn update_research_ui(
                         TextColor(Color::srgba(0.8, 0.8, 0.8, 1.0)),
                     ));
 
-                    card.spawn((
-                        Text::new(&format!("Time: {}s", def.time_required)),
-                        TextFont {
-                            font_size: 12.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgba(0.7, 0.7, 1.0, 1.0)),
-                    ));
+                    if !is_completed {
+                        card.spawn((
+                            Text::new(&format!("Time: {}s", def.time_required)),
+                            TextFont {
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgba(0.7, 0.7, 1.0, 1.0)),
+                        ));
 
-                    card.spawn((
-                        Text::new(&cost_str),
-                        TextFont {
-                            font_size: 12.0,
-                            ..default()
-                        },
-                        TextColor(if can_afford {
-                            Color::srgba(0.7, 1.0, 0.7, 1.0)
-                        } else {
-                            Color::srgba(1.0, 0.7, 0.7, 1.0)
-                        }),
-                    ));
+                        card.spawn((
+                            Text::new(&cost_str),
+                            TextFont {
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(if can_afford {
+                                Color::srgba(0.7, 1.0, 0.7, 1.0)
+                            } else {
+                                Color::srgba(1.0, 0.7, 0.7, 1.0)
+                            }),
+                        ));
+                    }
 
                     // Button
                     let (btn_text, btn_color, btn_border) = if is_completed {
