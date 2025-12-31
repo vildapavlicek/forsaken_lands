@@ -71,7 +71,8 @@ impl Plugin for ResearchPlugin {
                 (
                     systems::start_research.in_set(GameSchedule::Effect),
                     systems::update_research_progress.in_set(GameSchedule::FrameStart),
-                ),
+                )
+                    .run_if(in_state(states::GameState::Running)),
             );
     }
 }
