@@ -253,12 +253,13 @@ fn handle_research_button(
             }
 
             if let Some(def) = library.available.get(id) {
+                let prereqs_met = def.prerequisites.iter().all(|p| state.is_researched(p));
                 let can_afford = def
                     .cost
                     .iter()
                     .all(|(res, amt)| wallet.resources.get(res).copied().unwrap_or(0) >= *amt);
 
-                if can_afford {
+                if prereqs_met && can_afford {
                     events.write(StartResearchRequest(id.clone()));
                 }
             }
