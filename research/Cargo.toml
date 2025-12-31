@@ -1,0 +1,9 @@
+[package]
+name = "research"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+wallet.workspace = true
+system_schedule.workspace = true

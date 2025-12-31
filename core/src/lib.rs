@@ -7,6 +7,7 @@ use game_assets::AssetsPlugin;
 use heroes::HeroesPlugin;
 use messages::MessagesPlugin;
 use resources_ui::ResourcesUiPlugin;
+use research::ResearchPlugin;
 use system_schedule::GameSchedule::*;
 
 mod systems;
@@ -35,6 +36,7 @@ impl Plugin for CorePlugin {
                 HeroesPlugin,
                 MessagesPlugin,
                 ResourcesUiPlugin,
+                ResearchPlugin,
             ))
             .add_systems(Startup, setup_camera)
             .add_systems(OnEnter(GameState::Running), systems::spawn_starting_scene);

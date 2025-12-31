@@ -1,5 +1,30 @@
 (
-  resources: {},
+  resources: {
+    "research::ResearchLibrary": (
+      available: {
+        "basic_archery": (
+          name: "Basic Archery",
+          description: "Allows crafting of crude bows.",
+          prerequisites: [],
+          cost: { "wood": 200, "bones": 200 },
+          time_required: 10.0,
+          unlocks: [ Recipe("wooden_bow"), Recipe("bone_arrow") ],
+        ),
+        "bone_weaponry": (
+          name: "Bone Weaponry",
+          description: "Sharpened bone swords.",
+          prerequisites: ["basic_archery"],
+          cost: { "bones": 500 },
+          time_required: 20.0,
+          unlocks: [ Recipe("bone_sword") ],
+        ),
+      },
+    ),
+    "research::ResearchState": (
+      in_progress: {},
+      completed: [],
+    ),
+  },
   entities: {
     1: (
       components: {
