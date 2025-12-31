@@ -66,6 +66,8 @@ impl Plugin for ResearchPlugin {
             .register_type::<ResearchDefinition>()
             .register_type::<UnlockEffect>()
             .register_type::<ResearchState>()
+            .init_resource::<ResearchLibrary>()
+            .init_resource::<ResearchState>()
             .add_systems(
                 Update,
                 (

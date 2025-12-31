@@ -1826,10 +1826,12 @@ dependencies = [
  "messages",
  "portals",
  "research",
+ "research_ui",
  "resources_ui",
  "states",
  "system_schedule",
  "village",
+ "village_components",
  "wallet",
 ]
 
@@ -3931,6 +3933,16 @@ dependencies = [
  "bevy",
  "states",
  "system_schedule",
+ "wallet",
+]
+
+[[package]]
+name = "research_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "research",
+ "states",
  "wallet",
 ]
 

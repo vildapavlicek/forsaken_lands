@@ -1,8 +1,8 @@
 use {
     bevy::prelude::*, game_assets::AssetsPlugin, heroes::HeroesPlugin, messages::MessagesPlugin,
-    portals::PortalsPlugin, research::ResearchPlugin, resources_ui::ResourcesUiPlugin,
-    states::GameState, system_schedule::GameSchedule::*, village::VillagePlugin,
-    wallet::WalletPlugin,
+    portals::PortalsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
+    resources_ui::ResourcesUiPlugin, states::GameState, system_schedule::GameSchedule::*,
+    village::VillagePlugin, wallet::WalletPlugin,
 };
 
 mod systems;
@@ -25,9 +25,14 @@ impl Plugin for CorePlugin {
                 MessagesPlugin,
                 ResourcesUiPlugin,
                 ResearchPlugin,
+                ResearchUiPlugin,
             ))
             .add_systems(Startup, setup_camera)
-            .add_systems(OnEnter(GameState::Running), systems::spawn_starting_scene);
+            .add_systems(OnEnter(GameState::Initializing), systems::spawn_starting_scene)
+            .add_systems(
+                Update,
+                systems::check_scene_spawned.run_if(in_state(GameState::Initializing)),
+            );
     }
 }
 

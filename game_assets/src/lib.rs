@@ -33,7 +33,7 @@ fn check_assets(
         && asset_server.is_loaded_with_dependencies(&game_assets.goblin_prefab)
     {
         info!("assets loaded");
-        next_state.set(GameState::Running);
+        next_state.set(GameState::Initializing);
     }
 }
 
