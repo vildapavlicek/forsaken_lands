@@ -1,6 +1,5 @@
 use {
     bevy::{platform::collections::HashMap, prelude::*},
-    serde::{Deserialize, Serialize},
     system_schedule::GameSchedule,
 };
 
@@ -15,7 +14,7 @@ pub struct ResearchLibrary {
     pub available: HashMap<String, ResearchDefinition>,
 }
 
-#[derive(Reflect, Debug, Clone, Deserialize, Serialize)]
+#[derive(Reflect, Debug, Clone)]
 pub struct ResearchDefinition {
     pub name: String,
     pub description: String,
@@ -25,7 +24,7 @@ pub struct ResearchDefinition {
     pub unlocks: Vec<UnlockEffect>,
 }
 
-#[derive(Reflect, Debug, Clone, Deserialize, Serialize)]
+#[derive(Reflect, Debug, Clone)]
 pub enum UnlockEffect {
     Recipe(String),  // Unlocks a crafting recipe
     Feature(String), // Unlocks a game mechanic (e.g., "auto_mining")
