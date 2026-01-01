@@ -5,7 +5,8 @@ pub struct HeroEventsPlugin;
 impl Plugin for HeroEventsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<AttackIntent>()
-            .register_type::<ProjectileHit>();
+            .register_type::<ProjectileHit>()
+            .register_type::<EnemyKilled>();
     }
 }
 
@@ -39,6 +40,20 @@ impl Default for ProjectileHit {
             projectile: Entity::PLACEHOLDER,
             target: Entity::PLACEHOLDER,
             damage: 0.0,
+        }
+    }
+}
+
+#[derive(Event, Reflect)]
+#[reflect(Default)]
+pub struct EnemyKilled {
+    pub entity: Entity,
+}
+
+impl Default for EnemyKilled {
+    fn default() -> Self {
+        Self {
+            entity: Entity::PLACEHOLDER,
         }
     }
 }

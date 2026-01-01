@@ -1,5 +1,5 @@
 use {
-    bevy::prelude::*, enemy_components::ResourceRewards, messages::EnemyKilled,
+    bevy::prelude::*, enemy_components::ResourceRewards, hero_events::EnemyKilled,
     std::collections::HashMap,
 };
 

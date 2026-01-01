@@ -3750,7 +3750,7 @@ dependencies = [
  "bevy",
  "enemy_components",
  "game_assets",
- "messages",
+ "hero_events",
  "portal_components",
  "states",
  "system_schedule",
@@ -4815,7 +4815,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "enemy_components",
- "messages",
+ "hero_events",
  "system_schedule",
 ]
 

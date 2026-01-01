@@ -5,7 +5,7 @@ use {
         RewardCoefficient,
     },
     game_assets::GameAssets,
-    messages::EnemyKilled,
+    hero_events::EnemyKilled,
     portal_components::{Portal, SpawnTimer},
     system_schedule::GameSchedule,
 };
