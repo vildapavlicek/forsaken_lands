@@ -1,8 +1,8 @@
 use {
-    bevy::prelude::*, game_assets::AssetsPlugin, heroes::HeroesPlugin, messages::MessagesPlugin,
-    portals::PortalsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
-    resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin,
-    states::GameState, system_schedule::GameSchedule::*,
+    bevy::prelude::*, crafting_resources::CraftingResourcesPlugin, game_assets::AssetsPlugin,
+    heroes::HeroesPlugin, messages::MessagesPlugin, portals::PortalsPlugin,
+    research::ResearchPlugin, research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
+    shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
     village::VillagePlugin, wallet::WalletPlugin,
 };
 
@@ -18,19 +18,23 @@ impl Plugin for CorePlugin {
                 (FrameStart, ResolveIntent, PerformAction, Effect, FrameEnd).chain(),
             )
             .add_plugins((
-                VillagePlugin,
-                PortalsPlugin,
-                WalletPlugin,
                 AssetsPlugin,
+                CraftingResourcesPlugin,
                 HeroesPlugin,
                 MessagesPlugin,
-                ResourcesUiPlugin,
+                PortalsPlugin,
                 ResearchPlugin,
                 ResearchUiPlugin,
+                ResourcesUiPlugin,
                 SharedComponentsPlugin,
+                VillagePlugin,
+                WalletPlugin,
             ))
             .add_systems(Startup, setup_camera)
-            .add_systems(OnEnter(GameState::Initializing), systems::spawn_starting_scene)
+            .add_systems(
+                OnEnter(GameState::Initializing),
+                systems::spawn_starting_scene,
+            )
             .add_systems(
                 Update,
                 systems::check_scene_spawned.run_if(in_state(GameState::Initializing)),
