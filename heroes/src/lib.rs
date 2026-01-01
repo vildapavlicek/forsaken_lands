@@ -46,7 +46,8 @@ impl Plugin for HeroesPlugin {
 fn hero_attack_intent_system(
     time: Res<Time>,
     mut attack_intent_writer: MessageWriter<AttackIntent>,
-    mut weapons: Query<(Entity, &AttackRange, &mut AttackSpeed), With<Weapon>>,
+    mut weapons: Query<(Entity, &AttackRange, &mut AttackSpeed, &ChildOf), With<Weapon>>,
+    heroes: Query<&Hero>,
     enemies: Query<(Entity, &Transform), (With<Enemy>, Without<Village>)>,
     villages: Query<&Transform, With<Village>>,
 ) {
@@ -55,7 +56,12 @@ fn hero_attack_intent_system(
         return;
     };
 
-    for (weapon_entity, range, mut attack_speed) in weapons.iter_mut() {
+    for (weapon_entity, range, mut attack_speed, child_of) in weapons.iter_mut() {
+        // Only attack if current weapon is held by a hero
+        if heroes.get(child_of.parent()).is_err() {
+            continue;
+        }
+
         if attack_speed.timer.tick(time.delta()).just_finished() {
             let mut closest_enemy: Option<(Entity, f32)> = None;
 
@@ -97,6 +103,9 @@ fn hero_projectile_spawn_system(
     };
 
     for intent in attack_intent_reader.read() {
+        // Double check the attacker is still a valid weapon.
+        // The intent system already filters this, but if a weapon was unequipped
+        // between intent and action, this would catch it.
         if let Ok(damage) = weapons.get(intent.attacker) {
             commands.spawn((
                 Sprite {
