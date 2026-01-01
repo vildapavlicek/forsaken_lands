@@ -19,6 +19,7 @@ impl Plugin for ResearchUiPlugin {
                             .or(resource_changed::<ResearchLibrary>),
                     ),
                     handle_research_button,
+                    handle_research_button_visuals,
                 )
                     .run_if(in_state(GameState::Running)),
             );
@@ -27,6 +28,9 @@ impl Plugin for ResearchUiPlugin {
 
 #[derive(Component)]
 struct ResearchUiRoot;
+
+#[derive(Component)]
+struct Disabled;
 
 #[derive(Component)]
 struct ResearchButton {
@@ -182,33 +186,37 @@ fn update_research_ui(
                     }
 
                     // Button
-                    let (btn_text, btn_color, btn_border) = if is_completed {
+                    let (btn_text, btn_color, btn_border, is_disabled) = if is_completed {
                         (
                             "Completed",
                             Color::srgba(1.0, 1.0, 1.0, 1.0),
                             Color::srgba(1.0, 1.0, 1.0, 1.0),
+                            true,
                         )
                     } else if is_researching {
                         (
                             "Researching...",
                             Color::srgba(0.7, 0.7, 1.0, 1.0),
                             Color::srgba(0.4, 0.4, 1.0, 1.0),
+                            true,
                         )
                     } else if can_afford {
                         (
                             "Start",
                             Color::srgba(0.5, 1.0, 0.5, 1.0),
                             Color::srgba(0.0, 1.0, 0.0, 1.0),
+                            false,
                         )
                     } else {
                         (
                             "Start",
                             Color::srgba(0.5, 0.5, 0.5, 1.0),
                             Color::srgba(0.5, 0.5, 0.5, 1.0),
+                            true,
                         )
                     };
 
-                    card.spawn((
+                    let mut btn_commands = card.spawn((
                         Button,
                         Node {
                             width: Val::Px(100.0),
@@ -222,8 +230,13 @@ fn update_research_ui(
                         BorderColor::all(btn_border),
                         BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 1.0)),
                         ResearchButton { id: id.clone() },
-                    ))
-                    .with_children(|btn| {
+                    ));
+
+                    if is_disabled {
+                        btn_commands.insert(Disabled);
+                    }
+
+                    btn_commands.with_children(|btn| {
                         btn.spawn((
                             Text::new(btn_text),
                             TextFont {
@@ -264,6 +277,31 @@ fn handle_research_button(
                 if prereqs_met && can_afford {
                     events.write(StartResearchRequest(id.clone()));
                 }
+            }
+        }
+    }
+}
+
+fn handle_research_button_visuals(
+    mut query: Query<
+        (&Interaction, &mut BackgroundColor, Option<&Disabled>),
+        (Changed<Interaction>, With<ResearchButton>),
+    >,
+) {
+    for (interaction, mut color, disabled) in query.iter_mut() {
+        if disabled.is_some() {
+            continue;
+        }
+
+        match *interaction {
+            Interaction::Hovered => {
+                *color = BackgroundColor(Color::srgba(0.25, 0.25, 0.25, 1.0));
+            }
+            Interaction::Pressed => {
+                *color = BackgroundColor(Color::srgba(0.3, 0.3, 0.3, 1.0));
+            }
+            Interaction::None => {
+                *color = BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 1.0));
             }
         }
     }
