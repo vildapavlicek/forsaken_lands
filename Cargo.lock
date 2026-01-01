@@ -2391,6 +2391,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "core",
+ "hero_ui",
  "states",
 ]
 
@@ -2710,6 +2711,15 @@ name = "hero_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "hero_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "states",
+ "widgets",
 ]
 
 [[package]]

@@ -25,6 +25,7 @@ members = [
   "system_schedule",
   "ui/crafting_ui",
   "ui/research_ui",
+  "ui/hero_ui",
   "ui/resources_ui",
   "ui/widgets",
   "village",
@@ -42,6 +43,7 @@ enemy_components = { path = "components/enemy_components" }
 enemy_resources = { path = "resources/enemy_resources" }
 game_assets = { path = "game_assets" }
 hero_components = { path = "components/hero_components" }
+hero_ui = { path = "ui/hero_ui" }
 heroes = { path = "heroes" }
 messages = { path = "messages" }
 portal_components = { path = "components/portal_components" }
@@ -62,3 +64,4 @@ widgets = { path = "ui/widgets" }
 bevy.workspace = true
 core.workspace = true
 states.workspace = true
+hero_ui = { path = "ui/hero_ui" }
