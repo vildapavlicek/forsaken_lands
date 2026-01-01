@@ -25,6 +25,7 @@ members = [
   "research",
   "components/shared_components",
   "resources/crafting_resources",
+  "ui/crafting_ui",
 ]
 
 [workspace.dependencies]
@@ -49,6 +50,7 @@ research_ui = { path = "ui/research_ui" }
 research = { path = "research" }
 shared_components = { path = "components/shared_components" }
 crafting_resources = { path = "resources/crafting_resources" }
+crafting_ui = { path = "ui/crafting_ui" }
 
 [dependencies]
 bevy.workspace = true

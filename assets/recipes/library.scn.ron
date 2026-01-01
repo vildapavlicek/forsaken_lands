@@ -6,6 +6,7 @@
           id: "wooden_bow",
           display_name: "Wooden Bow",
           craft_time: 5.0,
+          required_research: Some("basic_archery"),
           cost: {
             "wood": 10,
           },
@@ -17,6 +18,7 @@
           id: "bone_sword",
           display_name: "Bone Sword",
           craft_time: 8.0,
+          required_research: Some("bone_weaponry"),
           cost: {
             "bones": 15,
             "wood": 2,

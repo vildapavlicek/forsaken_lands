@@ -1822,6 +1822,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "crafting_resources",
+ "crafting_ui",
  "game_assets",
  "heroes",
  "messages",
@@ -1969,6 +1970,17 @@ name = "crafting_resources"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "crafting_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "crafting_resources",
+ "research",
+ "states",
+ "wallet",
 ]
 
 [[package]]

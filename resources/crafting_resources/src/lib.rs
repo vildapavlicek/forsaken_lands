@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use std::collections::HashMap;
 
 #[derive(Resource, Debug, Reflect, Default)]
+#[reflect(Resource)]
 pub struct RecipesLibrary {
     pub recipes: HashMap<String, CraftingRecipe>,
 }
@@ -15,6 +16,8 @@ pub struct CraftingRecipe {
     pub display_name: String,
     /// Time in seconds to craft
     pub craft_time: f32,
+    /// The research required to unlock this recipe.
+    pub required_research: Option<String>,
     /// The inputs required to craft the item.
     pub cost: HashMap<String, u32>,
     /// The outputs produced by the craft.
