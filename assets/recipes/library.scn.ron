@@ -1,0 +1,32 @@
+(
+  resources: {
+    "crafting_resources::RecipesLibrary": (
+      recipes: {
+        "wooden_bow": (
+          id: "wooden_bow",
+          display_name: "Wooden Bow",
+          craft_time: 5.0,
+          cost: {
+            "wood": 10,
+          },
+          outcomes: [
+            SpawnPrefab("recipes/prefabs/wooden_bow.scn.ron"),
+          ],
+        ),
+        "bone_sword": (
+          id: "bone_sword",
+          display_name: "Bone Sword",
+          craft_time: 8.0,
+          cost: {
+            "bones": 15,
+            "wood": 2,
+          },
+          outcomes: [
+            SpawnPrefab("recipes/prefabs/bone_sword.scn.ron"),
+          ],
+        ),
+      },
+    ),
+  },
+  entities: {},
+)

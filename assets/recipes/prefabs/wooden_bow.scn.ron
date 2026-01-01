@@ -1,0 +1,21 @@
+(
+  resources: {},
+  entities: {
+    0: (
+      components: {
+        "hero_components::Weapon": (),
+        "hero_components::Damage": (2.0),
+        "hero_components::AttackRange": (200.0),
+        "hero_components::AttackSpeed": (
+          timer: (
+            stopwatch: ( elapsed: ( secs: 0, nanos: 0 ), is_paused: false ),
+            duration: ( secs: 1, nanos: 500000000 ),
+            mode: Repeating,
+            finished: false,
+            times_finished_this_tick: 0,
+          ),
+        ),
+      },
+    ),
+  },
+)
