@@ -1,7 +1,5 @@
 use {
-    crate::CraftingInProgress,
-    bevy::prelude::*,
-    crafting_events::StartCraftingRequest,
+    crate::CraftingInProgress, bevy::prelude::*, crafting_events::StartCraftingRequest,
     crafting_resources::RecipesLibrary,
 };
 

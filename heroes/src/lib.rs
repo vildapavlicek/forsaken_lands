@@ -29,10 +29,7 @@ impl Plugin for HeroesPlugin {
             Update,
             (
                 hero_attack_intent_system.in_set(GameSchedule::ResolveIntent),
-                (
-                    projectile_movement_system,
-                    projectile_collision_system,
-                )
+                (projectile_movement_system, projectile_collision_system)
                     .in_set(GameSchedule::PerformAction)
                     .chain(),
             )
@@ -166,10 +163,7 @@ fn projectile_collision_system(
     }
 }
 
-fn apply_damage_system(
-    trigger: On<ProjectileHit>,
-    mut enemies: Query<&mut Health, With<Enemy>>,
-) {
+fn apply_damage_system(trigger: On<ProjectileHit>, mut enemies: Query<&mut Health, With<Enemy>>) {
     let hit = trigger.event();
     if let Ok(mut health) = enemies.get_mut(hit.target) {
         health.current -= hit.damage;

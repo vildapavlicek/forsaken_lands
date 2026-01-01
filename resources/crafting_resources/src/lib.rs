@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use std::collections::HashMap;
+use {bevy::prelude::*, std::collections::HashMap};
 
 #[derive(Resource, Debug, Reflect, Default)]
 #[reflect(Resource)]

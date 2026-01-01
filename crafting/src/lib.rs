@@ -1,7 +1,5 @@
 use {
-    bevy::prelude::*,
-    crafting_resources::CraftingOutcome,
-    states::GameState,
+    bevy::prelude::*, crafting_resources::CraftingOutcome, states::GameState,
     system_schedule::GameSchedule,
 };
 

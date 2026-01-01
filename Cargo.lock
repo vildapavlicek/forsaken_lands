@@ -4778,8 +4778,10 @@ name = "village"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "enemy_components",
  "game_assets",
  "hero_components",
+ "hero_events",
  "states",
  "village_components",
 ]

@@ -95,9 +95,23 @@ fn update_research_ui(
     wallet: Res<Wallet>,
     container_query: Query<(Entity, Option<&Children>), With<ResearchItemsContainer>>,
     card_query: Query<(Entity, &ResearchCard, &Children)>,
-    mut cost_text_query: Query<(&mut Text, &mut TextColor), (With<ResearchCostText>, Without<ResearchButton>)>,
-    mut button_query: Query<(&mut BorderColor, &mut BackgroundColor, &Children, &ResearchButton), With<Button>>,
-    mut button_text_query: Query<(&mut Text, &mut TextColor), (Without<ResearchCostText>, Without<ResearchButton>)>,
+    mut cost_text_query: Query<
+        (&mut Text, &mut TextColor),
+        (With<ResearchCostText>, Without<ResearchButton>),
+    >,
+    mut button_query: Query<
+        (
+            &mut BorderColor,
+            &mut BackgroundColor,
+            &Children,
+            &ResearchButton,
+        ),
+        With<Button>,
+    >,
+    mut button_text_query: Query<
+        (&mut Text, &mut TextColor),
+        (Without<ResearchCostText>, Without<ResearchButton>),
+    >,
 ) {
     let Ok((container_entity, children)) = container_query.single() else {
         return;
@@ -173,8 +187,8 @@ fn update_research_ui(
                 for child in children.iter() {
                     // Try to update cost text
                     if let Ok((mut text, mut color)) = cost_text_query.get_mut(child) {
-                         text.0 = cost_str.clone();
-                         color.0 = if can_afford {
+                        text.0 = cost_str.clone();
+                        color.0 = if can_afford {
                             Color::srgba(0.7, 1.0, 0.7, 1.0)
                         } else {
                             Color::srgba(1.0, 0.7, 0.7, 1.0)
@@ -187,15 +201,17 @@ fn update_research_ui(
 
                         // Update button text
                         if let Some(&text_entity) = btn_children.first() {
-                             if let Ok((mut text, mut color)) = button_text_query.get_mut(text_entity) {
-                                 text.0 = btn_text_str.to_string();
-                                 color.0 = btn_color;
-                             }
+                            if let Ok((mut text, mut color)) =
+                                button_text_query.get_mut(text_entity)
+                            {
+                                text.0 = btn_text_str.to_string();
+                                color.0 = btn_color;
+                            }
                         }
                     }
                 }
             }
-             entity
+            entity
         } else {
             // Spawn New
             commands
@@ -209,7 +225,9 @@ fn update_research_ui(
                     },
                     BorderColor::all(Color::srgba(0.3, 0.3, 0.3, 1.0)),
                     BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 1.0)),
-                    ResearchCard { research_id: id.clone() },
+                    ResearchCard {
+                        research_id: id.clone(),
+                    },
                 ))
                 .with_children(|card| {
                     card.spawn((
@@ -263,7 +281,9 @@ fn update_research_ui(
         sorted_entities.push(card_entity);
     }
 
-    commands.entity(container_entity).replace_children(&sorted_entities);
+    commands
+        .entity(container_entity)
+        .replace_children(&sorted_entities);
 
     // Despawn remaining
     for (_, entity) in existing_cards {

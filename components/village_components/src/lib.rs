@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use std::collections::HashMap;
+use {bevy::prelude::*, std::collections::HashMap};
 
 #[derive(Reflect, Default, Debug, Clone)]
 pub struct EncyclopediaEntry {
@@ -12,7 +11,16 @@ pub struct EnemyEncyclopedia {
     pub inner: HashMap<String, EncyclopediaEntry>,
 }
 
-#[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
 #[require(EnemyEncyclopedia)]
 pub struct Village;
+
+impl EnemyEncyclopedia {
+    pub fn increment_kill_count(&mut self, enemy_id: String) {
+        self.inner
+            .entry(enemy_id)
+            .and_modify(|e| e.kill_count += 1)
+            .or_insert(EncyclopediaEntry { kill_count: 1 });
+    }
+}

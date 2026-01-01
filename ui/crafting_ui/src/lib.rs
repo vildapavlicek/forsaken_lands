@@ -114,7 +114,7 @@ fn update_crafting_ui(
 
             let mut can_afford = true;
             let mut cost_str = String::from("Cost: ");
-            
+
             let mut cost_items: Vec<_> = recipe.cost.iter().collect();
             cost_items.sort_by_key(|(res_id, _)| *res_id);
 
@@ -171,7 +171,9 @@ fn update_crafting_ui(
                         btn_text,
                         btn_color,
                         btn_border,
-                        CraftingButton { recipe_id: id.clone() },
+                        CraftingButton {
+                            recipe_id: id.clone(),
+                        },
                     );
                 });
         }
