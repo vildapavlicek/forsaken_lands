@@ -8,50 +8,54 @@ members = [
   "components/enemy_components",
   "components/hero_components",
   "components/portal_components",
+  "components/shared_components",
   "components/village_components",
   "components/wallet_components",
   "core",
+  "crafting",
+  "events/crafting_events",
   "game_assets",
   "heroes",
+  "messages",
   "portals",
+  "research",
+  "resources/crafting_resources",
   "resources/enemy_resources",
   "states",
   "system_schedule",
+  "ui/crafting_ui",
+  "ui/research_ui",
+  "ui/resources_ui",
+  "ui/widgets",
   "village",
   "wallet",
-  "messages",
-  "ui/resources_ui",
-  "ui/research_ui",
-  "research",
-  "components/shared_components",
-  "resources/crafting_resources",
-  "ui/crafting_ui",
-  "ui/widgets",
 ]
 
 [workspace.dependencies]
 bevy = "0.17"
 core = { path = "core" }
+crafting = { path = "crafting" }
+crafting_events = { path = "events/crafting_events" }
+crafting_resources = { path = "resources/crafting_resources" }
+crafting_ui = { path = "ui/crafting_ui" }
 enemy_components = { path = "components/enemy_components" }
+enemy_resources = { path = "resources/enemy_resources" }
 game_assets = { path = "game_assets" }
 hero_components = { path = "components/hero_components" }
 heroes = { path = "heroes" }
+messages = { path = "messages" }
 portal_components = { path = "components/portal_components" }
 portals = { path = "portals" }
+research = { path = "research" }
+research_ui = { path = "ui/research_ui" }
+resources_ui = { path = "ui/resources_ui" }
+shared_components = { path = "components/shared_components" }
 states = { path = "states" }
 system_schedule = { path = "system_schedule" }
 village = { path = "village" }
 village_components = { path = "components/village_components" }
 wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
-enemy_resources = { path = "resources/enemy_resources" }
-messages = { path = "messages" }
-resources_ui = { path = "ui/resources_ui" }
-research_ui = { path = "ui/research_ui" }
-research = { path = "research" }
-shared_components = { path = "components/shared_components" }
-crafting_resources = { path = "resources/crafting_resources" }
-crafting_ui = { path = "ui/crafting_ui" }
 widgets = { path = "ui/widgets" }
 
 [dependencies]

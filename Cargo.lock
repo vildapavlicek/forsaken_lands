@@ -1821,6 +1821,8 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "crafting",
+ "crafting_events",
  "crafting_resources",
  "crafting_ui",
  "game_assets",
@@ -1966,6 +1968,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "crafting"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "crafting_events",
+ "crafting_resources",
+ "states",
+ "system_schedule",
+]
+
+[[package]]
+name = "crafting_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "crafting_resources"
 version = "0.1.0"
 dependencies = [
@@ -1977,6 +1997,7 @@ name = "crafting_ui"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "crafting_events",
  "crafting_resources",
  "research",
  "states",

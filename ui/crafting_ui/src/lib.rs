@@ -1,5 +1,6 @@
 use {
     bevy::prelude::*,
+    crafting_events::StartCraftingRequest,
     crafting_resources::RecipesLibrary,
     research::ResearchState,
     states::GameState,
@@ -178,6 +179,7 @@ fn update_crafting_ui(
 }
 
 fn handle_crafting_button(
+    mut commands: Commands,
     mut wallet: ResMut<Wallet>,
     library: Res<RecipesLibrary>,
     interaction_query: Query<(&Interaction, &CraftingButton), (Changed<Interaction>, With<Button>)>,
@@ -185,20 +187,24 @@ fn handle_crafting_button(
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             if let Some(recipe) = library.recipes.get(&btn.recipe_id) {
-                // Check if can afford again (safety)
+                // Check if can afford
                 let can_afford = recipe.cost.iter().all(|(res_id, amt)| {
                     wallet.resources.get(res_id).copied().unwrap_or(0) >= *amt
                 });
 
                 if can_afford {
-                    // Subtract resources
+                    // Deduct resources
                     for (res_id, amt) in &recipe.cost {
                         if let Some(current) = wallet.resources.get_mut(res_id) {
                             *current -= *amt;
                         }
                     }
-                    info!("Crafting started for: {} (Resources subtracted)", recipe.display_name);
-                    // TODO: Trigger actual crafting timer/spawning if needed
+
+                    // Trigger the crafting request event (observer pattern)
+                    commands.trigger(StartCraftingRequest {
+                        recipe_id: btn.recipe_id.clone(),
+                    });
+                    info!("Sent crafting request for: {}", recipe.display_name);
                 }
             }
         }

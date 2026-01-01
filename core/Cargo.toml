@@ -5,7 +5,10 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+crafting.workspace = true
+crafting_events.workspace = true
 crafting_resources.workspace = true
+crafting_ui.workspace = true
 game_assets.workspace = true
 heroes.workspace = true
 messages.workspace = true
@@ -19,4 +22,4 @@ system_schedule.workspace = true
 village.workspace = true
 village_components.workspace = true
 wallet.workspace = true
-crafting_ui.workspace = true
+

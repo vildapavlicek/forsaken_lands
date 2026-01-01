@@ -1,5 +1,6 @@
 use {
-    bevy::prelude::*, crafting_resources::CraftingResourcesPlugin, crafting_ui::CraftingUiPlugin,
+    bevy::prelude::*, crafting::CraftingPlugin, 
+    crafting_resources::CraftingResourcesPlugin, crafting_ui::CraftingUiPlugin,
     game_assets::AssetsPlugin, heroes::HeroesPlugin, messages::MessagesPlugin,
     portals::PortalsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
     resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin, states::GameState,
@@ -19,6 +20,7 @@ impl Plugin for CorePlugin {
             )
             .add_plugins((
                 AssetsPlugin,
+                CraftingPlugin,
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,
                 HeroesPlugin,

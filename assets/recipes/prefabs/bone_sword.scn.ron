@@ -1,7 +1,7 @@
 (
   resources: {},
   entities: {
-    0: (
+    1: (
       components: {
         "hero_components::Weapon": (),
         "hero_components::Damage": (5.0),
