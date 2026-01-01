@@ -17,7 +17,6 @@ members = [
   "events/hero_events",
   "game_assets",
   "heroes",
-  "messages",
   "portals",
   "research",
   "resources/crafting_resources",
@@ -45,7 +44,6 @@ game_assets = { path = "game_assets" }
 hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }
 heroes = { path = "heroes" }
-messages = { path = "messages" }
 portal_components = { path = "components/portal_components" }
 portals = { path = "portals" }
 research = { path = "research" }
