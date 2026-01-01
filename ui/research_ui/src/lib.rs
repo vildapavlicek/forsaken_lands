@@ -3,6 +3,7 @@ use {
     research::{ResearchLibrary, ResearchState, StartResearchRequest},
     states::GameState,
     wallet::Wallet,
+    widgets::{spawn_action_button, spawn_cost_text, spawn_timer_text},
 };
 
 pub struct ResearchUiPlugin;
@@ -158,27 +159,8 @@ fn update_research_ui(
                     ));
 
                     if !is_completed {
-                        card.spawn((
-                            Text::new(&format!("Time: {}s", def.time_required)),
-                            TextFont {
-                                font_size: 12.0,
-                                ..default()
-                            },
-                            TextColor(Color::srgba(0.7, 0.7, 1.0, 1.0)),
-                        ));
-
-                        card.spawn((
-                            Text::new(&cost_str),
-                            TextFont {
-                                font_size: 12.0,
-                                ..default()
-                            },
-                            TextColor(if can_afford {
-                                Color::srgba(0.7, 1.0, 0.7, 1.0)
-                            } else {
-                                Color::srgba(1.0, 0.7, 0.7, 1.0)
-                            }),
-                        ));
+                        spawn_timer_text(card, def.time_required);
+                        spawn_cost_text(card, &cost_str, can_afford);
                     }
 
                     // Button
@@ -208,31 +190,13 @@ fn update_research_ui(
                         )
                     };
 
-                    card.spawn((
-                        Button,
-                        Node {
-                            width: Val::Px(100.0),
-                            height: Val::Px(30.0),
-                            margin: UiRect::top(Val::Px(5.0)),
-                            border: UiRect::all(Val::Px(2.0)),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        BorderColor::all(btn_border),
-                        BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 1.0)),
+                    spawn_action_button(
+                        card,
+                        btn_text,
+                        btn_color,
+                        btn_border,
                         ResearchButton { id: id.clone() },
-                    ))
-                    .with_children(|btn| {
-                        btn.spawn((
-                            Text::new(btn_text),
-                            TextFont {
-                                font_size: 14.0,
-                                ..default()
-                            },
-                            TextColor(btn_color),
-                        ));
-                    });
+                    );
                 });
         }
     });

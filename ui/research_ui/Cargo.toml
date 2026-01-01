@@ -8,3 +8,4 @@ bevy.workspace = true
 research.workspace = true
 wallet.workspace = true
 states.workspace = true
+widgets.workspace = true

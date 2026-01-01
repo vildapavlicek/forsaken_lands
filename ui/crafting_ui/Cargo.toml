@@ -9,3 +9,4 @@ crafting_resources.workspace = true
 wallet.workspace = true
 states.workspace = true
 research.workspace = true
+widgets.workspace = true

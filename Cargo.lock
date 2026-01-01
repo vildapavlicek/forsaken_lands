@@ -1981,6 +1981,7 @@ dependencies = [
  "research",
  "states",
  "wallet",
+ "widgets",
 ]
 
 [[package]]
@@ -3965,6 +3966,7 @@ dependencies = [
  "research",
  "states",
  "wallet",
+ "widgets",
 ]
 
 [[package]]
@@ -5135,6 +5137,13 @@ dependencies = [
  "serde",
  "thiserror 2.0.17",
  "web-sys",
+]
+
+[[package]]
+name = "widgets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
