@@ -1,7 +1,8 @@
 use {
     bevy::prelude::*, game_assets::AssetsPlugin, heroes::HeroesPlugin, messages::MessagesPlugin,
     portals::PortalsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
-    resources_ui::ResourcesUiPlugin, states::GameState, system_schedule::GameSchedule::*,
+    resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin,
+    states::GameState, system_schedule::GameSchedule::*,
     village::VillagePlugin, wallet::WalletPlugin,
 };
 
@@ -26,6 +27,7 @@ impl Plugin for CorePlugin {
                 ResourcesUiPlugin,
                 ResearchPlugin,
                 ResearchUiPlugin,
+                SharedComponentsPlugin,
             ))
             .add_systems(Startup, setup_camera)
             .add_systems(OnEnter(GameState::Initializing), systems::spawn_starting_scene)

@@ -17,3 +17,4 @@ heroes.workspace = true
 messages.workspace = true
 research.workspace = true
 village_components.workspace = true
+shared_components.workspace = true
