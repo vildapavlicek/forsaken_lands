@@ -1826,6 +1826,8 @@ dependencies = [
  "crafting_resources",
  "crafting_ui",
  "game_assets",
+ "hero_events",
+ "hero_ui",
  "heroes",
  "messages",
  "portals",
@@ -2714,10 +2716,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hero_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "hero_ui"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "hero_components",
+ "hero_events",
  "states",
  "widgets",
 ]

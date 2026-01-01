@@ -14,6 +14,7 @@ members = [
   "core",
   "crafting",
   "events/crafting_events",
+  "events/hero_events",
   "game_assets",
   "heroes",
   "messages",
@@ -37,6 +38,7 @@ bevy = "0.17"
 core = { path = "core" }
 crafting = { path = "crafting" }
 crafting_events = { path = "events/crafting_events" }
+hero_events = { path = "events/hero_events" }
 crafting_resources = { path = "resources/crafting_resources" }
 crafting_ui = { path = "ui/crafting_ui" }
 enemy_components = { path = "components/enemy_components" }

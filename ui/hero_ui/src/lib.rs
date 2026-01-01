@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use hero_components::{AttackRange, AttackSpeed, Damage, Hero, Weapon};
+use hero_events::OpenHeroScreen;
 use states::GameState;
 use widgets::{spawn_card, spawn_effect_display, spawn_primary_button, spawn_stat_display};
 
@@ -6,24 +8,37 @@ pub struct HeroUiPlugin;
 
 impl Plugin for HeroUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Running), setup_hero_ui)
-            .add_systems(OnExit(GameState::Running), cleanup_hero_ui);
+        app.add_message::<OpenHeroScreen>().add_systems(
+            Update,
+            (setup_hero_ui, handle_close_button).run_if(in_state(GameState::Running)),
+        );
     }
 }
 
 #[derive(Component)]
 struct HeroUiRoot;
 
-fn setup_hero_ui(mut commands: Commands) {
-    commands
-        .spawn((
-            HeroUiRoot,
-            Node {
-                width: Val::Vw(100.0),
-                height: Val::Vh(100.0),
-                position_type: PositionType::Absolute,
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
+fn setup_hero_ui(
+    mut commands: Commands,
+    mut hero_screen_events: MessageReader<OpenHeroScreen>,
+    hero_query: Query<Entity, With<Hero>>,
+    weapon_query: Query<(&Damage, &AttackRange, &AttackSpeed), With<Weapon>>,
+) {
+    if hero_query.is_empty() {
+        return;
+    }
+
+    if let Ok((damage, range, speed)) = weapon_query.single() {
+        for _ in hero_screen_events.read() {
+            commands
+                .spawn((
+                    HeroUiRoot,
+                Node {
+                    width: Val::Vw(100.0),
+                    height: Val::Vh(100.0),
+                    position_type: PositionType::Absolute,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
                 ..default()
             },
             BackgroundColor(Color::srgb_u8(16, 22, 34)),
@@ -52,6 +67,27 @@ fn setup_hero_ui(mut commands: Commands) {
                         },
                         TextColor(Color::WHITE),
                     ));
+
+                    header.spawn((
+                        Button,
+                        Node {
+                            width: Val::Px(32.0),
+                            height: Val::Px(32.0),
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            ..default()
+                        },
+                        CloseButton,
+                    )).with_children(|parent| {
+                        parent.spawn((
+                            Text::new("X"),
+                            TextFont {
+                                font_size: 24.0,
+                                ..default()
+                            },
+                            TextColor(Color::WHITE),
+                        ));
+                    });
                 });
 
             // Content
@@ -185,19 +221,19 @@ fn setup_hero_ui(mut commands: Commands) {
                                     spawn_stat_display(
                                         grid,
                                         "Damage",
-                                        "450",
+                                        &damage.0.to_string(),
                                         Color::srgba(0.8, 0.2, 0.2, 0.2),
                                     );
                                     spawn_stat_display(
                                         grid,
                                         "Range",
-                                        "50m",
+                                        &format!("{:.0}m", range.0),
                                         Color::srgba(0.2, 0.8, 0.2, 0.2),
                                     );
                                     spawn_stat_display(
                                         grid,
                                         "Speed",
-                                        "1.2s",
+                                        &format!("{:.1}s", speed.timer.duration().as_secs_f32()),
                                         Color::srgba(0.8, 0.8, 0.2, 0.2),
                                     );
                                 });
@@ -247,11 +283,24 @@ fn setup_hero_ui(mut commands: Commands) {
                             spawn_primary_button(button_container, "UPGRADE WEAPON");
                         });
                 });
-        });
+            });
+        }
+    }
 }
 
-fn cleanup_hero_ui(mut commands: Commands, query: Query<Entity, With<HeroUiRoot>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn();
+#[derive(Component)]
+struct CloseButton;
+
+fn handle_close_button(
+    mut commands: Commands,
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<CloseButton>)>,
+    ui_root_query: Query<Entity, With<HeroUiRoot>>,
+) {
+    for interaction in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            for entity in ui_root_query.iter() {
+                commands.entity(entity).despawn();
+            }
+        }
     }
 }

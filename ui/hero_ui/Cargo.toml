@@ -7,3 +7,5 @@ edition = "2021"
 bevy = { workspace = true }
 widgets = { path = "../widgets" }
 states = { path = "../../states" }
+hero_events = { path = "../../events/hero_events" }
+hero_components = { path = "../../components/hero_components" }
