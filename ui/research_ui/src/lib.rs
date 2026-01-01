@@ -1,9 +1,9 @@
 use {
-    bevy::prelude::*,
+    bevy::{platform::collections::HashMap, prelude::*},
     research::{ResearchLibrary, ResearchState, StartResearchRequest},
     states::GameState,
     wallet::Wallet,
-    widgets::{spawn_action_button, spawn_cost_text, spawn_timer_text},
+    widgets::{spawn_action_button, spawn_timer_text},
 };
 
 pub struct ResearchUiPlugin;
@@ -35,7 +35,12 @@ struct ResearchButton {
 }
 
 #[derive(Component)]
-struct ResearchCard;
+struct ResearchCard {
+    research_id: String,
+}
+
+#[derive(Component)]
+struct ResearchCostText;
 
 fn setup_research_ui(mut commands: Commands) {
     commands
@@ -89,44 +94,111 @@ fn update_research_ui(
     state: Res<ResearchState>,
     wallet: Res<Wallet>,
     container_query: Query<(Entity, Option<&Children>), With<ResearchItemsContainer>>,
+    card_query: Query<(Entity, &ResearchCard, &Children)>,
+    mut cost_text_query: Query<(&mut Text, &mut TextColor), (With<ResearchCostText>, Without<ResearchButton>)>,
+    mut button_query: Query<(&mut BorderColor, &mut BackgroundColor, &Children, &ResearchButton), With<Button>>,
+    mut button_text_query: Query<(&mut Text, &mut TextColor), (Without<ResearchCostText>, Without<ResearchButton>)>,
 ) {
     let Ok((container_entity, children)) = container_query.single() else {
         return;
     };
 
-    // Simple approach: Clear and rebuild the list
+    // 1. Map existing cards for diffing
+    let mut existing_cards: HashMap<String, Entity> = HashMap::default();
     if let Some(children) = children {
         for child in children.iter() {
-            commands.entity(child).despawn();
+            if let Ok((_, card, _)) = card_query.get(child) {
+                existing_cards.insert(card.research_id.clone(), child);
+            }
         }
     }
 
+    // 2. Sort available research by ID
     let mut sorted_techs: Vec<_> = library.available.iter().collect();
-    sorted_techs.sort_by_key(|(id, _)| *id);
+    sorted_techs.sort_by_key(|(_, def)| def.id);
 
-    commands.entity(container_entity).with_children(|parent| {
-        for (id, def) in sorted_techs {
-            let is_completed = state.is_researched(id);
-            let is_researching = state.is_researching(id);
+    let mut sorted_entities = Vec::new();
 
-            let mut can_afford = true;
-            let mut cost_str = String::from("Cost: ");
-            for (res, amt) in &def.cost {
-                let current = wallet.resources.get(res).copied().unwrap_or(0);
-                cost_str.push_str(&format!("{}: {}/{} ", res, current, amt));
-                if current < *amt {
-                    can_afford = false;
+    for (id, def) in sorted_techs {
+        // Prerequisites check
+        let prereqs_met = def.prerequisites.iter().all(|p| state.is_researched(p));
+        if !prereqs_met {
+            continue;
+        }
+
+        let is_completed = state.is_researched(id);
+        let is_researching = state.is_researching(id);
+
+        let mut can_afford = true;
+        let mut cost_str = String::from("Cost: ");
+        for (res, amt) in &def.cost {
+            let current = wallet.resources.get(res).copied().unwrap_or(0);
+            cost_str.push_str(&format!("{}: {}/{} ", res, current, amt));
+            if current < *amt {
+                can_afford = false;
+            }
+        }
+
+        let (btn_text_str, btn_color, btn_border) = if is_completed {
+            (
+                "Completed",
+                Color::srgba(1.0, 1.0, 1.0, 1.0),
+                Color::srgba(1.0, 1.0, 1.0, 1.0),
+            )
+        } else if is_researching {
+            (
+                "Researching...",
+                Color::srgba(0.7, 0.7, 1.0, 1.0),
+                Color::srgba(0.4, 0.4, 1.0, 1.0),
+            )
+        } else if can_afford {
+            (
+                "Start",
+                Color::srgba(0.5, 1.0, 0.5, 1.0),
+                Color::srgba(0.0, 1.0, 0.0, 1.0),
+            )
+        } else {
+            (
+                "Start",
+                Color::srgba(0.5, 0.5, 0.5, 1.0),
+                Color::srgba(0.5, 0.5, 0.5, 1.0),
+            )
+        };
+
+        let card_entity = if let Some(&entity) = existing_cards.get(id) {
+            // Update Existing
+            existing_cards.remove(id);
+
+            if let Ok((_, _, children)) = card_query.get(entity) {
+                for child in children.iter() {
+                    // Try to update cost text
+                    if let Ok((mut text, mut color)) = cost_text_query.get_mut(child) {
+                         text.0 = cost_str.clone();
+                         color.0 = if can_afford {
+                            Color::srgba(0.7, 1.0, 0.7, 1.0)
+                        } else {
+                            Color::srgba(1.0, 0.7, 0.7, 1.0)
+                        };
+                    }
+
+                    // Try to update button
+                    if let Ok((mut border, _, btn_children, _)) = button_query.get_mut(child) {
+                        *border = BorderColor::all(btn_border);
+
+                        // Update button text
+                        if let Some(&text_entity) = btn_children.first() {
+                             if let Ok((mut text, mut color)) = button_text_query.get_mut(text_entity) {
+                                 text.0 = btn_text_str.to_string();
+                                 color.0 = btn_color;
+                             }
+                        }
+                    }
                 }
             }
-
-            // Prerequisites check
-            let prereqs_met = def.prerequisites.iter().all(|p| state.is_researched(p));
-            if !prereqs_met {
-                continue; // Don't even show if prereqs not met? Or show as locked?
-                // For now, let's just show it if it's in the library.
-            }
-
-            parent
+             entity
+        } else {
+            // Spawn New
+            commands
                 .spawn((
                     Node {
                         flex_direction: FlexDirection::Column,
@@ -137,7 +209,7 @@ fn update_research_ui(
                     },
                     BorderColor::all(Color::srgba(0.3, 0.3, 0.3, 1.0)),
                     BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 1.0)),
-                    ResearchCard,
+                    ResearchCard { research_id: id.clone() },
                 ))
                 .with_children(|card| {
                     card.spawn((
@@ -160,46 +232,43 @@ fn update_research_ui(
 
                     if !is_completed {
                         spawn_timer_text(card, def.time_required);
-                        spawn_cost_text(card, &cost_str, can_afford);
-                    }
 
-                    // Button
-                    let (btn_text, btn_color, btn_border) = if is_completed {
-                        (
-                            "Completed",
-                            Color::srgba(1.0, 1.0, 1.0, 1.0),
-                            Color::srgba(1.0, 1.0, 1.0, 1.0),
-                        )
-                    } else if is_researching {
-                        (
-                            "Researching...",
-                            Color::srgba(0.7, 0.7, 1.0, 1.0),
-                            Color::srgba(0.4, 0.4, 1.0, 1.0),
-                        )
-                    } else if can_afford {
-                        (
-                            "Start",
-                            Color::srgba(0.5, 1.0, 0.5, 1.0),
-                            Color::srgba(0.0, 1.0, 0.0, 1.0),
-                        )
-                    } else {
-                        (
-                            "Start",
-                            Color::srgba(0.5, 0.5, 0.5, 1.0),
-                            Color::srgba(0.5, 0.5, 0.5, 1.0),
-                        )
-                    };
+                        // Manually spawn cost text with marker
+                        card.spawn((
+                            Text::new(&cost_str),
+                            TextFont {
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(if can_afford {
+                                Color::srgba(0.7, 1.0, 0.7, 1.0)
+                            } else {
+                                Color::srgba(1.0, 0.7, 0.7, 1.0)
+                            }),
+                            ResearchCostText,
+                        ));
+                    }
 
                     spawn_action_button(
                         card,
-                        btn_text,
+                        btn_text_str,
                         btn_color,
                         btn_border,
                         ResearchButton { id: id.clone() },
                     );
-                });
-        }
-    });
+                })
+                .id()
+        };
+
+        sorted_entities.push(card_entity);
+    }
+
+    commands.entity(container_entity).replace_children(&sorted_entities);
+
+    // Despawn remaining
+    for (_, entity) in existing_cards {
+        commands.entity(entity).despawn();
+    }
 }
 
 fn handle_research_button(
@@ -213,7 +282,6 @@ fn handle_research_button(
         if *interaction == Interaction::Pressed {
             let id = &btn.id;
 
-            // Re-check conditions briefly before sending request
             if state.is_researched(id) || state.is_researching(id) {
                 continue;
             }

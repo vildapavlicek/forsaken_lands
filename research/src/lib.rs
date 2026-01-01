@@ -16,6 +16,7 @@ pub struct ResearchLibrary {
 
 #[derive(Reflect, Debug, Clone)]
 pub struct ResearchDefinition {
+    pub id: usize,
     pub name: String,
     pub description: String,
     pub prerequisites: Vec<String>,

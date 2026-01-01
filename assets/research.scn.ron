@@ -3,6 +3,7 @@
     "research::ResearchLibrary": (
       available: {
         "basic_archery": (
+          id: 1,
           name: "Basic Archery",
           description: "Allows crafting of crude bows.",
           prerequisites: [],
@@ -11,6 +12,7 @@
           unlocks: [ Recipe("wooden_bow"), Recipe("bone_arrow") ],
         ),
         "bone_weaponry": (
+          id: 2,
           name: "Bone Weaponry",
           description: "Sharpened bone swords.",
           prerequisites: ["basic_archery"],
