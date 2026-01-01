@@ -1,8 +1,8 @@
 use {
     bevy::prelude::*,
     enemy_components::{
-        Dead, Enemy, Health, Lifetime, MovementSpeed, NeedsHydration, ResourceRewards, Reward,
-        RewardCoefficient,
+        Dead, Enemy, Health, Lifetime, MonsterId, MovementSpeed, NeedsHydration, ResourceRewards,
+        Reward, RewardCoefficient,
     },
     game_assets::GameAssets,
     hero_events::EnemyKilled,
@@ -26,6 +26,7 @@ impl Plugin for PortalsPlugin {
         app.register_type::<ResourceRewards>();
         app.register_type::<Reward>();
         app.register_type::<Dead>();
+        app.register_type::<MonsterId>();
 
         app.add_systems(Update, enemy_spawn_system);
         app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));

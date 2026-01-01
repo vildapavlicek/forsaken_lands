@@ -40,3 +40,7 @@ pub struct Reward {
     pub id: String,
     pub value: u32,
 }
+
+#[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
+#[reflect(Component, Default)]
+pub struct MonsterId(pub String);
