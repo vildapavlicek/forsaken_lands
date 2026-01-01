@@ -30,22 +30,23 @@ impl Plugin for HeroesPlugin {
             (
                 hero_attack_intent_system.in_set(GameSchedule::ResolveIntent),
                 (
-                    hero_projectile_spawn_system,
                     projectile_movement_system,
                     projectile_collision_system,
                 )
                     .in_set(GameSchedule::PerformAction)
                     .chain(),
-                apply_damage_system.in_set(GameSchedule::Effect),
             )
                 .run_if(in_state(GameState::Running)),
         );
+
+        app.add_observer(hero_projectile_spawn_system);
+        app.add_observer(apply_damage_system);
     }
 }
 
 fn hero_attack_intent_system(
     time: Res<Time>,
-    mut attack_intent_writer: MessageWriter<AttackIntent>,
+    mut commands: Commands,
     mut weapons: Query<(Entity, &AttackRange, &mut AttackSpeed, &ChildOf), With<Weapon>>,
     heroes: Query<&Hero>,
     enemies: Query<(Entity, &Transform), (With<Enemy>, Without<Village>)>,
@@ -82,7 +83,7 @@ fn hero_attack_intent_system(
             }
 
             if let Some((enemy_entity, _)) = closest_enemy {
-                attack_intent_writer.write(AttackIntent {
+                commands.trigger(AttackIntent {
                     attacker: weapon_entity,
                     target: enemy_entity,
                 });
@@ -92,8 +93,8 @@ fn hero_attack_intent_system(
 }
 
 fn hero_projectile_spawn_system(
+    trigger: On<AttackIntent>,
     mut commands: Commands,
-    mut attack_intent_reader: MessageReader<AttackIntent>,
     weapons: Query<&Damage, With<Weapon>>,
     villages: Query<&Transform, With<Village>>,
 ) {
@@ -102,24 +103,24 @@ fn hero_projectile_spawn_system(
         return;
     };
 
-    for intent in attack_intent_reader.read() {
-        // Double check the attacker is still a valid weapon.
-        // The intent system already filters this, but if a weapon was unequipped
-        // between intent and action, this would catch it.
-        if let Ok(damage) = weapons.get(intent.attacker) {
-            commands.spawn((
-                Sprite {
-                    color: Color::srgb(1.0, 1.0, 0.0),
-                    custom_size: Some(Vec2::new(10.0, 10.0)),
-                    ..default()
-                },
-                Transform::from_translation(village_transform.translation),
-                Projectile,
-                ProjectileTarget(intent.target),
-                ProjectileSpeed(400.0),
-                ProjectileDamage(damage.0),
-            ));
-        }
+    let intent = trigger.event();
+
+    // Double check the attacker is still a valid weapon.
+    // The intent system already filters this, but if a weapon was unequipped
+    // between intent and action, this would catch it.
+    if let Ok(damage) = weapons.get(intent.attacker) {
+        commands.spawn((
+            Sprite {
+                color: Color::srgb(1.0, 1.0, 0.0),
+                custom_size: Some(Vec2::new(10.0, 10.0)),
+                ..default()
+            },
+            Transform::from_translation(village_transform.translation),
+            Projectile,
+            ProjectileTarget(intent.target),
+            ProjectileSpeed(400.0),
+            ProjectileDamage(damage.0),
+        ));
     }
 }
 
@@ -138,7 +139,6 @@ fn projectile_movement_system(
 
 fn projectile_collision_system(
     mut commands: Commands,
-    mut projectile_hit_writer: MessageWriter<ProjectileHit>,
     projectiles: Query<
         (Entity, &Transform, &ProjectileTarget, &ProjectileDamage),
         With<Projectile>,
@@ -152,7 +152,7 @@ fn projectile_collision_system(
                 .distance(target_transform.translation);
 
             if distance < 10.0 {
-                projectile_hit_writer.write(ProjectileHit {
+                commands.trigger(ProjectileHit {
                     projectile: projectile_entity,
                     target: target.0,
                     damage: damage.0,
@@ -167,16 +167,15 @@ fn projectile_collision_system(
 }
 
 fn apply_damage_system(
-    mut projectile_hit_reader: MessageReader<ProjectileHit>,
+    trigger: On<ProjectileHit>,
     mut enemies: Query<&mut Health, With<Enemy>>,
 ) {
-    for hit in projectile_hit_reader.read() {
-        if let Ok(mut health) = enemies.get_mut(hit.target) {
-            health.current -= hit.damage;
-            info!(
-                "Projectile hit enemy {:?} for {} damage. Health: {}/{}",
-                hit.target, hit.damage, health.current, health.max
-            );
-        }
+    let hit = trigger.event();
+    if let Ok(mut health) = enemies.get_mut(hit.target) {
+        health.current -= hit.damage;
+        info!(
+            "Projectile hit enemy {:?} for {} damage. Health: {}/{}",
+            hit.target, hit.damage, health.current, health.max
+        );
     }
 }

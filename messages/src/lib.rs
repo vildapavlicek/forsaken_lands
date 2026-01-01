@@ -4,16 +4,13 @@ pub struct MessagesPlugin;
 
 impl Plugin for MessagesPlugin {
     fn build(&self, app: &mut App) {
-        app.add_message::<AttackIntent>()
-            .add_message::<ProjectileHit>()
-            .add_message::<EnemyKilled>()
-            .register_type::<AttackIntent>()
+        app.register_type::<AttackIntent>()
             .register_type::<ProjectileHit>()
             .register_type::<EnemyKilled>();
     }
 }
 
-#[derive(Message, Reflect)]
+#[derive(Event, Reflect)]
 #[reflect(Default)]
 pub struct EnemyKilled {
     pub entity: Entity,
@@ -27,7 +24,7 @@ impl Default for EnemyKilled {
     }
 }
 
-#[derive(Message, Reflect)]
+#[derive(Event, Reflect)]
 #[reflect(Default)]
 pub struct AttackIntent {
     pub attacker: Entity,
@@ -43,7 +40,7 @@ impl Default for AttackIntent {
     }
 }
 
-#[derive(Message, Reflect)]
+#[derive(Event, Reflect)]
 #[reflect(Default)]
 pub struct ProjectileHit {
     pub projectile: Entity,

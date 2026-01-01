@@ -64,12 +64,11 @@ fn despawn_expired_enemies(
 
 fn despawn_dead_enemies(
     mut commands: Commands,
-    mut enemy_killed_writer: MessageWriter<EnemyKilled>,
     query: Query<(Entity, &Health), (With<Enemy>, Without<Dead>)>,
 ) {
     for (entity, health) in query.iter() {
         if health.current <= 0.0 {
-            enemy_killed_writer.write(EnemyKilled { entity });
+            commands.trigger(EnemyKilled { entity });
             commands
                 .entity(entity)
                 .insert(Dead)
