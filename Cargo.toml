@@ -14,6 +14,7 @@ members = [
   "core",
   "crafting",
   "events/crafting_events",
+  "events/hero_events",
   "game_assets",
   "heroes",
   "messages",
@@ -42,6 +43,7 @@ enemy_components = { path = "components/enemy_components" }
 enemy_resources = { path = "resources/enemy_resources" }
 game_assets = { path = "game_assets" }
 hero_components = { path = "components/hero_components" }
+hero_events = { path = "events/hero_events" }
 heroes = { path = "heroes" }
 messages = { path = "messages" }
 portal_components = { path = "components/portal_components" }

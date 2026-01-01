@@ -5,7 +5,7 @@ use {
         AttackRange, AttackSpeed, Damage, Hero, Projectile, ProjectileDamage, ProjectileSpeed,
         ProjectileTarget, Weapon,
     },
-    messages::{AttackIntent, ProjectileHit},
+    hero_events::{AttackIntent, ProjectileHit},
     states::GameState,
     system_schedule::GameSchedule,
     village_components::Village,
