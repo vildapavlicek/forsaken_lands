@@ -45,6 +45,10 @@ fn handle_divinity_increase(
 ) {
     let event = trigger.event();
     if let Ok((mut divinity, mut stats)) = query.get_mut(event.entity) {
+        info!(
+            xp_added = event.xp_amount,
+            "increased Village's divinity XP"
+        );
         if stats.add_xp(event.xp_amount, &mut divinity) {
             info!(
                 tier = divinity.tier,
@@ -54,4 +58,3 @@ fn handle_divinity_increase(
         }
     }
 }
-

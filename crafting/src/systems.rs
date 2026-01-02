@@ -1,6 +1,10 @@
 use {
-    crate::CraftingInProgress, bevy::prelude::*, crafting_events::StartCraftingRequest,
+    crate::CraftingInProgress,
+    bevy::prelude::*,
+    crafting_events::StartCraftingRequest,
     crafting_resources::RecipesLibrary,
+    divinity_events::IncreaseDivinity,
+    village_components::Village,
 };
 
 /// Observer that handles StartCraftingRequest events.
@@ -34,6 +38,7 @@ pub fn update_crafting_progress(
     time: Res<Time>,
     asset_server: Res<AssetServer>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
+    village_query: Query<Entity, With<Village>>,
 ) {
     for (entity, mut crafting) in query.iter_mut() {
         crafting.timer.tick(time.delta());
@@ -58,6 +63,17 @@ pub fn update_crafting_progress(
                     }
                     crafting_resources::CraftingOutcome::GrantXp(xp) => {
                         info!("Would grant {} XP", xp);
+                    }
+                    crafting_resources::CraftingOutcome::IncreaseDivinity(amount) => {
+                        if let Ok(village_entity) = village_query.single() {
+                            commands.trigger(IncreaseDivinity {
+                                entity: village_entity,
+                                xp_amount: *amount as f32,
+                            });
+                            info!("Triggered IncreaseDivinity with {} XP for Village", amount);
+                        } else {
+                            warn!("Could not find Village entity to increase divinity");
+                        }
                     }
                 }
             }

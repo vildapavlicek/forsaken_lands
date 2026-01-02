@@ -1977,8 +1977,10 @@ dependencies = [
  "bevy",
  "crafting_events",
  "crafting_resources",
+ "divinity_events",
  "states",
  "system_schedule",
+ "village_components",
 ]
 
 [[package]]

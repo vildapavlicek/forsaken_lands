@@ -34,6 +34,8 @@ pub enum CraftingOutcome {
     UnlockFeature(String),
     /// Grants Experience points
     GrantXp(u32),
+    /// Increases Village Divinity XP by the given amount
+    IncreaseDivinity(u32),
 }
 
 pub struct CraftingResourcesPlugin;
