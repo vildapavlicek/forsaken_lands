@@ -23,3 +23,4 @@ system_schedule.workspace = true
 village.workspace = true
 village_components.workspace = true
 wallet.workspace = true
+widgets.workspace = true
