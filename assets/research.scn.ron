@@ -2,6 +2,15 @@
   resources: {
     "research::ResearchLibrary": (
       available: {
+        "bone_crafting": (
+            id: 0,
+            name: "Bone Crafting",
+            description: "Crafting using bones",
+            prerequisites: [],
+            cost: { "bones": 100 },
+            time_required: 30.0,
+            unlocks: []
+          )
         "basic_archery": (
           id: 1,
           name: "Basic Archery",
@@ -15,7 +24,7 @@
           id: 2,
           name: "Bone Weaponry",
           description: "Sharpened bone swords.",
-          prerequisites: ["basic_archery"],
+          prerequisites: ["bone_crafting"],
           cost: { "bones": 10 },
           time_required: 20.0,
           unlocks: [ Recipe("bone_sword") ],
