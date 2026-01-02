@@ -10,3 +10,8 @@ We can have different portals with different attributes. Reaching certain portal
 
 ## Reverse-engineering research
 Enemies that are technologically advanced could allow reverse-engineering of their technology.
+
+# Divinity System
+I had idea about where lower tier divinity cannot hurt higher tier divinity. Thus creating kind of level-check.
+This would be global stat for village and then applied to every hero. However it could be cool feature to have divinity
+as a per-hero stat and when hero would like to tier up his/her divinity, there would be quest required.

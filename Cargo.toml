@@ -5,6 +5,7 @@ edition = "2024"
 
 [workspace]
 members = [
+  "components/divinity_components",
   "components/enemy_components",
   "components/hero_components",
   "components/portal_components",
@@ -38,6 +39,7 @@ crafting = { path = "crafting" }
 crafting_events = { path = "events/crafting_events" }
 crafting_resources = { path = "resources/crafting_resources" }
 crafting_ui = { path = "ui/crafting_ui" }
+divinity_components = { path = "components/divinity_components" }
 enemy_components = { path = "components/enemy_components" }
 enemy_resources = { path = "resources/enemy_resources" }
 game_assets = { path = "game_assets" }
