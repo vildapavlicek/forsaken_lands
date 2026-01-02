@@ -1,5 +1,41 @@
 use bevy::prelude::*;
 
+pub struct WidgetsPlugin;
+
+impl Plugin for WidgetsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, button_interaction_system);
+    }
+}
+
+#[derive(Component)]
+pub struct AnimatedButton {
+    pub normal_color: Color,
+    pub hover_color: Color,
+    pub pressed_color: Color,
+}
+
+fn button_interaction_system(
+    mut query: Query<
+        (&Interaction, &mut BackgroundColor, &AnimatedButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, mut bg_color, anim) in query.iter_mut() {
+        match *interaction {
+            Interaction::Pressed => {
+                *bg_color = BackgroundColor(anim.pressed_color);
+            }
+            Interaction::Hovered => {
+                *bg_color = BackgroundColor(anim.hover_color);
+            }
+            Interaction::None => {
+                *bg_color = BackgroundColor(anim.normal_color);
+            }
+        }
+    }
+}
+
 /// Spawns a cost text display showing resource requirements.
 /// Text is colored green if affordable, red if not.
 pub fn spawn_cost_text(parent: &mut ChildSpawnerCommands, cost_str: &str, can_afford: bool) {
@@ -37,6 +73,10 @@ pub fn spawn_action_button<M: Component>(
     border_color: Color,
     marker: M,
 ) {
+    let normal_color = Color::srgba(0.2, 0.2, 0.2, 1.0);
+    let hover_color = Color::srgba(0.3, 0.3, 0.3, 1.0);
+    let pressed_color = Color::srgba(0.1, 0.1, 0.1, 1.0);
+
     parent
         .spawn((
             Button,
@@ -50,7 +90,12 @@ pub fn spawn_action_button<M: Component>(
                 ..default()
             },
             BorderColor::all(border_color),
-            BackgroundColor(Color::srgba(0.2, 0.2, 0.2, 1.0)),
+            BackgroundColor(normal_color),
+            AnimatedButton {
+                normal_color,
+                hover_color,
+                pressed_color,
+            },
             marker,
         ))
         .with_children(|btn| {

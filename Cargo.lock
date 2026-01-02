@@ -1839,6 +1839,7 @@ dependencies = [
  "village",
  "village_components",
  "wallet",
+ "widgets",
 ]
 
 [[package]]

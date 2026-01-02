@@ -4,7 +4,7 @@ use {
     heroes::HeroesPlugin, portals::PortalsPlugin, research::ResearchPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
-    village::VillagePlugin, wallet::WalletPlugin,
+    village::VillagePlugin, wallet::WalletPlugin, widgets::WidgetsPlugin,
 };
 
 mod systems;
@@ -32,6 +32,7 @@ impl Plugin for CorePlugin {
                 SharedComponentsPlugin,
                 VillagePlugin,
                 WalletPlugin,
+                WidgetsPlugin,
             ))
             .add_systems(Startup, setup_camera)
             .add_systems(
