@@ -10,6 +10,7 @@
           color: Srgba(Srgba(red: 1.0, green: 0.0, blue: 0.0, alpha: 1.0)),
           custom_size: Some((16.0, 16.0)),
         ),
+        "shared_components::DisplayName": ("Goblin"),
         "enemy_components::Enemy": (),
         "enemy_components::MovementSpeed": (150.0),
         "enemy_components::RewardCoefficient": (1.0),
@@ -31,6 +32,7 @@
         "enemy_components::ResourceRewards": ([
           (id: "bones", value: 10),
           (id: "wood", value: 2),
+          (id: "xikegos", value: 1)
         ]),
       },
     ),

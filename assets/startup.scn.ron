@@ -51,6 +51,7 @@
       components: {
         "hero_components::Weapon": (),
         "bevy_ecs::hierarchy::ChildOf": (3),
+        "shared_components::DisplayName": ("Legendary throwing rock"),
         "hero_components::Damage": (1.0),
         "hero_components::AttackRange": (150.0),
         "hero_components::AttackSpeed": (
