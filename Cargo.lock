@@ -1825,6 +1825,7 @@ dependencies = [
  "crafting_events",
  "crafting_resources",
  "crafting_ui",
+ "divinity_components",
  "game_assets",
  "hero_components",
  "hero_events",
@@ -2130,6 +2131,13 @@ checksum = "c9c272297e804878a2a4b707cfcfc6d2328b5bb936944613b4fdf2b9269afdfd"
 
 [[package]]
 name = "divinity_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "divinity_events"
 version = "0.1.0"
 dependencies = [
  "bevy",
@@ -3748,6 +3756,8 @@ name = "portals"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "divinity_components",
+ "divinity_events",
  "enemy_components",
  "game_assets",
  "hero_events",
@@ -4786,6 +4796,8 @@ name = "village"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "divinity_components",
+ "divinity_events",
  "enemy_components",
  "game_assets",
  "hero_components",

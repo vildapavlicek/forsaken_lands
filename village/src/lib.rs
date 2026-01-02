@@ -1,5 +1,7 @@
 use {
     bevy::prelude::*,
+    divinity_components::{Divinity, DivinityStats},
+    divinity_events::IncreaseDivinity,
     enemy_components::MonsterId,
     hero_events::EnemyKilled,
     village_components::{EncyclopediaEntry, EnemyEncyclopedia, Village},
@@ -14,6 +16,7 @@ impl Plugin for VillagePlugin {
         app.register_type::<EncyclopediaEntry>();
 
         app.add_observer(update_encyclopedia);
+        app.add_observer(handle_divinity_increase);
     }
 }
 
@@ -35,3 +38,20 @@ fn update_encyclopedia(
         );
     }
 }
+
+fn handle_divinity_increase(
+    trigger: On<IncreaseDivinity>,
+    mut query: Query<(&mut Divinity, &mut DivinityStats), With<Village>>,
+) {
+    let event = trigger.event();
+    if let Ok((mut divinity, mut stats)) = query.get_mut(event.entity) {
+        if stats.add_xp(event.xp_amount, &mut divinity) {
+            info!(
+                tier = divinity.tier,
+                level = divinity.level,
+                "Village leveled up"
+            );
+        }
+    }
+}
+
