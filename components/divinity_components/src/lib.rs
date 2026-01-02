@@ -66,6 +66,27 @@ pub struct DivinityStats {
     pub required_xp: f32,
 }
 
+impl DivinityStats {
+    /// Calculate required XP for a given Divinity level
+    pub fn required_xp_for(divinity: &Divinity) -> f32 {
+        // Base formula: 100 * tier * level
+        100.0 * divinity.tier as f32 * divinity.level as f32
+    }
+
+    /// Add XP and return true if a level up occurred
+    pub fn add_xp(&mut self, amount: f32, divinity: &mut Divinity) -> bool {
+        self.current_xp += amount;
+        if self.current_xp >= self.required_xp {
+            self.current_xp -= self.required_xp;
+            divinity.level_up();
+            self.required_xp = Self::required_xp_for(divinity);
+            true
+        } else {
+            false
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

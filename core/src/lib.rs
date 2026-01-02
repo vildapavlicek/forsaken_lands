@@ -1,10 +1,11 @@
 use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
-    crafting_ui::CraftingUiPlugin, game_assets::AssetsPlugin, hero_events::HeroEventsPlugin,
-    heroes::HeroesPlugin, portals::PortalsPlugin, research::ResearchPlugin,
-    research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
-    shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
-    village::VillagePlugin, wallet::WalletPlugin, widgets::WidgetsPlugin,
+    crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
+    game_assets::AssetsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
+    portals::PortalsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
+    resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin,
+    states::GameState, system_schedule::GameSchedule::*, village::VillagePlugin,
+    wallet::WalletPlugin, widgets::WidgetsPlugin,
 };
 
 mod systems;
@@ -23,6 +24,7 @@ impl Plugin for CorePlugin {
                 CraftingPlugin,
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,
+                DivinityComponentsPlugin,
                 HeroesPlugin,
                 HeroEventsPlugin,
                 PortalsPlugin,

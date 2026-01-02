@@ -9,6 +9,7 @@ crafting.workspace = true
 crafting_events.workspace = true
 crafting_resources.workspace = true
 crafting_ui.workspace = true
+divinity_components.workspace = true
 game_assets.workspace = true
 hero_components.workspace = true
 hero_events.workspace = true

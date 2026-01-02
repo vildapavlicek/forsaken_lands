@@ -16,6 +16,11 @@
           custom_size: Some((16.0, 32.0)),
         ),
         "portal_components::Portal": (),
+        "divinity_components::Divinity": (tier: 1, level: 1),
+        "divinity_components::DivinityStats": (
+            current_xp: 0.0,
+            required_xp: 100.0,
+        ),
         "portal_components::SpawnTimer": (
              (
                 stopwatch: ( elapsed: ( secs: 6, nanos: 0 ), is_paused: false ),
@@ -37,6 +42,11 @@
           custom_size: Some((32.0, 32.0)),
         ),
         "village_components::Village": (),
+        "divinity_components::Divinity": (tier: 1, level: 1),
+        "divinity_components::DivinityStats": (
+            current_xp: 0.0,
+            required_xp: 100.0,
+        ),
         "bevy_ecs::hierarchy::Children": ([3]),
       },
     ),
