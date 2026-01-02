@@ -27,7 +27,6 @@ pub struct ResearchDefinition {
 
 #[derive(Reflect, Debug, Clone)]
 pub enum UnlockEffect {
-    Recipe(String),  // Unlocks a crafting recipe
     Feature(String), // Unlocks a game mechanic (e.g., "auto_mining")
     StatBuff { stat: String, value: f32 },
 }
