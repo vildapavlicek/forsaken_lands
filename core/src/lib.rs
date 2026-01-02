@@ -1,9 +1,9 @@
 use {
-    bevy::prelude::*, crafting::CraftingPlugin, 
-    crafting_resources::CraftingResourcesPlugin, crafting_ui::CraftingUiPlugin,
-    game_assets::AssetsPlugin, heroes::HeroesPlugin, messages::MessagesPlugin,
-    portals::PortalsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
-    resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin, states::GameState,
+    bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
+    crafting_ui::CraftingUiPlugin, game_assets::AssetsPlugin, hero_ui::HeroUiPlugin,
+    heroes::HeroesPlugin, messages::MessagesPlugin, portals::PortalsPlugin,
+    research::ResearchPlugin, research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
+    shared_components::SharedComponentsPlugin, states::GameState,
     system_schedule::GameSchedule::*, village::VillagePlugin, wallet::WalletPlugin,
 };
 
@@ -23,6 +23,7 @@ impl Plugin for CorePlugin {
                 CraftingPlugin,
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,
+                HeroUiPlugin,
                 HeroesPlugin,
                 MessagesPlugin,
                 PortalsPlugin,
@@ -40,7 +41,10 @@ impl Plugin for CorePlugin {
             )
             .add_systems(
                 Update,
-                systems::check_scene_spawned.run_if(in_state(GameState::Initializing)),
+                (
+                    systems::check_scene_spawned.run_if(in_state(GameState::Initializing)),
+                    systems::handle_village_click.run_if(in_state(GameState::Running)),
+                ),
             );
     }
 }

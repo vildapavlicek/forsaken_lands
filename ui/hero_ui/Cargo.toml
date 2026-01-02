@@ -1,0 +1,11 @@
+[package]
+name = "hero_ui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bevy = { workspace = true }
+widgets = { path = "../widgets" }
+states = { path = "../../states" }
+hero_events = { path = "../../events/hero_events" }
+hero_components = { path = "../../components/hero_components" }
