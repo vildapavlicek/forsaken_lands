@@ -1830,6 +1830,7 @@ dependencies = [
  "hero_components",
  "hero_events",
  "heroes",
+ "portal_ui",
  "portals",
  "research",
  "research_ui",
@@ -3751,6 +3752,20 @@ name = "portal_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "portal_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "divinity_components",
+ "divinity_events",
+ "portal_components",
+ "shared_components",
+ "states",
+ "wallet",
+ "widgets",
 ]
 
 [[package]]

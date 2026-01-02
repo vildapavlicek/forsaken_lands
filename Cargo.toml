@@ -28,6 +28,7 @@ members = [
   "ui/crafting_ui",
   "ui/research_ui",
   "ui/resources_ui",
+  "ui/portal_ui",
   "ui/widgets",
   "village",
   "wallet",
@@ -49,6 +50,7 @@ hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }
 heroes = { path = "heroes" }
 portal_components = { path = "components/portal_components" }
+portal_ui = { path = "ui/portal_ui" }
 portals = { path = "portals" }
 research = { path = "research" }
 research_ui = { path = "ui/research_ui" }
