@@ -2,6 +2,18 @@
   resources: {
     "crafting_resources::RecipesLibrary": (
       recipes: {
+        "bone_idol": (
+          id: "bone_idol",
+          display_name: "Bone Idol",
+          craft_time: 5.0,
+          required_research: Some("bone_idol"),
+          cost: {
+            "bones": 50, "xikegos": 5,
+          },
+          outcomes: [
+            IncreaseDivinity(100),
+          ],
+        ),
         "wooden_bow": (
           id: "wooden_bow",
           display_name: "Wooden Bow",
