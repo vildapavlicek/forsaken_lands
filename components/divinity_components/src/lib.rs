@@ -12,7 +12,7 @@ impl Plugin for DivinityComponentsPlugin {
 
 pub const MAX_LEVEL: u32 = 99;
 
-#[derive(Component, Reflect, Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq)]
 #[reflect(Component, Default)]
 pub struct Divinity {
     pub tier: u32,
@@ -50,6 +50,12 @@ impl Ord for Divinity {
             Ordering::Equal => self.level.cmp(&other.level),
             other => other,
         }
+    }
+}
+
+impl Default for Divinity {
+    fn default() -> Self {
+        Self { tier: 1, level: 1 }
     }
 }
 
@@ -95,7 +101,7 @@ mod tests {
         assert_eq!(div.tier, 2);
         assert_eq!(div.level, 1);
     }
-    
+
     #[test]
     fn test_level_up_tier_high() {
         let mut div = Divinity::new(10, 99);
