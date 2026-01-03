@@ -5,5 +5,6 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+states.workspace = true
 village_components.workspace = true
 widgets.workspace = true

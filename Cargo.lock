@@ -1826,6 +1826,7 @@ dependencies = [
  "crafting_resources",
  "crafting_ui",
  "divinity_components",
+ "enemy_encyclopedia",
  "game_assets",
  "hero_components",
  "hero_events",
@@ -2234,6 +2235,7 @@ name = "enemy_encyclopedia"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "states",
  "village_components",
  "widgets",
 ]

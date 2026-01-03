@@ -1,6 +1,7 @@
 use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
+    enemy_encyclopedia::EnemyEncyclopediaUiPlugin,
     game_assets::AssetsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
     portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
     portal_resources::PortalResourcesPlugin,
@@ -27,6 +28,7 @@ impl Plugin for CorePlugin {
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,
                 DivinityComponentsPlugin,
+                EnemyEncyclopediaUiPlugin,
                 HeroesPlugin,
                 HeroEventsPlugin,
                 PortalsPlugin,

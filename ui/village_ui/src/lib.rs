@@ -2,7 +2,7 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     crafting_resources::RecipesLibrary,
     research::{ResearchLibrary, ResearchState},
-    states::GameState,
+    states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
     widgets::{
@@ -317,6 +317,7 @@ fn handle_menu_button(
         (Changed<Interaction>, With<Button>),
     >,
     mut ui_query: Query<&mut VillageUiRoot>,
+    mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
@@ -325,15 +326,19 @@ fn handle_menu_button(
 
                 match btn.target {
                     VillageContent::Crafting => {
+                        next_state.set(EnemyEncyclopediaState::Closed);
                         commands.queue(SpawnCraftingContentCommand);
                     }
                     VillageContent::Research => {
+                        next_state.set(EnemyEncyclopediaState::Closed);
                         commands.queue(SpawnResearchContentCommand);
                     }
                     VillageContent::Encyclopedia => {
+                        next_state.set(EnemyEncyclopediaState::Open);
                         commands.queue(SpawnEncyclopediaContentCommand);
                     }
                     VillageContent::Menu => {
+                        next_state.set(EnemyEncyclopediaState::Closed);
                         commands.queue(SpawnMenuContentCommand);
                     }
                 }
@@ -346,11 +351,13 @@ fn handle_back_button(
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
     mut ui_query: Query<&mut VillageUiRoot>,
+    mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             if let Ok(mut ui_root) = ui_query.single_mut() {
                 ui_root.content = VillageContent::Menu;
+                next_state.set(EnemyEncyclopediaState::Closed);
                 commands.queue(SpawnMenuContentCommand);
             }
         }
@@ -361,10 +368,12 @@ fn handle_close_button(
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageCloseButton>)>,
     ui_query: Query<Entity, With<VillageUiRoot>>,
+    mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             for ui_entity in ui_query.iter() {
+                next_state.set(EnemyEncyclopediaState::Closed);
                 commands.entity(ui_entity).despawn();
             }
         }
