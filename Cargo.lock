@@ -1840,6 +1840,7 @@ dependencies = [
  "system_schedule",
  "village",
  "village_components",
+ "village_ui",
  "wallet",
  "widgets",
 ]
@@ -4829,6 +4830,21 @@ name = "village_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "village_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "crafting_resources",
+ "crafting_ui",
+ "research",
+ "research_ui",
+ "states",
+ "village_components",
+ "wallet",
+ "widgets",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-use {bevy::prelude::*, std::collections::HashMap};
+use {bevy::{picking::prelude::Pickable, prelude::*}, std::collections::HashMap};
 
 #[derive(Reflect, Default, Debug, Clone)]
 pub struct EncyclopediaEntry {
@@ -13,7 +13,7 @@ pub struct EnemyEncyclopedia {
 
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
-#[require(EnemyEncyclopedia)]
+#[require(EnemyEncyclopedia, Pickable)]
 pub struct Village;
 
 impl EnemyEncyclopedia {

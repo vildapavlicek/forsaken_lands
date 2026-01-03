@@ -29,6 +29,7 @@ members = [
   "ui/research_ui",
   "ui/resources_ui",
   "ui/portal_ui",
+  "ui/village_ui",
   "ui/widgets",
   "village",
   "wallet",
@@ -60,6 +61,7 @@ states = { path = "states" }
 system_schedule = { path = "system_schedule" }
 village = { path = "village" }
 village_components = { path = "components/village_components" }
+village_ui = { path = "ui/village_ui" }
 wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
 widgets = { path = "ui/widgets" }

@@ -1,0 +1,15 @@
+[package]
+name = "village_ui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+crafting_resources.workspace = true
+crafting_ui.workspace = true
+research.workspace = true
+research_ui.workspace = true
+states.workspace = true
+village_components.workspace = true
+wallet.workspace = true
+widgets.workspace = true

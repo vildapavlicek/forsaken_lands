@@ -5,8 +5,8 @@ use {
     portals::PortalsPlugin, portal_ui::PortalUiPlugin, research::ResearchPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState,
-    system_schedule::GameSchedule::*, village::VillagePlugin, wallet::WalletPlugin,
-    widgets::WidgetsPlugin,
+    system_schedule::GameSchedule::*, village::VillagePlugin, village_ui::VillageUiPlugin,
+    wallet::WalletPlugin, widgets::WidgetsPlugin,
 };
 
 mod systems;
@@ -37,6 +37,7 @@ impl Plugin for CorePlugin {
                 ResourcesUiPlugin,
                 SharedComponentsPlugin,
                 VillagePlugin,
+                VillageUiPlugin,
                 WalletPlugin,
                 WidgetsPlugin,
             ))

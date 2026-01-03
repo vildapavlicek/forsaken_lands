@@ -1,11 +1,12 @@
 use {
-    bevy::{platform::collections::HashMap, prelude::*},
+    bevy::prelude::*,
     research::{ResearchLibrary, ResearchState, StartResearchRequest},
     states::GameState,
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_card_title, spawn_description_text, spawn_scrollable_container,
-        spawn_timer_text, spawn_ui_panel, PanelPosition, UiTheme,
+        spawn_action_button, spawn_card_title, spawn_description_text,
+        spawn_scrollable_container, spawn_tab_bar, spawn_tab_button,
+        spawn_timer_text, UiTheme,
     },
 };
 
@@ -13,279 +14,466 @@ pub struct ResearchUiPlugin;
 
 impl Plugin for ResearchUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Running), setup_research_ui)
-            .add_systems(
-                Update,
-                (
-                    update_research_ui.run_if(
-                        resource_changed::<ResearchState>
-                            .or(resource_changed::<Wallet>)
-                            .or(resource_changed::<ResearchLibrary>),
-                    ),
-                    handle_research_button,
-                )
-                    .run_if(in_state(GameState::Running)),
-            );
+        app.add_systems(
+            Update,
+            (
+                handle_research_close_button,
+                handle_tab_switch,
+                update_research_ui.run_if(
+                    resource_changed::<ResearchState>
+                        .or(resource_changed::<Wallet>)
+                        .or(resource_changed::<ResearchLibrary>),
+                ),
+                handle_research_button,
+            )
+                .run_if(in_state(GameState::Running)),
+        );
     }
 }
 
-#[derive(Component)]
-struct ResearchUiRoot;
+// ============================================================================
+// Components
+// ============================================================================
 
+#[derive(Component, PartialEq, Clone, Copy, Debug)]
+pub enum ResearchTab {
+    Available,
+    Completed,
+}
+
+/// Root of the research popup card
 #[derive(Component)]
-struct ResearchButton {
-    id: String,
+pub struct ResearchUiRoot {
+    pub active_tab: ResearchTab,
+}
+
+/// Close button marker
+#[derive(Component)]
+pub struct ResearchCloseButton;
+
+/// Tab button with category
+#[derive(Component)]
+pub struct ResearchTabButton {
+    pub tab: ResearchTab,
 }
 
 #[derive(Component)]
-struct ResearchCard {
-    research_id: String,
+pub struct ResearchButton {
+    pub id: String,
 }
 
 #[derive(Component)]
-struct ResearchCostText;
+pub struct ResearchItemsContainer;
 
-#[derive(Component)]
-struct ResearchItemsContainer;
+// ============================================================================
+// Research Data Builder (for external use)
+// ============================================================================
 
-fn setup_research_ui(mut commands: Commands) {
-    let panel = spawn_ui_panel(
-        &mut commands,
-        PanelPosition::Right(10.0),
-        300.0,
-        Val::Percent(90.0),
-        ResearchUiRoot,
-    );
+/// Data needed to display research content
+pub struct ResearchData {
+    pub active_tab: ResearchTab,
+    pub items: Vec<ResearchDisplayData>,
+}
 
-    commands.entity(panel).with_children(|parent| {
-        // Title
-        parent.spawn((
-            Text::new("Research"),
-            TextFont {
-                font_size: 24.0,
-                ..default()
-            },
-            TextColor(UiTheme::TEXT_PRIMARY),
+/// Display data for a single research item
+pub struct ResearchDisplayData {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub time: f32,
+    pub cost_str: String,
+    pub can_afford: bool,
+    pub is_completed: bool,
+    pub btn_text: String,
+    pub btn_color: Color,
+    pub btn_border: Color,
+}
+
+/// Builds research display data from game resources
+pub fn build_research_data(
+    library: &ResearchLibrary,
+    state: &ResearchState,
+    wallet: &Wallet,
+) -> ResearchData {
+    let active_tab = ResearchTab::Available;
+    let items = build_research_list(library, state, wallet, active_tab);
+    ResearchData { active_tab, items }
+}
+
+fn build_research_list(
+    library: &ResearchLibrary,
+    state: &ResearchState,
+    wallet: &Wallet,
+    active_tab: ResearchTab,
+) -> Vec<ResearchDisplayData> {
+    let mut research_data = Vec::new();
+
+    match active_tab {
+        ResearchTab::Available => {
+            let mut sorted_techs: Vec<_> = library.available.iter().collect();
+            sorted_techs.sort_by_key(|(_, def)| def.id);
+
+            for (id, def) in sorted_techs {
+                let prereqs_met = def.prerequisites.iter().all(|p| state.is_researched(p));
+                if !prereqs_met {
+                    continue;
+                }
+
+                let is_completed = state.is_researched(id);
+                if is_completed {
+                    continue;
+                }
+
+                let is_researching = state.is_researching(id);
+
+                let mut can_afford = true;
+                let mut cost_str = String::from("Cost: ");
+                for (res, amt) in &def.cost {
+                    let current = wallet.resources.get(res).copied().unwrap_or(0);
+                    cost_str.push_str(&format!("{}: {}/{} ", res, current, amt));
+                    if current < *amt {
+                        can_afford = false;
+                    }
+                }
+
+                let (btn_text, btn_color, btn_border) = if is_researching {
+                    (
+                        "Researching...".to_string(),
+                        UiTheme::TEXT_INFO,
+                        Color::srgba(0.4, 0.4, 1.0, 1.0),
+                    )
+                } else if can_afford {
+                    ("Start".to_string(), UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
+                } else {
+                    ("Start".to_string(), UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
+                };
+
+                research_data.push(ResearchDisplayData {
+                    id: id.clone(),
+                    name: def.name.clone(),
+                    description: def.description.clone(),
+                    time: def.time_required,
+                    cost_str,
+                    can_afford,
+                    is_completed: false,
+                    btn_text,
+                    btn_color,
+                    btn_border,
+                });
+            }
+        }
+        ResearchTab::Completed => {
+            for id in &state.completed {
+                if let Some(def) = library.available.get(id) {
+                    research_data.push(ResearchDisplayData {
+                        id: id.clone(),
+                        name: def.name.clone(),
+                        description: def.description.clone(),
+                        time: 0.0,
+                        cost_str: String::new(),
+                        can_afford: true,
+                        is_completed: true,
+                        btn_text: "Completed".to_string(),
+                        btn_color: UiTheme::TEXT_PRIMARY,
+                        btn_border: UiTheme::TEXT_PRIMARY,
+                    });
+                }
+            }
+            research_data.sort_by(|a, b| a.name.cmp(&b.name));
+        }
+    }
+
+    research_data
+}
+
+// ============================================================================
+// Spawn Research Content (for embedding in village UI)
+// ============================================================================
+
+/// Spawns the research content (tabs + research list) into a parent container.
+/// This does NOT include the outer panel or header.
+pub fn spawn_research_content(parent: &mut ChildSpawnerCommands, data: ResearchData) {
+    // Create a container for the research content
+    let research_root = parent
+        .spawn((
             Node {
-                margin: UiRect::bottom(Val::Px(10.0)),
+                flex_direction: FlexDirection::Column,
+                flex_grow: 1.0,
+                width: Val::Percent(100.0),
                 ..default()
             },
-        ));
+            ResearchUiRoot {
+                active_tab: data.active_tab,
+            },
+        ))
+        .id();
 
-        // Scrollable container
-        spawn_scrollable_container(parent, ResearchItemsContainer);
+    parent.commands().entity(research_root).with_children(|content| {
+        // Tab bar
+        let tab_bar = spawn_tab_bar(content);
+        content.commands().entity(tab_bar).with_children(|tabs| {
+            spawn_tab_button(
+                tabs,
+                "Available",
+                data.active_tab == ResearchTab::Available,
+                ResearchTabButton {
+                    tab: ResearchTab::Available,
+                },
+            );
+            spawn_tab_button(
+                tabs,
+                "Completed",
+                data.active_tab == ResearchTab::Completed,
+                ResearchTabButton {
+                    tab: ResearchTab::Completed,
+                },
+            );
+        });
+
+        // Scrollable container for research items
+        spawn_scrollable_container(content, ResearchItemsContainer);
+    });
+
+    // Populate with initial research (queue command)
+    parent.commands().queue(PopulateResearchDirectCommand {
+        research_data: data
+            .items
+            .into_iter()
+            .map(|r| {
+                (
+                    r.id,
+                    r.name,
+                    r.description,
+                    r.time,
+                    r.cost_str,
+                    r.can_afford,
+                    r.is_completed,
+                    r.btn_text,
+                    r.btn_color,
+                    r.btn_border,
+                )
+            })
+            .collect(),
     });
 }
 
-/// Data for spawning a new research card
-struct NewCardData {
-    id: String,
-    name: String,
-    description: String,
-    time_required: f32,
-    cost_str: String,
-    can_afford: bool,
-    is_completed: bool,
-    btn_text: &'static str,
-    btn_color: Color,
-    btn_border: Color,
+// ============================================================================
+// Close Button Handler
+// ============================================================================
+
+fn handle_research_close_button(
+    mut commands: Commands,
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<ResearchCloseButton>)>,
+    ui_query: Query<Entity, With<ResearchUiRoot>>,
+) {
+    for interaction in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            for ui_entity in ui_query.iter() {
+                commands.entity(ui_entity).despawn();
+            }
+        }
+    }
 }
 
-#[allow(clippy::too_many_arguments)]
+// ============================================================================
+// Tab Switch Handler
+// ============================================================================
+
 #[allow(clippy::type_complexity)]
+fn handle_tab_switch(
+    mut commands: Commands,
+    interaction_query: Query<
+        (&Interaction, &ResearchTabButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut ui_query: Query<&mut ResearchUiRoot>,
+    mut tab_buttons: Query<(&ResearchTabButton, &mut BackgroundColor)>,
+    library: Res<ResearchLibrary>,
+    state: Res<ResearchState>,
+    wallet: Res<Wallet>,
+) {
+    for (interaction, tab_btn) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            if let Ok(mut ui_root) = ui_query.single_mut() {
+                if ui_root.active_tab != tab_btn.tab {
+                    ui_root.active_tab = tab_btn.tab;
+
+                    // Update tab button styling
+                    for (btn, mut bg_color) in tab_buttons.iter_mut() {
+                        if btn.tab == ui_root.active_tab {
+                            *bg_color = BackgroundColor(UiTheme::TAB_ACTIVE_BG);
+                        } else {
+                            *bg_color = BackgroundColor(UiTheme::TAB_INACTIVE_BG);
+                        }
+                    }
+
+                    // Repopulate research
+                    let items = build_research_list(&library, &state, &wallet, ui_root.active_tab);
+                    commands.queue(PopulateResearchDirectCommand {
+                        research_data: items
+                            .into_iter()
+                            .map(|r| {
+                                (
+                                    r.id,
+                                    r.name,
+                                    r.description,
+                                    r.time,
+                                    r.cost_str,
+                                    r.can_afford,
+                                    r.is_completed,
+                                    r.btn_text,
+                                    r.btn_color,
+                                    r.btn_border,
+                                )
+                            })
+                            .collect(),
+                    });
+                }
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Update Research UI (on resource change)
+// ============================================================================
+
 fn update_research_ui(
     mut commands: Commands,
     library: Res<ResearchLibrary>,
     state: Res<ResearchState>,
     wallet: Res<Wallet>,
-    container_query: Query<(Entity, Option<&Children>), With<ResearchItemsContainer>>,
-    card_query: Query<(Entity, &ResearchCard, &Children)>,
-    mut cost_text_query: Query<
-        (&mut Text, &mut TextColor),
-        (With<ResearchCostText>, Without<ResearchButton>),
-    >,
-    mut button_query: Query<
-        (
-            &mut BorderColor,
-            &mut BackgroundColor,
-            &Children,
-            &ResearchButton,
-        ),
-        With<Button>,
-    >,
-    mut button_text_query: Query<
-        (&mut Text, &mut TextColor),
-        (Without<ResearchCostText>, Without<ResearchButton>),
-    >,
+    ui_query: Query<&ResearchUiRoot>,
 ) {
-    let Ok((container_entity, children)) = container_query.single() else {
-        return;
-    };
-
-    // 1. Map existing cards for diffing
-    let mut existing_cards: HashMap<String, Entity> = HashMap::default();
-    if let Some(children) = children {
-        for child in children.iter() {
-            if let Ok((_, card, _)) = card_query.get(child) {
-                existing_cards.insert(card.research_id.clone(), child);
-            }
-        }
-    }
-
-    // 2. Sort available research by ID
-    let mut sorted_techs: Vec<_> = library.available.iter().collect();
-    sorted_techs.sort_by_key(|(_, def)| def.id);
-
-    let mut sorted_entities = Vec::new();
-    let mut new_cards_to_spawn: Vec<NewCardData> = Vec::new();
-
-    for (id, def) in sorted_techs {
-        // Prerequisites check
-        let prereqs_met = def.prerequisites.iter().all(|p| state.is_researched(p));
-        if !prereqs_met {
-            continue;
-        }
-
-        let is_completed = state.is_researched(id);
-        let is_researching = state.is_researching(id);
-
-        let mut can_afford = true;
-        let mut cost_str = String::from("Cost: ");
-        for (res, amt) in &def.cost {
-            let current = wallet.resources.get(res).copied().unwrap_or(0);
-            cost_str.push_str(&format!("{}: {}/{} ", res, current, amt));
-            if current < *amt {
-                can_afford = false;
-            }
-        }
-
-        let (btn_text_str, btn_color, btn_border) = if is_completed {
-            ("Completed", UiTheme::TEXT_PRIMARY, UiTheme::TEXT_PRIMARY)
-        } else if is_researching {
-            (
-                "Researching...",
-                UiTheme::TEXT_INFO,
-                Color::srgba(0.4, 0.4, 1.0, 1.0),
-            )
-        } else if can_afford {
-            ("Start", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
-        } else {
-            ("Start", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
-        };
-
-        if let Some(&entity) = existing_cards.get(id) {
-            // Update Existing
-            existing_cards.remove(id);
-
-            if let Ok((_, _, children)) = card_query.get(entity) {
-                for child in children.iter() {
-                    // Try to update cost text
-                    if let Ok((mut text, mut color)) = cost_text_query.get_mut(child) {
-                        text.0 = cost_str.clone();
-                        color.0 = if can_afford {
-                            UiTheme::AFFORDABLE
-                        } else {
-                            UiTheme::NOT_AFFORDABLE
-                        };
-                    }
-
-                    // Try to update button
-                    if let Ok((mut border, _, btn_children, _)) = button_query.get_mut(child) {
-                        *border = BorderColor::all(btn_border);
-
-                        // Update button text
-                        if let Some(&text_entity) = btn_children.first()
-                            && let Ok((mut text, mut color)) =
-                                button_text_query.get_mut(text_entity)
-                        {
-                            text.0 = btn_text_str.to_string();
-                            color.0 = btn_color;
-                        }
-                    }
-                }
-            }
-            sorted_entities.push(entity);
-        } else {
-            // Queue for spawning
-            new_cards_to_spawn.push(NewCardData {
-                id: id.clone(),
-                name: def.name.clone(),
-                description: def.description.clone(),
-                time_required: def.time_required,
-                cost_str,
-                can_afford,
-                is_completed,
-                btn_text: btn_text_str,
-                btn_color,
-                btn_border,
-            });
-        }
-    }
-
-    // Spawn new cards
-    for card_data in new_cards_to_spawn {
-        let card_entity = commands
-            .spawn((
-                Node {
-                    flex_direction: FlexDirection::Column,
-                    padding: UiRect::all(Val::Px(8.0)),
-                    margin: UiRect::bottom(Val::Px(4.0)),
-                    border: UiRect::all(Val::Px(1.0)),
-                    ..default()
-                },
-                BorderColor::all(UiTheme::CARD_BORDER),
-                BackgroundColor(UiTheme::CARD_BG),
-                ResearchCard {
-                    research_id: card_data.id.clone(),
-                },
-            ))
-            .with_children(|card| {
-                spawn_card_title(card, &card_data.name);
-                spawn_description_text(card, &card_data.description);
-
-                if !card_data.is_completed {
-                    spawn_timer_text(card, card_data.time_required);
-
-                    // Cost text with marker
-                    card.spawn((
-                        Text::new(&card_data.cost_str),
-                        TextFont {
-                            font_size: 12.0,
-                            ..default()
-                        },
-                        TextColor(if card_data.can_afford {
-                            UiTheme::AFFORDABLE
-                        } else {
-                            UiTheme::NOT_AFFORDABLE
-                        }),
-                        ResearchCostText,
-                    ));
-                }
-
-                spawn_action_button(
-                    card,
-                    card_data.btn_text,
-                    card_data.btn_color,
-                    card_data.btn_border,
-                    ResearchButton {
-                        id: card_data.id.clone(),
-                    },
-                );
-            })
-            .id();
-
-        sorted_entities.push(card_entity);
-    }
-
-    commands
-        .entity(container_entity)
-        .replace_children(&sorted_entities);
-
-    // Despawn remaining
-    for (_, entity) in existing_cards {
-        commands.entity(entity).despawn();
+    if let Ok(ui_root) = ui_query.single() {
+        let items = build_research_list(&library, &state, &wallet, ui_root.active_tab);
+        commands.queue(PopulateResearchDirectCommand {
+            research_data: items
+                .into_iter()
+                .map(|r| {
+                    (
+                        r.id,
+                        r.name,
+                        r.description,
+                        r.time,
+                        r.cost_str,
+                        r.can_afford,
+                        r.is_completed,
+                        r.btn_text,
+                        r.btn_color,
+                        r.btn_border,
+                    )
+                })
+                .collect(),
+        });
     }
 }
+
+// ============================================================================
+// Populate Research Command
+// ============================================================================
+
+/// Command to populate research (deferred execution)
+struct PopulateResearchDirectCommand {
+    #[allow(clippy::type_complexity)]
+    research_data: Vec<(
+        String,
+        String,
+        String,
+        f32,
+        String,
+        bool,
+        bool,
+        String,
+        Color,
+        Color,
+    )>,
+}
+
+impl Command for PopulateResearchDirectCommand {
+    fn apply(self, world: &mut World) {
+        let mut container_query = world
+            .query_filtered::<(Entity, Option<&Children>), With<ResearchItemsContainer>>();
+
+        let Some((container_entity, children)) = container_query.iter(world).next() else {
+            return;
+        };
+
+        let children_to_despawn: Vec<Entity> =
+            children.map(|c| c.iter().collect()).unwrap_or_default();
+
+        for child in children_to_despawn {
+            world.commands().entity(child).despawn();
+        }
+
+        world
+            .commands()
+            .entity(container_entity)
+            .with_children(|parent| {
+                for (
+                    id,
+                    name,
+                    description,
+                    time,
+                    cost_str,
+                    can_afford,
+                    is_completed,
+                    btn_text,
+                    btn_color,
+                    btn_border,
+                ) in self.research_data
+                {
+                    parent
+                        .spawn((
+                            Node {
+                                flex_direction: FlexDirection::Column,
+                                padding: UiRect::all(Val::Px(8.0)),
+                                margin: UiRect::bottom(Val::Px(4.0)),
+                                border: UiRect::all(Val::Px(1.0)),
+                                ..default()
+                            },
+                            BorderColor::all(UiTheme::CARD_BORDER),
+                            BackgroundColor(UiTheme::CARD_BG),
+                        ))
+                        .with_children(|card| {
+                            spawn_card_title(card, &name);
+                            spawn_description_text(card, &description);
+
+                            if !is_completed {
+                                spawn_timer_text(card, time);
+
+                                if !cost_str.is_empty() {
+                                    card.spawn((
+                                        Text::new(cost_str),
+                                        TextFont {
+                                            font_size: 12.0,
+                                            ..default()
+                                        },
+                                        TextColor(if can_afford {
+                                            UiTheme::AFFORDABLE
+                                        } else {
+                                            UiTheme::NOT_AFFORDABLE
+                                        }),
+                                    ));
+                                }
+                            }
+
+                            spawn_action_button(
+                                card,
+                                &btn_text,
+                                btn_color,
+                                btn_border,
+                                ResearchButton { id: id.clone() },
+                            );
+                        });
+                }
+            });
+    }
+}
+
+// ============================================================================
+// Research Button Handler
+// ============================================================================
 
 #[allow(clippy::type_complexity)]
 fn handle_research_button(
@@ -317,4 +505,3 @@ fn handle_research_button(
         }
     }
 }
-
