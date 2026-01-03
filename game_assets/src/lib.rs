@@ -17,6 +17,7 @@ pub struct GameAssets {
     pub startup_scene: Handle<DynamicScene>,
     pub research_library_scene: Handle<DynamicScene>,
     pub recipes_library_scene: Handle<DynamicScene>,
+    pub spawn_table: Handle<DynamicScene>,
     pub goblin_prefab: Handle<DynamicScene>,
 }
 
@@ -25,6 +26,7 @@ fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>)
     assets.startup_scene = asset_server.load("startup.scn.ron");
     assets.research_library_scene = asset_server.load("research.scn.ron");
     assets.recipes_library_scene = asset_server.load("recipes/library.scn.ron");
+    assets.spawn_table = asset_server.load("spawn_table_default.scn.ron");
     assets.goblin_prefab = asset_server.load("prefabs/enemies/goblin.scn.ron");
 }
 
@@ -36,6 +38,7 @@ fn check_assets(
     if asset_server.is_loaded_with_dependencies(&game_assets.startup_scene)
         && asset_server.is_loaded_with_dependencies(&game_assets.research_library_scene)
         && asset_server.is_loaded_with_dependencies(&game_assets.recipes_library_scene)
+        && asset_server.is_loaded_with_dependencies(&game_assets.spawn_table)
         && asset_server.is_loaded_with_dependencies(&game_assets.goblin_prefab)
     {
         info!("assets loaded");
