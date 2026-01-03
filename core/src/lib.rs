@@ -54,5 +54,14 @@ impl Plugin for CorePlugin {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d);
+    commands.spawn((
+        Camera2d,
+        Projection::from(OrthographicProjection {
+            scaling_mode: bevy::camera::ScalingMode::AutoMin {
+                min_width: 300.0,
+                min_height: 700.0,
+            },
+            ..OrthographicProjection::default_2d()
+        }),
+    ));
 }
