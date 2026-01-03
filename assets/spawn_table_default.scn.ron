@@ -1,0 +1,14 @@
+(
+  resources: {
+    "portal_resources::SpawnTable": (
+      entries: [
+        (
+          condition: Min((tier: 1, level: 1)),
+          monster_file: "goblin",
+          weight: 100,
+        ),
+      ],
+    ),
+  },
+  entities: {},
+)
