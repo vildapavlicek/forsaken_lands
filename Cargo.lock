@@ -2230,6 +2230,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "enemy_encyclopedia"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "village_components",
+ "widgets",
+]
+
+[[package]]
 name = "enemy_resources"
 version = "0.1.0"
 dependencies = [
@@ -4848,6 +4857,8 @@ dependencies = [
  "bevy",
  "crafting_resources",
  "crafting_ui",
+ "enemy_encyclopedia",
+ "enemy_resources",
  "research",
  "research_ui",
  "states",

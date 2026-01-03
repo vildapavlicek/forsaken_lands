@@ -3,7 +3,7 @@ use {
     crafting_resources::RecipesLibrary,
     research::{ResearchLibrary, ResearchState},
     states::GameState,
-    village_components::Village,
+    village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
     widgets::{
         spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel, PanelPosition,
@@ -38,6 +38,7 @@ pub enum VillageContent {
     Menu,
     Crafting,
     Research,
+    Encyclopedia,
 }
 
 /// Root of the village UI
@@ -164,6 +165,13 @@ impl Command for SpawnMenuContentCommand {
                         target: VillageContent::Research,
                     },
                 );
+                spawn_menu_button(
+                    parent,
+                    "📖 Encyclopedia",
+                    VillageMenuButton {
+                        target: VillageContent::Encyclopedia,
+                    },
+                );
             });
     }
 }
@@ -255,6 +263,49 @@ impl Command for SpawnResearchContentCommand {
 }
 
 // ============================================================================
+// Encyclopedia Content Command
+// ============================================================================
+
+struct SpawnEncyclopediaContentCommand;
+
+impl Command for SpawnEncyclopediaContentCommand {
+    fn apply(self, world: &mut World) {
+        let mut query =
+            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
+
+        let Some((container, children)) = query.iter(world).next() else {
+            return;
+        };
+
+        // Despawn existing children
+        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
+        for child in to_despawn {
+            world.commands().entity(child).despawn();
+        }
+
+        // Get encyclopedia from village
+        let mut village_query = world.query::<&EnemyEncyclopedia>();
+        let Some(encyclopedia) = village_query.iter(world).next() else {
+            return;
+        };
+
+        let encyclopedia = encyclopedia.clone();
+
+        // Spawn back button and encyclopedia content
+        world
+            .commands()
+            .entity(container)
+            .with_children(|parent| {
+                // Back button
+                spawn_menu_button(parent, "← Back", VillageBackButton);
+
+                // Spawn encyclopedia content
+                enemy_encyclopedia::spawn_enemy_encyclopedia_content(parent, &encyclopedia);
+            });
+    }
+}
+
+// ============================================================================
 // Button Handlers
 // ============================================================================
 
@@ -278,6 +329,9 @@ fn handle_menu_button(
                     }
                     VillageContent::Research => {
                         commands.queue(SpawnResearchContentCommand);
+                    }
+                    VillageContent::Encyclopedia => {
+                        commands.queue(SpawnEncyclopediaContentCommand);
                     }
                     VillageContent::Menu => {
                         commands.queue(SpawnMenuContentCommand);
