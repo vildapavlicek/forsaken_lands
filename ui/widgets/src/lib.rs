@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use bevy::a11y::AccessibilityNode;
+use accesskit::{Node as AccessKitNode, Role};
 
 pub struct WidgetsPlugin;
 
@@ -96,6 +98,13 @@ pub fn spawn_action_button<M: Component>(
                 hover_color,
                 pressed_color,
             },
+            AccessibilityNode(
+                {
+                    let mut node = AccessKitNode::new(Role::Button);
+                    node.set_label(text.to_string());
+                    node
+                }
+            ),
             marker,
         ))
         .with_children(|btn| {

@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+accesskit = "0.21.1"
