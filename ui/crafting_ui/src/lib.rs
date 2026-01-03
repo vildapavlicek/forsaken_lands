@@ -5,7 +5,10 @@ use {
     research::ResearchState,
     states::GameState,
     wallet::Wallet,
-    widgets::{spawn_action_button, spawn_cost_text, spawn_timer_text},
+    widgets::{
+        spawn_action_button, spawn_card_title, spawn_cost_text, spawn_scrollable_container,
+        spawn_timer_text, spawn_ui_panel, PanelPosition, UiTheme,
+    },
 };
 
 pub struct CraftingUiPlugin;
@@ -40,46 +43,32 @@ struct CraftingButton {
 }
 
 fn setup_crafting_ui(mut commands: Commands) {
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px(10.0),
-                top: Val::Px(10.0),
-                width: Val::Px(300.0),
-                height: Val::Percent(90.0),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(10.0)),
+    let panel = spawn_ui_panel(
+        &mut commands,
+        PanelPosition::Left(10.0),
+        300.0,
+        Val::Percent(90.0),
+        CraftingUiRoot,
+    );
+
+    commands.entity(panel).with_children(|parent| {
+        // Title
+        parent.spawn((
+            Text::new("Crafting"),
+            TextFont {
+                font_size: 24.0,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.8)),
-            CraftingUiRoot,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new("Crafting"),
-                TextFont {
-                    font_size: 24.0,
-                    ..default()
-                },
-                TextColor(Color::srgba(1.0, 1.0, 1.0, 1.0)),
-                Node {
-                    margin: UiRect::bottom(Val::Px(10.0)),
-                    ..default()
-                },
-            ));
+            TextColor(UiTheme::TEXT_PRIMARY),
+            Node {
+                margin: UiRect::bottom(Val::Px(10.0)),
+                ..default()
+            },
+        ));
 
-            // Scrollable area for crafting items
-            parent.spawn((
-                Node {
-                    flex_direction: FlexDirection::Column,
-                    overflow: Overflow::clip(),
-                    flex_grow: 1.0,
-                    ..default()
-                },
-                CraftingItemsContainer,
-            ));
-        });
+        // Scrollable container for items
+        spawn_scrollable_container(parent, CraftingItemsContainer);
+    });
 }
 
 fn update_crafting_ui(
@@ -103,29 +92,43 @@ fn update_crafting_ui(
     let mut sorted_recipes: Vec<_> = library.recipes.iter().collect();
     sorted_recipes.sort_by_key(|(id, _)| *id);
 
+    // Collect card data first to avoid borrow issues
+    let mut cards_to_spawn: Vec<(String, String, f32, String, bool)> = Vec::new();
+
+    for (id, recipe) in sorted_recipes {
+        // Check research requirements
+        if let Some(req) = &recipe.required_research
+            && !research_state.is_researched(req)
+        {
+            continue;
+        }
+
+        let mut can_afford = true;
+        let mut cost_str = String::from("Cost: ");
+
+        let mut cost_items: Vec<_> = recipe.cost.iter().collect();
+        cost_items.sort_by_key(|(res_id, _)| *res_id);
+
+        for (res_id, amt) in cost_items {
+            let current = wallet.resources.get(res_id).copied().unwrap_or(0);
+            cost_str.push_str(&format!("{}: {}/{} ", res_id, current, amt));
+            if current < *amt {
+                can_afford = false;
+            }
+        }
+
+        cards_to_spawn.push((
+            id.clone(),
+            recipe.display_name.clone(),
+            recipe.craft_time,
+            cost_str,
+            can_afford,
+        ));
+    }
+
+    // Now spawn all cards
     commands.entity(container_entity).with_children(|parent| {
-        for (id, recipe) in sorted_recipes {
-            // Check research requirements
-            if let Some(req) = &recipe.required_research {
-                if !research_state.is_researched(req) {
-                    continue;
-                }
-            }
-
-            let mut can_afford = true;
-            let mut cost_str = String::from("Cost: ");
-
-            let mut cost_items: Vec<_> = recipe.cost.iter().collect();
-            cost_items.sort_by_key(|(res_id, _)| *res_id);
-
-            for (res_id, amt) in cost_items {
-                let current = wallet.resources.get(res_id).copied().unwrap_or(0);
-                cost_str.push_str(&format!("{}: {}/{} ", res_id, current, amt));
-                if current < *amt {
-                    can_afford = false;
-                }
-            }
-
+        for (recipe_id, display_name, craft_time, cost_str, can_afford) in cards_to_spawn {
             parent
                 .spawn((
                     Node {
@@ -135,35 +138,19 @@ fn update_crafting_ui(
                         border: UiRect::all(Val::Px(1.0)),
                         ..default()
                     },
-                    BorderColor::all(Color::srgba(0.3, 0.3, 0.3, 1.0)),
-                    BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 1.0)),
+                    BorderColor::all(UiTheme::CARD_BORDER),
+                    BackgroundColor(UiTheme::CARD_BG),
                 ))
                 .with_children(|card| {
-                    card.spawn((
-                        Text::new(&recipe.display_name),
-                        TextFont {
-                            font_size: 18.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgba(1.0, 1.0, 1.0, 1.0)),
-                    ));
-
-                    spawn_timer_text(card, recipe.craft_time);
+                    spawn_card_title(card, &display_name);
+                    spawn_timer_text(card, craft_time);
                     spawn_cost_text(card, &cost_str, can_afford);
 
                     // Button
                     let (btn_text, btn_color, btn_border) = if can_afford {
-                        (
-                            "Start",
-                            Color::srgba(0.5, 1.0, 0.5, 1.0),
-                            Color::srgba(0.0, 1.0, 0.0, 1.0),
-                        )
+                        ("Start", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
                     } else {
-                        (
-                            "Start",
-                            Color::srgba(0.5, 0.5, 0.5, 1.0),
-                            Color::srgba(0.5, 0.5, 0.5, 1.0),
-                        )
+                        ("Start", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
                     };
 
                     spawn_action_button(
@@ -172,7 +159,7 @@ fn update_crafting_ui(
                         btn_color,
                         btn_border,
                         CraftingButton {
-                            recipe_id: id.clone(),
+                            recipe_id: recipe_id.clone(),
                         },
                     );
                 });
@@ -180,6 +167,7 @@ fn update_crafting_ui(
     });
 }
 
+#[allow(clippy::type_complexity)]
 fn handle_crafting_button(
     mut commands: Commands,
     mut wallet: ResMut<Wallet>,
@@ -187,27 +175,27 @@ fn handle_crafting_button(
     interaction_query: Query<(&Interaction, &CraftingButton), (Changed<Interaction>, With<Button>)>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
-        if *interaction == Interaction::Pressed {
-            if let Some(recipe) = library.recipes.get(&btn.recipe_id) {
-                // Check if can afford
-                let can_afford = recipe.cost.iter().all(|(res_id, amt)| {
-                    wallet.resources.get(res_id).copied().unwrap_or(0) >= *amt
-                });
+        if *interaction == Interaction::Pressed
+            && let Some(recipe) = library.recipes.get(&btn.recipe_id)
+        {
+            // Check if can afford
+            let can_afford = recipe.cost.iter().all(|(res_id, amt)| {
+                wallet.resources.get(res_id).copied().unwrap_or(0) >= *amt
+            });
 
-                if can_afford {
-                    // Deduct resources
-                    for (res_id, amt) in &recipe.cost {
-                        if let Some(current) = wallet.resources.get_mut(res_id) {
-                            *current -= *amt;
-                        }
+            if can_afford {
+                // Deduct resources
+                for (res_id, amt) in &recipe.cost {
+                    if let Some(current) = wallet.resources.get_mut(res_id) {
+                        *current -= *amt;
                     }
-
-                    // Trigger the crafting request event (observer pattern)
-                    commands.trigger(StartCraftingRequest {
-                        recipe_id: btn.recipe_id.clone(),
-                    });
-                    info!("Sent crafting request for: {}", recipe.display_name);
                 }
+
+                // Trigger the crafting request event (observer pattern)
+                commands.trigger(StartCraftingRequest {
+                    recipe_id: btn.recipe_id.clone(),
+                });
+                info!("Sent crafting request for: {}", recipe.display_name);
             }
         }
     }

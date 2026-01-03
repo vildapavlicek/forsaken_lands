@@ -4033,6 +4033,7 @@ dependencies = [
  "bevy",
  "states",
  "wallet",
+ "widgets",
 ]
 
 [[package]]

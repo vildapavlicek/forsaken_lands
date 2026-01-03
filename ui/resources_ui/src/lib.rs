@@ -1,4 +1,9 @@
-use {bevy::prelude::*, states::GameState, wallet::Wallet};
+use {
+    bevy::prelude::*,
+    states::GameState,
+    wallet::Wallet,
+    widgets::UiTheme,
+};
 
 pub struct ResourcesUiPlugin;
 
@@ -25,7 +30,7 @@ fn setup_resources_ui(mut commands: Commands) {
             left: Val::Px(10.0),
             ..default()
         },
-        TextColor(Color::WHITE),
+        TextColor(UiTheme::TEXT_PRIMARY),
         TextFont {
             font_size: 20.0,
             ..default()

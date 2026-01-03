@@ -7,3 +7,4 @@ edition = "2024"
 bevy.workspace = true
 wallet.workspace = true
 states.workspace = true
+widgets.workspace = true

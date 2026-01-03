@@ -3,7 +3,10 @@ use {
     research::{ResearchLibrary, ResearchState, StartResearchRequest},
     states::GameState,
     wallet::Wallet,
-    widgets::{spawn_action_button, spawn_timer_text},
+    widgets::{
+        spawn_action_button, spawn_card_title, spawn_description_text, spawn_scrollable_container,
+        spawn_timer_text, spawn_ui_panel, PanelPosition, UiTheme,
+    },
 };
 
 pub struct ResearchUiPlugin;
@@ -42,52 +45,54 @@ struct ResearchCard {
 #[derive(Component)]
 struct ResearchCostText;
 
-fn setup_research_ui(mut commands: Commands) {
-    commands
-        .spawn((
-            Node {
-                position_type: PositionType::Absolute,
-                right: Val::Px(10.0),
-                top: Val::Px(10.0),
-                width: Val::Px(300.0),
-                height: Val::Percent(90.0),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(10.0)),
-                ..default()
-            },
-            BackgroundColor(Color::srgba(0.1, 0.1, 0.1, 0.8)),
-            ResearchUiRoot,
-        ))
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new("Research"),
-                TextFont {
-                    font_size: 24.0,
-                    ..default()
-                },
-                TextColor(Color::srgba(1.0, 1.0, 1.0, 1.0)),
-                Node {
-                    margin: UiRect::bottom(Val::Px(10.0)),
-                    ..default()
-                },
-            ));
-
-            // Scrollable area for research items
-            parent.spawn((
-                Node {
-                    flex_direction: FlexDirection::Column,
-                    overflow: Overflow::clip(),
-                    flex_grow: 1.0,
-                    ..default()
-                },
-                ResearchItemsContainer,
-            ));
-        });
-}
-
 #[derive(Component)]
 struct ResearchItemsContainer;
 
+fn setup_research_ui(mut commands: Commands) {
+    let panel = spawn_ui_panel(
+        &mut commands,
+        PanelPosition::Right(10.0),
+        300.0,
+        Val::Percent(90.0),
+        ResearchUiRoot,
+    );
+
+    commands.entity(panel).with_children(|parent| {
+        // Title
+        parent.spawn((
+            Text::new("Research"),
+            TextFont {
+                font_size: 24.0,
+                ..default()
+            },
+            TextColor(UiTheme::TEXT_PRIMARY),
+            Node {
+                margin: UiRect::bottom(Val::Px(10.0)),
+                ..default()
+            },
+        ));
+
+        // Scrollable container
+        spawn_scrollable_container(parent, ResearchItemsContainer);
+    });
+}
+
+/// Data for spawning a new research card
+struct NewCardData {
+    id: String,
+    name: String,
+    description: String,
+    time_required: f32,
+    cost_str: String,
+    can_afford: bool,
+    is_completed: bool,
+    btn_text: &'static str,
+    btn_color: Color,
+    btn_border: Color,
+}
+
+#[allow(clippy::too_many_arguments)]
+#[allow(clippy::type_complexity)]
 fn update_research_ui(
     mut commands: Commands,
     library: Res<ResearchLibrary>,
@@ -132,6 +137,7 @@ fn update_research_ui(
     sorted_techs.sort_by_key(|(_, def)| def.id);
 
     let mut sorted_entities = Vec::new();
+    let mut new_cards_to_spawn: Vec<NewCardData> = Vec::new();
 
     for (id, def) in sorted_techs {
         // Prerequisites check
@@ -154,32 +160,20 @@ fn update_research_ui(
         }
 
         let (btn_text_str, btn_color, btn_border) = if is_completed {
-            (
-                "Completed",
-                Color::srgba(1.0, 1.0, 1.0, 1.0),
-                Color::srgba(1.0, 1.0, 1.0, 1.0),
-            )
+            ("Completed", UiTheme::TEXT_PRIMARY, UiTheme::TEXT_PRIMARY)
         } else if is_researching {
             (
                 "Researching...",
-                Color::srgba(0.7, 0.7, 1.0, 1.0),
+                UiTheme::TEXT_INFO,
                 Color::srgba(0.4, 0.4, 1.0, 1.0),
             )
         } else if can_afford {
-            (
-                "Start",
-                Color::srgba(0.5, 1.0, 0.5, 1.0),
-                Color::srgba(0.0, 1.0, 0.0, 1.0),
-            )
+            ("Start", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
         } else {
-            (
-                "Start",
-                Color::srgba(0.5, 0.5, 0.5, 1.0),
-                Color::srgba(0.5, 0.5, 0.5, 1.0),
-            )
+            ("Start", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
         };
 
-        let card_entity = if let Some(&entity) = existing_cards.get(id) {
+        if let Some(&entity) = existing_cards.get(id) {
             // Update Existing
             existing_cards.remove(id);
 
@@ -189,9 +183,9 @@ fn update_research_ui(
                     if let Ok((mut text, mut color)) = cost_text_query.get_mut(child) {
                         text.0 = cost_str.clone();
                         color.0 = if can_afford {
-                            Color::srgba(0.7, 1.0, 0.7, 1.0)
+                            UiTheme::AFFORDABLE
                         } else {
-                            Color::srgba(1.0, 0.7, 0.7, 1.0)
+                            UiTheme::NOT_AFFORDABLE
                         };
                     }
 
@@ -200,83 +194,85 @@ fn update_research_ui(
                         *border = BorderColor::all(btn_border);
 
                         // Update button text
-                        if let Some(&text_entity) = btn_children.first() {
-                            if let Ok((mut text, mut color)) =
+                        if let Some(&text_entity) = btn_children.first()
+                            && let Ok((mut text, mut color)) =
                                 button_text_query.get_mut(text_entity)
-                            {
-                                text.0 = btn_text_str.to_string();
-                                color.0 = btn_color;
-                            }
+                        {
+                            text.0 = btn_text_str.to_string();
+                            color.0 = btn_color;
                         }
                     }
                 }
             }
-            entity
+            sorted_entities.push(entity);
         } else {
-            // Spawn New
-            commands
-                .spawn((
-                    Node {
-                        flex_direction: FlexDirection::Column,
-                        padding: UiRect::all(Val::Px(8.0)),
-                        margin: UiRect::bottom(Val::Px(4.0)),
-                        border: UiRect::all(Val::Px(1.0)),
-                        ..default()
-                    },
-                    BorderColor::all(Color::srgba(0.3, 0.3, 0.3, 1.0)),
-                    BackgroundColor(Color::srgba(0.15, 0.15, 0.15, 1.0)),
-                    ResearchCard {
-                        research_id: id.clone(),
-                    },
-                ))
-                .with_children(|card| {
+            // Queue for spawning
+            new_cards_to_spawn.push(NewCardData {
+                id: id.clone(),
+                name: def.name.clone(),
+                description: def.description.clone(),
+                time_required: def.time_required,
+                cost_str,
+                can_afford,
+                is_completed,
+                btn_text: btn_text_str,
+                btn_color,
+                btn_border,
+            });
+        }
+    }
+
+    // Spawn new cards
+    for card_data in new_cards_to_spawn {
+        let card_entity = commands
+            .spawn((
+                Node {
+                    flex_direction: FlexDirection::Column,
+                    padding: UiRect::all(Val::Px(8.0)),
+                    margin: UiRect::bottom(Val::Px(4.0)),
+                    border: UiRect::all(Val::Px(1.0)),
+                    ..default()
+                },
+                BorderColor::all(UiTheme::CARD_BORDER),
+                BackgroundColor(UiTheme::CARD_BG),
+                ResearchCard {
+                    research_id: card_data.id.clone(),
+                },
+            ))
+            .with_children(|card| {
+                spawn_card_title(card, &card_data.name);
+                spawn_description_text(card, &card_data.description);
+
+                if !card_data.is_completed {
+                    spawn_timer_text(card, card_data.time_required);
+
+                    // Cost text with marker
                     card.spawn((
-                        Text::new(&def.name),
+                        Text::new(&card_data.cost_str),
                         TextFont {
-                            font_size: 18.0,
+                            font_size: 12.0,
                             ..default()
                         },
-                        TextColor(Color::srgba(1.0, 1.0, 1.0, 1.0)),
+                        TextColor(if card_data.can_afford {
+                            UiTheme::AFFORDABLE
+                        } else {
+                            UiTheme::NOT_AFFORDABLE
+                        }),
+                        ResearchCostText,
                     ));
+                }
 
-                    card.spawn((
-                        Text::new(&def.description),
-                        TextFont {
-                            font_size: 14.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgba(0.8, 0.8, 0.8, 1.0)),
-                    ));
-
-                    if !is_completed {
-                        spawn_timer_text(card, def.time_required);
-
-                        // Manually spawn cost text with marker
-                        card.spawn((
-                            Text::new(&cost_str),
-                            TextFont {
-                                font_size: 12.0,
-                                ..default()
-                            },
-                            TextColor(if can_afford {
-                                Color::srgba(0.7, 1.0, 0.7, 1.0)
-                            } else {
-                                Color::srgba(1.0, 0.7, 0.7, 1.0)
-                            }),
-                            ResearchCostText,
-                        ));
-                    }
-
-                    spawn_action_button(
-                        card,
-                        btn_text_str,
-                        btn_color,
-                        btn_border,
-                        ResearchButton { id: id.clone() },
-                    );
-                })
-                .id()
-        };
+                spawn_action_button(
+                    card,
+                    card_data.btn_text,
+                    card_data.btn_color,
+                    card_data.btn_border,
+                    ResearchButton {
+                        id: card_data.id.clone(),
+                    },
+                );
+            })
+            .id();
 
         sorted_entities.push(card_entity);
     }
@@ -291,6 +287,7 @@ fn update_research_ui(
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn handle_research_button(
     mut events: MessageWriter<StartResearchRequest>,
     library: Res<ResearchLibrary>,
@@ -320,3 +317,4 @@ fn handle_research_button(
         }
     }
 }
+
