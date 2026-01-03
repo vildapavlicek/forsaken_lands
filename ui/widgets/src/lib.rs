@@ -39,6 +39,10 @@ impl UiTheme {
     pub const BORDER_SUCCESS: Color = Color::srgba(0.0, 1.0, 0.0, 1.0);
     pub const BORDER_ERROR: Color = Color::srgba(1.0, 0.0, 0.0, 1.0);
     pub const BORDER_DISABLED: Color = Color::srgba(0.5, 0.5, 0.5, 1.0);
+
+    pub const TAB_ACTIVE_BG: Color = Color::srgba(0.3, 0.3, 0.4, 1.0);
+    pub const TAB_INACTIVE_BG: Color = Color::srgba(0.15, 0.15, 0.2, 1.0);
+    pub const TAB_BORDER: Color = Color::srgba(0.4, 0.4, 0.5, 1.0);
 }
 
 // ============================================================================
@@ -372,6 +376,104 @@ pub fn spawn_action_button<M: Component>(
                     ..default()
                 },
                 TextColor(text_color),
+            ));
+        });
+}
+
+// ============================================================================
+// Tab Bar Widget
+// ============================================================================
+
+/// Spawns a horizontal tab bar container. Returns Entity for adding tab buttons.
+pub fn spawn_tab_bar(parent: &mut ChildSpawnerCommands) -> Entity {
+    parent
+        .spawn(Node {
+            flex_direction: FlexDirection::Row,
+            margin: UiRect::bottom(Val::Px(10.0)),
+            ..default()
+        })
+        .id()
+}
+
+/// Spawns a tab button with active/inactive styling.
+pub fn spawn_tab_button<M: Component>(
+    parent: &mut ChildSpawnerCommands,
+    label: &str,
+    is_active: bool,
+    marker: M,
+) {
+    let bg_color = if is_active {
+        UiTheme::TAB_ACTIVE_BG
+    } else {
+        UiTheme::TAB_INACTIVE_BG
+    };
+
+    parent
+        .spawn((
+            Button,
+            Node {
+                padding: UiRect::axes(Val::Px(16.0), Val::Px(8.0)),
+                border: UiRect::all(Val::Px(1.0)),
+                margin: UiRect::right(Val::Px(4.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BorderColor::all(UiTheme::TAB_BORDER),
+            BackgroundColor(bg_color),
+            marker,
+        ))
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(label),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(UiTheme::TEXT_PRIMARY),
+            ));
+        });
+}
+
+// ============================================================================
+// Icon Button Widget
+// ============================================================================
+
+/// Spawns a small icon-style button (e.g., for opening panels)
+pub fn spawn_icon_button<M: Component>(
+    parent: &mut ChildSpawnerCommands,
+    icon_text: &str,
+    marker: M,
+) {
+    parent
+        .spawn((
+            Button,
+            Node {
+                width: Val::Px(40.0),
+                height: Val::Px(40.0),
+                margin: UiRect::all(Val::Px(5.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                border: UiRect::all(Val::Px(2.0)),
+                ..default()
+            },
+            BorderColor::all(UiTheme::CARD_BORDER),
+            BackgroundColor(UiTheme::BUTTON_NORMAL),
+            AnimatedButton {
+                normal_color: UiTheme::BUTTON_NORMAL,
+                hover_color: UiTheme::BUTTON_HOVER,
+                pressed_color: UiTheme::BUTTON_PRESSED,
+            },
+            marker,
+        ))
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(icon_text),
+                TextFont {
+                    font_size: 20.0,
+                    ..default()
+                },
+                TextColor(UiTheme::TEXT_PRIMARY),
             ));
         });
 }

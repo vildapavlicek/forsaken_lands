@@ -1,5 +1,13 @@
 use {bevy::prelude::*, std::collections::HashMap};
 
+/// Category for organizing recipes into tabs
+#[derive(Reflect, Clone, Debug, Default, PartialEq, Eq)]
+pub enum RecipeCategory {
+    #[default]
+    Weapons,
+    Idols,
+}
+
 #[derive(Resource, Debug, Reflect, Default)]
 #[reflect(Resource)]
 pub struct RecipesLibrary {
@@ -13,6 +21,8 @@ pub struct CraftingRecipe {
     pub id: String,
     /// Display name for UI
     pub display_name: String,
+    /// Category for tab-based organization (Weapons, Idols)
+    pub category: RecipeCategory,
     /// Time in seconds to craft
     pub craft_time: f32,
     /// The research required to unlock this recipe.
@@ -42,7 +52,8 @@ pub struct CraftingResourcesPlugin;
 
 impl Plugin for CraftingResourcesPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<CraftingRecipe>()
+        app.register_type::<RecipeCategory>()
+            .register_type::<CraftingRecipe>()
             .register_type::<CraftingOutcome>()
             .register_type::<RecipesLibrary>();
 

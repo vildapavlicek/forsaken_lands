@@ -5,6 +5,7 @@
         "bone_idol": (
           id: "bone_idol",
           display_name: "Bone Idol",
+          category: Idols,
           craft_time: 5.0,
           required_research: Some("bone_idol"),
           cost: {
@@ -17,6 +18,7 @@
         "wooden_bow": (
           id: "wooden_bow",
           display_name: "Wooden Bow",
+          category: Weapons,
           craft_time: 5.0,
           required_research: Some("basic_archery"),
           cost: {
@@ -29,6 +31,7 @@
         "bone_sword": (
           id: "bone_sword",
           display_name: "Bone Sword",
+          category: Weapons,
           craft_time: 8.0,
           required_research: Some("bone_weaponry"),
           cost: {
