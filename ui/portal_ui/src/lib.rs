@@ -6,8 +6,8 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_panel_header_with_close, spawn_ui_panel, PanelPosition,
-        UiTheme,
+        spawn_action_button, spawn_item_card, spawn_panel_header_with_close, spawn_ui_panel,
+        PanelPosition, UiTheme,
     },
 };
 
@@ -26,6 +26,10 @@ impl Plugin for PortalUiPlugin {
         );
     }
 }
+
+// ============================================================================
+// Components
+// ============================================================================
 
 #[derive(Component)]
 struct PortalUiRoot {
@@ -46,84 +50,113 @@ struct LevelUpButton {
 #[derive(Component)]
 struct PortalCloseButton;
 
+#[derive(Component)]
+struct DivinityCard;
+
+// ============================================================================
+// Portal Click Observer
+// ============================================================================
+
 /// Observer triggered when a Portal entity is clicked.
 fn on_portal_click(
     trigger: On<Pointer<Click>>,
     mut commands: Commands,
-    portal_query: Query<(&Divinity, &DivinityStats), With<Portal>>,
-    wallet: Res<Wallet>,
+    portal_query: Query<(), With<Portal>>,
     existing_ui: Query<Entity, With<PortalUiRoot>>,
 ) {
     let portal_entity = trigger.entity;
 
-
-    let Ok((divinity, stats)) = portal_query.get(portal_entity) else {
+    // Verify this is a portal entity
+    if portal_query.get(portal_entity).is_err() {
         return;
-    };
+    }
 
-    let cost = (stats.required_xp / 10.0).ceil() as u32;
-    let have = wallet.resources.get("xikegos").copied().unwrap_or(0);
-    let can_afford = have >= cost;
+    // Toggle: if UI exists, close it; otherwise open
+    if let Ok(ui_entity) = existing_ui.single() {
+        commands.entity(ui_entity).despawn();
+        return;
+    }
 
-    // Spawn the panel using widget
+    spawn_portal_ui(&mut commands, portal_entity);
+}
+
+// ============================================================================
+// Spawn Portal UI
+// ============================================================================
+
+fn spawn_portal_ui(commands: &mut Commands, portal_entity: Entity) {
     let panel_entity = spawn_ui_panel(
-        &mut commands,
-        PanelPosition::CenterPopup { top: 10.0 },
-        250.0,
-        Val::Auto,
+        commands,
+        PanelPosition::CenterPopup { top: 50.0 },
+        350.0,
+        Val::Px(400.0),
         PortalUiRoot { portal_entity },
     );
 
     commands.entity(panel_entity).with_children(|parent| {
         // Header with close button
-        spawn_panel_header_with_close(parent, "Portal Divinity", PortalCloseButton);
+        spawn_panel_header_with_close(parent, "Portal", PortalCloseButton);
 
-        // Divinity level text
-        parent.spawn((
-            Text::new(format!("Tier {} Level {}", divinity.tier, divinity.level)),
-            TextFont {
-                font_size: 16.0,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-            PortalDivinityText,
-        ));
-
-        // Cost text
-        parent.spawn((
-            Text::new(format!("Cost: {} / {} xikegos", have, cost)),
-            TextFont {
-                font_size: 14.0,
-                ..default()
-            },
-            TextColor(UiTheme::TEXT_INFO),
-            PortalCostText,
-            Node {
-                margin: UiRect {
-                    top: Val::Px(5.0),
-                    bottom: Val::Px(10.0),
+        // Divinity Card
+        let card = spawn_item_card(parent, DivinityCard);
+        parent.commands().entity(card).with_children(|card_parent| {
+            card_parent.spawn((
+                Text::new("Divinity"),
+                TextFont {
+                    font_size: 18.0,
                     ..default()
                 },
-                ..default()
-            },
-        ));
+                TextColor(UiTheme::TEXT_HEADER),
+                Node {
+                    margin: UiRect::bottom(Val::Px(10.0)),
+                    ..default()
+                },
+            ));
 
-        // Level up button
-        let btn_border = if can_afford {
-            UiTheme::BORDER_SUCCESS
-        } else {
-            UiTheme::BORDER_ERROR
-        };
+            // Divinity level text
+            card_parent.spawn((
+                Text::new("Tier - Level -"),
+                TextFont {
+                    font_size: 16.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
+                PortalDivinityText,
+            ));
 
-        spawn_action_button(
-            parent,
-            "Level Up",
-            Color::WHITE,
-            btn_border,
-            LevelUpButton { portal_entity },
-        );
+            // Cost text
+            card_parent.spawn((
+                Text::new("Cost: - / - xikegos"),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(UiTheme::TEXT_INFO),
+                PortalCostText,
+                Node {
+                    margin: UiRect {
+                        top: Val::Px(5.0),
+                        bottom: Val::Px(10.0),
+                        ..default()
+                    },
+                    ..default()
+                },
+            ));
+
+            spawn_action_button(
+                card_parent,
+                "Level Up",
+                Color::WHITE,
+                UiTheme::BORDER_DISABLED,
+                LevelUpButton { portal_entity },
+            );
+        });
     });
 }
+
+// ============================================================================
+// Systems
+// ============================================================================
 
 fn handle_close_button(
     mut commands: Commands,
@@ -140,8 +173,8 @@ fn handle_close_button(
 }
 
 /// Context for recursive UI update
-struct UpdateContext<'a> {
-    divinity: &'a Divinity,
+struct UpdateContext {
+    divinity: Divinity,
     have: u32,
     cost: u32,
     can_afford: bool,
@@ -156,7 +189,8 @@ fn update_portal_ui(
         Option<&PortalDivinityText>,
         Option<&PortalCostText>,
     )>,
-    mut btn_border_query: Query<&mut BorderColor, With<LevelUpButton>>,
+    mut color_query: Query<&mut TextColor>,
+    mut border_query: Query<&mut BorderColor, With<LevelUpButton>>,
     children_query: Query<&Children>,
 ) {
     for (ui_entity, ui_root) in ui_query.iter() {
@@ -169,7 +203,7 @@ fn update_portal_ui(
         let can_afford = have >= cost;
 
         let ctx = UpdateContext {
-            divinity,
+            divinity: divinity.clone(),
             have,
             cost,
             can_afford,
@@ -180,7 +214,8 @@ fn update_portal_ui(
             &ctx,
             &children_query,
             &mut text_query,
-            &mut btn_border_query,
+            &mut color_query,
+            &mut border_query,
         );
     }
 }
@@ -195,27 +230,50 @@ fn update_children_recursive(
         Option<&PortalDivinityText>,
         Option<&PortalCostText>,
     )>,
-    btn_border_query: &mut Query<&mut BorderColor, With<LevelUpButton>>,
+    color_query: &mut Query<&mut TextColor>,
+    border_query: &mut Query<&mut BorderColor, With<LevelUpButton>>,
 ) {
     if let Ok((mut text, is_div, is_cost)) = text_query.get_mut(entity) {
         if is_div.is_some() {
             text.0 = format!("Tier {} Level {}", ctx.divinity.tier, ctx.divinity.level);
         } else if is_cost.is_some() {
             text.0 = format!("Cost: {} / {} xikegos", ctx.have, ctx.cost);
+            if let Ok(mut color) = color_query.get_mut(entity) {
+                color.0 = if ctx.can_afford {
+                    UiTheme::AFFORDABLE
+                } else {
+                    UiTheme::NOT_AFFORDABLE
+                };
+            }
         }
     }
 
-    if let Ok(mut border) = btn_border_query.get_mut(entity) {
+    if let Ok(mut border) = border_query.get_mut(entity) {
         *border = BorderColor::all(if ctx.can_afford {
             UiTheme::BORDER_SUCCESS
         } else {
             UiTheme::BORDER_ERROR
         });
+
+        if let Ok(mut text_color) = color_query.get_mut(entity) {
+            text_color.0 = if ctx.can_afford {
+                Color::WHITE
+            } else {
+                UiTheme::BORDER_DISABLED
+            };
+        }
     }
 
     if let Ok(children) = children_query.get(entity) {
         for child in children.iter() {
-            update_children_recursive(child, ctx, children_query, text_query, btn_border_query);
+            update_children_recursive(
+                child,
+                ctx,
+                children_query,
+                text_query,
+                color_query,
+                border_query,
+            );
         }
     }
 }
