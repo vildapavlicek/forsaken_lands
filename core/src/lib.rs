@@ -2,7 +2,8 @@ use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
     game_assets::AssetsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
-    portals::PortalsPlugin, portal_ui::PortalUiPlugin, research::ResearchPlugin,
+    portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
+    portal_resources::PortalResourcesPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState,
     system_schedule::GameSchedule::*, village::VillagePlugin, village_ui::VillageUiPlugin,
@@ -29,6 +30,7 @@ impl Plugin for CorePlugin {
                 HeroesPlugin,
                 HeroEventsPlugin,
                 PortalsPlugin,
+                PortalResourcesPlugin,
             ))
             .add_plugins((
                 PortalUiPlugin,

@@ -23,6 +23,7 @@ members = [
   "research",
   "resources/crafting_resources",
   "resources/enemy_resources",
+  "resources/portal_resources",
   "states",
   "system_schedule",
   "ui/crafting_ui",
@@ -51,6 +52,7 @@ hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }
 heroes = { path = "heroes" }
 portal_components = { path = "components/portal_components" }
+portal_resources = { path = "resources/portal_resources" }
 portal_ui = { path = "ui/portal_ui" }
 portals = { path = "portals" }
 research = { path = "research" }
