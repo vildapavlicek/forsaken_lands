@@ -199,7 +199,9 @@ pub fn spawn_research_content(parent: &mut ChildSpawnerCommands, data: ResearchD
             Node {
                 flex_direction: FlexDirection::Column,
                 flex_grow: 1.0,
+                flex_basis: Val::Px(0.0),
                 width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
                 ..default()
             },
             ResearchUiRoot {

@@ -114,7 +114,10 @@ fn spawn_village_ui(commands: &mut Commands) {
             Node {
                 flex_direction: FlexDirection::Column,
                 flex_grow: 1.0,
+                flex_basis: Val::Px(0.0),
                 width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                overflow: Overflow::clip(),
                 ..default()
             },
             ContentContainer,

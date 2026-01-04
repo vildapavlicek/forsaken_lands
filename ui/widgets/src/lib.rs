@@ -248,10 +248,13 @@ pub fn spawn_scrollable_container<M: Component>(parent: &mut ChildSpawnerCommand
     parent.spawn((
         Node {
             flex_direction: FlexDirection::Column,
-            overflow: Overflow::clip(),
+            overflow: Overflow::scroll_y(),
             flex_grow: 1.0,
+            flex_basis: Val::Px(0.0),
+            height: Val::Percent(100.0),
             ..default()
         },
+        ScrollPosition::default(),
         marker,
     ));
 }
