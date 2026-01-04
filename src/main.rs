@@ -1,8 +1,19 @@
-use {bevy::prelude::*, core::CorePlugin};
+use {
+    bevy::{log::LogPlugin, prelude::*},
+    core::CorePlugin,
+};
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(
+            DefaultPlugins.set(LogPlugin {
+                filter:
+                    "error,game_assets=debug,portals=trace,village=debug,wallet=debug,heroes=debug"
+                        .into(),
+                level: bevy::log::Level::TRACE,
+                ..Default::default()
+            }),
+        )
         .add_plugins(CorePlugin)
         .run();
 }
