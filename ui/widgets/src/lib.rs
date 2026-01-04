@@ -73,21 +73,21 @@ pub struct AnimatedButton {
 #[allow(clippy::type_complexity)]
 fn button_interaction_system(
     mut query: Query<
-        (&Interaction, &mut BackgroundColor, &AnimatedButton),
+        (&Interaction, &mut BackgroundColor, &AnimatedButton, Option<&mut Transform>),
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    for (interaction, mut bg_color, anim) in query.iter_mut() {
-        match *interaction {
-            Interaction::Pressed => {
-                *bg_color = BackgroundColor(anim.pressed_color);
-            }
-            Interaction::Hovered => {
-                *bg_color = BackgroundColor(anim.hover_color);
-            }
-            Interaction::None => {
-                *bg_color = BackgroundColor(anim.normal_color);
-            }
+    for (interaction, mut bg_color, anim, mut transform) in query.iter_mut() {
+        let (color, scale) = match *interaction {
+            Interaction::Pressed => (anim.pressed_color, 0.98),
+            Interaction::Hovered => (anim.hover_color, 1.05),
+            Interaction::None => (anim.normal_color, 1.0),
+        };
+
+        *bg_color = BackgroundColor(color);
+
+        if let Some(tf) = transform.as_mut() {
+            tf.scale = Vec3::splat(scale);
         }
     }
 }
@@ -171,7 +171,7 @@ pub fn spawn_panel_header(parent: &mut ChildSpawnerCommands, title: &str) -> Ent
             header.spawn((
                 Text::new(title),
                 TextFont {
-                    font_size: 20.0,
+                    font_size: 22.0,
                     ..default()
                 },
                 TextColor(UiTheme::TEXT_HEADER),
@@ -198,7 +198,7 @@ pub fn spawn_panel_header_with_close<M: Component>(
             header.spawn((
                 Text::new(title),
                 TextFont {
-                    font_size: 20.0,
+                    font_size: 22.0,
                     ..default()
                 },
                 TextColor(UiTheme::TEXT_HEADER),
@@ -231,7 +231,7 @@ pub fn spawn_close_button<M: Component>(parent: &mut ChildSpawnerCommands, marke
             btn.spawn((
                 Text::new("X"),
                 TextFont {
-                    font_size: 14.0,
+                    font_size: 16.0,
                     ..default()
                 },
                 TextColor(Color::WHITE),
@@ -287,7 +287,7 @@ pub fn spawn_card_title(parent: &mut ChildSpawnerCommands, text: &str) {
     parent.spawn((
         Text::new(text),
         TextFont {
-            font_size: 18.0,
+            font_size: 20.0,
             ..default()
         },
         TextColor(UiTheme::TEXT_PRIMARY),
@@ -299,7 +299,7 @@ pub fn spawn_description_text(parent: &mut ChildSpawnerCommands, text: &str) {
     parent.spawn((
         Text::new(text),
         TextFont {
-            font_size: 14.0,
+            font_size: 16.0,
             ..default()
         },
         TextColor(UiTheme::TEXT_SECONDARY),
@@ -312,7 +312,7 @@ pub fn spawn_cost_text(parent: &mut ChildSpawnerCommands, cost_str: &str, can_af
     parent.spawn((
         Text::new(cost_str),
         TextFont {
-            font_size: 12.0,
+            font_size: 14.0,
             ..default()
         },
         TextColor(if can_afford {
@@ -328,7 +328,7 @@ pub fn spawn_timer_text(parent: &mut ChildSpawnerCommands, seconds: f32) {
     parent.spawn((
         Text::new(format!("Time: {}s", seconds)),
         TextFont {
-            font_size: 12.0,
+            font_size: 14.0,
             ..default()
         },
         TextColor(UiTheme::TEXT_INFO),
@@ -372,7 +372,7 @@ pub fn spawn_action_button<M: Component>(
             btn.spawn((
                 Text::new(text),
                 TextFont {
-                    font_size: 14.0,
+                    font_size: 16.0,
                     ..default()
                 },
                 TextColor(text_color),
@@ -427,7 +427,7 @@ pub fn spawn_tab_button<M: Component>(
             btn.spawn((
                 Text::new(label),
                 TextFont {
-                    font_size: 14.0,
+                    font_size: 16.0,
                     ..default()
                 },
                 TextColor(UiTheme::TEXT_PRIMARY),
@@ -470,7 +470,7 @@ pub fn spawn_icon_button<M: Component>(
             btn.spawn((
                 Text::new(icon_text),
                 TextFont {
-                    font_size: 20.0,
+                    font_size: 22.0,
                     ..default()
                 },
                 TextColor(UiTheme::TEXT_PRIMARY),
@@ -513,11 +513,10 @@ pub fn spawn_menu_button<M: Component>(
             btn.spawn((
                 Text::new(text),
                 TextFont {
-                    font_size: 18.0,
+                    font_size: 20.0,
                     ..default()
                 },
                 TextColor(UiTheme::TEXT_PRIMARY),
             ));
         });
 }
-
