@@ -78,18 +78,13 @@ fn enemy_spawn_system(
                     continue;
                 }
 
-                // Simple selection: Pick first or random (Just taking first valid for simplicity here)
-                // In a real implementation, you would use weights.
                 if let Some(entry) = valid_entries.first() {
                     info!("Spawning monster: {}", entry.monster_file);
 
-                    // Construct path or use known handles.
-                    // Since "goblin" is known, we can match or load dynamically.
-                    let prefab_handle = if entry.monster_file == "goblin" {
-                        game_assets.goblin_prefab.clone()
-                    } else {
-                        // Fallback for new monsters defined in table
-                        asset_server.load(format!("prefabs/enemies/{}.scn.ron", entry.monster_file))
+                    let Some(prefab_handle) = game_assets.enemies.get(&entry.monster_file).cloned()
+                    else {
+                        error!(%entry.monster_file, "failed to spawn monster, not found in enemies library");
+                        return;
                     };
 
                     scene_spawner.spawn_dynamic(prefab_handle);
