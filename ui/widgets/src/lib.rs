@@ -1,10 +1,102 @@
-use bevy::prelude::*;
+use bevy::{
+    input::mouse::{MouseScrollUnit, MouseWheel},
+    picking::hover::HoverMap,
+    prelude::*,
+};
+
+/// Line height for scroll calculations (pixels per line)
+const SCROLL_LINE_HEIGHT: f32 = 21.0;
 
 pub struct WidgetsPlugin;
 
 impl Plugin for WidgetsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, button_interaction_system);
+        app.add_systems(Update, (button_interaction_system, send_scroll_events))
+            .add_observer(on_scroll_handler);
+    }
+}
+
+// ============================================================================
+// Scroll Handling
+// ============================================================================
+
+/// UI scrolling event that propagates through the hierarchy.
+#[derive(EntityEvent, Debug, Clone)]
+#[entity_event(propagate, auto_propagate)]
+struct Scroll {
+    /// The target entity for this scroll event.
+    #[event_target]
+    entity: Entity,
+    /// Scroll delta in logical coordinates.
+    delta: Vec2,
+}
+
+/// Converts mouse wheel input into scroll events on hovered UI entities.
+fn send_scroll_events(
+    mut mouse_wheel_reader: MessageReader<MouseWheel>,
+    hover_map: Res<HoverMap>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+) {
+    for mouse_wheel in mouse_wheel_reader.read() {
+        let mut delta = -Vec2::new(mouse_wheel.x, mouse_wheel.y);
+
+        // Convert line units to pixels
+        if mouse_wheel.unit == MouseScrollUnit::Line {
+            delta *= SCROLL_LINE_HEIGHT;
+        }
+
+        // Swap axes if Ctrl is held (horizontal scroll)
+        if keyboard_input.any_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]) {
+            std::mem::swap(&mut delta.x, &mut delta.y);
+        }
+
+        // Trigger scroll event on all hovered entities
+        for pointer_map in hover_map.values() {
+            for entity in pointer_map.keys().copied() {
+                commands.trigger(Scroll { entity, delta });
+            }
+        }
+    }
+}
+
+/// Handles scroll events by updating ScrollPosition on scrollable containers.
+fn on_scroll_handler(
+    mut scroll: On<Scroll>,
+    mut query: Query<(&mut ScrollPosition, &Node, &ComputedNode)>,
+) {
+    let Ok((mut scroll_position, node, computed)) = query.get_mut(scroll.entity) else {
+        return;
+    };
+
+    let max_offset = (computed.content_size() - computed.size()) * computed.inverse_scale_factor();
+
+    let delta = scroll.delta;
+
+    // Handle horizontal scrolling
+    if node.overflow.x == OverflowAxis::Scroll && delta.x != 0. {
+        let at_max = if delta.x > 0. {
+            scroll_position.x >= max_offset.x
+        } else {
+            scroll_position.x <= 0.
+        };
+
+        if !at_max {
+            scroll_position.x = (scroll_position.x + delta.x).clamp(0.0, max_offset.x.max(0.0));
+        }
+    }
+
+    // Handle vertical scrolling
+    if node.overflow.y == OverflowAxis::Scroll && delta.y != 0. {
+        let at_max = if delta.y > 0. {
+            scroll_position.y >= max_offset.y
+        } else {
+            scroll_position.y <= 0.
+        };
+
+        if !at_max {
+            scroll_position.y = (scroll_position.y + delta.y).clamp(0.0, max_offset.y.max(0.0));
+        }
     }
 }
 
@@ -255,6 +347,7 @@ pub fn spawn_scrollable_container<M: Component>(parent: &mut ChildSpawnerCommand
             ..default()
         },
         ScrollPosition::default(),
+        Interaction::default(),
         marker,
     ));
 }
