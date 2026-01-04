@@ -9,7 +9,7 @@ use {
     game_assets::GameAssets,
     hero_events::EnemyKilled,
     portal_components::{Portal, SpawnTimer, SpawnTableId},
-    portal_resources::{SpawnTable, SpawnCondition},
+    portal_assets::{SpawnTable, SpawnCondition},
     system_schedule::GameSchedule,
 };
 

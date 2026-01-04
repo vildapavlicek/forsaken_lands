@@ -1,4 +1,4 @@
-use {bevy::prelude::*, states::GameState, portal_resources::SpawnTable};
+use {bevy::prelude::*, states::GameState, portal_assets::SpawnTable};
 
 pub struct AssetsPlugin;
 

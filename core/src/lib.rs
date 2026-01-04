@@ -4,7 +4,7 @@ use {
     enemy_encyclopedia::EnemyEncyclopediaUiPlugin,
     game_assets::AssetsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
     portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
-    portal_resources::PortalResourcesPlugin,
+    portal_assets::PortalAssetsPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState,
     system_schedule::GameSchedule::*, village::VillagePlugin, village_ui::VillageUiPlugin,
@@ -32,7 +32,7 @@ impl Plugin for CorePlugin {
                 HeroesPlugin,
                 HeroEventsPlugin,
                 PortalsPlugin,
-                PortalResourcesPlugin,
+                PortalAssetsPlugin,
             ))
             .add_plugins((
                 PortalUiPlugin,
