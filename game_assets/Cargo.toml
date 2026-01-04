@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 bevy.workspace = true
 states.workspace = true
+portal_resources.workspace = true

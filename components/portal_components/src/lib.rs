@@ -14,3 +14,8 @@ impl Default for SpawnTimer {
         Self(Timer::from_seconds(10.0, TimerMode::Repeating))
     }
 }
+
+/// Links a Portal to a specific SpawnTable asset (e.g., "default")
+#[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
+#[reflect(Component)]
+pub struct SpawnTableId(pub String);

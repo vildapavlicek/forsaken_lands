@@ -1,4 +1,4 @@
-use {bevy::prelude::*, states::GameState};
+use {bevy::prelude::*, states::GameState, portal_resources::SpawnTable};
 
 pub struct AssetsPlugin;
 
@@ -17,7 +17,7 @@ pub struct GameAssets {
     pub startup_scene: Handle<DynamicScene>,
     pub research_library_scene: Handle<DynamicScene>,
     pub recipes_library_scene: Handle<DynamicScene>,
-    pub spawn_table: Handle<DynamicScene>,
+    pub spawn_table: Handle<SpawnTable>,
     pub goblin_prefab: Handle<DynamicScene>,
 }
 
@@ -26,7 +26,7 @@ fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>)
     assets.startup_scene = asset_server.load("startup.scn.ron");
     assets.research_library_scene = asset_server.load("research.scn.ron");
     assets.recipes_library_scene = asset_server.load("recipes/library.scn.ron");
-    assets.spawn_table = asset_server.load("spawn_table_default.scn.ron");
+    assets.spawn_table = asset_server.load("default.spawn_table.ron");
     assets.goblin_prefab = asset_server.load("prefabs/enemies/goblin.scn.ron");
 }
 

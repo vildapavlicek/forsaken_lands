@@ -8,7 +8,8 @@ use {
     },
     game_assets::GameAssets,
     hero_events::EnemyKilled,
-    portal_components::{Portal, SpawnTimer},
+    portal_components::{Portal, SpawnTimer, SpawnTableId},
+    portal_resources::{SpawnTable, SpawnCondition},
     system_schedule::GameSchedule,
 };
 
@@ -18,6 +19,7 @@ impl Plugin for PortalsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Portal>();
         app.register_type::<SpawnTimer>();
+        app.register_type::<SpawnTableId>();
 
         app.register_type::<Enemy>();
         app.register_type::<MovementSpeed>();
@@ -43,14 +45,55 @@ impl Plugin for PortalsPlugin {
 
 fn enemy_spawn_system(
     time: Res<Time>,
-    mut query: Query<&mut SpawnTimer, With<Portal>>,
+    mut query: Query<(&mut SpawnTimer, &SpawnTableId, &Divinity), With<Portal>>,
     game_assets: Res<GameAssets>,
+    spawn_tables: Res<Assets<SpawnTable>>,
+    asset_server: Res<AssetServer>,
     mut scene_spawner: ResMut<SceneSpawner>,
 ) {
-    for mut timer in query.iter_mut() {
+    for (mut timer, table_id, divinity) in query.iter_mut() {
         if timer.0.tick(time.delta()).just_finished() {
-            info!("spawning monster");
-            scene_spawner.spawn_dynamic(game_assets.goblin_prefab.clone());
+            
+            // Resolve ID to Handle (Simple mapping for now)
+            let table_handle = if table_id.0 == "default" {
+                &game_assets.spawn_table
+            } else {
+                warn!("Unknown spawn table: {}", table_id.0);
+                continue;
+            };
+
+            // Get the asset data
+            if let Some(table) = spawn_tables.get(table_handle) {
+                // Find valid entries based on condition
+                let valid_entries: Vec<_> = table.entries.iter().filter(|e| {
+                    match &e.condition {
+                        SpawnCondition::Min(req) => divinity >= req,
+                        SpawnCondition::Specific(req) => divinity == req,
+                        SpawnCondition::Range { min, max } => divinity >= min && divinity <= max,
+                    }
+                }).collect();
+
+                if valid_entries.is_empty() {
+                    continue;
+                }
+
+                // Simple selection: Pick first or random (Just taking first valid for simplicity here)
+                // In a real implementation, you would use weights.
+                if let Some(entry) = valid_entries.first() {
+                    info!("Spawning monster: {}", entry.monster_file);
+                    
+                    // Construct path or use known handles. 
+                    // Since "goblin" is known, we can match or load dynamically.
+                    let prefab_handle = if entry.monster_file == "goblin" {
+                        game_assets.goblin_prefab.clone()
+                    } else {
+                        // Fallback for new monsters defined in table
+                        asset_server.load(format!("prefabs/enemies/{}.scn.ron", entry.monster_file))
+                    };
+                    
+                    scene_spawner.spawn_dynamic(prefab_handle);
+                }
+            }
         }
     }
 }

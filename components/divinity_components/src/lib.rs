@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 pub struct DivinityComponentsPlugin;
@@ -12,7 +13,7 @@ impl Plugin for DivinityComponentsPlugin {
 
 pub const MAX_LEVEL: u32 = 99;
 
-#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[reflect(Component, Default)]
 pub struct Divinity {
     pub tier: u32,
