@@ -23,7 +23,6 @@ members = [
   "portals",
   "research",
   "resources/crafting_resources",
-  "resources/enemy_resources",
   "states",
   "system_schedule",
   "ui/crafting_ui",
@@ -48,7 +47,6 @@ crafting_ui = { path = "ui/crafting_ui" }
 divinity_components = { path = "components/divinity_components" }
 divinity_events = { path = "events/divinity_events" }
 enemy_components = { path = "components/enemy_components" }
-enemy_resources = { path = "resources/enemy_resources" }
 enemy_encyclopedia = { path = "ui/enemy_encyclopedia" }
 game_assets = { path = "game_assets" }
 hero_components = { path = "components/hero_components" }
