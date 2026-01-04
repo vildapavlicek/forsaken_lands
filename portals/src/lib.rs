@@ -8,8 +8,8 @@ use {
     },
     game_assets::GameAssets,
     hero_events::EnemyKilled,
-    portal_components::{Portal, SpawnTimer, SpawnTableId},
-    portal_resources::{SpawnTable, SpawnCondition},
+    portal_assets::{SpawnCondition, SpawnTable},
+    portal_components::{Portal, SpawnTableId, SpawnTimer},
     system_schedule::GameSchedule,
 };
 
@@ -53,25 +53,26 @@ fn enemy_spawn_system(
 ) {
     for (mut timer, table_id, divinity) in query.iter_mut() {
         if timer.0.tick(time.delta()).just_finished() {
-            
             // Resolve ID to Handle (Simple mapping for now)
-            let table_handle = if table_id.0 == "default" {
-                &game_assets.spawn_table
+            let table_handle = if let Some(handle) = game_assets.spawn_tables.get(&table_id.0) {
+                handle
             } else {
-                warn!("Unknown spawn table: {}", table_id.0);
+                error!("Unknown spawn table: {}", table_id.0);
                 continue;
             };
 
             // Get the asset data
             if let Some(table) = spawn_tables.get(table_handle) {
                 // Find valid entries based on condition
-                let valid_entries: Vec<_> = table.entries.iter().filter(|e| {
-                    match &e.condition {
+                let valid_entries: Vec<_> = table
+                    .entries
+                    .iter()
+                    .filter(|e| match &e.condition {
                         SpawnCondition::Min(req) => divinity >= req,
                         SpawnCondition::Specific(req) => divinity == req,
                         SpawnCondition::Range { min, max } => divinity >= min && divinity <= max,
-                    }
-                }).collect();
+                    })
+                    .collect();
 
                 if valid_entries.is_empty() {
                     continue;
@@ -81,8 +82,8 @@ fn enemy_spawn_system(
                 // In a real implementation, you would use weights.
                 if let Some(entry) = valid_entries.first() {
                     info!("Spawning monster: {}", entry.monster_file);
-                    
-                    // Construct path or use known handles. 
+
+                    // Construct path or use known handles.
                     // Since "goblin" is known, we can match or load dynamically.
                     let prefab_handle = if entry.monster_file == "goblin" {
                         game_assets.goblin_prefab.clone()
@@ -90,7 +91,7 @@ fn enemy_spawn_system(
                         // Fallback for new monsters defined in table
                         asset_server.load(format!("prefabs/enemies/{}.scn.ron", entry.monster_file))
                     };
-                    
+
                     scene_spawner.spawn_dynamic(prefab_handle);
                 }
             }
@@ -151,4 +152,3 @@ fn handle_divinity_increase(
         }
     }
 }
-

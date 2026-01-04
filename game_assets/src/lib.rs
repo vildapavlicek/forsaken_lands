@@ -1,4 +1,8 @@
-use {bevy::prelude::*, states::GameState, portal_resources::SpawnTable};
+use {
+    bevy::{platform::collections::HashMap, prelude::*},
+    portal_assets::SpawnTable,
+    states::GameState,
+};
 
 pub struct AssetsPlugin;
 
@@ -17,7 +21,7 @@ pub struct GameAssets {
     pub startup_scene: Handle<DynamicScene>,
     pub research_library_scene: Handle<DynamicScene>,
     pub recipes_library_scene: Handle<DynamicScene>,
-    pub spawn_table: Handle<SpawnTable>,
+    pub spawn_tables: HashMap<String, Handle<SpawnTable>>,
     pub goblin_prefab: Handle<DynamicScene>,
 }
 
@@ -26,8 +30,12 @@ fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>)
     assets.startup_scene = asset_server.load("startup.scn.ron");
     assets.research_library_scene = asset_server.load("research.scn.ron");
     assets.recipes_library_scene = asset_server.load("recipes/library.scn.ron");
-    assets.spawn_table = asset_server.load("default.spawn_table.ron");
     assets.goblin_prefab = asset_server.load("prefabs/enemies/goblin.scn.ron");
+    let default_spawn_table = asset_server.load("default.spawn_table.ron");
+
+    assets
+        .spawn_tables
+        .insert(String::from("default"), default_spawn_table);
 }
 
 fn check_assets(
@@ -35,10 +43,15 @@ fn check_assets(
     game_assets: Res<GameAssets>,
     asset_server: Res<AssetServer>,
 ) {
+    let spawn_tables_loaded = game_assets
+        .spawn_tables
+        .values()
+        .all(|handle| asset_server.is_loaded_with_dependencies(handle));
+
     if asset_server.is_loaded_with_dependencies(&game_assets.startup_scene)
         && asset_server.is_loaded_with_dependencies(&game_assets.research_library_scene)
         && asset_server.is_loaded_with_dependencies(&game_assets.recipes_library_scene)
-        && asset_server.is_loaded_with_dependencies(&game_assets.spawn_table)
+        && spawn_tables_loaded
         && asset_server.is_loaded_with_dependencies(&game_assets.goblin_prefab)
     {
         info!("assets loaded");

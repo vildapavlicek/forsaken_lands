@@ -1851,7 +1851,7 @@ dependencies = [
  "hero_components",
  "hero_events",
  "heroes",
- "portal_resources",
+ "portal_assets",
  "portal_ui",
  "portals",
  "research",
@@ -2508,7 +2508,7 @@ name = "game_assets"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "portal_resources",
+ "portal_assets",
  "states",
 ]
 
@@ -3804,20 +3804,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "portal_components"
-version = "0.1.0"
-dependencies = [
- "bevy",
-]
-
-[[package]]
-name = "portal_resources"
+name = "portal_assets"
 version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
  "divinity_components",
  "serde",
+]
+
+[[package]]
+name = "portal_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
@@ -3844,8 +3844,8 @@ dependencies = [
  "enemy_components",
  "game_assets",
  "hero_events",
+ "portal_assets",
  "portal_components",
- "portal_resources",
  "states",
  "system_schedule",
 ]
