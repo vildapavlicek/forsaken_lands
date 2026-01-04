@@ -48,7 +48,6 @@ fn enemy_spawn_system(
     mut query: Query<(&mut SpawnTimer, &SpawnTableId, &Divinity), With<Portal>>,
     game_assets: Res<GameAssets>,
     spawn_tables: Res<Assets<SpawnTable>>,
-    asset_server: Res<AssetServer>,
     mut scene_spawner: ResMut<SceneSpawner>,
 ) {
     for (mut timer, table_id, divinity) in query.iter_mut() {
