@@ -52,7 +52,6 @@ fn enemy_spawn_system(
 ) {
     for (mut timer, table_id, divinity) in query.iter_mut() {
         if timer.0.tick(time.delta()).just_finished() {
-            // Resolve ID to Handle (Simple mapping for now)
             let table_handle = if let Some(handle) = game_assets.spawn_tables.get(&table_id.0) {
                 handle
             } else {
