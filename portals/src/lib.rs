@@ -10,6 +10,7 @@ use {
     hero_events::EnemyKilled,
     portal_assets::{SpawnCondition, SpawnTable},
     portal_components::{Portal, SpawnTableId, SpawnTimer},
+    rand::{distr::weighted::WeightedIndex, prelude::*},
     system_schedule::GameSchedule,
 };
 
@@ -76,17 +77,25 @@ fn enemy_spawn_system(
                     continue;
                 }
 
-                if let Some(entry) = valid_entries.first() {
-                    info!("Spawning monster: {}", entry.monster_file);
+                // Collect weights and select randomly
+                let weights: Vec<u32> = valid_entries.iter().map(|e| e.weight).collect();
+                let Ok(dist) = WeightedIndex::new(&weights) else {
+                    error!("Failed to create weighted distribution from spawn table weights");
+                    continue;
+                };
 
-                    let Some(prefab_handle) = game_assets.enemies.get(&entry.monster_file).cloned()
-                    else {
-                        error!(%entry.monster_file, "failed to spawn monster, not found in enemies library");
-                        return;
-                    };
+                let mut rng = rand::rng();
+                let selected_entry = valid_entries[dist.sample(&mut rng)];
 
-                    scene_spawner.spawn_dynamic(prefab_handle);
-                }
+                info!("Spawning monster: {}", selected_entry.monster_file);
+
+                let Some(prefab_handle) = game_assets.enemies.get(&selected_entry.monster_file).cloned()
+                else {
+                    error!(%selected_entry.monster_file, "failed to spawn monster, not found in enemies library");
+                    return;
+                };
+
+                scene_spawner.spawn_dynamic(prefab_handle);
             }
         }
     }

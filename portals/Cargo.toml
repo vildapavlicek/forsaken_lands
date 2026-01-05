@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+rand.workspace = true
 divinity_components.workspace = true
 divinity_events.workspace = true
 game_assets.workspace = true

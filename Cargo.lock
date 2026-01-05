@@ -3839,6 +3839,7 @@ dependencies = [
  "hero_events",
  "portal_assets",
  "portal_components",
+ "rand",
  "states",
  "system_schedule",
 ]
