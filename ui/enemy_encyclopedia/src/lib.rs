@@ -42,7 +42,7 @@ pub fn spawn_enemy_encyclopedia_content(
                 .insert(TextColor(Color::WHITE));
 
             // List of enemies
-            for (enemy_id, entry) in &encyclopedia.inner {
+            for (_enemy_id, entry) in &encyclopedia.inner {
                 list.spawn(Node {
                     flex_direction: FlexDirection::Row,
                     justify_content: JustifyContent::SpaceBetween,
@@ -51,7 +51,7 @@ pub fn spawn_enemy_encyclopedia_content(
                     ..default()
                 })
                 .with_children(|row| {
-                    row.spawn(Text::new(enemy_id.clone()))
+                    row.spawn(Text::new(entry.display_name.clone()))
                         .insert(TextColor(Color::WHITE));
 
                     row.spawn(Text::new(format!("Kills: {}", entry.kill_count)))
@@ -99,7 +99,7 @@ fn update_encyclopedia_ui(
             .insert(TextColor(Color::WHITE));
 
         // List of enemies
-        for (enemy_id, entry) in &encyclopedia.inner {
+        for (_enemy_id, entry) in &encyclopedia.inner {
             list.spawn(Node {
                 flex_direction: FlexDirection::Row,
                 justify_content: JustifyContent::SpaceBetween,
@@ -108,7 +108,7 @@ fn update_encyclopedia_ui(
                 ..default()
             })
             .with_children(|row| {
-                row.spawn(Text::new(enemy_id.clone()))
+                row.spawn(Text::new(entry.display_name.clone()))
                     .insert(TextColor(Color::WHITE));
 
                 row.spawn(Text::new(format!("Kills: {}", entry.kill_count)))

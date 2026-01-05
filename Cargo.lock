@@ -4894,6 +4894,7 @@ dependencies = [
  "game_assets",
  "hero_components",
  "hero_events",
+ "shared_components",
  "states",
  "village_components",
 ]

@@ -4,6 +4,7 @@ use {
     divinity_events::IncreaseDivinity,
     enemy_components::MonsterId,
     hero_events::EnemyKilled,
+    shared_components::DisplayName,
     village_components::{EncyclopediaEntry, EnemyEncyclopedia, Village},
 };
 
@@ -23,14 +24,18 @@ impl Plugin for VillagePlugin {
 fn update_encyclopedia(
     trigger: On<EnemyKilled>,
     mut village_query: Query<&mut EnemyEncyclopedia, With<Village>>,
-    monster_query: Query<&MonsterId>,
+    monster_query: Query<(&MonsterId, Option<&DisplayName>)>,
 ) {
-    let Ok(monster_id) = monster_query.get(trigger.event().entity) else {
+    let Ok((monster_id, display_name)) = monster_query.get(trigger.event().entity) else {
         return;
     };
 
+    let display_name = display_name
+        .map(|d| d.0.clone())
+        .unwrap_or_else(|| monster_id.0.clone());
+
     for mut encyclopedia in &mut village_query {
-        encyclopedia.increment_kill_count(monster_id.0.clone());
+        encyclopedia.increment_kill_count(monster_id.0.clone(), display_name.clone());
         info!(
             monster_id = %monster_id.0,
             kill_count = %encyclopedia.inner.get(&monster_id.0).unwrap().kill_count,
@@ -38,6 +43,7 @@ fn update_encyclopedia(
         );
     }
 }
+
 
 fn handle_divinity_increase(
     trigger: On<IncreaseDivinity>,
