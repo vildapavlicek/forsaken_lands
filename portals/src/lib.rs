@@ -3,8 +3,7 @@ use {
     divinity_components::{Divinity, DivinityStats},
     divinity_events::IncreaseDivinity,
     enemy_components::{
-        Dead, Enemy, Health, Lifetime, MonsterId, MovementSpeed, NeedsHydration, ResourceRewards,
-        Reward, RewardCoefficient,
+        Dead, Enemy, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards, Reward,
     },
     game_assets::GameAssets,
     hero_events::EnemyKilled,
@@ -24,8 +23,6 @@ impl Plugin for PortalsPlugin {
 
         app.register_type::<Enemy>();
         app.register_type::<MovementSpeed>();
-        app.register_type::<RewardCoefficient>();
-        app.register_type::<NeedsHydration>();
         app.register_type::<Lifetime>();
         app.register_type::<Health>();
         app.register_type::<ResourceRewards>();
@@ -89,7 +86,10 @@ fn enemy_spawn_system(
 
                 info!("Spawning monster: {}", selected_entry.monster_file);
 
-                let Some(prefab_handle) = game_assets.enemies.get(&selected_entry.monster_file).cloned()
+                let Some(prefab_handle) = game_assets
+                    .enemies
+                    .get(&selected_entry.monster_file)
+                    .cloned()
                 else {
                     error!(%selected_entry.monster_file, "failed to spawn monster, not found in enemies library");
                     return;
