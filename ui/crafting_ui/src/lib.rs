@@ -74,6 +74,7 @@ pub struct CraftingData {
 }
 
 /// Display data for a single recipe
+#[derive(PartialEq, Clone, Debug)]
 pub struct RecipeDisplayData {
     pub id: String,
     pub display_name: String,
@@ -275,9 +276,16 @@ fn update_recipes_ui(
     wallet: Res<Wallet>,
     research_state: Res<ResearchState>,
     ui_query: Query<&RecipesUiRoot>,
+    mut last_data: Local<Vec<RecipeDisplayData>>,
 ) {
     if let Ok(ui_root) = ui_query.single() {
         let recipes = build_recipe_list(&library, &wallet, &research_state, &ui_root.active_tab);
+        
+        if *last_data == recipes {
+            return;
+        }
+        *last_data = recipes.clone();
+        
         commands.queue(PopulateRecipesDirectCommand {
             recipes_data: recipes
                 .into_iter()
@@ -318,19 +326,8 @@ impl Command for PopulateRecipesDirectCommand {
         // Spawn new recipe cards
         world.commands().entity(container_entity).with_children(|parent| {
             for (recipe_id, display_name, craft_time, cost_str, can_afford) in self.recipes_data {
-                parent
-                    .spawn((
-                        Node {
-                            flex_direction: FlexDirection::Column,
-                            padding: UiRect::all(Val::Px(8.0)),
-                            margin: UiRect::bottom(Val::Px(4.0)),
-                            border: UiRect::all(Val::Px(1.0)),
-                            ..default()
-                        },
-                        BorderColor::all(UiTheme::CARD_BORDER),
-                        BackgroundColor(UiTheme::CARD_BG),
-                    ))
-                    .with_children(|card| {
+                let card_entity = widgets::spawn_item_card(parent, ());
+                parent.commands().entity(card_entity).with_children(|card| {
                         spawn_card_title(card, &display_name);
                         spawn_timer_text(card, craft_time);
                         spawn_cost_text(card, &cost_str, can_afford);

@@ -62,7 +62,7 @@ fn send_scroll_events(
 
 /// Handles scroll events by updating ScrollPosition on scrollable containers.
 fn on_scroll_handler(
-    mut scroll: On<Scroll>,
+    scroll: On<Scroll>,
     mut query: Query<(&mut ScrollPosition, &Node, &ComputedNode)>,
 ) {
     let Ok((mut scroll_position, node, computed)) = query.get_mut(scroll.entity) else {
@@ -357,7 +357,7 @@ pub fn spawn_scrollable_container<M: Component>(parent: &mut ChildSpawnerCommand
 // ============================================================================
 
 /// Spawns a styled item card. Returns Entity for adding children via with_children.
-pub fn spawn_item_card<M: Component>(parent: &mut ChildSpawnerCommands, marker: M) -> Entity {
+pub fn spawn_item_card<M: Bundle>(parent: &mut ChildSpawnerCommands, marker: M) -> Entity {
     parent
         .spawn((
             Node {
@@ -370,6 +370,7 @@ pub fn spawn_item_card<M: Component>(parent: &mut ChildSpawnerCommands, marker: 
             BorderColor::all(UiTheme::CARD_BORDER),
             BackgroundColor(UiTheme::CARD_BG),
             marker,
+            Pickable::IGNORE,
         ))
         .id()
 }

@@ -425,19 +425,8 @@ impl Command for PopulateResearchDirectCommand {
                     btn_border,
                 ) in self.research_data
                 {
-                    parent
-                        .spawn((
-                            Node {
-                                flex_direction: FlexDirection::Column,
-                                padding: UiRect::all(Val::Px(8.0)),
-                                margin: UiRect::bottom(Val::Px(4.0)),
-                                border: UiRect::all(Val::Px(1.0)),
-                                ..default()
-                            },
-                            BorderColor::all(UiTheme::CARD_BORDER),
-                            BackgroundColor(UiTheme::CARD_BG),
-                        ))
-                        .with_children(|card| {
+                    let card_entity = widgets::spawn_item_card(parent, ());
+                    parent.commands().entity(card_entity).with_children(|card| {
                             spawn_card_title(card, &name);
                             spawn_description_text(card, &description);
 
