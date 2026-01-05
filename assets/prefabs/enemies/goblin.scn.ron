@@ -13,8 +13,6 @@
         "shared_components::DisplayName": ("Goblin"),
         "enemy_components::Enemy": (),
         "enemy_components::MovementSpeed": (150.0),
-        "enemy_components::RewardCoefficient": (1.0),
-        "enemy_components::NeedsHydration": (),
         "enemy_components::MonsterId": ("goblin"),
         "enemy_components::Health": (
           current: 2.0,
