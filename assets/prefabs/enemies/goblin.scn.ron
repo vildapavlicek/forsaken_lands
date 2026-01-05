@@ -17,8 +17,8 @@
         "enemy_components::NeedsHydration": (),
         "enemy_components::MonsterId": ("goblin"),
         "enemy_components::Health": (
-          current: 1.0,
-          max: 5.0,
+          current: 2.0,
+          max: 2.0,
         ),
         "enemy_components::Lifetime": (
              (

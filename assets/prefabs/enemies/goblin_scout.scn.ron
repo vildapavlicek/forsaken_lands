@@ -12,7 +12,7 @@
         "enemy_components::Enemy": (),
         "enemy_components::MovementSpeed": (155.0),
         "enemy_components::MonsterId": ("goblin_scout_01"),
-        "enemy_components::Health": (current: 6.0, max: 6.0),
+        "enemy_components::Health": (current: 1.0, max: 1.0),
         "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 5, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
         "enemy_components::ResourceRewards": ([(id: "bones", value: 5), (id: "xikegos", value: 1)]),
       },
