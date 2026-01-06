@@ -3,7 +3,7 @@ use {
     enemy_components::{Enemy, Health},
     hero_components::{
         AttackRange, AttackSpeed, Damage, Hero, Projectile, ProjectileDamage, ProjectileSpeed,
-        ProjectileTarget, Weapon,
+        ProjectileTarget, RangedWeapon, Weapon,
     },
     hero_events::{AttackIntent, ProjectileHit},
     states::GameState,
@@ -17,6 +17,7 @@ impl Plugin for HeroesPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Hero>()
             .register_type::<Weapon>()
+            .register_type::<RangedWeapon>()
             .register_type::<Damage>()
             .register_type::<AttackRange>()
             .register_type::<AttackSpeed>()
@@ -92,7 +93,7 @@ fn hero_attack_intent_system(
 fn hero_projectile_spawn_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<&Damage, With<Weapon>>,
+    weapons: Query<&Damage, (With<Weapon>, With<RangedWeapon>)>,
     villages: Query<&Transform, With<Village>>,
 ) {
     let Ok(village_transform) = villages.single() else {

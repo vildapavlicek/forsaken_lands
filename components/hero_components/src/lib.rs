@@ -9,6 +9,10 @@ pub struct Hero;
 pub struct Weapon;
 
 #[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct RangedWeapon;
+
+#[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
 pub struct Damage(pub f32);
 

@@ -4,6 +4,7 @@
     1: (
       components: {
         "hero_components::Weapon": (),
+        "hero_components::RangedWeapon": (),
         "hero_components::Damage": (2.0),
         "hero_components::AttackRange": (200.0),
         "hero_components::AttackSpeed": (
