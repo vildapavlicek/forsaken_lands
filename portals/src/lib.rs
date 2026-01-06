@@ -140,7 +140,6 @@ fn assign_enemy_destination(
     mut commands: Commands,
     query: Query<&EnemyRange>,
 ) {
-    info!("observer to add TargetDestination ran!");
     let entity = trigger.entity;
     let range = match query.get(entity) {
         Ok(range) => range,
