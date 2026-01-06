@@ -62,6 +62,8 @@ impl EnemyRange {
     }
 }
 
+pub const MELEE_ENGAGEMENT_RADIUS: f32 = 150.0;
+
 /// The target destination an enemy is moving towards.
 /// Generated randomly within the enemy's range section on spawn.
 #[derive(Component, Reflect, Default, Debug, Clone)]

@@ -3,8 +3,8 @@ use {
     divinity_components::{Divinity, DivinityStats},
     divinity_events::IncreaseDivinity,
     enemy_components::{
-        Dead, Enemy, EnemyRange, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards,
-        Reward, TargetDestination,
+        Dead, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
+        MovementSpeed, ResourceRewards, Reward, TargetDestination,
     },
     game_assets::GameAssets,
     hero_events::EnemyKilled,
@@ -150,13 +150,40 @@ fn assign_enemy_destination(
     };
 
     let mut rng = rand::rng();
-    let (min_y, max_y) = range.y_bounds();
-    // Generate random x within game bounds (-200 to 200) and y within range section
-    let x = rng.random_range(-200.0..200.0);
-    let y = rng.random_range(min_y..max_y);
-    commands
-        .entity(entity)
-        .insert(TargetDestination(Vec2::new(x, y)));
+
+    match range {
+        EnemyRange::CloseRange => {
+            // Funnel strategy: Target a point on a circle around the village
+            // Village center is assumed at (0, -300)
+            let village_center = Vec2::new(0.0, -300.0);
+
+            // Random angle for funneling (restricted to -30 to 210 degrees)
+            // This prevents enemies from going "below" the village (South)
+            let min_angle = -30.0f32.to_radians();
+            let max_angle = 210.0f32.to_radians();
+            let theta = rng.random_range(min_angle..max_angle);
+
+            // Random distance buffer to prevent stacking and overlap
+            // MELEE_ENGAGEMENT_RADIUS is max, 25.0 is min offset from center
+            let min_dist = 25.0;
+            let max_dist = MELEE_ENGAGEMENT_RADIUS;
+            let r = rng.random_range(min_dist..max_dist);
+
+            let offset = Vec2::new(r * theta.cos(), r * theta.sin());
+            let target = village_center + offset;
+
+            commands.entity(entity).insert(TargetDestination(target));
+        }
+        _ => {
+            let (min_y, max_y) = range.y_bounds();
+            // Generate random x within game bounds (-200 to 200) and y within range section
+            let x = rng.random_range(-200.0..200.0);
+            let y = rng.random_range(min_y..max_y);
+            commands
+                .entity(entity)
+                .insert(TargetDestination(Vec2::new(x, y)));
+        }
+    }
 }
 
 /// Moves enemies towards their target destination.
@@ -196,6 +223,7 @@ fn move_enemy(
 /// Draws debug gizmo lines at each range section boundary.
 fn draw_range_gizmos(mut gizmos: Gizmos) {
     let line_half_width = 250.0;
+    let village_center = Vec2::new(0.0, -300.0);
 
     // LongRange / MediumRange boundary (y = 100) - Yellow
     gizmos.line_2d(
@@ -211,12 +239,16 @@ fn draw_range_gizmos(mut gizmos: Gizmos) {
         Color::srgb(1.0, 0.5, 0.0),
     );
 
-    // Bottom of CloseRange / Village line (y = -300) - Red
-    gizmos.line_2d(
-        Vec2::new(-line_half_width, EnemyRange::CloseRange.y_bounds().0),
-        Vec2::new(line_half_width, EnemyRange::CloseRange.y_bounds().0),
+    // CloseRange: Draw funnel target area circles - Red
+    // Max engagement radius
+    gizmos.circle_2d(
+        village_center,
+        MELEE_ENGAGEMENT_RADIUS,
         Color::srgb(1.0, 0.0, 0.0),
     );
+
+    // Min offset radius
+    gizmos.circle_2d(village_center, 25.0, Color::srgb(0.5, 0.0, 0.0));
 }
 
 fn handle_divinity_increase(
