@@ -13,6 +13,16 @@ pub struct Weapon;
 pub struct RangedWeapon;
 
 #[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct MeleeWeapon;
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component, Default)]
+pub struct MeleeArc {
+    pub width: f32, // In radians
+}
+
+#[derive(Component, Reflect, Default)]
 #[reflect(Component, Default)]
 pub struct Damage(pub f32);
 

@@ -2,8 +2,8 @@ use {
     bevy::prelude::*,
     enemy_components::{Enemy, Health},
     hero_components::{
-        AttackRange, AttackSpeed, Damage, Hero, Projectile, ProjectileDamage, ProjectileSpeed,
-        ProjectileTarget, RangedWeapon, Weapon,
+        AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
+        ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon,
     },
     hero_events::{AttackIntent, ProjectileHit},
     states::GameState,
@@ -18,6 +18,8 @@ impl Plugin for HeroesPlugin {
         app.register_type::<Hero>()
             .register_type::<Weapon>()
             .register_type::<RangedWeapon>()
+            .register_type::<MeleeWeapon>()
+            .register_type::<MeleeArc>()
             .register_type::<Damage>()
             .register_type::<AttackRange>()
             .register_type::<AttackSpeed>()
@@ -38,6 +40,7 @@ impl Plugin for HeroesPlugin {
         );
 
         app.add_observer(hero_projectile_spawn_system);
+        app.add_observer(hero_melee_attack_system);
         app.add_observer(apply_damage_system);
     }
 }
@@ -93,7 +96,7 @@ fn hero_attack_intent_system(
 fn hero_projectile_spawn_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<&Damage, (With<Weapon>, With<RangedWeapon>)>,
+    weapons: Query<&Damage, (With<Weapon>, With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
 ) {
     let Ok(village_transform) = villages.single() else {
@@ -119,6 +122,51 @@ fn hero_projectile_spawn_system(
             ProjectileSpeed(400.0),
             ProjectileDamage(damage.0),
         ));
+    }
+}
+
+fn hero_melee_attack_system(
+    trigger: On<AttackIntent>,
+    mut commands: Commands,
+    weapons: Query<(&Damage, &AttackRange, &MeleeArc), (With<Weapon>, With<MeleeWeapon>)>,
+    villages: Query<&Transform, With<Village>>,
+    enemies: Query<(Entity, &Transform), With<Enemy>>,
+) {
+    let Ok(village_transform) = villages.single() else {
+        error!("village without transform");
+        return;
+    };
+
+    let intent = trigger.event();
+
+    if let Ok((damage, range, arc)) = weapons.get(intent.attacker) {
+        let Ok((_, target_transform)) = enemies.get(intent.target) else {
+            return;
+        };
+
+        // Determine attack direction (Target - Village)
+        let attack_direction = (target_transform.translation - village_transform.translation).truncate().normalize();
+
+        for (enemy_entity, enemy_transform) in enemies.iter() {
+            let to_enemy = enemy_transform.translation - village_transform.translation;
+            let distance = to_enemy.length();
+
+            // Check 1: Distance within AttackRange
+            if distance <= range.0 {
+                // Check 2: Angle within MeleeArc
+                // angle_between returns value in [0, PI], so we just check if it's <= half the width
+                let angle = attack_direction.angle_between(to_enemy.truncate());
+                
+                if angle <= arc.width / 2.0 {
+                    // Apply damage immediately
+                     commands.trigger(ProjectileHit {
+                        projectile: intent.attacker, // Using attacker entity as projectile source equivalent
+                        target: enemy_entity,
+                        damage: damage.0,
+                    });
+                }
+            }
+        }
     }
 }
 
