@@ -14,6 +14,7 @@
         "enemy_components::Enemy": (),
         "enemy_components::MovementSpeed": (150.0),
         "enemy_components::MonsterId": ("goblin"),
+        "enemy_components::EnemyRange": CloseRange,
         "enemy_components::Health": (
           current: 2.0,
           max: 2.0,

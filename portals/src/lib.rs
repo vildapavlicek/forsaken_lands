@@ -3,7 +3,8 @@ use {
     divinity_components::{Divinity, DivinityStats},
     divinity_events::IncreaseDivinity,
     enemy_components::{
-        Dead, Enemy, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards, Reward,
+        Dead, Enemy, EnemyRange, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards,
+        Reward, TargetDestination,
     },
     game_assets::GameAssets,
     hero_events::EnemyKilled,
@@ -29,6 +30,8 @@ impl Plugin for PortalsPlugin {
         app.register_type::<Reward>();
         app.register_type::<Dead>();
         app.register_type::<MonsterId>();
+        app.register_type::<EnemyRange>();
+        app.register_type::<TargetDestination>();
 
         app.add_systems(Update, enemy_spawn_system);
         app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));
@@ -36,7 +39,9 @@ impl Plugin for PortalsPlugin {
             Update,
             (despawn_expired_enemies, despawn_dead_enemies).in_set(GameSchedule::FrameEnd),
         );
+        app.add_systems(Update, draw_range_gizmos);
 
+        app.add_observer(assign_enemy_destination);
         app.add_observer(handle_divinity_increase);
     }
 }
@@ -128,15 +133,91 @@ fn despawn_dead_enemies(
     }
 }
 
-fn move_enemy(time: Res<Time>, mut query: Query<(&mut Transform, &MovementSpeed), With<Enemy>>) {
-    for (mut transform, speed) in query.iter_mut() {
-        if transform.translation.y > -250.0 {
+/// Assigns a random target destination when an Enemy is spawned.
+/// Triggered when the Enemy component is inserted.
+fn assign_enemy_destination(
+    trigger: On<Add, EnemyRange>,
+    mut commands: Commands,
+    query: Query<&EnemyRange>,
+) {
+    info!("observer to add TargetDestination ran!");
+    let entity = trigger.entity;
+    let range = match query.get(entity) {
+        Ok(range) => range,
+        Err(err) => {
+            error!(%err, "could not apply TargetDestination");
+            return;
+        }
+    };
+
+    let mut rng = rand::rng();
+    let (min_y, max_y) = range.y_bounds();
+    // Generate random x within game bounds (-200 to 200) and y within range section
+    let x = rng.random_range(-200.0..200.0);
+    let y = rng.random_range(min_y..max_y);
+    commands
+        .entity(entity)
+        .insert(TargetDestination(Vec2::new(x, y)));
+}
+
+/// Moves enemies towards their target destination.
+fn move_enemy(
+    time: Res<Time>,
+    mut query: Query<(&mut Transform, &MovementSpeed, Option<&TargetDestination>), With<Enemy>>,
+) {
+    for (mut transform, speed, target_dest) in query.iter_mut() {
+        // Use target destination if available, otherwise fallback to default y=-250
+        let target_y = target_dest.map(|t| t.0.y).unwrap_or(-250.0);
+        let target_x = target_dest
+            .map(|t| t.0.x)
+            .unwrap_or(transform.translation.x);
+
+        // Move towards target y
+        if transform.translation.y > target_y {
             transform.translation.y -= speed.0 * time.delta_secs();
-            if transform.translation.y < -250.0 {
-                transform.translation.y = -250.0;
+            if transform.translation.y < target_y {
+                transform.translation.y = target_y;
+            }
+        }
+
+        // Move towards target x
+        let x_diff = target_x - transform.translation.x;
+        if x_diff.abs() > 1.0 {
+            let x_speed = speed.0 * 0.5; // Move slower horizontally
+            let x_dir = x_diff.signum();
+            transform.translation.x += x_dir * x_speed * time.delta_secs();
+            // Clamp to target if we overshoot
+            if (target_x - transform.translation.x).signum() != x_dir {
+                transform.translation.x = target_x;
             }
         }
     }
+}
+
+/// Draws debug gizmo lines at each range section boundary.
+fn draw_range_gizmos(mut gizmos: Gizmos) {
+    let line_half_width = 250.0;
+
+    // LongRange / MediumRange boundary (y = 100) - Yellow
+    gizmos.line_2d(
+        Vec2::new(-line_half_width, EnemyRange::LongRange.y_bounds().0),
+        Vec2::new(line_half_width, EnemyRange::LongRange.y_bounds().0),
+        Color::srgb(1.0, 1.0, 0.0),
+    );
+
+    // MediumRange / CloseRange boundary (y = -100) - Orange
+    gizmos.line_2d(
+        Vec2::new(-line_half_width, EnemyRange::MediumRange.y_bounds().0),
+        Vec2::new(line_half_width, EnemyRange::MediumRange.y_bounds().0),
+        Color::srgb(1.0, 0.5, 0.0),
+    );
+
+    // Bottom of CloseRange / Village line (y = -300) - Red
+    gizmos.line_2d(
+        Vec2::new(-line_half_width, EnemyRange::CloseRange.y_bounds().0),
+        Vec2::new(line_half_width, EnemyRange::CloseRange.y_bounds().0),
+        Color::srgb(1.0, 0.0, 0.0),
+    );
 }
 
 fn handle_divinity_increase(

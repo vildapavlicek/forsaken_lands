@@ -36,3 +36,34 @@ pub struct Reward {
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component, Default)]
 pub struct MonsterId(pub String);
+
+/// Defines which distance range section an enemy belongs to.
+/// The game area spans from Portal (y=300) to Village (y=-300).
+#[derive(Component, Reflect, Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[reflect(Component, Default)]
+pub enum EnemyRange {
+    /// Near the village (y: -250 to -150)
+    #[default]
+    CloseRange,
+    /// Middle ground (y: -150 to 50)
+    MediumRange,
+    /// Near the portal (y: 50 to 275)
+    LongRange,
+}
+
+impl EnemyRange {
+    /// Returns the (min_y, max_y) bounds for this range section.
+    pub fn y_bounds(&self) -> (f32, f32) {
+        match self {
+            EnemyRange::CloseRange => (-250.0, -150.0),
+            EnemyRange::MediumRange => (-150.0, 50.0),
+            EnemyRange::LongRange => (50.0, 275.0),
+        }
+    }
+}
+
+/// The target destination an enemy is moving towards.
+/// Generated randomly within the enemy's range section on spawn.
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Component, Default)]
+pub struct TargetDestination(pub Vec2);
