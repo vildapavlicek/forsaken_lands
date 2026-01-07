@@ -5,7 +5,7 @@ use {
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon,
     },
-    hero_events::{AttackIntent, ProjectileHit},
+    hero_events::{AttackIntent, MeleeHit, ProjectileHit},
     states::GameState,
     system_schedule::GameSchedule,
     village_components::Village,
@@ -42,6 +42,7 @@ impl Plugin for HeroesPlugin {
         app.add_observer(hero_projectile_spawn_system);
         app.add_observer(hero_melee_attack_system);
         app.add_observer(apply_damage_system);
+        app.add_observer(apply_melee_damage_observer);
     }
 }
 
@@ -145,7 +146,11 @@ fn hero_melee_attack_system(
         };
 
         // Determine attack direction (Target - Village)
-        let attack_direction = (target_transform.translation - village_transform.translation).truncate().normalize();
+        let attack_direction = (target_transform.translation - village_transform.translation)
+            .truncate()
+            .normalize();
+
+        let mut targets = Vec::new();
 
         for (enemy_entity, enemy_transform) in enemies.iter() {
             let to_enemy = enemy_transform.translation - village_transform.translation;
@@ -156,16 +161,19 @@ fn hero_melee_attack_system(
                 // Check 2: Angle within MeleeArc
                 // angle_between returns value in [0, PI], so we just check if it's <= half the width
                 let angle = attack_direction.angle_between(to_enemy.truncate());
-                
+
                 if angle <= arc.width / 2.0 {
-                    // Apply damage immediately
-                     commands.trigger(ProjectileHit {
-                        projectile: intent.attacker, // Using attacker entity as projectile source equivalent
-                        target: enemy_entity,
-                        damage: damage.0,
-                    });
+                    targets.push(enemy_entity);
                 }
             }
+        }
+
+        if !targets.is_empty() {
+             commands.trigger(MeleeHit {
+                attacker: intent.attacker,
+                targets,
+                damage: damage.0,
+            });
         }
     }
 }
@@ -220,5 +228,21 @@ fn apply_damage_system(trigger: On<ProjectileHit>, mut enemies: Query<&mut Healt
             "Projectile hit enemy {:?} for {} damage. Health: {}/{}",
             hit.target, hit.damage, health.current, health.max
         );
+    }
+}
+
+fn apply_melee_damage_observer(
+    trigger: On<MeleeHit>,
+    mut enemies: Query<&mut Health, With<Enemy>>,
+) {
+    let hit = trigger.event();
+    for &target in &hit.targets {
+        if let Ok(mut health) = enemies.get_mut(target) {
+            health.current -= hit.damage;
+            info!(
+                "Melee hit enemy {:?} for {} damage. Health: {}/{}",
+                target, hit.damage, health.current, health.max
+            );
+        }
     }
 }

@@ -6,6 +6,7 @@ impl Plugin for HeroEventsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<AttackIntent>()
             .register_type::<ProjectileHit>()
+            .register_type::<MeleeHit>()
             .register_type::<EnemyKilled>();
     }
 }
@@ -54,6 +55,24 @@ impl Default for EnemyKilled {
     fn default() -> Self {
         Self {
             entity: Entity::PLACEHOLDER,
+        }
+    }
+}
+
+#[derive(Event, Reflect)]
+#[reflect(Default)]
+pub struct MeleeHit {
+    pub attacker: Entity,
+    pub targets: Vec<Entity>,
+    pub damage: f32,
+}
+
+impl Default for MeleeHit {
+    fn default() -> Self {
+        Self {
+            attacker: Entity::PLACEHOLDER,
+            targets: Vec::new(),
+            damage: 0.0,
         }
     }
 }
