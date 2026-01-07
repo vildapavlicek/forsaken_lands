@@ -1,5 +1,5 @@
 # Game idea
-Village in forsaken world that has become barren and unable to sustain life get their last prayer answered by nameless god which creates (temporary) portal from which enemies pour out. Killing enemies enables looting resources from the dead which brings new opportunities.
+Village in forsaken world that has become barren and unable to sustain life get their last prayer answered by nameless god which creates portal spawning enemies. Killing enemies enables looting resources from the dead which brings new opportunities.
 
 # Core loop
 Killing enemies spawned by the portal and looting them (and butchering) for resources.
