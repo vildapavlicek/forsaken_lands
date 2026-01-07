@@ -129,7 +129,7 @@ fn hero_projectile_spawn_system(
 fn hero_melee_attack_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<(&Damage, &AttackRange, &MeleeArc), (With<Weapon>, With<MeleeWeapon>)>,
+    weapons: Query<(&Damage, &AttackRange, &MeleeArc), (With<MeleeWeapon>, Without<RangedWeapon>)>,
     villages: Query<&Transform, With<Village>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
 ) {
@@ -150,31 +150,36 @@ fn hero_melee_attack_system(
             .truncate()
             .normalize();
 
-        let mut targets = Vec::new();
+        let targets = enemies
+            .iter()
+            .filter_map(|(enemy_entity, enemy_transform)| {
+                let to_enemy = enemy_transform.translation - village_transform.translation;
+                let distance = to_enemy.length();
 
-        for (enemy_entity, enemy_transform) in enemies.iter() {
-            let to_enemy = enemy_transform.translation - village_transform.translation;
-            let distance = to_enemy.length();
+                if distance > range.0 {
+                    return None;
+                };
 
-            // Check 1: Distance within AttackRange
-            if distance <= range.0 {
                 // Check 2: Angle within MeleeArc
                 // angle_between returns value in [0, PI], so we just check if it's <= half the width
-                let angle = attack_direction.angle_between(to_enemy.truncate());
-
-                if angle <= arc.width / 2.0 {
-                    targets.push(enemy_entity);
+                let angle = attack_direction.angle_to(to_enemy.truncate());
+                if angle > arc.width / 2.0 {
+                    return None;
                 }
-            }
+
+                Some(enemy_entity)
+            })
+            .collect::<Vec<Entity>>();
+
+        if targets.is_empty() {
+            return;
         }
 
-        if !targets.is_empty() {
-             commands.trigger(MeleeHit {
-                attacker: intent.attacker,
-                targets,
-                damage: damage.0,
-            });
-        }
+        commands.trigger(MeleeHit {
+            attacker: intent.attacker,
+            targets,
+            damage: damage.0,
+        });
     }
 }
 
