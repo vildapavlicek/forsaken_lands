@@ -2796,6 +2796,7 @@ dependencies = [
  "enemy_components",
  "hero_components",
  "hero_events",
+ "shared_components",
  "states",
  "system_schedule",
  "village_components",

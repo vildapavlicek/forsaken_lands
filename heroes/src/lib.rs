@@ -6,6 +6,7 @@ use {
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon,
     },
     hero_events::{AttackIntent, MeleeHit, ProjectileHit},
+    shared_components::HitIndicator,
     states::GameState,
     system_schedule::GameSchedule,
     village_components::Village,
@@ -35,6 +36,7 @@ impl Plugin for HeroesPlugin {
                 (projectile_movement_system, projectile_collision_system)
                     .in_set(GameSchedule::PerformAction)
                     .chain(),
+                hit_indicator_system.run_if(in_state(GameState::Running)),
             )
                 .run_if(in_state(GameState::Running)),
         );
@@ -43,6 +45,7 @@ impl Plugin for HeroesPlugin {
         app.add_observer(hero_melee_attack_system);
         app.add_observer(apply_damage_system);
         app.add_observer(apply_melee_damage_observer);
+        app.add_observer(apply_hit_indicator_observer);
     }
 }
 
@@ -248,6 +251,45 @@ fn apply_melee_damage_observer(
                 "Melee hit enemy {:?} for {} damage. Health: {}/{}",
                 target, hit.damage, health.current, health.max
             );
+        }
+    }
+}
+
+fn apply_hit_indicator_observer(
+    trigger: On<MeleeHit>,
+    mut commands: Commands,
+    query: Query<&Sprite, (With<Enemy>, Without<HitIndicator>, With<Sprite>)>,
+) {
+    let hit = trigger.event();
+    commands.insert_batch(
+        hit.targets
+            .iter()
+            .filter_map(|target| {
+                let target = *target;
+
+                let Ok(sprite) = query.get(target) else {
+                    return None;
+                };
+
+                Some((target, HitIndicator::new(sprite.color)))
+            })
+            .collect::<Vec<_>>(),
+    );
+}
+
+fn hit_indicator_system(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut HitIndicator, &mut Sprite)>,
+) {
+    for (entity, mut indicator, mut sprite) in query.iter_mut() {
+        if indicator.timer.tick(time.delta()).just_finished() {
+            std::mem::swap(&mut sprite.color, &mut indicator.saved_color);
+            indicator.blink_count -= 1;
+
+            if indicator.blink_count == 0 {
+                commands.entity(entity).remove::<HitIndicator>();
+            }
         }
     }
 }

@@ -7,6 +7,28 @@ impl Plugin for SharedComponentsPlugin {
         app.register_type::<AttackBonus>();
         app.register_type::<BonusValue>();
         app.register_type::<DisplayName>();
+        app.register_type::<HitIndicator>();
+    }
+}
+
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component, Default)]
+pub struct HitIndicator {
+    /// Timer for the duration of each blink state (white vs original).
+    pub timer: Timer,
+    /// The color currently *not* on the sprite (swapped out).
+    pub saved_color: Color,
+    /// Number of times left to swap back.
+    pub blink_count: u32,
+}
+
+impl HitIndicator {
+    pub fn new(saved_color: Color) -> Self {
+        Self {
+            timer: Timer::from_seconds(0.1, TimerMode::Repeating),
+            saved_color: bevy::color::palettes::basic::WHITE.into(),
+            blink_count: 4,
+        }
     }
 }
 
