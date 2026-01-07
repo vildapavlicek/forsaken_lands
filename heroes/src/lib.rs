@@ -97,7 +97,7 @@ fn hero_attack_intent_system(
 fn hero_projectile_spawn_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<&Damage, (With<Weapon>, With<RangedWeapon>, Without<MeleeWeapon>)>,
+    weapons: Query<&Damage, (With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
 ) {
     let Ok(village_transform) = villages.single() else {
