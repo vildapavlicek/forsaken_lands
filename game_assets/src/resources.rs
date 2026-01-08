@@ -5,3 +5,7 @@ use bevy::{asset::LoadedFolder, prelude::*};
 
 #[derive(Debug, Resource)]
 pub(super) struct EnemyPrefabsFolderHandle(pub Handle<LoadedFolder>);
+
+#[derive(Debug, Resource)]
+pub(super) struct UnlocksFolderHandle(pub Handle<LoadedFolder>);
+

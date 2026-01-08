@@ -1,7 +1,7 @@
 mod resources;
 
 use {
-    crate::resources::EnemyPrefabsFolderHandle,
+    crate::resources::{EnemyPrefabsFolderHandle, UnlocksFolderHandle},
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     portal_assets::SpawnTable,
     states::GameState,
@@ -13,7 +13,7 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameAssets>()
-            .add_systems(Startup, (start_loading, load_enemy_prefabs))
+            .add_systems(Startup, (start_loading, load_enemy_prefabs, load_unlocks_assets))
             .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)))
             .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
             .add_systems(OnExit(GameState::Loading), cleanup_loading_ui);
@@ -46,11 +46,17 @@ fn load_enemy_prefabs(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(EnemyPrefabsFolderHandle(handle));
 }
 
+fn load_unlocks_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("unlocks");
+    cmd.insert_resource(UnlocksFolderHandle(handle));
+}
+
 fn check_assets(
     mut next_state: ResMut<NextState<GameState>>,
     mut game_assets: ResMut<GameAssets>,
     asset_server: Res<AssetServer>,
     enemy_prefabs: Res<EnemyPrefabsFolderHandle>,
+    unlocks: Res<UnlocksFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
 ) {
     let spawn_tables_loaded = game_assets
@@ -63,6 +69,7 @@ fn check_assets(
         && asset_server.is_loaded_with_dependencies(&game_assets.recipes_library_scene)
         && spawn_tables_loaded
         && asset_server.is_loaded_with_dependencies(enemy_prefabs.0.id())
+        && asset_server.is_loaded_with_dependencies(unlocks.0.id())
     {
         info!("assets loaded");
 

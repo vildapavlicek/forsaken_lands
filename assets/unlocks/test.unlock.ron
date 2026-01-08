@@ -1,0 +1,14 @@
+(
+    id: "test_unlock_notif",
+    display_name: Some("Testing Unlock Notif"),
+    reward_id: "crafting_recipe_bone_sword",
+    condition: And([ // <--- Changed: Removed opening '('
+        Stat(
+            StatCheck(
+                stat_id: "stat:goblin_kills",
+                value: 2.0,
+                op: Ge,
+            )
+        ),
+    ]), // <--- Changed: Removed closing ')'
+)

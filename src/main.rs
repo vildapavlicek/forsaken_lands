@@ -8,7 +8,7 @@ fn main() {
         .add_plugins(
             DefaultPlugins.set(LogPlugin {
                 filter:
-                    "error,game_assets=debug,portals=trace,village=debug,wallet=debug,heroes=debug"
+                    "error,game_assets=debug,portals=trace,village=debug,wallet=debug,heroes=debug,unlocks=trace"
                         .into(),
                 level: bevy::log::Level::TRACE,
                 ..Default::default()

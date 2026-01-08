@@ -161,7 +161,9 @@ pub fn on_enemy_killed_stat_update(
 
     // Emit stat change to topic entity for this monster's kills
     let stat_key = format!("stat:{}_kills", monster_id.0);
+    debug!(%stat_key, ?monster_id, %kill_count, "looking for a topic for enemy kill");
     if let Some(&topic_entity) = topic_map.topics.get(&stat_key) {
+        debug!(%stat_key, "found topic");
         commands.trigger(StatChangedEvent {
             entity: topic_entity,
             stat_id: format!("{}_kills", monster_id.0),
@@ -171,11 +173,7 @@ pub fn on_enemy_killed_stat_update(
 }
 
 /// System that checks for Wallet changes and emits resource change signals.
-pub fn check_wallet_changes(
-    wallet: Res<Wallet>,
-    topic_map: Res<TopicMap>,
-    mut commands: Commands,
-) {
+pub fn check_wallet_changes(wallet: Res<Wallet>, topic_map: Res<TopicMap>, mut commands: Commands) {
     // Only run if wallet changed
     if !wallet.is_changed() {
         return;

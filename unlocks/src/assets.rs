@@ -16,7 +16,7 @@ pub struct UnlockDefinition {
 
 /// A node in the logical condition tree.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(tag = "type", content = "data")]
+// #[serde(tag = "type", content = "data")]
 pub enum ConditionNode {
     // --- Logic Gates ---
     /// Requires ALL sub-conditions to be true.
