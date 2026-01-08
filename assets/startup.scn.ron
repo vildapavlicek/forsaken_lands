@@ -61,11 +61,12 @@
     4: (
       components: {
         "hero_components::Weapon": (),
-        "hero_components::RangedWeapon": (),
+        "hero_components::MeleeWeapon": (),
         "bevy_ecs::hierarchy::ChildOf": (3),
         "shared_components::DisplayName": ("Legendary throwing rock"),
         "hero_components::Damage": (0.5),
         "hero_components::AttackRange": (150.0),
+        "hero_components::MeleeArc": (width: 1.047),
         "hero_components::AttackSpeed": (
           timer:
              (

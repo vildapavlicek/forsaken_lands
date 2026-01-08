@@ -1,0 +1,32 @@
+(
+    id: "recipe_bone_sword",
+    display_name: Some("Bone Sword Recipe"),
+    reward_id: "crafting_recipe_bone_sword",
+    condition: (
+        type: "And",
+        data: [
+            // Must have killed 10 goblins
+            (
+                type: "Stat",
+                data: (
+                    stat_id: "goblin_kills",
+                    value: 10.0,
+                    op: Ge,
+                ),
+            ),
+            // Must have bone crafting researched
+            (
+                type: "Unlock",
+                data: "bone_crafting",
+            ),
+            // Must have 5 bones in inventory
+            (
+                type: "Resource",
+                data: (
+                    resource_id: "bones",
+                    amount: 5,
+                ),
+            ),
+        ],
+    ),
+)

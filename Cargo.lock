@@ -1860,6 +1860,7 @@ dependencies = [
  "shared_components",
  "states",
  "system_schedule",
+ "unlocks",
  "village",
  "village_components",
  "village_ui",
@@ -4842,6 +4843,20 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "unlocks"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "enemy_components",
+ "hero_events",
+ "research",
+ "serde",
+ "village_components",
+ "wallet",
+]
 
 [[package]]
 name = "uuid"

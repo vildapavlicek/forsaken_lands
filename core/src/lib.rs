@@ -8,7 +8,7 @@ use {
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState,
     system_schedule::GameSchedule::*, village::VillagePlugin, village_ui::VillageUiPlugin,
-    wallet::WalletPlugin, widgets::WidgetsPlugin,
+    wallet::WalletPlugin, widgets::WidgetsPlugin, unlocks::UnlocksPlugin,
 };
 
 mod systems;
@@ -40,6 +40,7 @@ impl Plugin for CorePlugin {
                 ResearchUiPlugin,
                 ResourcesUiPlugin,
                 SharedComponentsPlugin,
+                UnlocksPlugin,
                 VillagePlugin,
                 VillageUiPlugin,
                 WalletPlugin,

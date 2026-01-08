@@ -1,0 +1,48 @@
+use bevy::prelude::*;
+
+/// Tag for the root entity of an unlock definition.
+#[derive(Component)]
+pub struct UnlockRoot {
+    pub id: String,
+    pub reward_id: String,
+}
+
+/// Represents a boolean logic gate in the ECS world.
+#[derive(Component)]
+pub struct LogicGate {
+    pub operator: LogicOperator,
+    /// How many positive signals needed (AND = children count, OR = 1).
+    pub required_signals: usize,
+    /// Current number of active positive signals from children.
+    pub current_signals: usize,
+    /// Previous state to detect transitions.
+    pub was_active: bool,
+    /// The parent entity to notify when this gate changes state.
+    pub parent: Entity,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogicOperator {
+    And,
+    Or,
+    Not, // Special: inverts single child
+}
+
+/// Represents a Leaf Node (Sensor).
+#[derive(Component)]
+pub struct ConditionSensor {
+    pub parent: Entity,
+    pub is_met: bool,
+}
+
+/// Marker for topic entities (event channels).
+#[derive(Component)]
+pub struct TopicEntity {
+    pub key: String,
+}
+
+/// Tracks which unlock definitions have been compiled.
+#[derive(Component)]
+pub struct CompiledUnlock {
+    pub definition_id: String,
+}

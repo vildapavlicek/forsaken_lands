@@ -29,3 +29,4 @@ village_components.workspace = true
 village_ui.workspace = true
 wallet.workspace = true
 widgets.workspace = true
+unlocks.workspace = true
