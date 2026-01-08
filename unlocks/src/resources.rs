@@ -15,9 +15,12 @@ impl TopicMap {
             entity
         } else {
             let entity = commands
-                .spawn(TopicEntity {
-                    key: key.to_string(),
-                })
+                .spawn((
+                    TopicEntity {
+                        key: key.to_string(),
+                    },
+                    crate::components::TopicSubscribers::default(),
+                ))
                 .id();
             self.topics.insert(key.to_string(), entity);
             entity

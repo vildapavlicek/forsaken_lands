@@ -89,7 +89,7 @@ fn enemy_spawn_system(
                 let mut rng = rand::rng();
                 let selected_entry = valid_entries[dist.sample(&mut rng)];
 
-                info!("Spawning monster: {}", selected_entry.monster_file);
+                debug!("Spawning monster: {}", selected_entry.monster_file);
 
                 let Some(prefab_handle) = game_assets
                     .enemies

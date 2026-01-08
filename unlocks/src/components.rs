@@ -41,6 +41,21 @@ pub struct TopicEntity {
     pub key: String,
 }
 
+#[derive(Component, Default, Debug, Reflect)]
+#[reflect(Component)]
+pub struct TopicSubscribers {
+    pub sensors: Vec<Entity>,
+}
+
+#[derive(Component)]
+pub struct StatSensor(pub crate::assets::StatCheck);
+
+#[derive(Component)]
+pub struct ResourceSensor(pub crate::assets::ResourceCheck);
+
+#[derive(Component)]
+pub struct UnlockSensor(pub String);
+
 /// Tracks which unlock definitions have been compiled.
 #[derive(Component)]
 pub struct CompiledUnlock {

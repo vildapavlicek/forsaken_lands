@@ -2,6 +2,7 @@
 
 use crate::{assets::*, components::*, events::*, resources::*};
 use bevy::prelude::*;
+
 use research::ResearchState;
 use village_components::EnemyEncyclopedia;
 use wallet::Wallet;
@@ -22,6 +23,19 @@ pub struct CompilerContext<'a> {
     pub wallet: &'a Wallet,
     pub encyclopedia: Option<&'a EnemyEncyclopedia>,
     pub research_state: &'a ResearchState,
+}
+
+pub struct AddTopicSubscriber {
+    pub topic: Entity,
+    pub sensor: Entity,
+}
+
+impl Command for AddTopicSubscriber {
+    fn apply(self, world: &mut World) {
+        if let Some(mut sub) = world.get_mut::<TopicSubscribers>(self.topic) {
+            sub.sensors.push(self.sensor);
+        }
+    }
 }
 
 /// Recursively builds the condition node tree.
@@ -81,7 +95,7 @@ pub fn build_condition_node(
         }
         ConditionNode::Stat(check) => {
             let topic_key = format!("stat:{}", check.stat_id);
-            let _topic_entity = topic_map.get_or_create(commands, &topic_key);
+            let topic_entity = topic_map.get_or_create(commands, &topic_key);
 
             // Hydrate from encyclopedia if available
             let current_val = ctx
@@ -92,11 +106,19 @@ pub fn build_condition_node(
             let initially_met = compare_op(current_val, check.value, check.op);
 
             let sensor = commands
-                .spawn(ConditionSensor {
-                    parent,
-                    is_met: initially_met,
-                })
+                .spawn((
+                    ConditionSensor {
+                        parent,
+                        is_met: initially_met,
+                    },
+                    StatSensor(check.clone()),
+                ))
                 .id();
+
+            commands.queue(AddTopicSubscriber {
+                topic: topic_entity,
+                sensor,
+            });
 
             if initially_met {
                 commands.trigger(LogicSignalEvent {
@@ -109,7 +131,7 @@ pub fn build_condition_node(
         }
         ConditionNode::Resource(check) => {
             let topic_key = format!("resource:{}", check.resource_id);
-            let _topic_entity = topic_map.get_or_create(commands, &topic_key);
+            let topic_entity = topic_map.get_or_create(commands, &topic_key);
 
             let current_amount = ctx
                 .wallet
@@ -120,11 +142,19 @@ pub fn build_condition_node(
             let initially_met = current_amount >= check.amount;
 
             let sensor = commands
-                .spawn(ConditionSensor {
-                    parent,
-                    is_met: initially_met,
-                })
+                .spawn((
+                    ConditionSensor {
+                        parent,
+                        is_met: initially_met,
+                    },
+                    ResourceSensor(check.clone()),
+                ))
                 .id();
+
+            commands.queue(AddTopicSubscriber {
+                topic: topic_entity,
+                sensor,
+            });
 
             if initially_met {
                 commands.trigger(LogicSignalEvent {
@@ -137,16 +167,24 @@ pub fn build_condition_node(
         }
         ConditionNode::Unlock(unlock_id) => {
             let topic_key = format!("unlock:{}", unlock_id);
-            let _topic_entity = topic_map.get_or_create(commands, &topic_key);
+            let topic_entity = topic_map.get_or_create(commands, &topic_key);
 
             let initially_met = ctx.research_state.is_researched(unlock_id);
 
             let sensor = commands
-                .spawn(ConditionSensor {
-                    parent,
-                    is_met: initially_met,
-                })
+                .spawn((
+                    ConditionSensor {
+                        parent,
+                        is_met: initially_met,
+                    },
+                    UnlockSensor(unlock_id.clone()),
+                ))
                 .id();
+
+            commands.queue(AddTopicSubscriber {
+                topic: topic_entity,
+                sensor,
+            });
 
             if initially_met {
                 commands.trigger(LogicSignalEvent {

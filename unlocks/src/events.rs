@@ -35,7 +35,7 @@ pub struct ResourceChangedEvent {
 }
 
 /// Triggered on a Topic Entity when an unlock is completed.
-#[derive(EntityEvent)]
+#[derive(Debug, EntityEvent)]
 pub struct UnlockCompletedEvent {
     /// The topic entity this event targets.
     pub entity: Entity,

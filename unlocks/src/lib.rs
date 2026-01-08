@@ -26,6 +26,7 @@ impl Plugin for UnlocksPlugin {
             .init_resource::<UnlockState>()
             // Registration
             .register_type::<UnlockState>()
+            .register_type::<TopicSubscribers>()
             // Systems for compilation and change detection
             .add_systems(
                 Update,
@@ -38,6 +39,10 @@ impl Plugin for UnlocksPlugin {
             .add_observer(propagate_logic_signal)
             .add_observer(handle_unlock_completion)
             .add_observer(on_enemy_killed_stat_update)
-            .add_observer(on_research_completed);
+            .add_observer(on_research_completed)
+            // Observers for sensor updates
+            .add_observer(on_stat_changed)
+            .add_observer(on_resource_changed)
+            .add_observer(on_unlock_completed_notification);
     }
 }

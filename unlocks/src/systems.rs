@@ -70,8 +70,10 @@ pub fn propagate_logic_signal(
     roots: Query<&UnlockRoot>,
     mut commands: Commands,
 ) {
-    let gate_entity = trigger.entity;
     let signal = trigger.event();
+    let gate_entity = signal.entity;
+
+    trace!(target = ?gate_entity, is_high = %signal.is_high, "reacting to logic signal event");
 
     // Check if this is a root first
     if let Ok(root) = roots.get(gate_entity) {
@@ -208,5 +210,111 @@ pub fn on_research_completed(
             entity: topic_entity,
             unlock_id: research_id.clone(),
         });
+    }
+}
+
+/// Observer that updates Stat sensors when a stat changes.
+pub fn on_stat_changed(
+    trigger: On<StatChangedEvent>,
+    subscribers: Query<&TopicSubscribers>,
+    mut sensors: Query<(&mut ConditionSensor, &StatSensor)>,
+    mut commands: Commands,
+) {
+    let event = trigger.event();
+    let topic_entity = event.entity;
+
+    if let Ok(subs) = subscribers.get(topic_entity) {
+        for &sensor_entity in &subs.sensors {
+            if let Ok((mut condition, stat_sensor)) = sensors.get_mut(sensor_entity) {
+                // Double check stat ID matches (should be guaranteed by topic wiring but good for safety)
+                if stat_sensor.0.stat_id != event.stat_id {
+                    continue;
+                }
+
+                let is_met = compare_op(event.new_value, stat_sensor.0.value, stat_sensor.0.op);
+
+                debug!(
+                    stat_id = %event.stat_id,
+                    new_value = %event.new_value,
+                    target_value = %stat_sensor.0.value,
+                    was_met = %condition.is_met,
+                    is_met = %is_met,
+                    "evaluating stat condition"
+                );
+
+                if condition.is_met != is_met {
+                    condition.is_met = is_met;
+                    debug!(parent = ?condition.parent, is_high = %is_met, "sending logic signal");
+                    commands.trigger(LogicSignalEvent {
+                        entity: condition.parent,
+                        is_high: is_met,
+                    });
+                }
+            }
+        }
+    }
+}
+
+/// Observer that updates Resource sensors when a resource changes.
+pub fn on_resource_changed(
+    trigger: On<ResourceChangedEvent>,
+    subscribers: Query<&TopicSubscribers>,
+    mut sensors: Query<(&mut ConditionSensor, &ResourceSensor)>,
+    mut commands: Commands,
+) {
+    let event = trigger.event();
+    let topic_entity = event.entity;
+
+    if let Ok(subs) = subscribers.get(topic_entity) {
+        for &sensor_entity in &subs.sensors {
+            if let Ok((mut condition, resource_sensor)) = sensors.get_mut(sensor_entity) {
+                if resource_sensor.0.resource_id != event.resource_id {
+                    continue;
+                }
+
+                let is_met = event.new_amount >= resource_sensor.0.amount;
+
+                if condition.is_met != is_met {
+                    condition.is_met = is_met;
+                    commands.trigger(LogicSignalEvent {
+                        entity: condition.parent,
+                        is_high: is_met,
+                    });
+                }
+            }
+        }
+    }
+}
+
+/// Observer that updates Unlock sensors when an unlock is completed.
+pub fn on_unlock_completed_notification(
+    trigger: On<UnlockCompletedEvent>,
+    subscribers: Query<&TopicSubscribers>,
+    mut sensors: Query<(&mut ConditionSensor, &UnlockSensor)>,
+    mut commands: Commands,
+) {
+    let event = trigger.event();
+    let topic_entity = event.entity;
+
+    info!(?event, "received unlock completed event");
+
+    if let Ok(subs) = subscribers.get(topic_entity) {
+        for &sensor_entity in &subs.sensors {
+            if let Ok((mut condition, unlock_sensor)) = sensors.get_mut(sensor_entity) {
+                if unlock_sensor.0 != event.unlock_id {
+                    continue;
+                }
+
+                let is_met = true; // UnlockCompleted means it is done.
+
+                if condition.is_met != is_met {
+                    condition.is_met = is_met;
+                    commands.trigger(LogicSignalEvent {
+                        entity: condition.parent,
+                        is_high: is_met,
+                    });
+                }
+            }
+        }
     }
 }

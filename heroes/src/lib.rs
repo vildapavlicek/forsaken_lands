@@ -232,7 +232,7 @@ fn apply_damage_system(trigger: On<ProjectileHit>, mut enemies: Query<&mut Healt
     let hit = trigger.event();
     if let Ok(mut health) = enemies.get_mut(hit.target) {
         health.current -= hit.damage;
-        info!(
+        trace!(
             "Projectile hit enemy {:?} for {} damage. Health: {}/{}",
             hit.target, hit.damage, health.current, health.max
         );
@@ -247,7 +247,7 @@ fn apply_melee_damage_observer(
     for &target in &hit.targets {
         if let Ok(mut health) = enemies.get_mut(target) {
             health.current -= hit.damage;
-            info!(
+            trace!(
                 "Melee hit enemy {:?} for {} damage. Health: {}/{}",
                 target, hit.damage, health.current, health.max
             );
