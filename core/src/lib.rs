@@ -9,6 +9,7 @@ use {
     shared_components::SharedComponentsPlugin, states::GameState,
     system_schedule::GameSchedule::*, village::VillagePlugin, village_ui::VillageUiPlugin,
     wallet::WalletPlugin, widgets::WidgetsPlugin, unlocks::UnlocksPlugin,
+    unlock_notification_ui::UnlockNotificationUiPlugin,
 };
 
 mod systems;
@@ -41,6 +42,7 @@ impl Plugin for CorePlugin {
                 ResourcesUiPlugin,
                 SharedComponentsPlugin,
                 UnlocksPlugin,
+                UnlockNotificationUiPlugin,
                 VillagePlugin,
                 VillageUiPlugin,
                 WalletPlugin,

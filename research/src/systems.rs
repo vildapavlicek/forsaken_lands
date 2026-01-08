@@ -1,5 +1,5 @@
 use {
-    crate::{ResearchLibrary, ResearchState, StartResearchRequest},
+    crate::{ResearchCompleted, ResearchLibrary, ResearchState, StartResearchRequest},
     bevy::prelude::*,
     wallet::Wallet,
 };
@@ -36,7 +36,11 @@ pub fn start_research(
     }
 }
 
-pub fn update_research_progress(time: Res<Time>, mut state: ResMut<ResearchState>) {
+pub fn update_research_progress(
+    time: Res<Time>,
+    mut state: ResMut<ResearchState>,
+    mut commands: Commands,
+) {
     let mut finished = Vec::new();
 
     for (id, timer) in state.in_progress.iter_mut() {
@@ -49,7 +53,10 @@ pub fn update_research_progress(time: Res<Time>, mut state: ResMut<ResearchState
     for id in finished {
         info!("Research complete: {}", id);
         state.in_progress.remove(&id);
-        state.completed.push(id);
+        state.completed.push(id.clone());
         // Optional: Send event `ResearchCompleted(id)` for UI popups
+        commands.trigger(ResearchCompleted {
+            research_id: id,
+        });
     }
 }
