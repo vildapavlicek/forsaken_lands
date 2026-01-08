@@ -53,6 +53,11 @@ impl ResearchState {
 }
 
 // Define an event for UI interactions
+#[derive(Event)]
+pub struct ResearchCompleted {
+    pub research_id: String,
+}
+
 #[derive(Message)]
 pub struct StartResearchRequest(pub String);
 
@@ -61,6 +66,7 @@ pub struct ResearchPlugin;
 impl Plugin for ResearchPlugin {
     fn build(&self, app: &mut App) {
         app.add_message::<StartResearchRequest>();
+
 
         app.register_type::<ResearchLibrary>()
             .register_type::<ResearchDefinition>()

@@ -194,25 +194,21 @@ pub fn check_wallet_changes(
     }
 }
 
-/// System that checks for research completion and emits unlock signals.
-pub fn check_research_changes(
-    research_state: Res<ResearchState>,
+/// Observer that handles research completion and emits unlock signals.
+pub fn on_research_completed(
+    trigger: On<research::ResearchCompleted>,
     topic_map: Res<TopicMap>,
     mut commands: Commands,
 ) {
-    // Only run if research state changed
-    if !research_state.is_changed() {
-        return;
-    }
+    let event = trigger.event();
+    let research_id = &event.research_id;
 
     // Emit unlock events for completed research
-    for research_id in research_state.completed.iter() {
-        let topic_key = format!("unlock:{}", research_id);
-        if let Some(&topic_entity) = topic_map.topics.get(&topic_key) {
-            commands.trigger(UnlockCompletedEvent {
-                entity: topic_entity,
-                unlock_id: research_id.clone(),
-            });
-        }
+    let topic_key = format!("unlock:{}", research_id);
+    if let Some(&topic_entity) = topic_map.topics.get(&topic_key) {
+        commands.trigger(UnlockCompletedEvent {
+            entity: topic_entity,
+            unlock_id: research_id.clone(),
+        });
     }
 }

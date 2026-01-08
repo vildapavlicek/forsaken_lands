@@ -32,12 +32,12 @@ impl Plugin for UnlocksPlugin {
                 (
                     compile_pending_unlocks,
                     check_wallet_changes,
-                    check_research_changes,
                 ),
             )
             // Observers for gate logic and event interception
             .add_observer(propagate_logic_signal)
             .add_observer(handle_unlock_completion)
-            .add_observer(on_enemy_killed_stat_update);
+            .add_observer(on_enemy_killed_stat_update)
+            .add_observer(on_research_completed);
     }
 }
