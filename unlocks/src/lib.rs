@@ -152,16 +152,13 @@
 //! - Unlock completion events
 
 mod assets;
-mod components;
 mod compiler;
-mod events;
-mod resources;
 mod systems;
 
 pub use assets::*;
-pub use components::*;
-pub use events::*;
-pub use resources::*;
+pub use unlocks_components::*;
+pub use unlocks_events::*;
+pub use unlocks_resources::*;
 
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;

@@ -1,4 +1,7 @@
-use crate::{assets::*, compiler::*, components::*, events::*, resources::*};
+use crate::{assets::*, compiler::*};
+use unlocks_components::*;
+use unlocks_events::*;
+use unlocks_resources::*;
 use bevy::prelude::*;
 use enemy_components::MonsterId;
 use hero_events::EnemyKilled;

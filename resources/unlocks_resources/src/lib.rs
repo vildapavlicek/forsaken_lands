@@ -1,6 +1,5 @@
 use bevy::{platform::collections::HashMap, prelude::*};
-
-use crate::TopicEntity;
+use unlocks_components::{TopicEntity, TopicSubscribers};
 
 /// Maps topic keys to their corresponding Topic Entities.
 #[derive(Resource, Default)]
@@ -19,7 +18,7 @@ impl TopicMap {
                     TopicEntity {
                         key: key.to_string(),
                     },
-                    crate::components::TopicSubscribers::default(),
+                    TopicSubscribers::default(),
                 ))
                 .id();
             self.topics.insert(key.to_string(), entity);

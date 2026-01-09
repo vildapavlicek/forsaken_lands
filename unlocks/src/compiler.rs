@@ -1,6 +1,9 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
-use crate::{assets::*, components::*, events::*, resources::*};
+use crate::assets::*;
+use unlocks_components::*;
+use unlocks_events::*;
+use unlocks_resources::*;
 use bevy::prelude::*;
 
 use research::ResearchState;

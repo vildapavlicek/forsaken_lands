@@ -1,0 +1,8 @@
+[package]
+name = "unlocks_resources"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+unlocks_components.workspace = true # For TopicSubscribers which is used in TopicMap

@@ -33,6 +33,9 @@ members = [
   "ui/unlock_notification_ui",
   "ui/village_ui",
   "ui/widgets",
+  "components/unlocks_components",
+  "events/unlocks_events",
+  "resources/unlocks_resources",
   "unlocks",
   "village",
   "wallet",
@@ -70,6 +73,9 @@ village_components = { path = "components/village_components" }
 village_ui = { path = "ui/village_ui" }
 unlock_notification_ui = { path = "ui/unlock_notification_ui" }
 unlocks = { path = "unlocks" }
+unlocks_components = { path = "components/unlocks_components" }
+unlocks_events = { path = "events/unlocks_events" }
+unlocks_resources = { path = "resources/unlocks_resources" }
 wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
 widgets = { path = "ui/widgets" }

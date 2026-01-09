@@ -35,26 +35,4 @@ pub enum ConditionNode {
     Unlock(String),
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
-pub enum ComparisonOp {
-    #[default]
-    Ge, // >=
-    Le, // <=
-    Eq, // ==
-    Gt, // >
-    Lt, // <
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct StatCheck {
-    pub stat_id: String,
-    pub value: f32,
-    #[serde(default)]
-    pub op: ComparisonOp,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ResourceCheck {
-    pub resource_id: String,
-    pub amount: u32,
-}
+pub use unlocks_components::{ComparisonOp, ResourceCheck, StatCheck};

@@ -4865,8 +4865,35 @@ dependencies = [
  "hero_events",
  "research",
  "serde",
+ "unlocks_components",
+ "unlocks_events",
+ "unlocks_resources",
  "village_components",
  "wallet",
+]
+
+[[package]]
+name = "unlocks_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "serde",
+]
+
+[[package]]
+name = "unlocks_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "unlocks_resources"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "unlocks_components",
 ]
 
 [[package]]

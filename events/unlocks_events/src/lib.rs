@@ -25,6 +25,7 @@ pub struct UnlockAchieved {
 #[derive(EntityEvent)]
 pub struct StatChangedEvent {
     /// The topic entity this event targets.
+    #[event_target]
     pub entity: Entity,
     pub stat_id: String,
     pub new_value: f32,
@@ -34,6 +35,7 @@ pub struct StatChangedEvent {
 #[derive(EntityEvent)]
 pub struct ResourceChangedEvent {
     /// The topic entity this event targets.
+    #[event_target]
     pub entity: Entity,
     pub resource_id: String,
     pub new_amount: u32,
@@ -43,6 +45,7 @@ pub struct ResourceChangedEvent {
 #[derive(Debug, EntityEvent)]
 pub struct UnlockTopicUpdated {
     /// The topic entity this event targets.
+    #[event_target]
     pub entity: Entity,
     pub unlock_id: String,
 }
