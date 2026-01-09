@@ -4,6 +4,7 @@ use {
         ResearchMap, ResearchNode, StartResearchRequest,
     },
     bevy::prelude::*,
+    unlocks_resources::UnlockState,
     wallet::Wallet,
 };
 
@@ -14,6 +15,7 @@ pub fn spawn_research_entities(
     mut research_map: ResMut<ResearchMap>,
     mut assets: ResMut<Assets<ResearchDefinition>>,
     mut events: MessageReader<AssetEvent<ResearchDefinition>>,
+    unlock_state: Res<UnlockState>,
 ) {
     // Collect added asset IDs first to avoid borrow conflicts
     let added_ids: Vec<_> = events
@@ -46,19 +48,48 @@ pub fn spawn_research_entities(
             continue;
         };
 
-        let entity = commands
-            .spawn((
-                ResearchNode {
-                    id: def_id.clone(),
-                    handle,
-                },
-                Locked,
-            ))
-            .id();
+        // Check if the unlock for this research has already been achieved
+        // Unlocks use reward_id format: "research_{id}"
+        let reward_id = format!("research_{}", def_id);
+        let already_unlocked = unlock_state
+            .completed
+            .iter()
+            .any(|unlock_id| {
+                // Check if any completed unlock has a matching reward_id
+                // The unlock_id is the unlock's id, but we need to check reward_id
+                // Since UnlockState stores unlock IDs, we need to match the pattern
+                unlock_id.ends_with(&format!("{}_unlock", def_id))
+                    || unlock_id.starts_with(&format!("research_{}", def_id))
+            });
+
+        let entity = if already_unlocked {
+            debug!("Research '{}' unlock already achieved, spawning as Available", def_id);
+            commands
+                .spawn((
+                    ResearchNode {
+                        id: def_id.clone(),
+                        handle,
+                    },
+                    Available,
+                ))
+                .id()
+        } else {
+            commands
+                .spawn((
+                    ResearchNode {
+                        id: def_id.clone(),
+                        handle,
+                    },
+                    Locked,
+                ))
+                .id()
+        };
+        
         research_map.entities.insert(def_id.clone(), entity);
         debug!("Spawned research entity: {} -> {:?}", def_id, entity);
     }
 }
+
 
 /// Listens for UnlockAchieved events with research_ prefix
 pub fn on_unlock_achieved(
