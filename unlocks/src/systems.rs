@@ -37,7 +37,7 @@ pub fn compile_pending_unlocks(
         .filter(|def| !unlock_state.is_unlocked(&def.id));
 
     for definition in pending_definitions {
-        info!(unlock_id = %definition.id, "Compiling unlock definition");
+        debug!(unlock_id = %definition.id, "Compiling unlock definition");
 
         // Spawn root entity
         let root = commands
