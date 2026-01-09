@@ -1,6 +1,15 @@
+
 (
-    id: "research_invaders_unlock",
-    display_name: Some("Invaders Research"),
+    id: "invaders_research",
+    display_name: Some("Invaders.."),
     reward_id: "research_invaders",
-    condition: True,
+    condition: And([
+        Stat(
+            StatCheck(
+                stat_id: "goblin_kills",
+                value: 5.0,
+                op: Ge,
+            )
+        ),
+    ]),
 )
