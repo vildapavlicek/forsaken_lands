@@ -79,7 +79,7 @@ pub fn propagate_logic_signal(
     if let Ok(root) = roots.get(gate_entity) {
         if signal.is_high {
             info!(unlock_id = %root.id, "Unlock achieved!");
-            commands.trigger(UnlockEvent {
+            commands.trigger(UnlockAchieved {
                 unlock_id: root.id.clone(),
                 reward_id: root.reward_id.clone(),
             });
@@ -122,7 +122,7 @@ pub fn propagate_logic_signal(
 
 /// Observer for when an unlock is completed.
 pub fn handle_unlock_completion(
-    trigger: On<UnlockEvent>,
+    trigger: On<UnlockAchieved>,
     mut unlock_state: ResMut<UnlockState>,
     topic_map: Res<TopicMap>,
     mut commands: Commands,
@@ -138,7 +138,7 @@ pub fn handle_unlock_completion(
     // Notify topic for unlock dependencies
     let topic_key = format!("unlock:{}", event.unlock_id);
     if let Some(&topic_entity) = topic_map.topics.get(&topic_key) {
-        commands.trigger(UnlockCompletedEvent {
+        commands.trigger(UnlockTopicUpdated {
             entity: topic_entity,
             unlock_id: event.unlock_id.clone(),
         });
@@ -212,7 +212,7 @@ pub fn on_research_completed(
     // Emit unlock events for completed research
     let topic_key = format!("unlock:{}", research_id);
     if let Some(&topic_entity) = topic_map.topics.get(&topic_key) {
-        commands.trigger(UnlockCompletedEvent {
+        commands.trigger(UnlockTopicUpdated {
             entity: topic_entity,
             unlock_id: research_id.clone(),
         });
@@ -293,8 +293,8 @@ pub fn on_resource_changed(
 }
 
 /// Observer that updates Unlock sensors when an unlock is completed.
-pub fn on_unlock_completed_notification(
-    trigger: On<UnlockCompletedEvent>,
+pub fn on_unlock_topic_updated(
+    trigger: On<UnlockTopicUpdated>,
     subscribers: Query<&TopicSubscribers>,
     mut sensors: Query<(Entity, &mut ConditionSensor, &UnlockSensor)>,
     mut commands: Commands,

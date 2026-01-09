@@ -196,6 +196,6 @@ impl Plugin for UnlocksPlugin {
             // Observers for sensor updates
             .add_observer(on_stat_changed)
             .add_observer(on_resource_changed)
-            .add_observer(on_unlock_completed_notification);
+            .add_observer(on_unlock_topic_updated);
     }
 }

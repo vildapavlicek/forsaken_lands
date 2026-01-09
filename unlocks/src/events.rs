@@ -15,7 +15,7 @@ pub struct LogicSignalEvent {
 
 /// Fired globally when an unlock's conditions are fully met.
 #[derive(Event)]
-pub struct UnlockEvent {
+pub struct UnlockAchieved {
     pub unlock_id: String,
     pub reward_id: String,
 }
@@ -38,9 +38,9 @@ pub struct ResourceChangedEvent {
     pub new_amount: u32,
 }
 
-/// Triggered on a Topic Entity when an unlock is completed.
+/// Triggered on a Topic Entity when an unlock is completed used to update dependent nodes.
 #[derive(Debug, EntityEvent)]
-pub struct UnlockCompletedEvent {
+pub struct UnlockTopicUpdated {
     /// The topic entity this event targets.
     pub entity: Entity,
     pub unlock_id: String,
