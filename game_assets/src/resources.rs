@@ -9,3 +9,6 @@ pub(super) struct EnemyPrefabsFolderHandle(pub Handle<LoadedFolder>);
 #[derive(Debug, Resource)]
 pub(super) struct UnlocksFolderHandle(pub Handle<LoadedFolder>);
 
+#[derive(Debug, Resource)]
+pub(super) struct ResearchFolderHandle(pub Handle<LoadedFolder>);
+

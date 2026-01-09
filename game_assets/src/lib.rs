@@ -1,7 +1,7 @@
 mod resources;
 
 use {
-    crate::resources::{EnemyPrefabsFolderHandle, UnlocksFolderHandle},
+    crate::resources::{EnemyPrefabsFolderHandle, ResearchFolderHandle, UnlocksFolderHandle},
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     portal_assets::SpawnTable,
     states::GameState,
@@ -15,7 +15,7 @@ impl Plugin for AssetsPlugin {
         app.init_resource::<GameAssets>()
             .add_systems(
                 Startup,
-                (start_loading, load_enemy_prefabs, load_unlocks_assets),
+                (start_loading, load_enemy_prefabs, load_unlocks_assets, load_research_assets),
             )
             .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)))
             .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
@@ -54,12 +54,18 @@ fn load_unlocks_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(UnlocksFolderHandle(handle));
 }
 
+fn load_research_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("research");
+    cmd.insert_resource(ResearchFolderHandle(handle));
+}
+
 fn check_assets(
     mut next_state: ResMut<NextState<GameState>>,
     mut game_assets: ResMut<GameAssets>,
     asset_server: Res<AssetServer>,
     enemy_prefabs: Res<EnemyPrefabsFolderHandle>,
     unlocks: Res<UnlocksFolderHandle>,
+    research: Res<ResearchFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
 ) {
     let spawn_tables_loaded = game_assets
@@ -73,6 +79,7 @@ fn check_assets(
         && spawn_tables_loaded
         && asset_server.is_loaded_with_dependencies(enemy_prefabs.0.id())
         && asset_server.is_loaded_with_dependencies(unlocks.0.id())
+        && asset_server.is_loaded_with_dependencies(research.0.id())
     {
         info!("assets loaded");
 
