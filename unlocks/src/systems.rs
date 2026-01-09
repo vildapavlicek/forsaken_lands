@@ -44,6 +44,7 @@ pub fn compile_pending_unlocks(
             .spawn((
                 UnlockRoot {
                     id: definition.id.clone(),
+                    display_name: definition.display_name.clone(),
                     reward_id: definition.reward_id.clone(),
                 },
                 CompiledUnlock {
@@ -81,6 +82,7 @@ pub fn propagate_logic_signal(
             info!(unlock_id = %root.id, "Unlock achieved!");
             commands.trigger(UnlockAchieved {
                 unlock_id: root.id.clone(),
+                display_name: root.display_name.clone(),
                 reward_id: root.reward_id.clone(),
             });
         }

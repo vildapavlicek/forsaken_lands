@@ -30,14 +30,17 @@ struct UnlockNotification {
 /// Spawns a notification when an unlock is completed
 fn on_unlock_completed(trigger: On<UnlockAchieved>, mut commands: Commands) {
     let event = trigger.event();
-    let unlock_id = &event.unlock_id;
+    let text_content = if let Some(name) = &event.display_name {
+        format!("Unlocked: {}", name)
+    } else {
+        format!("Unlocked: {}", event.unlock_id)
+    };
 
     commands.spawn((
-        Text::new(format!("Unlocked: {}", unlock_id)),
+        Text::new(text_content),
         Node {
             position_type: PositionType::Absolute,
-            top: Val::Px(20.0),
-            left: Val::Percent(50.0),
+            left: Val::Percent(33.0),
             // Center the text horizontally
             margin: UiRect {
                 left: Val::Auto,

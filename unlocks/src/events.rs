@@ -17,6 +17,7 @@ pub struct LogicSignalEvent {
 #[derive(Event)]
 pub struct UnlockAchieved {
     pub unlock_id: String,
+    pub display_name: Option<String>,
     pub reward_id: String,
 }
 

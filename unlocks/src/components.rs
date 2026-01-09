@@ -4,6 +4,7 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct UnlockRoot {
     pub id: String,
+    pub display_name: Option<String>,
     pub reward_id: String,
 }
 
