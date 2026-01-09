@@ -3,7 +3,7 @@
 
 use bevy::prelude::*;
 use states::GameState;
-use unlocks::UnlockCompletedEvent;
+use unlocks::UnlockAchieved;
 use widgets::UiTheme;
 
 /// Duration in seconds to show the notification
@@ -28,7 +28,7 @@ struct UnlockNotification {
 }
 
 /// Spawns a notification when an unlock is completed
-fn on_unlock_completed(trigger: On<UnlockCompletedEvent>, mut commands: Commands) {
+fn on_unlock_completed(trigger: On<UnlockAchieved>, mut commands: Commands) {
     let event = trigger.event();
     let unlock_id = &event.unlock_id;
 
