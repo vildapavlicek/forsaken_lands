@@ -8,6 +8,7 @@ pub struct UnlockRoot {
 }
 
 /// Represents a boolean logic gate in the ECS world.
+/// Parent relationship is tracked via ChildOf component for event bubbling.
 #[derive(Component)]
 pub struct LogicGate {
     pub operator: LogicOperator,
@@ -17,8 +18,6 @@ pub struct LogicGate {
     pub current_signals: usize,
     /// Previous state to detect transitions.
     pub was_active: bool,
-    /// The parent entity to notify when this gate changes state.
-    pub parent: Entity,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,9 +28,9 @@ pub enum LogicOperator {
 }
 
 /// Represents a Leaf Node (Sensor).
+/// Parent relationship is tracked via ChildOf component for event bubbling.
 #[derive(Component)]
 pub struct ConditionSensor {
-    pub parent: Entity,
     pub is_met: bool,
 }
 

@@ -1,9 +1,13 @@
 use bevy::prelude::*;
 
-/// Signal propagated up the logic tree to a specific gate entity.
+/// Signal propagated up the logic tree via ChildOf hierarchy.
+/// Uses Bevy 0.17 event bubbling - triggers on sensor/gate entities and propagates to parents.
+/// The `entity` field is auto-filled when using `commands.entity(e).trigger()`.
 #[derive(EntityEvent)]
+#[entity_event(propagate)]
 pub struct LogicSignalEvent {
-    /// The target gate entity to receive this signal.
+    /// The entity this event targets (auto-filled by entity-targeted trigger).
+    #[event_target]
     pub entity: Entity,
     /// True if the signal is high (condition met), false if low.
     pub is_high: bool,

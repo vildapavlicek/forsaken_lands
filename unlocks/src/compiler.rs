@@ -49,13 +49,15 @@ pub fn build_condition_node(
     match node {
         ConditionNode::And(children) => {
             let gate = commands
-                .spawn(LogicGate {
-                    operator: LogicOperator::And,
-                    required_signals: children.len(),
-                    current_signals: 0,
-                    was_active: false,
-                    parent,
-                })
+                .spawn((
+                    ChildOf(parent),
+                    LogicGate {
+                        operator: LogicOperator::And,
+                        required_signals: children.len(),
+                        current_signals: 0,
+                        was_active: false,
+                    },
+                ))
                 .id();
 
             for child in children {
@@ -65,13 +67,15 @@ pub fn build_condition_node(
         }
         ConditionNode::Or(children) => {
             let gate = commands
-                .spawn(LogicGate {
-                    operator: LogicOperator::Or,
-                    required_signals: 1,
-                    current_signals: 0,
-                    was_active: false,
-                    parent,
-                })
+                .spawn((
+                    ChildOf(parent),
+                    LogicGate {
+                        operator: LogicOperator::Or,
+                        required_signals: 1,
+                        current_signals: 0,
+                        was_active: false,
+                    },
+                ))
                 .id();
 
             for child in children {
@@ -81,13 +85,15 @@ pub fn build_condition_node(
         }
         ConditionNode::Not(child) => {
             let gate = commands
-                .spawn(LogicGate {
-                    operator: LogicOperator::Not,
-                    required_signals: 1,
-                    current_signals: 0,
-                    was_active: true, // NOT starts as "true" when child is false
-                    parent,
-                })
+                .spawn((
+                    ChildOf(parent),
+                    LogicGate {
+                        operator: LogicOperator::Not,
+                        required_signals: 1,
+                        current_signals: 0,
+                        was_active: true, // NOT starts as "true" when child is false
+                    },
+                ))
                 .id();
 
             build_condition_node(commands, topic_map, child, gate, ctx);
@@ -107,8 +113,8 @@ pub fn build_condition_node(
 
             let sensor = commands
                 .spawn((
+                    ChildOf(parent),
                     ConditionSensor {
-                        parent,
                         is_met: initially_met,
                     },
                     StatSensor(check.clone()),
@@ -121,8 +127,8 @@ pub fn build_condition_node(
             });
 
             if initially_met {
-                commands.trigger(LogicSignalEvent {
-                    entity: parent,
+                commands.entity(sensor).trigger(|entity| LogicSignalEvent {
+                    entity,
                     is_high: true,
                 });
             }
@@ -143,8 +149,8 @@ pub fn build_condition_node(
 
             let sensor = commands
                 .spawn((
+                    ChildOf(parent),
                     ConditionSensor {
-                        parent,
                         is_met: initially_met,
                     },
                     ResourceSensor(check.clone()),
@@ -157,8 +163,8 @@ pub fn build_condition_node(
             });
 
             if initially_met {
-                commands.trigger(LogicSignalEvent {
-                    entity: parent,
+                commands.entity(sensor).trigger(|entity| LogicSignalEvent {
+                    entity,
                     is_high: true,
                 });
             }
@@ -173,8 +179,8 @@ pub fn build_condition_node(
 
             let sensor = commands
                 .spawn((
+                    ChildOf(parent),
                     ConditionSensor {
-                        parent,
                         is_met: initially_met,
                     },
                     UnlockSensor(unlock_id.clone()),
@@ -187,8 +193,8 @@ pub fn build_condition_node(
             });
 
             if initially_met {
-                commands.trigger(LogicSignalEvent {
-                    entity: parent,
+                commands.entity(sensor).trigger(|entity| LogicSignalEvent {
+                    entity,
                     is_high: true,
                 });
             }

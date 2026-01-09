@@ -63,9 +63,9 @@ pub fn compile_pending_unlocks(
     }
 }
 
-/// Observer for logic signal propagation.
+/// Observer for logic signal propagation via ChildOf hierarchy.
 pub fn propagate_logic_signal(
-    trigger: On<LogicSignalEvent>,
+    mut trigger: On<LogicSignalEvent>,
     mut gates: Query<(Entity, &mut LogicGate)>,
     roots: Query<&UnlockRoot>,
     mut commands: Commands,
@@ -84,6 +84,8 @@ pub fn propagate_logic_signal(
                 reward_id: root.reward_id.clone(),
             });
         }
+        // Stop bubbling at root - there's nothing above it
+        trigger.propagate(false);
         return;
     }
 
@@ -106,11 +108,15 @@ pub fn propagate_logic_signal(
         // Only propagate if state changed
         if is_active != gate.was_active {
             gate.was_active = is_active;
-            commands.trigger(LogicSignalEvent {
-                entity: gate.parent,
-                is_high: is_active,
-            });
+            // Continue bubbling to parent via ChildOf
+            trigger.propagate(true);
+        } else {
+            // State unchanged, stop bubbling
+            trigger.propagate(false);
         }
+    } else {
+        // This is a sensor or intermediate entity - continue bubbling to parent
+        trigger.propagate(true);
     }
 }
 
@@ -217,7 +223,7 @@ pub fn on_research_completed(
 pub fn on_stat_changed(
     trigger: On<StatChangedEvent>,
     subscribers: Query<&TopicSubscribers>,
-    mut sensors: Query<(&mut ConditionSensor, &StatSensor)>,
+    mut sensors: Query<(Entity, &mut ConditionSensor, &StatSensor)>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
@@ -225,7 +231,7 @@ pub fn on_stat_changed(
 
     if let Ok(subs) = subscribers.get(topic_entity) {
         for &sensor_entity in &subs.sensors {
-            if let Ok((mut condition, stat_sensor)) = sensors.get_mut(sensor_entity) {
+            if let Ok((entity, mut condition, stat_sensor)) = sensors.get_mut(sensor_entity) {
                 // Double check stat ID matches (should be guaranteed by topic wiring but good for safety)
                 if stat_sensor.0.stat_id != event.stat_id {
                     continue;
@@ -244,9 +250,9 @@ pub fn on_stat_changed(
 
                 if condition.is_met != is_met {
                     condition.is_met = is_met;
-                    debug!(parent = ?condition.parent, is_high = %is_met, "sending logic signal");
-                    commands.trigger(LogicSignalEvent {
-                        entity: condition.parent,
+                    debug!(sensor = ?entity, is_high = %is_met, "sending logic signal");
+                    commands.entity(entity).trigger(|e| LogicSignalEvent {
+                        entity: e,
                         is_high: is_met,
                     });
                 }
@@ -259,7 +265,7 @@ pub fn on_stat_changed(
 pub fn on_resource_changed(
     trigger: On<ResourceChangedEvent>,
     subscribers: Query<&TopicSubscribers>,
-    mut sensors: Query<(&mut ConditionSensor, &ResourceSensor)>,
+    mut sensors: Query<(Entity, &mut ConditionSensor, &ResourceSensor)>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
@@ -267,7 +273,7 @@ pub fn on_resource_changed(
 
     if let Ok(subs) = subscribers.get(topic_entity) {
         for &sensor_entity in &subs.sensors {
-            if let Ok((mut condition, resource_sensor)) = sensors.get_mut(sensor_entity) {
+            if let Ok((entity, mut condition, resource_sensor)) = sensors.get_mut(sensor_entity) {
                 if resource_sensor.0.resource_id != event.resource_id {
                     continue;
                 }
@@ -276,8 +282,8 @@ pub fn on_resource_changed(
 
                 if condition.is_met != is_met {
                     condition.is_met = is_met;
-                    commands.trigger(LogicSignalEvent {
-                        entity: condition.parent,
+                    commands.entity(entity).trigger(|e| LogicSignalEvent {
+                        entity: e,
                         is_high: is_met,
                     });
                 }
@@ -290,7 +296,7 @@ pub fn on_resource_changed(
 pub fn on_unlock_completed_notification(
     trigger: On<UnlockCompletedEvent>,
     subscribers: Query<&TopicSubscribers>,
-    mut sensors: Query<(&mut ConditionSensor, &UnlockSensor)>,
+    mut sensors: Query<(Entity, &mut ConditionSensor, &UnlockSensor)>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
@@ -300,7 +306,7 @@ pub fn on_unlock_completed_notification(
 
     if let Ok(subs) = subscribers.get(topic_entity) {
         for &sensor_entity in &subs.sensors {
-            if let Ok((mut condition, unlock_sensor)) = sensors.get_mut(sensor_entity) {
+            if let Ok((entity, mut condition, unlock_sensor)) = sensors.get_mut(sensor_entity) {
                 if unlock_sensor.0 != event.unlock_id {
                     continue;
                 }
@@ -309,8 +315,8 @@ pub fn on_unlock_completed_notification(
 
                 if condition.is_met != is_met {
                     condition.is_met = is_met;
-                    commands.trigger(LogicSignalEvent {
-                        entity: condition.parent,
+                    commands.entity(entity).trigger(|e| LogicSignalEvent {
+                        entity: e,
                         is_high: is_met,
                     });
                 }
