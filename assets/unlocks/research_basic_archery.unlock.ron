@@ -1,0 +1,6 @@
+(
+    id: "research_basic_archery_unlock",
+    display_name: Some("Basic Archery Research"),
+    reward_id: "research_basic_archery",
+    condition: True,
+)

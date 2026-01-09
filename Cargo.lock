@@ -4074,8 +4074,11 @@ name = "research"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_common_assets",
+ "serde",
  "states",
  "system_schedule",
+ "unlocks_events",
  "wallet",
 ]
 

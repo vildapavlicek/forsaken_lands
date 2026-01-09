@@ -13,7 +13,10 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameAssets>()
-            .add_systems(Startup, (start_loading, load_enemy_prefabs, load_unlocks_assets))
+            .add_systems(
+                Startup,
+                (start_loading, load_enemy_prefabs, load_unlocks_assets),
+            )
             .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)))
             .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
             .add_systems(OnExit(GameState::Loading), cleanup_loading_ui);
@@ -23,7 +26,7 @@ impl Plugin for AssetsPlugin {
 #[derive(Resource, Default)]
 pub struct GameAssets {
     pub startup_scene: Handle<DynamicScene>,
-    pub research_library_scene: Handle<DynamicScene>,
+    // pub research_library_scene: Handle<DynamicScene>,
     pub recipes_library_scene: Handle<DynamicScene>,
     pub spawn_tables: HashMap<String, Handle<SpawnTable>>,
     pub enemies: HashMap<String, Handle<DynamicScene>>,
@@ -32,7 +35,7 @@ pub struct GameAssets {
 fn start_loading(mut assets: ResMut<GameAssets>, asset_server: Res<AssetServer>) {
     info!("started loading assets");
     assets.startup_scene = asset_server.load("startup.scn.ron");
-    assets.research_library_scene = asset_server.load("research.scn.ron");
+    // assets.research_library_scene = asset_server.load("research.scn.ron");
     assets.recipes_library_scene = asset_server.load("recipes/library.scn.ron");
     let default_spawn_table = asset_server.load("default.spawn_table.ron");
 
@@ -65,7 +68,7 @@ fn check_assets(
         .all(|handle| asset_server.is_loaded_with_dependencies(handle));
 
     if asset_server.is_loaded_with_dependencies(&game_assets.startup_scene)
-        && asset_server.is_loaded_with_dependencies(&game_assets.research_library_scene)
+        // && asset_server.is_loaded_with_dependencies(&game_assets.research_library_scene)
         && asset_server.is_loaded_with_dependencies(&game_assets.recipes_library_scene)
         && spawn_tables_loaded
         && asset_server.is_loaded_with_dependencies(enemy_prefabs.0.id())

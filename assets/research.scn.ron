@@ -2,8 +2,17 @@
   resources: {
     "research::ResearchLibrary": (
       available: {
+        "invaders":(
+          id: 0,
+          name: "Invaders",
+          description: "They are green, pointy and ugly..but can we eat them?",
+          prerequisites: [],
+          cost: {},
+          time_required: 60.0,
+          unlocks: []
+        )
         "bone_crafting": (
-            id: 0,
+            id: 1,
             name: "Bone Crafting",
             description: "Crafting using bones",
             prerequisites: [],
@@ -12,7 +21,7 @@
             unlocks: []
         ),
         "theology_i": (
-            id: 1,
+            id: 2,
             name: "Theology I",
             description: "Is there more than physical?",
             prerequisites: [],
@@ -21,7 +30,7 @@
             unlocks: []
         ),
         "bone_idol": (
-            id: 2,
+            id: 3,
             name: "Bone Idol",
             description: "Will this please gods?",
             prerequisites: ["bone_crafting", "theology_i"],
@@ -30,7 +39,7 @@
             unlocks: []
         ),
         "basic_archery": (
-          id: 2,
+          id: 3,
           name: "Basic Archery",
           description: "Allows crafting of crude bows.",
           prerequisites: [],
@@ -39,7 +48,7 @@
           unlocks: [],
         ),
         "bone_weaponry": (
-          id: 3,
+          id: 4,
           name: "Bone Weaponry",
           description: "Sharpened bone swords.",
           prerequisites: ["bone_crafting"],

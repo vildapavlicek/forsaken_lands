@@ -1,9 +1,5 @@
 (
   resources: {
-    "research::ResearchState": (
-      in_progress: {},
-      completed: [],
-    ),
   },
   entities: {
     1: (

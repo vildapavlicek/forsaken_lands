@@ -1,0 +1,8 @@
+(
+    id: "invaders",
+    name: "Invaders",
+    description: "They are green, pointy and ugly..but can we eat them?",
+    cost: {},
+    time_required: 60.0,
+    unlocks: [],
+)

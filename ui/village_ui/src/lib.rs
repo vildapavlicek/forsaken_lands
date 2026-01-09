@@ -1,7 +1,7 @@
 use {
     bevy::{picking::prelude::*, prelude::*},
     crafting_resources::RecipesLibrary,
-    research::{ResearchLibrary, ResearchState},
+    research::{Available, Completed, InProgress, ResearchDefinition, ResearchNode},
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
@@ -200,13 +200,20 @@ impl Command for SpawnCraftingContentCommand {
             world.commands().entity(child).despawn();
         }
 
-        // Get resources needed for crafting content
+        // Get completed research IDs from entity queries FIRST (before borrowing resources)
+        let mut completed_query = world.query_filtered::<&ResearchNode, With<Completed>>();
+        let completed_research: Vec<String> = completed_query
+            .iter(world)
+            .map(|node| node.id.clone())
+            .collect();
+
+        // Now get resources needed for crafting content
         let library = world.resource::<RecipesLibrary>();
         let wallet = world.resource::<Wallet>();
-        let research_state = world.resource::<ResearchState>();
 
         // Build crafting data
-        let crafting_data = crafting_ui::build_crafting_data(library, wallet, research_state);
+        let crafting_data =
+            crafting_ui::build_crafting_data(library, wallet, &completed_research);
 
         // Spawn back button and crafting content
         world
@@ -243,13 +250,99 @@ impl Command for SpawnResearchContentCommand {
             world.commands().entity(child).despawn();
         }
 
-        // Get resources needed for research content
-        let library = world.resource::<ResearchLibrary>();
-        let state = world.resource::<ResearchState>();
+        // Query research entities by state FIRST - collect into owned data
+        let mut available_query =
+            world.query_filtered::<(Entity, &ResearchNode), With<Available>>();
+        let available_ids: Vec<(Entity, String)> = available_query
+            .iter(world)
+            .map(|(e, n)| (e, n.id.clone()))
+            .collect();
+
+        let mut in_progress_query = world.query::<(Entity, &ResearchNode, &InProgress)>();
+        let in_progress_ids: Vec<(Entity, String)> = in_progress_query
+            .iter(world)
+            .map(|(e, n, _)| (e, n.id.clone()))
+            .collect();
+
+        let mut completed_query =
+            world.query_filtered::<(Entity, &ResearchNode), With<Completed>>();
+        let completed_ids: Vec<(Entity, String)> = completed_query
+            .iter(world)
+            .map(|(e, n)| (e, n.id.clone()))
+            .collect();
+
+        // Now get resources needed for research content
+        let assets = world.resource::<Assets<ResearchDefinition>>();
         let wallet = world.resource::<Wallet>();
 
-        // Build research data
-        let research_data = research_ui::build_research_data(library, state, wallet);
+        // Build research data directly using the assets
+        let mut items = Vec::new();
+
+        // Available research
+        for (_, id) in &available_ids {
+            if let Some((_handle, def)) = assets.iter().find(|(_, d)| &d.id == id) {
+                let mut can_afford = true;
+                let mut cost_str = String::from("Cost: ");
+                for (res, amt) in &def.cost {
+                    let current = wallet.resources.get(res).copied().unwrap_or(0);
+                    cost_str.push_str(&format!("{}: {}/{} ", res, current, amt));
+                    if current < *amt {
+                        can_afford = false;
+                    }
+                }
+
+                items.push(research_ui::ResearchDisplayData {
+                    id: id.clone(),
+                    name: def.name.clone(),
+                    description: def.description.clone(),
+                    time: def.time_required,
+                    cost_str,
+                    can_afford,
+                    is_completed: false,
+                    btn_text: if can_afford {
+                        "Start".to_string()
+                    } else {
+                        "Start".to_string()
+                    },
+                    btn_color: if can_afford {
+                        widgets::UiTheme::AFFORDABLE
+                    } else {
+                        widgets::UiTheme::BORDER_DISABLED
+                    },
+                    btn_border: if can_afford {
+                        widgets::UiTheme::BORDER_SUCCESS
+                    } else {
+                        widgets::UiTheme::BORDER_DISABLED
+                    },
+                });
+            }
+        }
+
+        // In-progress research
+        for (_, id) in &in_progress_ids {
+            if let Some((_handle, def)) = assets.iter().find(|(_, d)| &d.id == id) {
+                items.push(research_ui::ResearchDisplayData {
+                    id: id.clone(),
+                    name: def.name.clone(),
+                    description: def.description.clone(),
+                    time: def.time_required,
+                    cost_str: String::new(),
+                    can_afford: true,
+                    is_completed: false,
+                    btn_text: "Researching...".to_string(),
+                    btn_color: widgets::UiTheme::TEXT_INFO,
+                    btn_border: bevy::color::Color::srgba(0.4, 0.4, 1.0, 1.0),
+                });
+            }
+        }
+
+        // Sort by name
+        items.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let research_data = research_ui::ResearchData {
+            active_tab: research_ui::ResearchTab::Available,
+            items,
+        };
 
         // Spawn back button and research content
         world

@@ -6,7 +6,6 @@ use unlocks_events::*;
 use unlocks_resources::*;
 use bevy::prelude::*;
 
-use research::ResearchState;
 use village_components::EnemyEncyclopedia;
 use wallet::Wallet;
 
@@ -25,7 +24,7 @@ pub fn compare_op(current: f32, target: f32, op: ComparisonOp) -> bool {
 pub struct CompilerContext<'a> {
     pub wallet: &'a Wallet,
     pub encyclopedia: Option<&'a EnemyEncyclopedia>,
-    pub research_state: &'a ResearchState,
+    pub unlock_state: &'a UnlockState,
 }
 
 pub struct AddTopicSubscriber {
@@ -178,7 +177,7 @@ pub fn build_condition_node(
             let topic_key = format!("unlock:{}", unlock_id);
             let topic_entity = topic_map.get_or_create(commands, &topic_key);
 
-            let initially_met = ctx.research_state.is_researched(unlock_id);
+            let initially_met = ctx.unlock_state.is_unlocked(unlock_id);
 
             let sensor = commands
                 .spawn((
@@ -201,6 +200,25 @@ pub fn build_condition_node(
                     is_high: true,
                 });
             }
+
+            sensor
+        }
+        ConditionNode::True => {
+            // Always met - immediately signal parent to trigger unlock completion
+            // No sensor needed since this condition can never change
+            let sensor = commands
+                .spawn((
+                    ChildOf(parent),
+                    ConditionSensor { is_met: true },
+                ))
+                .id();
+
+            // Immediately signal parent - this will propagate up to UnlockRoot
+            // and fire UnlockAchieved, adding this unlock to UnlockState.completed
+            commands.entity(sensor).trigger(|e| LogicSignalEvent {
+                entity: e,
+                is_high: true,
+            });
 
             sensor
         }

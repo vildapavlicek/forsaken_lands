@@ -1,0 +1,15 @@
+
+(
+    id: "invaders_research",
+    display_name: Some("Testing Unlock Notif"),
+    reward_id: "crafting_recipe_bone_sword",
+    condition: And([
+        Stat(
+            StatCheck(
+                stat_id: "goblin_kills",
+                value: 2.0,
+                op: Ge,
+            )
+        ),
+    ]),
+)

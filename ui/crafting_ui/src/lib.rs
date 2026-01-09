@@ -2,13 +2,12 @@ use {
     bevy::prelude::*,
     crafting_events::StartCraftingRequest,
     crafting_resources::{RecipeCategory, RecipesLibrary},
-    research::ResearchState,
+    research::{Completed, ResearchNode},
     states::GameState,
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_card_title, spawn_cost_text,
-        spawn_scrollable_container, spawn_tab_bar,
-        spawn_tab_button, spawn_timer_text, UiTheme,
+        spawn_action_button, spawn_card_title, spawn_cost_text, spawn_scrollable_container,
+        spawn_tab_bar, spawn_tab_button, spawn_timer_text, UiTheme,
     },
 };
 
@@ -21,11 +20,7 @@ impl Plugin for CraftingUiPlugin {
             (
                 handle_recipes_close_button,
                 handle_tab_switch,
-                update_recipes_ui.run_if(
-                    resource_changed::<RecipesLibrary>
-                        .or(resource_changed::<Wallet>)
-                        .or(resource_changed::<ResearchState>),
-                ),
+                update_recipes_ui,
                 handle_crafting_button,
             )
                 .run_if(in_state(GameState::Running)),
@@ -87,17 +82,17 @@ pub struct RecipeDisplayData {
 pub fn build_crafting_data(
     library: &RecipesLibrary,
     wallet: &Wallet,
-    research_state: &ResearchState,
+    completed_research: &[String],
 ) -> CraftingData {
     let active_tab = RecipeCategory::Weapons;
-    let recipes = build_recipe_list(library, wallet, research_state, &active_tab);
+    let recipes = build_recipe_list(library, wallet, completed_research, &active_tab);
     CraftingData { active_tab, recipes }
 }
 
 fn build_recipe_list(
     library: &RecipesLibrary,
     wallet: &Wallet,
-    research_state: &ResearchState,
+    completed_research: &[String],
     category: &RecipeCategory,
 ) -> Vec<RecipeDisplayData> {
     library
@@ -108,7 +103,7 @@ fn build_recipe_list(
                 && recipe
                     .required_research
                     .as_ref()
-                    .is_none_or(|req| research_state.is_researched(req))
+                    .is_none_or(|req| completed_research.contains(req))
         })
         .map(|(id, recipe)| {
             let mut can_afford = true;
@@ -160,38 +155,49 @@ pub fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingD
         ))
         .id();
 
-    parent.commands().entity(crafting_root).with_children(|content| {
-        // Tab bar
-        let tab_bar = spawn_tab_bar(content);
-        content.commands().entity(tab_bar).with_children(|tabs| {
-            spawn_tab_button(
-                tabs,
-                "Weapons",
-                data.active_tab == RecipeCategory::Weapons,
-                RecipeTabButton {
-                    category: RecipeCategory::Weapons,
-                },
-            );
-            spawn_tab_button(
-                tabs,
-                "Idols",
-                data.active_tab == RecipeCategory::Idols,
-                RecipeTabButton {
-                    category: RecipeCategory::Idols,
-                },
-            );
-        });
+    parent
+        .commands()
+        .entity(crafting_root)
+        .with_children(|content| {
+            // Tab bar
+            let tab_bar = spawn_tab_bar(content);
+            content.commands().entity(tab_bar).with_children(|tabs| {
+                spawn_tab_button(
+                    tabs,
+                    "Weapons",
+                    data.active_tab == RecipeCategory::Weapons,
+                    RecipeTabButton {
+                        category: RecipeCategory::Weapons,
+                    },
+                );
+                spawn_tab_button(
+                    tabs,
+                    "Idols",
+                    data.active_tab == RecipeCategory::Idols,
+                    RecipeTabButton {
+                        category: RecipeCategory::Idols,
+                    },
+                );
+            });
 
-        // Scrollable container for recipe items
-        spawn_scrollable_container(content, RecipesItemsContainer);
-    });
+            // Scrollable container for recipe items
+            spawn_scrollable_container(content, RecipesItemsContainer);
+        });
 
     // Populate with initial recipes (queue command)
     parent.commands().queue(PopulateRecipesDirectCommand {
         recipes_data: data
             .recipes
             .into_iter()
-            .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
+            .map(|r| {
+                (
+                    r.id,
+                    r.display_name,
+                    r.craft_time,
+                    r.cost_str,
+                    r.can_afford,
+                )
+            })
             .collect(),
     });
 }
@@ -229,7 +235,7 @@ fn handle_tab_switch(
     mut tab_buttons: Query<(&RecipeTabButton, &mut BackgroundColor)>,
     library: Res<RecipesLibrary>,
     wallet: Res<Wallet>,
-    research_state: Res<ResearchState>,
+    completed_query: Query<&ResearchNode, With<Completed>>,
 ) {
     for (interaction, tab_btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
@@ -247,17 +253,29 @@ fn handle_tab_switch(
                         }
                     }
 
+                    // Get completed research IDs
+                    let completed_research: Vec<String> =
+                        completed_query.iter().map(|node| node.id.clone()).collect();
+
                     // Repopulate recipes
                     let recipes = build_recipe_list(
                         &library,
                         &wallet,
-                        &research_state,
+                        &completed_research,
                         &tab_btn.category,
                     );
                     commands.queue(PopulateRecipesDirectCommand {
                         recipes_data: recipes
                             .into_iter()
-                            .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
+                            .map(|r| {
+                                (
+                                    r.id,
+                                    r.display_name,
+                                    r.craft_time,
+                                    r.cost_str,
+                                    r.can_afford,
+                                )
+                            })
                             .collect(),
                     });
                 }
@@ -274,22 +292,37 @@ fn update_recipes_ui(
     mut commands: Commands,
     library: Res<RecipesLibrary>,
     wallet: Res<Wallet>,
-    research_state: Res<ResearchState>,
     ui_query: Query<&RecipesUiRoot>,
+    completed_query: Query<&ResearchNode, With<Completed>>,
     mut last_data: Local<Vec<RecipeDisplayData>>,
 ) {
+    // Only update if wallet changed
+    if !wallet.is_changed() {
+        return;
+    }
+
     if let Ok(ui_root) = ui_query.single() {
-        let recipes = build_recipe_list(&library, &wallet, &research_state, &ui_root.active_tab);
-        
+        let completed_research: Vec<String> =
+            completed_query.iter().map(|node| node.id.clone()).collect();
+        let recipes = build_recipe_list(&library, &wallet, &completed_research, &ui_root.active_tab);
+
         if *last_data == recipes {
             return;
         }
         *last_data = recipes.clone();
-        
+
         commands.queue(PopulateRecipesDirectCommand {
             recipes_data: recipes
                 .into_iter()
-                .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
+                .map(|r| {
+                    (
+                        r.id,
+                        r.display_name,
+                        r.craft_time,
+                        r.cost_str,
+                        r.can_afford,
+                    )
+                })
                 .collect(),
         });
     }
@@ -307,16 +340,16 @@ struct PopulateRecipesDirectCommand {
 impl Command for PopulateRecipesDirectCommand {
     fn apply(self, world: &mut World) {
         // Find the container entity
-        let mut container_query = world.query_filtered::<(Entity, Option<&Children>), With<RecipesItemsContainer>>();
+        let mut container_query =
+            world.query_filtered::<(Entity, Option<&Children>), With<RecipesItemsContainer>>();
 
         let Some((container_entity, children)) = container_query.iter(world).next() else {
             return;
         };
 
         // Collect children to despawn
-        let children_to_despawn: Vec<Entity> = children
-            .map(|c| c.iter().collect())
-            .unwrap_or_default();
+        let children_to_despawn: Vec<Entity> =
+            children.map(|c| c.iter().collect()).unwrap_or_default();
 
         // Despawn existing children
         for child in children_to_despawn {
@@ -324,33 +357,40 @@ impl Command for PopulateRecipesDirectCommand {
         }
 
         // Spawn new recipe cards
-        world.commands().entity(container_entity).with_children(|parent| {
-            for (recipe_id, display_name, craft_time, cost_str, can_afford) in self.recipes_data {
-                let card_entity = widgets::spawn_item_card(parent, ());
-                parent.commands().entity(card_entity).with_children(|card| {
-                        spawn_card_title(card, &display_name);
-                        spawn_timer_text(card, craft_time);
-                        spawn_cost_text(card, &cost_str, can_afford);
+        world
+            .commands()
+            .entity(container_entity)
+            .with_children(|parent| {
+                for (recipe_id, display_name, craft_time, cost_str, can_afford) in self.recipes_data
+                {
+                    let card_entity = widgets::spawn_item_card(parent, ());
+                    parent
+                        .commands()
+                        .entity(card_entity)
+                        .with_children(|card| {
+                            spawn_card_title(card, &display_name);
+                            spawn_timer_text(card, craft_time);
+                            spawn_cost_text(card, &cost_str, can_afford);
 
-                        // Button
-                        let (btn_text, btn_color, btn_border) = if can_afford {
-                            ("Craft", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
-                        } else {
-                            ("Craft", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
-                        };
+                            // Button
+                            let (btn_text, btn_color, btn_border) = if can_afford {
+                                ("Craft", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
+                            } else {
+                                ("Craft", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
+                            };
 
-                        spawn_action_button(
-                            card,
-                            btn_text,
-                            btn_color,
-                            btn_border,
-                            CraftingButton {
-                                recipe_id: recipe_id.clone(),
-                            },
-                        );
-                    });
-            }
-        });
+                            spawn_action_button(
+                                card,
+                                btn_text,
+                                btn_color,
+                                btn_border,
+                                CraftingButton {
+                                    recipe_id: recipe_id.clone(),
+                                },
+                            );
+                        });
+                }
+            });
     }
 }
 
@@ -370,9 +410,10 @@ fn handle_crafting_button(
             && let Some(recipe) = library.recipes.get(&btn.recipe_id)
         {
             // Check if can afford
-            let can_afford = recipe.cost.iter().all(|(res_id, amt)| {
-                wallet.resources.get(res_id).copied().unwrap_or(0) >= *amt
-            });
+            let can_afford = recipe
+                .cost
+                .iter()
+                .all(|(res_id, amt)| wallet.resources.get(res_id).copied().unwrap_or(0) >= *amt);
 
             if can_afford {
                 // Deduct resources

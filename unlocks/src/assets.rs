@@ -25,6 +25,8 @@ pub enum ConditionNode {
     Or(Vec<ConditionNode>),
     /// Inverts the result of the sub-condition.
     Not(Box<ConditionNode>),
+    /// Always true - for unlocks with no prerequisites.
+    True,
 
     // --- Leaf Sensors ---
     /// Checks if a numeric statistic meets a threshold.

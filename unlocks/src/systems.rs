@@ -5,7 +5,6 @@ use unlocks_resources::*;
 use bevy::prelude::*;
 use enemy_components::MonsterId;
 use hero_events::EnemyKilled;
-use research::ResearchState;
 use village_components::{EnemyEncyclopedia, Village};
 use wallet::Wallet;
 
@@ -16,7 +15,6 @@ pub fn compile_pending_unlocks(
     mut topic_map: ResMut<TopicMap>,
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
-    research_state: Res<ResearchState>,
     unlock_state: Res<UnlockState>,
     compiled: Query<&CompiledUnlock>,
 ) {
@@ -25,7 +23,7 @@ pub fn compile_pending_unlocks(
     let ctx = CompilerContext {
         wallet: &wallet,
         encyclopedia,
-        research_state: &research_state,
+        unlock_state: &unlock_state,
     };
 
     // Collect already-compiled IDs for filtering

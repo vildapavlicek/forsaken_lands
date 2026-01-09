@@ -1,0 +1,6 @@
+(
+    id: "research_invaders_unlock",
+    display_name: Some("Invaders Research"),
+    reward_id: "research_invaders",
+    condition: True,
+)
