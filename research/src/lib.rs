@@ -80,10 +80,18 @@ impl Plugin for ResearchPlugin {
             .init_resource::<ResearchMap>()
             .add_message::<StartResearchRequest>()
             .register_type::<UnlockEffect>()
+            // spawn_research_entities needs to run during Loading to catch AssetEvent::Added
+            .add_systems(
+                Update,
+                systems::spawn_research_entities.run_if(
+                    in_state(states::GameState::Loading)
+                        .or(in_state(states::GameState::Initializing))
+                        .or(in_state(states::GameState::Running)),
+                ),
+            )
             .add_systems(
                 Update,
                 (
-                    systems::spawn_research_entities,
                     systems::start_research.in_set(GameSchedule::Effect),
                     systems::update_research_progress.in_set(GameSchedule::FrameStart),
                 )
