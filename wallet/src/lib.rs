@@ -29,7 +29,7 @@ fn process_enemy_killed_rewards(
         for reward in rewards.0.iter() {
             let current = wallet.resources.entry(reward.id.clone()).or_insert(0);
             *current += reward.value;
-            debug!("Added {} {} to wallet", reward.value, reward.id);
+            trace!("Added {} {} to wallet", reward.value, reward.id);
         }
     }
 }

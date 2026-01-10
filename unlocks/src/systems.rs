@@ -1,10 +1,10 @@
 use crate::{assets::*, compiler::*};
-use unlocks_components::*;
-use unlocks_events::*;
-use unlocks_resources::*;
 use bevy::prelude::*;
 use enemy_components::MonsterId;
 use hero_events::EnemyKilled;
+use unlocks_components::*;
+use unlocks_events::*;
+use unlocks_resources::*;
 use village_components::{EnemyEncyclopedia, Village};
 use wallet::Wallet;
 
@@ -32,7 +32,7 @@ pub fn compile_pending_unlocks(
         compiled.iter().map(|c| c.definition_id.as_str()).collect();
 
     // Filter out already-compiled and already-unlocked definitions
-    // Even though this runs once, checking compiled_ids is safe if we re-enter or something weird happens, 
+    // Even though this runs once, checking compiled_ids is safe if we re-enter or something weird happens,
     // but mainly we want to skip already unlocked ones.
     let pending_definitions = unlock_assets
         .iter()
@@ -177,9 +177,7 @@ pub fn on_enemy_killed_stat_update(
 
     // Emit stat change to topic entity for this monster's kills
     let stat_key = format!("stat:{}_kills", monster_id.0);
-    debug!(%stat_key, ?monster_id, %kill_count, "looking for a topic for enemy kill");
     if let Some(&topic_entity) = topic_map.topics.get(&stat_key) {
-        debug!(%stat_key, "found topic");
         commands.trigger(StatChangedEvent {
             entity: topic_entity,
             stat_id: format!("{}_kills", monster_id.0),
@@ -359,4 +357,3 @@ pub fn cleanup_finished_unlock(
         }
     }
 }
-

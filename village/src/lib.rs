@@ -36,7 +36,7 @@ fn update_encyclopedia(
 
     for mut encyclopedia in &mut village_query {
         encyclopedia.increment_kill_count(monster_id.0.clone(), display_name.clone());
-        debug!(
+        trace!(
             monster_id = %monster_id.0,
             kill_count = %encyclopedia.inner.get(&monster_id.0).unwrap().kill_count,
             "updated encyclopedia",
