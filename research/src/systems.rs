@@ -15,7 +15,6 @@ pub fn spawn_research_entities(
     mut research_map: ResMut<ResearchMap>,
     mut assets: ResMut<Assets<ResearchDefinition>>,
     unlock_state: Res<UnlockState>,
-    mut next_phase: ResMut<NextState<states::LoadingPhase>>,
 ) {
     debug!("Spawning research entities...");
 
@@ -77,8 +76,6 @@ pub fn spawn_research_entities(
         research_map.entities.insert(def_id.clone(), entity);
         debug!("Spawned research entity: {} -> {:?}", def_id, entity);
     }
-
-    next_phase.set(states::LoadingPhase::Recipes);
 }
 
 /// Listens for UnlockAchieved events with research_ prefix

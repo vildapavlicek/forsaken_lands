@@ -152,7 +152,7 @@
 //! - Unlock completion events
 
 mod assets;
-mod compiler;
+pub mod compiler;
 mod systems;
 
 pub use {assets::*, unlocks_components::*, unlocks_events::*, unlocks_resources::*};
@@ -173,10 +173,6 @@ impl Plugin for UnlocksPlugin {
             .register_type::<TopicSubscribers>()
             // Systems for compilation and change detection
             .add_systems(Update, check_wallet_changes)
-            .add_systems(
-                OnEnter(states::LoadingPhase::Unlocks),
-                compile_pending_unlocks,
-            )
             // Observers for gate logic and event interception
             .add_observer(propagate_logic_signal)
             .add_observer(handle_unlock_completion)

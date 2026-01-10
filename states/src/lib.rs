@@ -19,8 +19,8 @@ pub enum EnemyEncyclopediaState {
 pub enum LoadingPhase {
     #[default]
     Assets,
-    Research,
-    Recipes,
-    Unlocks,
-    Done,
+    SpawnEntities,  // Spawn research & recipe entities
+    CompileUnlocks, // Build unlock logic graphs
+    SpawnScene,     // Spawn startup scene
+    Ready,          // All done
 }

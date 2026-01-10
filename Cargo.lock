@@ -2504,7 +2504,11 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "portal_assets",
+ "research",
  "states",
+ "unlocks",
+ "village_components",
+ "wallet",
 ]
 
 [[package]]

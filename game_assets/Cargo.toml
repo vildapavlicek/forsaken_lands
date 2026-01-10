@@ -7,3 +7,7 @@ edition = "2024"
 bevy.workspace = true
 states.workspace = true
 portal_assets.workspace = true
+research.workspace = true
+unlocks.workspace = true
+wallet.workspace = true
+village_components.workspace = true

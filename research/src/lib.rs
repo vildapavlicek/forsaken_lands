@@ -80,11 +80,6 @@ impl Plugin for ResearchPlugin {
             .init_resource::<ResearchMap>()
             .add_message::<StartResearchRequest>()
             .register_type::<UnlockEffect>()
-            // spawn_research_entities needs to run during Loading to catch AssetEvent::Added
-            .add_systems(
-                OnEnter(states::LoadingPhase::Research),
-                systems::spawn_research_entities,
-            )
             .add_systems(
                 Update,
                 (

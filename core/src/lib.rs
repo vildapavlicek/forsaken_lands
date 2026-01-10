@@ -1,7 +1,7 @@
 use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
-    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, game_assets::AssetsPlugin,
+    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, game_assets::LoadingManagerPlugin,
     hero_events::HeroEventsPlugin, heroes::HeroesPlugin, portal_assets::PortalAssetsPlugin,
     portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
@@ -10,8 +10,6 @@ use {
     village::VillagePlugin, village_ui::VillageUiPlugin, wallet::WalletPlugin,
     widgets::WidgetsPlugin,
 };
-
-mod systems;
 
 pub struct CorePlugin;
 
@@ -23,7 +21,7 @@ impl Plugin for CorePlugin {
                 (FrameStart, ResolveIntent, PerformAction, Effect, FrameEnd).chain(),
             )
             .add_plugins((
-                AssetsPlugin,
+                LoadingManagerPlugin,
                 CraftingPlugin,
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,
@@ -47,15 +45,7 @@ impl Plugin for CorePlugin {
                 WalletPlugin,
                 WidgetsPlugin,
             ))
-            .add_systems(Startup, setup_camera)
-            .add_systems(
-                OnEnter(GameState::Initializing),
-                systems::spawn_starting_scene,
-            )
-            .add_systems(
-                Update,
-                systems::check_scene_spawned.run_if(in_state(GameState::Initializing)),
-            );
+            .add_systems(Startup, setup_camera);
     }
 }
 
