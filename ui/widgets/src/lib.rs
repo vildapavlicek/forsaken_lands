@@ -138,84 +138,12 @@ impl UiTheme {
 }
 
 // ============================================================================
-// Panel Configuration
+// Menu Panel Constants
 // ============================================================================
 
-/// Configuration for panel position and size.
-/// Supports flexible positioning using Bevy's `Val` type for viewport-relative
-/// or fixed pixel dimensions.
-pub struct PanelConfig {
-    /// Width of the panel (supports Val::Px, Val::Percent, Val::Vw, etc.)
-    pub width: Val,
-    /// Height of the panel
-    pub height: Val,
-    /// Left position (use Val::Auto for right-aligned or centered panels)
-    pub left: Val,
-    /// Right position (use Val::Auto for left-aligned or centered panels)
-    pub right: Val,
-    /// Top position
-    pub top: Val,
-    /// Bottom position (use Val::Auto for top-positioned panels)
-    pub bottom: Val,
-    /// Background color for the panel
-    pub background: Color,
-}
-
-impl PanelConfig {
-    /// Centered panel with percentage-based viewport dimensions.
-    /// Uses viewport width (vw) and viewport height (vh) for responsive sizing.
-    pub fn centered(width_percent: f32, height_percent: f32) -> Self {
-        Self {
-            width: Val::Vw(width_percent),
-            height: Val::Vh(height_percent),
-            left: Val::Percent(50.0),
-            right: Val::Auto,
-            top: Val::Percent(50.0),
-            bottom: Val::Auto,
-            background: UiTheme::PANEL_BG,
-        }
-    }
-
-    /// Popup-style centered panel with fixed pixel dimensions.
-    /// Positioned with a fixed offset from the top.
-    pub fn popup(width: f32, height: f32) -> Self {
-        Self {
-            width: Val::Px(width),
-            height: Val::Px(height),
-            left: Val::Percent(50.0),
-            right: Val::Auto,
-            top: Val::Px(50.0),
-            bottom: Val::Auto,
-            background: UiTheme::POPUP_BG,
-        }
-    }
-
-    /// Left-aligned panel with fixed width and height stretching.
-    pub fn left_panel(offset: f32, width: f32) -> Self {
-        Self {
-            width: Val::Px(width),
-            height: Val::Auto,
-            left: Val::Px(offset),
-            right: Val::Auto,
-            top: Val::Px(10.0),
-            bottom: Val::Px(10.0),
-            background: UiTheme::PANEL_BG,
-        }
-    }
-
-    /// Right-aligned panel with fixed width and height stretching.
-    pub fn right_panel(offset: f32, width: f32) -> Self {
-        Self {
-            width: Val::Px(width),
-            height: Val::Auto,
-            left: Val::Auto,
-            right: Val::Px(offset),
-            top: Val::Px(10.0),
-            bottom: Val::Px(10.0),
-            background: UiTheme::PANEL_BG,
-        }
-    }
-}
+/// Standard menu panel dimensions (80% of viewport width and height)
+const MENU_PANEL_WIDTH: Val = Val::Vw(80.0);
+const MENU_PANEL_HEIGHT: Val = Val::Vh(80.0);
 
 // ============================================================================
 // Animated Button
@@ -269,98 +197,58 @@ pub struct UiPanelWrapper;
 #[derive(Component)]
 pub struct PanelWrapperRef(pub Entity);
 
-/// Spawns a styled UI panel/window with consistent styling.
-/// Returns the Entity so callers can add children via `commands.entity(id).with_children(...)`.
+/// Spawns a centered menu panel with fixed 80vw × 80vh dimensions.
+/// This is the standard root container for menu-style UIs (e.g., village, portal menus).
 ///
-/// For centered panels (using `Val::Percent(50.0)` for left/top), this spawns a full-screen
-/// wrapper that uses flexbox to center the panel properly. The wrapper is automatically
-/// despawned when the panel entity is despawned (if using `.despawn()` with recursive despawn).
+/// The panel is automatically centered using a full-screen flexbox wrapper.
+/// Callers only need to provide a marker component and populate children.
 ///
-/// **Important**: When despawning a centered panel, use `despawn()` rather than
-/// `despawn_descendants()` to ensure the wrapper is cleaned up. Alternatively,
-/// query for `Parent` and despawn that if you need finer control.
-pub fn spawn_ui_panel<M: Component>(
-    commands: &mut Commands,
-    config: PanelConfig,
-    root_marker: M,
-) -> Entity {
-    // Determine if we need flexbox centering (when using 50% positioning)
-    let needs_center_x = matches!(config.left, Val::Percent(50.0));
-    let needs_center_y = matches!(config.top, Val::Percent(50.0));
+/// Returns the panel Entity so callers can add children via `commands.entity(id).with_children(...)`.
+///
+/// **Important**: When despawning the panel, use `despawn()` to ensure the wrapper is cleaned up.
+/// The panel has a `PanelWrapperRef` component that can be used to despawn the wrapper manually.
+pub fn spawn_menu_panel<M: Component>(commands: &mut Commands, root_marker: M) -> Entity {
+    // Spawn a full-screen wrapper with flexbox centering
+    let wrapper = commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            UiPanelWrapper,
+            // Make wrapper non-pickable so clicks pass through to game world
+            Pickable::IGNORE,
+        ))
+        .id();
 
-    if needs_center_x || needs_center_y {
-        // For centered panels, spawn a full-screen wrapper with flexbox centering
-        let wrapper = commands
-            .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: Val::Px(0.0),
-                    right: Val::Px(0.0),
-                    top: Val::Px(0.0),
-                    bottom: Val::Px(0.0),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    justify_content: if needs_center_x {
-                        JustifyContent::Center
-                    } else {
-                        JustifyContent::FlexStart
-                    },
-                    align_items: if needs_center_y {
-                        AlignItems::Center
-                    } else {
-                        AlignItems::FlexStart
-                    },
-                    ..default()
-                },
-                UiPanelWrapper,
-                // Make wrapper non-pickable so clicks pass through to game world
-                Pickable::IGNORE,
-            ))
-            .id();
+    // Spawn the actual panel as a child of the wrapper
+    let panel = commands
+        .spawn((
+            Node {
+                width: MENU_PANEL_WIDTH,
+                height: MENU_PANEL_HEIGHT,
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(10.0)),
+                ..default()
+            },
+            BackgroundColor(UiTheme::PANEL_BG),
+            root_marker,
+            PanelWrapperRef(wrapper),
+            Pickable::default(),
+            Interaction::default(),
+        ))
+        .id();
 
-        // Spawn the actual panel as a child of the wrapper
-        let panel = commands
-            .spawn((
-                Node {
-                    width: config.width,
-                    height: config.height,
-                    flex_direction: FlexDirection::Column,
-                    padding: UiRect::all(Val::Px(10.0)),
-                    ..default()
-                },
-                BackgroundColor(config.background),
-                root_marker,
-                PanelWrapperRef(wrapper),
-                Pickable::default(),
-                Interaction::default(),
-            ))
-            .id();
-
-        commands.entity(wrapper).add_child(panel);
-        panel
-    } else {
-        // For non-centered panels, use direct absolute positioning
-        commands
-            .spawn((
-                Node {
-                    position_type: PositionType::Absolute,
-                    left: config.left,
-                    right: config.right,
-                    top: config.top,
-                    bottom: config.bottom,
-                    width: config.width,
-                    height: config.height,
-                    flex_direction: FlexDirection::Column,
-                    padding: UiRect::all(Val::Px(10.0)),
-                    ..default()
-                },
-                BackgroundColor(config.background),
-                root_marker,
-                Pickable::default(),
-                Interaction::default(),
-            ))
-            .id()
-    }
+    commands.entity(wrapper).add_child(panel);
+    panel
 }
 
 // ============================================================================

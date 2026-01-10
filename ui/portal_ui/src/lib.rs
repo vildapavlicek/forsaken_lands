@@ -6,8 +6,8 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        PanelConfig, PanelWrapperRef, UiTheme, spawn_action_button, spawn_item_card,
-        spawn_panel_header_with_close, spawn_ui_panel,
+        PanelWrapperRef, UiTheme, spawn_action_button, spawn_item_card,
+        spawn_menu_panel, spawn_panel_header_with_close,
     },
 };
 
@@ -90,11 +90,7 @@ fn on_portal_click(
 // ============================================================================
 
 fn spawn_portal_ui(commands: &mut Commands, portal_entity: Entity) {
-    let panel_entity = spawn_ui_panel(
-        commands,
-        PanelConfig::popup(350.0, 400.0),
-        PortalUiRoot { portal_entity },
-    );
+    let panel_entity = spawn_menu_panel(commands, PortalUiRoot { portal_entity });
 
     commands.entity(panel_entity).with_children(|parent| {
         // Header with close button
