@@ -4,7 +4,7 @@ use {
     crate::resources::{EnemyPrefabsFolderHandle, ResearchFolderHandle, UnlocksFolderHandle},
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     portal_assets::SpawnTable,
-    states::GameState,
+    states::{GameState, LoadingPhase},
     std::ffi::OsStr,
 };
 
@@ -13,13 +13,22 @@ pub struct AssetsPlugin;
 impl Plugin for AssetsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<GameAssets>()
+            .init_state::<LoadingPhase>()
             .add_systems(
                 Startup,
                 (start_loading, load_enemy_prefabs, load_unlocks_assets, load_research_assets),
             )
-            .add_systems(Update, check_assets.run_if(in_state(GameState::Loading)))
+            .add_systems(
+                Update,
+                check_assets.run_if(in_state(GameState::Loading).and(in_state(LoadingPhase::Assets))),
+            )
             .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
-            .add_systems(OnExit(GameState::Loading), cleanup_loading_ui);
+            .add_systems(OnExit(GameState::Loading), cleanup_loading_ui)
+            .add_systems(
+                OnEnter(LoadingPhase::Recipes),
+                transition_recipes_phase,
+            )
+            .add_systems(OnEnter(LoadingPhase::Done), finish_loading);
     }
 }
 
@@ -60,7 +69,7 @@ fn load_research_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
 }
 
 fn check_assets(
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut game_assets: ResMut<GameAssets>,
     asset_server: Res<AssetServer>,
     enemy_prefabs: Res<EnemyPrefabsFolderHandle>,
@@ -114,8 +123,18 @@ fn check_assets(
             }
         }
 
-        next_state.set(GameState::Initializing);
+        next_phase.set(LoadingPhase::Research);
     }
+}
+
+fn transition_recipes_phase(mut next_phase: ResMut<NextState<LoadingPhase>>) {
+    // Placeholder for recipes loading logic
+    next_phase.set(LoadingPhase::Unlocks);
+}
+
+fn finish_loading(mut next_state: ResMut<NextState<GameState>>) {
+    info!("Loading phase done, transitioning to Initializing");
+    next_state.set(GameState::Initializing);
 }
 
 #[derive(Component)]

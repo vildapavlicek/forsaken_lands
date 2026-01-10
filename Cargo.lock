@@ -4869,6 +4869,7 @@ dependencies = [
  "hero_events",
  "research",
  "serde",
+ "states",
  "unlocks_components",
  "unlocks_events",
  "unlocks_resources",

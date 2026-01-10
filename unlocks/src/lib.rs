@@ -180,10 +180,11 @@ impl Plugin for UnlocksPlugin {
             // Systems for compilation and change detection
             .add_systems(
                 Update,
-                (
-                    compile_pending_unlocks,
-                    check_wallet_changes,
-                ),
+                check_wallet_changes,
+            )
+            .add_systems(
+                OnEnter(states::LoadingPhase::Unlocks),
+                compile_pending_unlocks,
             )
             // Observers for gate logic and event interception
             .add_observer(propagate_logic_signal)

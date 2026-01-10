@@ -14,53 +14,42 @@ pub fn spawn_research_entities(
     mut commands: Commands,
     mut research_map: ResMut<ResearchMap>,
     mut assets: ResMut<Assets<ResearchDefinition>>,
-    mut events: MessageReader<AssetEvent<ResearchDefinition>>,
     unlock_state: Res<UnlockState>,
+    mut next_phase: ResMut<NextState<states::LoadingPhase>>,
 ) {
-    // Collect added asset IDs first to avoid borrow conflicts
-    let added_ids: Vec<_> = events
-        .read()
-        .filter_map(|event| {
-            if let AssetEvent::Added { id } = event {
-                Some(*id)
-            } else {
-                None
-            }
-        })
-        .collect();
+    debug!("Spawning research entities...");
+    
+    // Collect IDs first to avoid borrowing assets immutably while needing mutable access later
+    let ids: Vec<_> = assets.ids().collect();
 
-    for id in added_ids {
+    for id in ids {
         // Get definition info first and clone what we need
-        let Some(def) = assets.get(id) else {
-            continue;
-        };
-
-        // Check if already spawned
-        if research_map.entities.contains_key(&def.id) {
-            continue;
-        }
-
-        // Clone the definition ID before getting handle
-        let def_id = def.id.clone();
-
-        // Now get the strong handle (needs mutable borrow, but def is no longer borrowed)
-        let Some(handle) = assets.get_strong_handle(id) else {
-            continue;
+        // We scope this so we drop the immutable borrow before get_strong_handle
+        let def_id = {
+            let Some(def) = assets.get(id) else {
+                continue;
+            };
+            
+            // Check if already spawned
+            if research_map.entities.contains_key(&def.id) {
+                continue;
+            }
+            
+            def.id.clone()
         };
 
         // Check if the unlock for this research has already been achieved
         // Unlocks use reward_id format: "research_{id}"
-        let reward_id = format!("research_{}", def_id);
         let already_unlocked = unlock_state
             .completed
             .iter()
             .any(|unlock_id| {
-                // Check if any completed unlock has a matching reward_id
-                // The unlock_id is the unlock's id, but we need to check reward_id
-                // Since UnlockState stores unlock IDs, we need to match the pattern
                 unlock_id.ends_with(&format!("{}_unlock", def_id))
                     || unlock_id.starts_with(&format!("research_{}", def_id))
             });
+
+        // Now we can mutably borrow assets to get the strong handle
+        let handle = assets.get_strong_handle(id).unwrap();
 
         let entity = if already_unlocked {
             debug!("Research '{}' unlock already achieved, spawning as Available", def_id);
@@ -88,6 +77,8 @@ pub fn spawn_research_entities(
         research_map.entities.insert(def_id.clone(), entity);
         debug!("Spawned research entity: {} -> {:?}", def_id, entity);
     }
+
+    next_phase.set(states::LoadingPhase::Recipes);
 }
 
 

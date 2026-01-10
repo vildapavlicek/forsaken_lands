@@ -82,12 +82,8 @@ impl Plugin for ResearchPlugin {
             .register_type::<UnlockEffect>()
             // spawn_research_entities needs to run during Loading to catch AssetEvent::Added
             .add_systems(
-                Update,
-                systems::spawn_research_entities.run_if(
-                    in_state(states::GameState::Loading)
-                        .or(in_state(states::GameState::Initializing))
-                        .or(in_state(states::GameState::Running)),
-                ),
+                OnEnter(states::LoadingPhase::Research),
+                systems::spawn_research_entities,
             )
             .add_systems(
                 Update,

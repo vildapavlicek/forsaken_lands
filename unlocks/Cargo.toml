@@ -15,3 +15,4 @@ wallet.workspace = true
 unlocks_components.workspace = true
 unlocks_events.workspace = true
 unlocks_resources.workspace = true
+states.workspace = true

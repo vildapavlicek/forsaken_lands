@@ -17,6 +17,7 @@ pub fn compile_pending_unlocks(
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     unlock_state: Res<UnlockState>,
     compiled: Query<&CompiledUnlock>,
+    mut next_phase: ResMut<NextState<states::LoadingPhase>>,
 ) {
     let encyclopedia = encyclopedia_query.single().ok();
 
@@ -31,6 +32,8 @@ pub fn compile_pending_unlocks(
         compiled.iter().map(|c| c.definition_id.as_str()).collect();
 
     // Filter out already-compiled and already-unlocked definitions
+    // Even though this runs once, checking compiled_ids is safe if we re-enter or something weird happens, 
+    // but mainly we want to skip already unlocked ones.
     let pending_definitions = unlock_assets
         .iter()
         .map(|(_, def)| def)
@@ -63,6 +66,8 @@ pub fn compile_pending_unlocks(
             &ctx,
         );
     }
+
+    next_phase.set(states::LoadingPhase::Done);
 }
 
 /// Observer for logic signal propagation via ChildOf hierarchy.
