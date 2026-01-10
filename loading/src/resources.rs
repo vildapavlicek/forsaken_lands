@@ -10,3 +10,6 @@ pub(super) struct UnlocksFolderHandle(pub Handle<LoadedFolder>);
 
 #[derive(Debug, Resource)]
 pub(super) struct ResearchFolderHandle(pub Handle<LoadedFolder>);
+
+#[derive(Debug, Resource)]
+pub(super) struct RecipesFolderHandle(pub Handle<LoadedFolder>);

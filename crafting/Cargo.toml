@@ -5,9 +5,14 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+crafting_components.workspace = true
 crafting_events.workspace = true
 crafting_resources.workspace = true
 divinity_events.workspace = true
+recipes_assets.workspace = true
 states.workspace = true
 system_schedule.workspace = true
+unlock_states.workspace = true
+unlocks_events.workspace = true
+unlocks_resources.workspace = true
 village_components.workspace = true

@@ -1,55 +1,150 @@
-# Asset ID Mappings
+# Asset ID Mappings & Unlock Conditions Guide
 
-## Research Unlocks
+This guide explains how IDs work in the unlock system and how to properly define unlock conditions for new content.
 
-To ensure proper linkage between the Unlock system and the Research system, specific ID naming conventions must be followed.
+## Overview
 
-### Naming Convention
+The unlock system uses **topics** to signal when conditions are met. Different systems emit events to different topics:
 
-For a Research Definition with ID `{NAME}`:
+| Event Type | Topic Format | Example |
+|------------|--------------|---------|
+| Research Completed | `unlock:{research_id}` | `unlock:bone_weaponry` |
+| Unlock Achieved | `unlock:{unlock_id}` | `unlock:research_bone_weaponry_unlock` |
 
-1.  **Research Asset** (`.research.ron`):
-    *   `id`: `"{NAME}"`
-    *   Example: `"basic_archery"`
+---
 
-2.  **Unlock Asset** (`.unlock.ron`):
-    *   `id`: `"research_{NAME}_unlock"`
-    *   `reward_id`: `"research_{NAME}"`
-    *   Example:
-        *   `id`: `"research_basic_archery_unlock"`
-        *   `reward_id`: `"research_basic_archery"`
+## Research System
 
-### Logic Flow
+### Research Definition (`.research.ron`)
 
-1.  **Unlock Achievement**:
-    *   When the unlock condition is met, the system fires an `UnlockAchieved` event with the `reward_id` (e.g., `"research_basic_archery"`).
-
-2.  **Research Availability**:
-    *   The Research system listens for `UnlockAchieved`.
-    *   It strips the `"research_"` prefix from the `reward_id` to get the target Research ID (e.g., `"basic_archery"`).
-    *   It looks up the Research entity with that ID and changes its state from `Locked` to `Available`.
-
-3.  **Initialization Reference**:
-    *   During game startup, the system also checks `UnlockState` to see if `id` (e.g. `"research_basic_archery_unlock"`) has already been completed.
-    *   If matched, the research entity is spawned directly in the `Available` state.
-
-### Example Files
-
-**`assets/research/basic_archery.research.ron`**
 ```ron
 (
-    id: "basic_archery",
-    name: "Basic Archery",
-    // ...
+    id: "bone_weaponry",        // ← This is the research_id
+    name: "Bone Weaponry",
+    ...
 )
 ```
 
-**`assets/unlocks/research_basic_archery.unlock.ron`**
+When a player **completes** this research, the system emits:
+- Topic: `unlock:bone_weaponry`
+
+### Research Unlock Definition (`.unlock.ron`)
+
 ```ron
 (
-    id: "research_basic_archery_unlock",
-    display_name: Some("Basic Archery Research"),
-    reward_id: "research_basic_archery",
-    condition: ...
+    id: "research_bone_weaponry_unlock",   // ← unlock_id (unique identifier)
+    display_name: Some("Bone Weaponry"),
+    reward_id: "research_bone_weaponry",   // ← Used by research system to identify which research to make available
+    condition: Unlock("bone_crafting"),    // ← References a research_id (triggers when that research completes)
 )
 ```
+
+When this unlock **achieves**, the system:
+1. Adds `"research_bone_weaponry_unlock"` to completed unlocks
+2. Emits topic: `unlock:research_bone_weaponry_unlock`
+3. Research system sees `reward_id: "research_bone_weaponry"` and makes that research available
+
+---
+
+## Recipe System
+
+### Recipe Definition (`.recipe.ron`)
+
+```ron
+(
+    id: "bone_sword",           // ← This is the recipe_id
+    display_name: "Bone Sword",
+    ...
+)
+```
+
+### Recipe Unlock Definition (`.unlock.ron`)
+
+```ron
+(
+    id: "recipe_bone_sword_unlock",        // ← unlock_id (unique identifier)
+    display_name: Some("Bone Sword Recipe"),
+    reward_id: "recipe_bone_sword",        // ← Used by crafting system (must match recipe_id)
+    condition: Unlock("bone_weaponry"),    // ← References a research_id
+)
+```
+
+---
+
+## Choosing the Right Condition
+
+### To unlock when **research completes**:
+Use the **research_id** directly:
+```ron
+condition: Unlock("bone_weaponry")
+```
+This triggers when the player finishes researching "bone_weaponry".
+
+### To unlock when **research becomes available**:
+Use the **unlock_id** of the research unlock:
+```ron
+condition: Unlock("research_bone_weaponry_unlock")
+```
+This triggers when the research appears in the UI (before player starts it).
+
+### To unlock based on **stats or resources**:
+```ron
+condition: And([
+    Stat(StatCheck(stat_id: "goblin_kills", value: 10.0, op: Ge)),
+    Resource(ResourceCheck(resource_id: "bones", amount: 5)),
+])
+```
+
+---
+
+## Quick Reference Table
+
+| I want to unlock when... | Use this condition |
+|--------------------------|-------------------|
+| Research "X" is **completed** | `Unlock("X")` where X = research_id |
+| Research "X" becomes **available** | `Unlock("research_X_unlock")` |
+| Player kills N enemies | `Stat(StatCheck(...))` |
+| Player has N resources | `Resource(ResourceCheck(...))` |
+| Multiple conditions (all) | `And([...])` |
+| Any condition (one of) | `Or([...])` |
+| Always unlocked | `True` |
+
+---
+
+## Common Mistakes
+
+❌ **Wrong:** `Unlock("research_bone_weaponry")` 
+- This topic doesn't exist! No one emits `unlock:research_bone_weaponry`.
+
+✅ **Correct:** `Unlock("bone_weaponry")` 
+- Triggers when research with `id: "bone_weaponry"` completes.
+
+❌ **Wrong:** Recipe `reward_id` doesn't match recipe `id`
+```ron
+// Recipe file
+id: "bone_sword"
+
+// Unlock file  
+reward_id: "bone_sword_recipe"  // ← Won't work!
+```
+
+✅ **Correct:** `reward_id` matches recipe `id`
+```ron
+// Recipe file
+id: "bone_sword"
+
+// Unlock file
+reward_id: "recipe_bone_sword"  // ← Matches with prefix
+```
+
+---
+
+## Naming Conventions
+
+| Asset Type | ID Pattern | Example |
+|------------|------------|---------|
+| Research Definition | `{name}` | `bone_weaponry` |
+| Research Unlock | `research_{name}_unlock` | `research_bone_weaponry_unlock` |
+| Recipe Definition | `{name}` | `bone_sword` |
+| Recipe Unlock | `recipe_{name}_unlock` | `recipe_bone_sword_unlock` |
+| Recipe reward_id | `recipe_{name}` | `recipe_bone_sword` |

@@ -1,7 +1,8 @@
 use {
     bevy::{picking::prelude::*, prelude::*},
-    crafting_resources::RecipesLibrary,
-    research::{Available, Completed, InProgress, ResearchDefinition, ResearchNode},
+    crafting::{Available, RecipeNode},
+    recipes_assets::{RecipeCategory, RecipeDefinition},
+    research::{Completed, InProgress, ResearchDefinition, ResearchNode},
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
@@ -192,19 +193,58 @@ impl Command for SpawnCraftingContentCommand {
             world.commands().entity(child).despawn();
         }
 
-        // Get completed research IDs from entity queries FIRST (before borrowing resources)
-        let mut completed_query = world.query_filtered::<&ResearchNode, With<Completed>>();
-        let completed_research: Vec<String> = completed_query
+        // Query available recipe entities and collect ids and handles
+        let mut recipe_query = world.query_filtered::<&RecipeNode, With<Available>>();
+        let recipe_data: Vec<(String, bevy::asset::Handle<RecipeDefinition>)> = recipe_query
             .iter(world)
-            .map(|node| node.id.clone())
+            .map(|node| (node.id.clone(), node.handle.clone()))
             .collect();
 
-        // Now get resources needed for crafting content
-        let library = world.resource::<RecipesLibrary>();
+        let assets = world.resource::<Assets<RecipeDefinition>>();
         let wallet = world.resource::<Wallet>();
 
-        // Build crafting data
-        let crafting_data = crafting_ui::build_crafting_data(library, wallet, &completed_research);
+        // Build crafting display data from available recipes
+        let active_tab = RecipeCategory::Weapons;
+        let mut recipes = Vec::new();
+
+        for (id, handle) in &recipe_data {
+            let Some(def) = assets.get(handle) else {
+                continue;
+            };
+
+            // Filter by active tab (default to Weapons)
+            if def.category != active_tab {
+                continue;
+            }
+
+            // Calculate cost string and affordability
+            let mut can_afford = true;
+            let mut cost_str = String::from("Cost: ");
+
+            let mut cost_items: Vec<_> = def.cost.iter().collect();
+            cost_items.sort_by_key(|(res_id, _)| *res_id);
+
+            for (res_id, amt) in cost_items {
+                let current = wallet.resources.get(res_id).copied().unwrap_or(0);
+                cost_str.push_str(&format!("{}: {}/{} ", res_id, current, amt));
+                if current < *amt {
+                    can_afford = false;
+                }
+            }
+
+            recipes.push(crafting_ui::RecipeDisplayData {
+                id: id.clone(),
+                display_name: def.display_name.clone(),
+                craft_time: def.craft_time,
+                cost_str,
+                can_afford,
+            });
+        }
+
+        let crafting_data = crafting_ui::CraftingData {
+            active_tab,
+            recipes,
+        };
 
         // Spawn back button and crafting content
         world.commands().entity(container).with_children(|parent| {
@@ -240,7 +280,7 @@ impl Command for SpawnResearchContentCommand {
 
         // Query research entities by state FIRST - collect into owned data
         let mut available_query =
-            world.query_filtered::<(Entity, &ResearchNode), With<Available>>();
+            world.query_filtered::<(Entity, &ResearchNode), With<research::Available>>();
         let available_ids: Vec<(Entity, String)> = available_query
             .iter(world)
             .map(|(e, n)| (e, n.id.clone()))

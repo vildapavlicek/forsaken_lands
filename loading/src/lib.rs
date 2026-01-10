@@ -1,9 +1,13 @@
 mod resources;
 
 use {
-    crate::resources::{EnemyPrefabsFolderHandle, ResearchFolderHandle, UnlocksFolderHandle},
+    crate::resources::{
+        EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle, UnlocksFolderHandle,
+    },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
+    crafting_resources::RecipeMap,
     portal_assets::SpawnTable,
+    recipes_assets::RecipeDefinition,
     research::{ResearchDefinition, ResearchMap},
     states::{GameState, LoadingPhase},
     std::ffi::OsStr,
@@ -15,7 +19,6 @@ use {
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
 };
-
 
 pub struct LoadingManagerPlugin;
 
@@ -32,6 +35,7 @@ impl Plugin for LoadingManagerPlugin {
                     load_enemy_prefabs,
                     load_unlocks_assets,
                     load_research_assets,
+                    load_recipes_assets,
                 ),
             )
             .add_systems(
@@ -39,7 +43,7 @@ impl Plugin for LoadingManagerPlugin {
                 check_assets_loaded
                     .run_if(in_state(GameState::Loading).and(in_state(LoadingPhase::Assets))),
             )
-            // Phase: SpawnEntities - spawn research entities
+            // Phase: SpawnEntities - spawn research and recipe entities
             .add_systems(OnEnter(LoadingPhase::SpawnEntities), spawn_all_entities)
             // Phase: CompileUnlocks - build unlock logic graphs
             .add_systems(OnEnter(LoadingPhase::CompileUnlocks), compile_unlocks)
@@ -66,7 +70,6 @@ impl Plugin for LoadingManagerPlugin {
 #[derive(Resource, Default)]
 pub struct LoadingManager {
     pub startup_scene: Handle<DynamicScene>,
-    pub recipes_library_scene: Handle<DynamicScene>,
     pub spawn_tables: HashMap<String, Handle<SpawnTable>>,
     pub enemies: HashMap<String, Handle<DynamicScene>>,
 }
@@ -85,7 +88,6 @@ pub struct LoadingStatus {
 fn start_loading(mut assets: ResMut<LoadingManager>, asset_server: Res<AssetServer>) {
     info!("started loading assets");
     assets.startup_scene = asset_server.load("startup.scn.ron");
-    assets.recipes_library_scene = asset_server.load("recipes/library.scn.ron");
     let default_spawn_table = asset_server.load("default.spawn_table.ron");
 
     assets
@@ -108,6 +110,11 @@ fn load_research_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(ResearchFolderHandle(handle));
 }
 
+fn load_recipes_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("recipes");
+    cmd.insert_resource(RecipesFolderHandle(handle));
+}
+
 fn check_assets_loaded(
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut loading_manager: ResMut<LoadingManager>,
@@ -116,6 +123,7 @@ fn check_assets_loaded(
     enemy_prefabs: Res<EnemyPrefabsFolderHandle>,
     unlocks: Res<UnlocksFolderHandle>,
     research: Res<ResearchFolderHandle>,
+    recipes: Res<RecipesFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
 ) {
     status.current_phase = "Loading Assets".into();
@@ -127,11 +135,11 @@ fn check_assets_loaded(
         .all(|handle| asset_server.is_loaded_with_dependencies(handle));
 
     if asset_server.is_loaded_with_dependencies(&loading_manager.startup_scene)
-        && asset_server.is_loaded_with_dependencies(&loading_manager.recipes_library_scene)
         && spawn_tables_loaded
         && asset_server.is_loaded_with_dependencies(enemy_prefabs.0.id())
         && asset_server.is_loaded_with_dependencies(unlocks.0.id())
         && asset_server.is_loaded_with_dependencies(research.0.id())
+        && asset_server.is_loaded_with_dependencies(recipes.0.id())
     {
         info!("assets loaded");
 
@@ -168,25 +176,27 @@ fn check_assets_loaded(
 
 // --- Phase: SpawnEntities ---
 
+#[allow(clippy::too_many_arguments)]
 fn spawn_all_entities(
     mut commands: Commands,
     mut research_map: ResMut<ResearchMap>,
-    mut assets: ResMut<Assets<ResearchDefinition>>,
+    mut recipe_map: ResMut<RecipeMap>,
+    mut research_assets: ResMut<Assets<ResearchDefinition>>,
+    mut recipe_assets: ResMut<Assets<RecipeDefinition>>,
     unlock_state: Res<UnlockState>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
 ) {
     status.current_phase = "Spawning Entities".into();
-    status.detail = "Creating research nodes...".into();
+    status.detail = "Creating research and recipe nodes...".into();
 
+    // Spawn research entities
     debug!("Spawning research entities...");
+    let research_ids: Vec<_> = research_assets.ids().collect();
 
-    // Inline research spawning logic (from research::systems::spawn_research_entities)
-    let ids: Vec<_> = assets.ids().collect();
-
-    for id in ids {
+    for id in research_ids {
         let def_id = {
-            let Some(def) = assets.get(id) else {
+            let Some(def) = research_assets.get(id) else {
                 continue;
             };
 
@@ -202,7 +212,7 @@ fn spawn_all_entities(
                 || unlock_id.starts_with(&format!("research_{}", def_id))
         });
 
-        let handle = assets.get_strong_handle(id).unwrap();
+        let handle = research_assets.get_strong_handle(id).unwrap();
 
         let entity = if already_unlocked {
             debug!(
@@ -233,6 +243,15 @@ fn spawn_all_entities(
         research_map.entities.insert(def_id.clone(), entity);
         debug!("Spawned research entity: {} -> {:?}", def_id, entity);
     }
+
+    // Spawn recipe entities
+    debug!("Spawning recipe entities...");
+    crafting::spawn_recipe_entities(
+        &mut commands,
+        &mut recipe_map,
+        &mut recipe_assets,
+        &unlock_state,
+    );
 
     next_phase.set(LoadingPhase::CompileUnlocks);
 }
@@ -310,7 +329,6 @@ fn spawn_startup_scene(
 
     info!("spawning starting scene");
     scene_spawner.spawn_dynamic(loading_manager.startup_scene.clone());
-    scene_spawner.spawn_dynamic(loading_manager.recipes_library_scene.clone());
 }
 
 fn check_scene_spawned(mut next_phase: ResMut<NextState<LoadingPhase>>, query: Query<(), With<Village>>) {

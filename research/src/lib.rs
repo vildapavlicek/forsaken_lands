@@ -7,6 +7,9 @@ use {
 
 pub mod systems;
 
+// Re-export shared unlock states for backwards compatibility
+pub use unlock_states::{Available, Locked};
+
 // --- Asset Definition ---
 
 #[derive(Asset, TypePath, Debug, Clone, Deserialize)]
@@ -33,14 +36,6 @@ pub struct ResearchNode {
     pub id: String,
     pub handle: Handle<ResearchDefinition>,
 }
-
-/// Default state - not visible in UI, waiting for unlock
-#[derive(Component, Default)]
-pub struct Locked;
-
-/// Visible in UI, can be started by player
-#[derive(Component)]
-pub struct Available;
 
 /// Currently being researched
 #[derive(Component)]

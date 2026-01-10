@@ -1,0 +1,13 @@
+(
+    id: "bone_sword",
+    display_name: "Bone Sword",
+    category: Weapons,
+    craft_time: 8.0,
+    cost: {
+        "bones": 15,
+        "wood": 2,
+    },
+    outcomes: [
+        SpawnPrefab("recipes/prefabs/bone_sword.scn.ron"),
+    ],
+)

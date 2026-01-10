@@ -1,6 +1,10 @@
 use {
-    crate::CraftingInProgress, bevy::prelude::*, crafting_events::StartCraftingRequest,
-    crafting_resources::RecipesLibrary, divinity_events::IncreaseDivinity,
+    crate::{Available, CraftingInProgress, Locked, RecipeNode},
+    bevy::prelude::*,
+    crafting_events::StartCraftingRequest,
+    crafting_resources::RecipeMap,
+    divinity_events::IncreaseDivinity,
+    recipes_assets::RecipeDefinition,
     village_components::Village,
 };
 
@@ -10,23 +14,66 @@ use {
 pub fn start_crafting(
     trigger: On<StartCraftingRequest>,
     mut commands: Commands,
-    library: Res<RecipesLibrary>,
+    recipe_map: Res<RecipeMap>,
+    recipe_query: Query<&RecipeNode, With<Available>>,
+    assets: Res<Assets<RecipeDefinition>>,
 ) {
     let recipe_id = &trigger.event().recipe_id;
 
-    let Some(recipe) = library.recipes.get(recipe_id) else {
-        warn!("Recipe ID {} not found.", recipe_id);
+    // Look up the recipe entity
+    let Some(&entity) = recipe_map.entities.get(recipe_id) else {
+        warn!("Recipe '{}' not found in RecipeMap", recipe_id);
+        return;
+    };
+
+    // Verify it's available
+    let Ok(node) = recipe_query.get(entity) else {
+        warn!("Recipe '{}' not available", recipe_id);
+        return;
+    };
+
+    // Get the definition
+    let Some(def) = assets.get(&node.handle) else {
+        warn!("Recipe definition not loaded for '{}'", recipe_id);
         return;
     };
 
     // Spawn crafting entity with timer
     commands.spawn(CraftingInProgress {
         recipe_id: recipe_id.clone(),
-        outcomes: recipe.outcomes.clone(),
-        timer: Timer::from_seconds(recipe.craft_time, TimerMode::Once),
+        outcomes: def.outcomes.clone(),
+        timer: Timer::from_seconds(def.craft_time, TimerMode::Once),
     });
 
-    info!("Crafting started for: {}", recipe.display_name);
+    info!("Crafting started for: {}", def.display_name);
+}
+
+/// Observer for UnlockAchieved events with recipe_ prefix.
+/// Transitions recipe entities from Locked → Available.
+pub fn on_recipe_unlock_achieved(
+    trigger: On<unlocks_events::UnlockAchieved>,
+    mut commands: Commands,
+    recipe_map: Res<RecipeMap>,
+    locked_query: Query<(), With<Locked>>,
+) {
+    let event = trigger.event();
+    const PREFIX: &str = "recipe_";
+
+    if event.reward_id.starts_with(PREFIX) {
+        let recipe_id = &event.reward_id[PREFIX.len()..];
+        if let Some(&entity) = recipe_map.entities.get(recipe_id) {
+            // Only transition if currently Locked
+            if locked_query.get(entity).is_ok() {
+                commands.entity(entity).remove::<Locked>().insert(Available);
+                info!("Recipe '{}' is now available", recipe_id);
+            }
+        } else {
+            debug!(
+                "Recipe '{}' not found in RecipeMap (unlock may have fired before asset load)",
+                recipe_id
+            );
+        }
+    }
 }
 
 /// System that ticks crafting timers and processes completions.

@@ -1,0 +1,13 @@
+(
+    id: "bone_idol",
+    display_name: "Bone Idol",
+    category: Idols,
+    craft_time: 5.0,
+    cost: {
+        "bones": 50,
+        "xikegos": 5,
+    },
+    outcomes: [
+        IncreaseDivinity(100),
+    ],
+)

@@ -1,0 +1,12 @@
+(
+    id: "wooden_bow",
+    display_name: "Wooden Bow",
+    category: Weapons,
+    craft_time: 5.0,
+    cost: {
+        "wood": 10,
+    },
+    outcomes: [
+        SpawnPrefab("recipes/prefabs/wooden_bow.scn.ron"),
+    ],
+)

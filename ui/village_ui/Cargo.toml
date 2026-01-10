@@ -5,12 +5,14 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-crafting_resources.workspace = true
+crafting.workspace = true
 crafting_ui.workspace = true
 enemy_encyclopedia.workspace = true
+recipes_assets.workspace = true
 research.workspace = true
 research_ui.workspace = true
 states.workspace = true
+unlock_states.workspace = true
 village_components.workspace = true
 wallet.workspace = true
 widgets.workspace = true

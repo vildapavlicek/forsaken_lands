@@ -1,8 +1,9 @@
 use {
     bevy::prelude::*,
+    crafting::{Available, RecipeNode},
     crafting_events::StartCraftingRequest,
-    crafting_resources::{RecipeCategory, RecipesLibrary},
-    research::{Completed, ResearchNode},
+    crafting_resources::RecipeCategory,
+    recipes_assets::RecipeDefinition,
     states::GameState,
     wallet::Wallet,
     widgets::{
@@ -78,14 +79,14 @@ pub struct RecipeDisplayData {
     pub can_afford: bool,
 }
 
-/// Builds crafting display data from game resources
+/// Builds crafting display data from available recipe entities.
 pub fn build_crafting_data(
-    library: &RecipesLibrary,
+    recipe_query: &Query<&RecipeNode, With<Available>>,
+    assets: &Assets<RecipeDefinition>,
     wallet: &Wallet,
-    completed_research: &[String],
 ) -> CraftingData {
     let active_tab = RecipeCategory::Weapons;
-    let recipes = build_recipe_list(library, wallet, completed_research, &active_tab);
+    let recipes = build_recipe_list(recipe_query, assets, wallet, &active_tab);
     CraftingData {
         active_tab,
         recipes,
@@ -93,26 +94,26 @@ pub fn build_crafting_data(
 }
 
 fn build_recipe_list(
-    library: &RecipesLibrary,
+    recipe_query: &Query<&RecipeNode, With<Available>>,
+    assets: &Assets<RecipeDefinition>,
     wallet: &Wallet,
-    completed_research: &[String],
     category: &RecipeCategory,
 ) -> Vec<RecipeDisplayData> {
-    library
-        .recipes
+    recipe_query
         .iter()
-        .filter(|(_, recipe)| {
-            recipe.category == *category
-                && recipe
-                    .required_research
-                    .as_ref()
-                    .is_none_or(|req| completed_research.contains(req))
-        })
-        .map(|(id, recipe)| {
+        .filter_map(|node| {
+            let def = assets.get(&node.handle)?;
+            
+            // Filter by category
+            if &def.category != category {
+                return None;
+            }
+
+            // Calculate cost string and affordability
             let mut can_afford = true;
             let mut cost_str = String::from("Cost: ");
 
-            let mut cost_items: Vec<_> = recipe.cost.iter().collect();
+            let mut cost_items: Vec<_> = def.cost.iter().collect();
             cost_items.sort_by_key(|(res_id, _)| *res_id);
 
             for (res_id, amt) in cost_items {
@@ -123,13 +124,13 @@ fn build_recipe_list(
                 }
             }
 
-            RecipeDisplayData {
-                id: id.clone(),
-                display_name: recipe.display_name.clone(),
-                craft_time: recipe.craft_time,
+            Some(RecipeDisplayData {
+                id: node.id.clone(),
+                display_name: def.display_name.clone(),
+                craft_time: def.craft_time,
                 cost_str,
                 can_afford,
-            }
+            })
         })
         .collect()
 }
@@ -228,9 +229,9 @@ fn handle_tab_switch(
     >,
     mut ui_query: Query<&mut RecipesUiRoot>,
     mut tab_buttons: Query<(&RecipeTabButton, &mut BackgroundColor)>,
-    library: Res<RecipesLibrary>,
+    recipe_query: Query<&RecipeNode, With<Available>>,
+    assets: Res<Assets<RecipeDefinition>>,
     wallet: Res<Wallet>,
-    completed_query: Query<&ResearchNode, With<Completed>>,
 ) {
     for (interaction, tab_btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
@@ -248,15 +249,11 @@ fn handle_tab_switch(
                         }
                     }
 
-                    // Get completed research IDs
-                    let completed_research: Vec<String> =
-                        completed_query.iter().map(|node| node.id.clone()).collect();
-
                     // Repopulate recipes
                     let recipes = build_recipe_list(
-                        &library,
+                        &recipe_query,
+                        &assets,
                         &wallet,
-                        &completed_research,
                         &tab_btn.category,
                     );
                     commands.queue(PopulateRecipesDirectCommand {
@@ -277,10 +274,10 @@ fn handle_tab_switch(
 
 fn update_recipes_ui(
     mut commands: Commands,
-    library: Res<RecipesLibrary>,
+    recipe_query: Query<&RecipeNode, With<Available>>,
+    assets: Res<Assets<RecipeDefinition>>,
     wallet: Res<Wallet>,
     ui_query: Query<&RecipesUiRoot>,
-    completed_query: Query<&ResearchNode, With<Completed>>,
     mut last_data: Local<Vec<RecipeDisplayData>>,
 ) {
     // Only update if wallet changed
@@ -289,10 +286,7 @@ fn update_recipes_ui(
     }
 
     if let Ok(ui_root) = ui_query.single() {
-        let completed_research: Vec<String> =
-            completed_query.iter().map(|node| node.id.clone()).collect();
-        let recipes =
-            build_recipe_list(&library, &wallet, &completed_research, &ui_root.active_tab);
+        let recipes = build_recipe_list(&recipe_query, &assets, &wallet, &ui_root.active_tab);
 
         if *last_data == recipes {
             return;
@@ -379,22 +373,35 @@ impl Command for PopulateRecipesDirectCommand {
 fn handle_crafting_button(
     mut commands: Commands,
     mut wallet: ResMut<Wallet>,
-    library: Res<RecipesLibrary>,
+    recipe_query: Query<&RecipeNode, With<Available>>,
+    recipe_map: Res<crafting_resources::RecipeMap>,
+    assets: Res<Assets<RecipeDefinition>>,
     interaction_query: Query<(&Interaction, &CraftingButton), (Changed<Interaction>, With<Button>)>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
-        if *interaction == Interaction::Pressed
-            && let Some(recipe) = library.recipes.get(&btn.recipe_id)
-        {
+        if *interaction == Interaction::Pressed {
+            // Find recipe entity and get definition
+            let Some(&entity) = recipe_map.entities.get(&btn.recipe_id) else {
+                continue;
+            };
+            
+            let Ok(node) = recipe_query.get(entity) else {
+                continue;
+            };
+            
+            let Some(def) = assets.get(&node.handle) else {
+                continue;
+            };
+
             // Check if can afford
-            let can_afford = recipe
+            let can_afford = def
                 .cost
                 .iter()
                 .all(|(res_id, amt)| wallet.resources.get(res_id).copied().unwrap_or(0) >= *amt);
 
             if can_afford {
                 // Deduct resources
-                for (res_id, amt) in &recipe.cost {
+                for (res_id, amt) in &def.cost {
                     if let Some(current) = wallet.resources.get_mut(res_id) {
                         *current -= *amt;
                     }
@@ -404,7 +411,7 @@ fn handle_crafting_button(
                 commands.trigger(StartCraftingRequest {
                     recipe_id: btn.recipe_id.clone(),
                 });
-                info!("Sent crafting request for: {}", recipe.display_name);
+                info!("Sent crafting request for: {}", def.display_name);
             }
         }
     }

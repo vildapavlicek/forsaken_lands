@@ -1,62 +1,54 @@
-use {bevy::prelude::*, std::collections::HashMap};
+//! Resources for the crafting system.
 
-/// Category for organizing recipes into tabs
-#[derive(Reflect, Clone, Debug, Default, PartialEq, Eq)]
-pub enum RecipeCategory {
-    #[default]
-    Weapons,
-    Idols,
-}
+use bevy::{platform::collections::HashMap, prelude::*};
 
+// Re-export types from recipes_assets for backwards compatibility
+pub use recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition};
+
+// --- Legacy Resource (kept for migration, will be removed) ---
+
+/// DEPRECATED: Use RecipeMap with entity queries instead.
+/// This resource remains temporarily for backwards compatibility during migration.
 #[derive(Resource, Debug, Reflect, Default)]
 #[reflect(Resource)]
 pub struct RecipesLibrary {
     pub recipes: HashMap<String, CraftingRecipe>,
 }
 
-/// Represents the merged crafting recipe definition.
+/// DEPRECATED: Use RecipeDefinition asset instead.
+/// This type remains temporarily for backwards compatibility during migration.
 #[derive(Reflect, Default, Debug, Clone)]
 pub struct CraftingRecipe {
-    /// The unique ID used by Research to unlock this (e.g., "wooden_bow")
     pub id: String,
-    /// Display name for UI
     pub display_name: String,
-    /// Category for tab-based organization (Weapons, Idols)
     pub category: RecipeCategory,
-    /// Time in seconds to craft
     pub craft_time: f32,
-    /// The research required to unlock this recipe.
     pub required_research: Option<String>,
-    /// The inputs required to craft the item.
     pub cost: HashMap<String, u32>,
-    /// The outputs produced by the craft.
     pub outcomes: Vec<CraftingOutcome>,
 }
 
-/// Represents distinct actions that occur upon crafting completion.
-#[derive(Reflect, Clone, Debug)]
-pub enum CraftingOutcome {
-    /// Spawns a prefab by its asset key/path
-    SpawnPrefab(String),
-    /// Adds a quantity of a resource to the player's wallet
-    AddResource { id: String, amount: u32 },
-    /// Unlocks a specific tech or feature
-    UnlockFeature(String),
-    /// Grants Experience points
-    GrantXp(u32),
-    /// Increases Village Divinity XP by the given amount
-    IncreaseDivinity(u32),
+// --- New Entity-Based Resources ---
+
+/// O(1) lookup of recipe entities by ID.
+/// Similar to ResearchMap for research entities.
+#[derive(Resource, Default)]
+pub struct RecipeMap {
+    pub entities: HashMap<String, Entity>,
 }
+
+// --- Plugin ---
 
 pub struct CraftingResourcesPlugin;
 
 impl Plugin for CraftingResourcesPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<RecipeCategory>()
-            .register_type::<CraftingRecipe>()
-            .register_type::<CraftingOutcome>()
-            .register_type::<RecipesLibrary>();
+        // Legacy types (kept for migration)
+        app.register_type::<CraftingRecipe>()
+            .register_type::<RecipesLibrary>()
+            .init_resource::<RecipesLibrary>();
 
-        app.init_resource::<RecipesLibrary>();
+        // New entity-based resources
+        app.init_resource::<RecipeMap>();
     }
 }

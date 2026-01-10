@@ -1,0 +1,6 @@
+(
+    id: "recipe_bone_idol_unlock",
+    display_name: Some("Bone Idol Recipe"),
+    reward_id: "recipe_bone_idol",
+    condition: Unlock("bone_idol"),
+)
