@@ -37,7 +37,7 @@ impl Plugin for PortalsPlugin {
         app.add_systems(Update, move_enemy.in_set(GameSchedule::PerformAction));
         app.add_systems(
             Update,
-            (despawn_expired_enemies, despawn_dead_enemies).in_set(GameSchedule::FrameEnd),
+            manage_enemy_lifecycle.in_set(GameSchedule::FrameEnd),
         );
         app.add_systems(Update, draw_range_gizmos);
 
@@ -106,29 +106,45 @@ fn enemy_spawn_system(
     }
 }
 
-fn despawn_expired_enemies(
+fn manage_enemy_lifecycle(
     time: Res<Time>,
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Lifetime), With<Enemy>>,
+    mut query: Query<
+        (
+            Entity,
+            Option<&mut Lifetime>,
+            Option<&Health>,
+            Option<&Dead>,
+        ),
+        With<Enemy>,
+    >,
 ) {
-    for (entity, mut lifetime) in query.iter_mut() {
-        if lifetime.0.tick(time.delta()).just_finished() {
-            commands.entity(entity).despawn();
-        }
-    }
-}
+    for (entity, lifetime_opt, health_opt, dead_opt) in query.iter_mut() {
+        let mut should_despawn = false;
 
-fn despawn_dead_enemies(
-    mut commands: Commands,
-    query: Query<(Entity, &Health), (With<Enemy>, Without<Dead>)>,
-) {
-    for (entity, health) in query.iter() {
-        if health.current <= 0.0 {
-            commands.trigger(EnemyKilled { entity });
-            commands
-                .entity(entity)
-                .insert(Dead)
-                .remove::<(Sprite, Transform)>();
+        // Handle Lifetime
+        if let Some(mut lifetime) = lifetime_opt {
+            lifetime.0.tick(time.delta());
+            if lifetime.0.is_finished() {
+                should_despawn = true;
+            }
+        }
+
+        // Handle Death
+        if let Some(health) = health_opt {
+            if dead_opt.is_none() && health.current <= 0.0 {
+                commands.trigger(EnemyKilled { entity });
+                commands
+                    .entity(entity)
+                    .insert(Dead)
+                    .remove::<(Sprite, Transform)>();
+                // Prevent despawn this frame to avoid conflict
+                should_despawn = false;
+            }
+        }
+
+        if should_despawn {
+            commands.entity(entity).despawn();
         }
     }
 }
