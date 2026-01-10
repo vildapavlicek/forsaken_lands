@@ -18,7 +18,7 @@ members = [
   "events/divinity_events",
   "events/hero_events",
   "loading",
-  "loading/portal_assets",
+  "game_assets/portal_assets",
   "heroes",
   "portals",
   "research",
@@ -58,7 +58,7 @@ loading = { path = "loading" }
 hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }
 heroes = { path = "heroes" }
-portal_assets = { path = "loading/portal_assets" }
+portal_assets = { path = "game_assets/portal_assets" }
 portal_components = { path = "components/portal_components" }
 portal_ui = { path = "ui/portal_ui" }
 portals = { path = "portals" }
