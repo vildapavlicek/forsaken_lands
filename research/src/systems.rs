@@ -18,7 +18,7 @@ pub fn spawn_research_entities(
     mut next_phase: ResMut<NextState<states::LoadingPhase>>,
 ) {
     debug!("Spawning research entities...");
-    
+
     // Collect IDs first to avoid borrowing assets immutably while needing mutable access later
     let ids: Vec<_> = assets.ids().collect();
 
@@ -29,30 +29,30 @@ pub fn spawn_research_entities(
             let Some(def) = assets.get(id) else {
                 continue;
             };
-            
+
             // Check if already spawned
             if research_map.entities.contains_key(&def.id) {
                 continue;
             }
-            
+
             def.id.clone()
         };
 
         // Check if the unlock for this research has already been achieved
         // Unlocks use reward_id format: "research_{id}"
-        let already_unlocked = unlock_state
-            .completed
-            .iter()
-            .any(|unlock_id| {
-                unlock_id.ends_with(&format!("{}_unlock", def_id))
-                    || unlock_id.starts_with(&format!("research_{}", def_id))
-            });
+        let already_unlocked = unlock_state.completed.iter().any(|unlock_id| {
+            unlock_id.ends_with(&format!("{}_unlock", def_id))
+                || unlock_id.starts_with(&format!("research_{}", def_id))
+        });
 
         // Now we can mutably borrow assets to get the strong handle
         let handle = assets.get_strong_handle(id).unwrap();
 
         let entity = if already_unlocked {
-            debug!("Research '{}' unlock already achieved, spawning as Available", def_id);
+            debug!(
+                "Research '{}' unlock already achieved, spawning as Available",
+                def_id
+            );
             commands
                 .spawn((
                     ResearchNode {
@@ -73,14 +73,13 @@ pub fn spawn_research_entities(
                 ))
                 .id()
         };
-        
+
         research_map.entities.insert(def_id.clone(), entity);
         debug!("Spawned research entity: {} -> {:?}", def_id, entity);
     }
 
     next_phase.set(states::LoadingPhase::Recipes);
 }
-
 
 /// Listens for UnlockAchieved events with research_ prefix
 pub fn on_unlock_achieved(
@@ -162,9 +161,12 @@ pub fn start_research(
             }
         }
 
-        commands.entity(entity).remove::<Available>().insert(InProgress {
-            timer: Timer::from_seconds(def.time_required, TimerMode::Once),
-        });
+        commands
+            .entity(entity)
+            .remove::<Available>()
+            .insert(InProgress {
+                timer: Timer::from_seconds(def.time_required, TimerMode::Once),
+            });
         info!("Started researching: {}", def.name);
     }
 }

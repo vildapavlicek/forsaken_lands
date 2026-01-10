@@ -7,8 +7,8 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_card_title, spawn_description_text, spawn_scrollable_container,
-        spawn_tab_bar, spawn_tab_button, spawn_timer_text, UiTheme,
+        UiTheme, spawn_action_button, spawn_card_title, spawn_description_text,
+        spawn_scrollable_container, spawn_tab_bar, spawn_tab_button, spawn_timer_text,
     },
 };
 
@@ -456,8 +456,8 @@ struct PopulateResearchDirectCommand {
 
 impl Command for PopulateResearchDirectCommand {
     fn apply(self, world: &mut World) {
-        let mut container_query = world
-            .query_filtered::<(Entity, Option<&Children>), With<ResearchItemsContainer>>();
+        let mut container_query =
+            world.query_filtered::<(Entity, Option<&Children>), With<ResearchItemsContainer>>();
 
         let Some((container_entity, children)) = container_query.iter(world).next() else {
             return;
@@ -488,40 +488,37 @@ impl Command for PopulateResearchDirectCommand {
                 ) in self.research_data
                 {
                     let card_entity = widgets::spawn_item_card(parent, ());
-                    parent
-                        .commands()
-                        .entity(card_entity)
-                        .with_children(|card| {
-                            spawn_card_title(card, &name);
-                            spawn_description_text(card, &description);
+                    parent.commands().entity(card_entity).with_children(|card| {
+                        spawn_card_title(card, &name);
+                        spawn_description_text(card, &description);
 
-                            if !is_completed {
-                                spawn_timer_text(card, time);
+                        if !is_completed {
+                            spawn_timer_text(card, time);
 
-                                if !cost_str.is_empty() {
-                                    card.spawn((
-                                        Text::new(cost_str),
-                                        TextFont {
-                                            font_size: 12.0,
-                                            ..default()
-                                        },
-                                        TextColor(if can_afford {
-                                            UiTheme::AFFORDABLE
-                                        } else {
-                                            UiTheme::NOT_AFFORDABLE
-                                        }),
-                                    ));
-                                }
+                            if !cost_str.is_empty() {
+                                card.spawn((
+                                    Text::new(cost_str),
+                                    TextFont {
+                                        font_size: 12.0,
+                                        ..default()
+                                    },
+                                    TextColor(if can_afford {
+                                        UiTheme::AFFORDABLE
+                                    } else {
+                                        UiTheme::NOT_AFFORDABLE
+                                    }),
+                                ));
                             }
+                        }
 
-                            spawn_action_button(
-                                card,
-                                &btn_text,
-                                btn_color,
-                                btn_border,
-                                ResearchButton { id: id.clone() },
-                            );
-                        });
+                        spawn_action_button(
+                            card,
+                            &btn_text,
+                            btn_color,
+                            btn_border,
+                            ResearchButton { id: id.clone() },
+                        );
+                    });
                 }
             });
     }

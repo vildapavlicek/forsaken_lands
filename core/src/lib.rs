@@ -1,15 +1,14 @@
 use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
-    enemy_encyclopedia::EnemyEncyclopediaUiPlugin,
-    game_assets::AssetsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
+    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, game_assets::AssetsPlugin,
+    hero_events::HeroEventsPlugin, heroes::HeroesPlugin, portal_assets::PortalAssetsPlugin,
     portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
-    portal_assets::PortalAssetsPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
-    shared_components::SharedComponentsPlugin, states::GameState,
-    system_schedule::GameSchedule::*, village::VillagePlugin, village_ui::VillageUiPlugin,
-    wallet::WalletPlugin, widgets::WidgetsPlugin, unlocks::UnlocksPlugin,
-    unlock_notification_ui::UnlockNotificationUiPlugin,
+    shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
+    unlock_notification_ui::UnlockNotificationUiPlugin, unlocks::UnlocksPlugin,
+    village::VillagePlugin, village_ui::VillageUiPlugin, wallet::WalletPlugin,
+    widgets::WidgetsPlugin,
 };
 
 mod systems;

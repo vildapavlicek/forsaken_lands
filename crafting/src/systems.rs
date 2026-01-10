@@ -1,9 +1,6 @@
 use {
-    crate::CraftingInProgress,
-    bevy::prelude::*,
-    crafting_events::StartCraftingRequest,
-    crafting_resources::RecipesLibrary,
-    divinity_events::IncreaseDivinity,
+    crate::CraftingInProgress, bevy::prelude::*, crafting_events::StartCraftingRequest,
+    crafting_resources::RecipesLibrary, divinity_events::IncreaseDivinity,
     village_components::Village,
 };
 

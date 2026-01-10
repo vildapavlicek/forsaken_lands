@@ -1,9 +1,4 @@
-use {
-    bevy::prelude::*,
-    states::GameState,
-    wallet::Wallet,
-    widgets::UiTheme,
-};
+use {bevy::prelude::*, states::GameState, wallet::Wallet, widgets::UiTheme};
 
 pub struct ResourcesUiPlugin;
 

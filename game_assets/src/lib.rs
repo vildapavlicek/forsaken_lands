@@ -16,18 +16,21 @@ impl Plugin for AssetsPlugin {
             .init_state::<LoadingPhase>()
             .add_systems(
                 Startup,
-                (start_loading, load_enemy_prefabs, load_unlocks_assets, load_research_assets),
+                (
+                    start_loading,
+                    load_enemy_prefabs,
+                    load_unlocks_assets,
+                    load_research_assets,
+                ),
             )
             .add_systems(
                 Update,
-                check_assets.run_if(in_state(GameState::Loading).and(in_state(LoadingPhase::Assets))),
+                check_assets
+                    .run_if(in_state(GameState::Loading).and(in_state(LoadingPhase::Assets))),
             )
             .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
             .add_systems(OnExit(GameState::Loading), cleanup_loading_ui)
-            .add_systems(
-                OnEnter(LoadingPhase::Recipes),
-                transition_recipes_phase,
-            )
+            .add_systems(OnEnter(LoadingPhase::Recipes), transition_recipes_phase)
             .add_systems(OnEnter(LoadingPhase::Done), finish_loading);
     }
 }

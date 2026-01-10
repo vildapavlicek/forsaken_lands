@@ -1,13 +1,9 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
-use crate::assets::*;
-use unlocks_components::*;
-use unlocks_events::*;
-use unlocks_resources::*;
-use bevy::prelude::*;
-
-use village_components::EnemyEncyclopedia;
-use wallet::Wallet;
+use {
+    crate::assets::*, bevy::prelude::*, unlocks_components::*, unlocks_events::*,
+    unlocks_resources::*, village_components::EnemyEncyclopedia, wallet::Wallet,
+};
 
 /// Compares values using the specified operator.
 pub fn compare_op(current: f32, target: f32, op: ComparisonOp) -> bool {
@@ -207,10 +203,7 @@ pub fn build_condition_node(
             // Always met - immediately signal parent to trigger unlock completion
             // No sensor needed since this condition can never change
             let sensor = commands
-                .spawn((
-                    ChildOf(parent),
-                    ConditionSensor { is_met: true },
-                ))
+                .spawn((ChildOf(parent), ConditionSensor { is_met: true }))
                 .id();
 
             // Immediately signal parent - this will propagate up to UnlockRoot

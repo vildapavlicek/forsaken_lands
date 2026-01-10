@@ -1,5 +1,7 @@
-use bevy::{platform::collections::HashMap, prelude::*};
-use unlocks_components::{TopicEntity, TopicSubscribers};
+use {
+    bevy::{platform::collections::HashMap, prelude::*},
+    unlocks_components::{TopicEntity, TopicSubscribers},
+};
 
 /// Maps topic keys to their corresponding Topic Entities.
 #[derive(Resource, Default)]

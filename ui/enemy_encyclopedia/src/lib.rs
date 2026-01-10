@@ -1,8 +1,4 @@
-use {
-    bevy::prelude::*,
-    states::EnemyEncyclopediaState,
-    village_components::EnemyEncyclopedia,
-};
+use {bevy::prelude::*, states::EnemyEncyclopediaState, village_components::EnemyEncyclopedia};
 
 pub struct EnemyEncyclopediaUiPlugin;
 

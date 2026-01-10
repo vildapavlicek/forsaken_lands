@@ -63,7 +63,9 @@ pub struct CompiledUnlock {
 
 // --- Shared Types moved from assets.rs to avoid circular deps ---
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize,
+)]
 pub enum ComparisonOp {
     #[default]
     Ge, // >=

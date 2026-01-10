@@ -1,6 +1,8 @@
-use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
+use {
+    bevy::prelude::*,
+    serde::{Deserialize, Serialize},
+    std::cmp::Ordering,
+};
 
 pub struct DivinityComponentsPlugin;
 

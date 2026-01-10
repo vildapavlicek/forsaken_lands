@@ -10,4 +10,3 @@ pub struct IncreaseDivinity {
     /// Amount of XP to add
     pub xp_amount: f32,
 }
-

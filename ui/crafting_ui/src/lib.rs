@@ -6,8 +6,8 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_card_title, spawn_cost_text, spawn_scrollable_container,
-        spawn_tab_bar, spawn_tab_button, spawn_timer_text, UiTheme,
+        UiTheme, spawn_action_button, spawn_card_title, spawn_cost_text,
+        spawn_scrollable_container, spawn_tab_bar, spawn_tab_button, spawn_timer_text,
     },
 };
 
@@ -86,7 +86,10 @@ pub fn build_crafting_data(
 ) -> CraftingData {
     let active_tab = RecipeCategory::Weapons;
     let recipes = build_recipe_list(library, wallet, completed_research, &active_tab);
-    CraftingData { active_tab, recipes }
+    CraftingData {
+        active_tab,
+        recipes,
+    }
 }
 
 fn build_recipe_list(
@@ -189,15 +192,7 @@ pub fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingD
         recipes_data: data
             .recipes
             .into_iter()
-            .map(|r| {
-                (
-                    r.id,
-                    r.display_name,
-                    r.craft_time,
-                    r.cost_str,
-                    r.can_afford,
-                )
-            })
+            .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
             .collect(),
     });
 }
@@ -267,15 +262,7 @@ fn handle_tab_switch(
                     commands.queue(PopulateRecipesDirectCommand {
                         recipes_data: recipes
                             .into_iter()
-                            .map(|r| {
-                                (
-                                    r.id,
-                                    r.display_name,
-                                    r.craft_time,
-                                    r.cost_str,
-                                    r.can_afford,
-                                )
-                            })
+                            .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
                             .collect(),
                     });
                 }
@@ -304,7 +291,8 @@ fn update_recipes_ui(
     if let Ok(ui_root) = ui_query.single() {
         let completed_research: Vec<String> =
             completed_query.iter().map(|node| node.id.clone()).collect();
-        let recipes = build_recipe_list(&library, &wallet, &completed_research, &ui_root.active_tab);
+        let recipes =
+            build_recipe_list(&library, &wallet, &completed_research, &ui_root.active_tab);
 
         if *last_data == recipes {
             return;
@@ -314,15 +302,7 @@ fn update_recipes_ui(
         commands.queue(PopulateRecipesDirectCommand {
             recipes_data: recipes
                 .into_iter()
-                .map(|r| {
-                    (
-                        r.id,
-                        r.display_name,
-                        r.craft_time,
-                        r.cost_str,
-                        r.can_afford,
-                    )
-                })
+                .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
                 .collect(),
         });
     }
@@ -364,31 +344,28 @@ impl Command for PopulateRecipesDirectCommand {
                 for (recipe_id, display_name, craft_time, cost_str, can_afford) in self.recipes_data
                 {
                     let card_entity = widgets::spawn_item_card(parent, ());
-                    parent
-                        .commands()
-                        .entity(card_entity)
-                        .with_children(|card| {
-                            spawn_card_title(card, &display_name);
-                            spawn_timer_text(card, craft_time);
-                            spawn_cost_text(card, &cost_str, can_afford);
+                    parent.commands().entity(card_entity).with_children(|card| {
+                        spawn_card_title(card, &display_name);
+                        spawn_timer_text(card, craft_time);
+                        spawn_cost_text(card, &cost_str, can_afford);
 
-                            // Button
-                            let (btn_text, btn_color, btn_border) = if can_afford {
-                                ("Craft", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
-                            } else {
-                                ("Craft", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
-                            };
+                        // Button
+                        let (btn_text, btn_color, btn_border) = if can_afford {
+                            ("Craft", UiTheme::AFFORDABLE, UiTheme::BORDER_SUCCESS)
+                        } else {
+                            ("Craft", UiTheme::BORDER_DISABLED, UiTheme::BORDER_DISABLED)
+                        };
 
-                            spawn_action_button(
-                                card,
-                                btn_text,
-                                btn_color,
-                                btn_border,
-                                CraftingButton {
-                                    recipe_id: recipe_id.clone(),
-                                },
-                            );
-                        });
+                        spawn_action_button(
+                            card,
+                            btn_text,
+                            btn_color,
+                            btn_border,
+                            CraftingButton {
+                                recipe_id: recipe_id.clone(),
+                            },
+                        );
+                    });
                 }
             });
     }

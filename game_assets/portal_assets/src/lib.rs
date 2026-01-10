@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use bevy_common_assets::ron::RonAssetPlugin;
-use divinity_components::Divinity;
-use serde::Deserialize;
+use {
+    bevy::prelude::*, bevy_common_assets::ron::RonAssetPlugin, divinity_components::Divinity,
+    serde::Deserialize,
+};
 
 pub struct PortalAssetsPlugin;
 

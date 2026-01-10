@@ -165,7 +165,12 @@ pub struct AnimatedButton {
 #[allow(clippy::type_complexity)]
 fn button_interaction_system(
     mut query: Query<
-        (&Interaction, &mut BackgroundColor, &AnimatedButton, Option<&mut Transform>),
+        (
+            &Interaction,
+            &mut BackgroundColor,
+            &AnimatedButton,
+            Option<&mut Transform>,
+        ),
         (Changed<Interaction>, With<Button>),
     >,
 ) {
@@ -198,18 +203,12 @@ pub fn spawn_ui_panel<M: Component>(
     root_marker: M,
 ) -> Entity {
     let (left, right, margin_left, bg_color) = match position {
-        PanelPosition::Left(offset) => (
-            Val::Px(offset),
-            Val::Auto,
-            Val::Px(0.0),
-            UiTheme::PANEL_BG,
-        ),
-        PanelPosition::Right(offset) => (
-            Val::Auto,
-            Val::Px(offset),
-            Val::Px(0.0),
-            UiTheme::PANEL_BG,
-        ),
+        PanelPosition::Left(offset) => {
+            (Val::Px(offset), Val::Auto, Val::Px(0.0), UiTheme::PANEL_BG)
+        }
+        PanelPosition::Right(offset) => {
+            (Val::Auto, Val::Px(offset), Val::Px(0.0), UiTheme::PANEL_BG)
+        }
         PanelPosition::CenterPopup { top: _ } => (
             Val::Percent(50.0),
             Val::Auto,
@@ -580,11 +579,7 @@ pub fn spawn_icon_button<M: Component>(
 // ============================================================================
 
 /// Spawns a large menu button for navigation (e.g., in village menu)
-pub fn spawn_menu_button<M: Component>(
-    parent: &mut ChildSpawnerCommands,
-    text: &str,
-    marker: M,
-) {
+pub fn spawn_menu_button<M: Component>(parent: &mut ChildSpawnerCommands, text: &str, marker: M) {
     parent
         .spawn((
             Button,

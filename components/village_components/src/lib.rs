@@ -1,4 +1,7 @@
-use {bevy::{picking::prelude::Pickable, prelude::*}, std::collections::HashMap};
+use {
+    bevy::{picking::prelude::Pickable, prelude::*},
+    std::collections::HashMap,
+};
 
 #[derive(Reflect, Default, Debug, Clone)]
 pub struct EncyclopediaEntry {

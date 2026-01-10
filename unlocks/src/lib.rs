@@ -155,14 +155,8 @@ mod assets;
 mod compiler;
 mod systems;
 
-pub use assets::*;
-pub use unlocks_components::*;
-pub use unlocks_events::*;
-pub use unlocks_resources::*;
-
-use bevy::prelude::*;
-use bevy_common_assets::ron::RonAssetPlugin;
-use systems::*;
+pub use {assets::*, unlocks_components::*, unlocks_events::*, unlocks_resources::*};
+use {bevy::prelude::*, bevy_common_assets::ron::RonAssetPlugin, systems::*};
 
 pub struct UnlocksPlugin;
 
@@ -178,10 +172,7 @@ impl Plugin for UnlocksPlugin {
             .register_type::<UnlockState>()
             .register_type::<TopicSubscribers>()
             // Systems for compilation and change detection
-            .add_systems(
-                Update,
-                check_wallet_changes,
-            )
+            .add_systems(Update, check_wallet_changes)
             .add_systems(
                 OnEnter(states::LoadingPhase::Unlocks),
                 compile_pending_unlocks,

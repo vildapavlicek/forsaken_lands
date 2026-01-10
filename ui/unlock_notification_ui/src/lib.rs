@@ -1,10 +1,7 @@
 //! Simple unlock notification UI.
 //! Shows a toast-style notification at the top center of the screen for 5 seconds when an unlock happens.
 
-use bevy::prelude::*;
-use states::GameState;
-use unlocks::UnlockAchieved;
-use widgets::UiTheme;
+use {bevy::prelude::*, states::GameState, unlocks::UnlockAchieved, widgets::UiTheme};
 
 /// Duration in seconds to show the notification
 const NOTIFICATION_DURATION: f32 = 5.0;
@@ -13,11 +10,10 @@ pub struct UnlockNotificationUiPlugin;
 
 impl Plugin for UnlockNotificationUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(on_unlock_completed)
-            .add_systems(
-                Update,
-                despawn_expired_notifications.run_if(in_state(GameState::Running)),
-            );
+        app.add_observer(on_unlock_completed).add_systems(
+            Update,
+            despawn_expired_notifications.run_if(in_state(GameState::Running)),
+        );
     }
 }
 

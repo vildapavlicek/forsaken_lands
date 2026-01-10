@@ -5,25 +5,18 @@ use {
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
-    widgets::{
-        spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel, PanelPosition,
-    },
+    widgets::{PanelPosition, spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel},
 };
 
 pub struct VillageUiPlugin;
 
 impl Plugin for VillageUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(on_village_clicked)
-            .add_systems(
-                Update,
-                (
-                    handle_menu_button,
-                    handle_back_button,
-                    handle_close_button,
-                )
-                    .run_if(in_state(GameState::Running)),
-            );
+        app.add_observer(on_village_clicked).add_systems(
+            Update,
+            (handle_menu_button, handle_back_button, handle_close_button)
+                .run_if(in_state(GameState::Running)),
+        );
     }
 }
 
@@ -150,32 +143,29 @@ impl Command for SpawnMenuContentCommand {
         }
 
         // Spawn menu buttons
-        world
-            .commands()
-            .entity(container)
-            .with_children(|parent| {
-                spawn_menu_button(
-                    parent,
-                    "⚒ Crafting",
-                    VillageMenuButton {
-                        target: VillageContent::Crafting,
-                    },
-                );
-                spawn_menu_button(
-                    parent,
-                    "🔬 Research",
-                    VillageMenuButton {
-                        target: VillageContent::Research,
-                    },
-                );
-                spawn_menu_button(
-                    parent,
-                    "📖 Encyclopedia",
-                    VillageMenuButton {
-                        target: VillageContent::Encyclopedia,
-                    },
-                );
-            });
+        world.commands().entity(container).with_children(|parent| {
+            spawn_menu_button(
+                parent,
+                "⚒ Crafting",
+                VillageMenuButton {
+                    target: VillageContent::Crafting,
+                },
+            );
+            spawn_menu_button(
+                parent,
+                "🔬 Research",
+                VillageMenuButton {
+                    target: VillageContent::Research,
+                },
+            );
+            spawn_menu_button(
+                parent,
+                "📖 Encyclopedia",
+                VillageMenuButton {
+                    target: VillageContent::Encyclopedia,
+                },
+            );
+        });
     }
 }
 
@@ -212,20 +202,16 @@ impl Command for SpawnCraftingContentCommand {
         let wallet = world.resource::<Wallet>();
 
         // Build crafting data
-        let crafting_data =
-            crafting_ui::build_crafting_data(library, wallet, &completed_research);
+        let crafting_data = crafting_ui::build_crafting_data(library, wallet, &completed_research);
 
         // Spawn back button and crafting content
-        world
-            .commands()
-            .entity(container)
-            .with_children(|parent| {
-                // Back button
-                spawn_menu_button(parent, "← Back", VillageBackButton);
+        world.commands().entity(container).with_children(|parent| {
+            // Back button
+            spawn_menu_button(parent, "← Back", VillageBackButton);
 
-                // Spawn crafting content
-                crafting_ui::spawn_crafting_content(parent, crafting_data);
-            });
+            // Spawn crafting content
+            crafting_ui::spawn_crafting_content(parent, crafting_data);
+        });
     }
 }
 
@@ -345,16 +331,13 @@ impl Command for SpawnResearchContentCommand {
         };
 
         // Spawn back button and research content
-        world
-            .commands()
-            .entity(container)
-            .with_children(|parent| {
-                // Back button
-                spawn_menu_button(parent, "← Back", VillageBackButton);
+        world.commands().entity(container).with_children(|parent| {
+            // Back button
+            spawn_menu_button(parent, "← Back", VillageBackButton);
 
-                // Spawn research content
-                research_ui::spawn_research_content(parent, research_data);
-            });
+            // Spawn research content
+            research_ui::spawn_research_content(parent, research_data);
+        });
     }
 }
 
@@ -388,16 +371,13 @@ impl Command for SpawnEncyclopediaContentCommand {
         let encyclopedia = encyclopedia.clone();
 
         // Spawn back button and encyclopedia content
-        world
-            .commands()
-            .entity(container)
-            .with_children(|parent| {
-                // Back button
-                spawn_menu_button(parent, "← Back", VillageBackButton);
+        world.commands().entity(container).with_children(|parent| {
+            // Back button
+            spawn_menu_button(parent, "← Back", VillageBackButton);
 
-                // Spawn encyclopedia content
-                enemy_encyclopedia::spawn_enemy_encyclopedia_content(parent, &encyclopedia);
-            });
+            // Spawn encyclopedia content
+            enemy_encyclopedia::spawn_enemy_encyclopedia_content(parent, &encyclopedia);
+        });
     }
 }
 

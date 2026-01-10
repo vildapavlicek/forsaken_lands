@@ -1,12 +1,14 @@
-use crate::{assets::*, compiler::*};
-use bevy::prelude::*;
-use enemy_components::MonsterId;
-use hero_events::EnemyKilled;
-use unlocks_components::*;
-use unlocks_events::*;
-use unlocks_resources::*;
-use village_components::{EnemyEncyclopedia, Village};
-use wallet::Wallet;
+use {
+    crate::{assets::*, compiler::*},
+    bevy::prelude::*,
+    enemy_components::MonsterId,
+    hero_events::EnemyKilled,
+    unlocks_components::*,
+    unlocks_events::*,
+    unlocks_resources::*,
+    village_components::{EnemyEncyclopedia, Village},
+    wallet::Wallet,
+};
 
 /// System that compiles newly loaded unlock definitions.
 pub fn compile_pending_unlocks(

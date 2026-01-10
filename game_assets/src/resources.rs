@@ -1,5 +1,4 @@
 //! Define common resources used for asset loading
-//!
 
 use bevy::{asset::LoadedFolder, prelude::*};
 
@@ -11,4 +10,3 @@ pub(super) struct UnlocksFolderHandle(pub Handle<LoadedFolder>);
 
 #[derive(Debug, Resource)]
 pub(super) struct ResearchFolderHandle(pub Handle<LoadedFolder>);
-

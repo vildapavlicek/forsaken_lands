@@ -1,5 +1,7 @@
-use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
+use {
+    bevy::prelude::*,
+    serde::{Deserialize, Serialize},
+};
 
 /// The top-level asset definition for an unlockable item.
 #[derive(Asset, TypePath, Debug, Clone, Deserialize)]
