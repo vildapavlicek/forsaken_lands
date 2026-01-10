@@ -10,10 +10,24 @@ pub struct UnlockNotificationUiPlugin;
 
 impl Plugin for UnlockNotificationUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(on_unlock_completed).add_systems(
-            Update,
-            despawn_expired_notifications.run_if(in_state(GameState::Running)),
-        );
+        app.add_observer(on_unlock_completed)
+            // Clean up any notifications spawned during loading
+            .add_systems(OnExit(GameState::Loading), cleanup_loading_notifications)
+            .add_systems(
+                Update,
+                despawn_expired_notifications.run_if(in_state(GameState::Running)),
+            );
+    }
+}
+
+/// Cleans up any unlock notifications that were spawned during loading.
+/// This prevents stale notifications from appearing when the game starts.
+fn cleanup_loading_notifications(
+    mut commands: Commands,
+    query: Query<Entity, With<UnlockNotification>>,
+) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }
 
