@@ -6,7 +6,7 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        PanelConfig, UiTheme, spawn_action_button, spawn_item_card,
+        PanelConfig, PanelWrapperRef, UiTheme, spawn_action_button, spawn_item_card,
         spawn_panel_header_with_close, spawn_ui_panel,
     },
 };
@@ -62,7 +62,7 @@ fn on_portal_click(
     trigger: On<Pointer<Click>>,
     mut commands: Commands,
     portal_query: Query<(), With<Portal>>,
-    existing_ui: Query<Entity, With<PortalUiRoot>>,
+    existing_ui: Query<(Entity, Option<&PanelWrapperRef>), With<PortalUiRoot>>,
 ) {
     let portal_entity = trigger.entity;
 
@@ -72,8 +72,13 @@ fn on_portal_click(
     }
 
     // Toggle: if UI exists, close it; otherwise open
-    if let Ok(ui_entity) = existing_ui.single() {
-        commands.entity(ui_entity).despawn();
+    if let Ok((ui_entity, wrapper_ref)) = existing_ui.single() {
+        // Despawn wrapper if it exists, otherwise just despawn the panel
+        if let Some(wrapper) = wrapper_ref {
+            commands.entity(wrapper.0).despawn();
+        } else {
+            commands.entity(ui_entity).despawn();
+        }
         return;
     }
 
@@ -159,12 +164,17 @@ fn spawn_portal_ui(commands: &mut Commands, portal_entity: Entity) {
 fn handle_close_button(
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<PortalCloseButton>)>,
-    ui_query: Query<Entity, With<PortalUiRoot>>,
+    ui_query: Query<(Entity, Option<&PanelWrapperRef>), With<PortalUiRoot>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
-            for ui_entity in ui_query.iter() {
-                commands.entity(ui_entity).despawn();
+            for (ui_entity, wrapper_ref) in ui_query.iter() {
+                // Despawn wrapper if it exists, otherwise just despawn the panel
+                if let Some(wrapper) = wrapper_ref {
+                    commands.entity(wrapper.0).despawn();
+                } else {
+                    commands.entity(ui_entity).despawn();
+                }
             }
         }
     }

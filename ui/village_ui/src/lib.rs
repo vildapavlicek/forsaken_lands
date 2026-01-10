@@ -5,7 +5,7 @@ use {
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
-    widgets::{PanelConfig, spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel},
+    widgets::{PanelConfig, PanelWrapperRef, spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel},
 };
 
 pub struct VillageUiPlugin;
@@ -66,7 +66,7 @@ fn on_village_clicked(
     trigger: On<Pointer<Click>>,
     mut commands: Commands,
     village_query: Query<(), With<Village>>,
-    existing_ui: Query<Entity, With<VillageUiRoot>>,
+    existing_ui: Query<(Entity, Option<&PanelWrapperRef>), With<VillageUiRoot>>,
 ) {
     // Verify this is a village entity
     let clicked_entity = trigger.entity;
@@ -75,8 +75,13 @@ fn on_village_clicked(
     }
 
     // Toggle: if UI exists, close it; otherwise open
-    if let Ok(ui_entity) = existing_ui.single() {
-        commands.entity(ui_entity).despawn();
+    if let Ok((ui_entity, wrapper_ref)) = existing_ui.single() {
+        // Despawn wrapper if it exists, otherwise just despawn the panel
+        if let Some(wrapper) = wrapper_ref {
+            commands.entity(wrapper.0).despawn();
+        } else {
+            commands.entity(ui_entity).despawn();
+        }
         return;
     }
 
@@ -441,14 +446,19 @@ fn handle_back_button(
 fn handle_close_button(
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageCloseButton>)>,
-    ui_query: Query<Entity, With<VillageUiRoot>>,
+    ui_query: Query<(Entity, Option<&PanelWrapperRef>), With<VillageUiRoot>>,
     mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
-            for ui_entity in ui_query.iter() {
+            for (ui_entity, wrapper_ref) in ui_query.iter() {
                 next_state.set(EnemyEncyclopediaState::Closed);
-                commands.entity(ui_entity).despawn();
+                // Despawn wrapper if it exists, otherwise just despawn the panel
+                if let Some(wrapper) = wrapper_ref {
+                    commands.entity(wrapper.0).despawn();
+                } else {
+                    commands.entity(ui_entity).despawn();
+                }
             }
         }
     }

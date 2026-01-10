@@ -259,11 +259,26 @@ fn button_interaction_system(
 // Panel Widget
 // ============================================================================
 
+/// Marker for the wrapper container used for centering panels.
+/// This is used internally and should not be added manually.
+#[derive(Component)]
+pub struct UiPanelWrapper;
+
+/// Reference to the wrapper entity that contains this panel.
+/// Used for cleanup when the panel is despawned.
+#[derive(Component)]
+pub struct PanelWrapperRef(pub Entity);
+
 /// Spawns a styled UI panel/window with consistent styling.
 /// Returns the Entity so callers can add children via `commands.entity(id).with_children(...)`.
 ///
 /// For centered panels (using `Val::Percent(50.0)` for left/top), this spawns a full-screen
-/// wrapper that uses flexbox to center the panel properly.
+/// wrapper that uses flexbox to center the panel properly. The wrapper is automatically
+/// despawned when the panel entity is despawned (if using `.despawn()` with recursive despawn).
+///
+/// **Important**: When despawning a centered panel, use `despawn()` rather than
+/// `despawn_descendants()` to ensure the wrapper is cleaned up. Alternatively,
+/// query for `Parent` and despawn that if you need finer control.
 pub fn spawn_ui_panel<M: Component>(
     commands: &mut Commands,
     config: PanelConfig,
@@ -276,26 +291,31 @@ pub fn spawn_ui_panel<M: Component>(
     if needs_center_x || needs_center_y {
         // For centered panels, spawn a full-screen wrapper with flexbox centering
         let wrapper = commands
-            .spawn(Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px(0.0),
-                right: Val::Px(0.0),
-                top: Val::Px(0.0),
-                bottom: Val::Px(0.0),
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                justify_content: if needs_center_x {
-                    JustifyContent::Center
-                } else {
-                    JustifyContent::FlexStart
+            .spawn((
+                Node {
+                    position_type: PositionType::Absolute,
+                    left: Val::Px(0.0),
+                    right: Val::Px(0.0),
+                    top: Val::Px(0.0),
+                    bottom: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    justify_content: if needs_center_x {
+                        JustifyContent::Center
+                    } else {
+                        JustifyContent::FlexStart
+                    },
+                    align_items: if needs_center_y {
+                        AlignItems::Center
+                    } else {
+                        AlignItems::FlexStart
+                    },
+                    ..default()
                 },
-                align_items: if needs_center_y {
-                    AlignItems::Center
-                } else {
-                    AlignItems::FlexStart
-                },
-                ..default()
-            })
+                UiPanelWrapper,
+                // Make wrapper non-pickable so clicks pass through to game world
+                Pickable::IGNORE,
+            ))
             .id();
 
         // Spawn the actual panel as a child of the wrapper
@@ -310,6 +330,7 @@ pub fn spawn_ui_panel<M: Component>(
                 },
                 BackgroundColor(config.background),
                 root_marker,
+                PanelWrapperRef(wrapper),
                 Pickable::default(),
                 Interaction::default(),
             ))
