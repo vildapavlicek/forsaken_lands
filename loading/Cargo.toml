@@ -9,5 +9,6 @@ states.workspace = true
 portal_assets.workspace = true
 research.workspace = true
 unlocks.workspace = true
+unlocks_assets.workspace = true
 wallet.workspace = true
 village_components.workspace = true

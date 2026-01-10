@@ -9,8 +9,9 @@ use {
     std::ffi::OsStr,
     unlocks::{
         compiler::{build_condition_node, CompilerContext},
-        CompiledUnlock, TopicMap, UnlockDefinition, UnlockRoot, UnlockState,
+        CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
     },
+    unlocks_assets::UnlockDefinition,
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
 };

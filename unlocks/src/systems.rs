@@ -1,8 +1,9 @@
 use {
-    crate::{assets::*, compiler::*},
+    crate::compiler::*,
     bevy::prelude::*,
     enemy_components::MonsterId,
     hero_events::EnemyKilled,
+    unlocks_assets::*,
     unlocks_components::*,
     unlocks_events::*,
     unlocks_resources::*,

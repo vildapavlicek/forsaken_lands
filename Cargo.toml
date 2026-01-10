@@ -19,6 +19,7 @@ members = [
   "events/hero_events",
   "loading",
   "game_assets/portal_assets",
+  "game_assets/unlocks_assets",
   "heroes",
   "portals",
   "research",
@@ -73,6 +74,7 @@ village_components = { path = "components/village_components" }
 village_ui = { path = "ui/village_ui" }
 unlock_notification_ui = { path = "ui/unlock_notification_ui" }
 unlocks = { path = "unlocks" }
+unlocks_assets = { path = "game_assets/unlocks_assets" }
 unlocks_components = { path = "components/unlocks_components" }
 unlocks_events = { path = "events/unlocks_events" }
 unlocks_resources = { path = "resources/unlocks_resources" }

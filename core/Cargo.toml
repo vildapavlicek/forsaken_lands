@@ -31,3 +31,4 @@ wallet.workspace = true
 widgets.workspace = true
 unlock_notification_ui.workspace = true
 unlocks.workspace = true
+unlocks_assets.workspace = true

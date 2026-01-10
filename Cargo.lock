@@ -1862,6 +1862,7 @@ dependencies = [
  "system_schedule",
  "unlock_notification_ui",
  "unlocks",
+ "unlocks_assets",
  "village",
  "village_components",
  "village_ui",
@@ -3061,6 +3062,7 @@ dependencies = [
  "research",
  "states",
  "unlocks",
+ "unlocks_assets",
  "village_components",
  "wallet",
 ]
@@ -4868,17 +4870,27 @@ name = "unlocks"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_common_assets",
  "enemy_components",
  "hero_events",
  "research",
  "serde",
  "states",
+ "unlocks_assets",
  "unlocks_components",
  "unlocks_events",
  "unlocks_resources",
  "village_components",
  "wallet",
+]
+
+[[package]]
+name = "unlocks_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "serde",
+ "unlocks_components",
 ]
 
 [[package]]

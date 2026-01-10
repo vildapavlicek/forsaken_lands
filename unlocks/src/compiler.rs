@@ -1,7 +1,7 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
 use {
-    crate::assets::*, bevy::prelude::*, unlocks_components::*, unlocks_events::*,
+    bevy::prelude::*, unlocks_assets::*, unlocks_components::*, unlocks_events::*,
     unlocks_resources::*, village_components::EnemyEncyclopedia, wallet::Wallet,
 };
 

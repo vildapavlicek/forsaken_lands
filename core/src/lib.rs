@@ -7,8 +7,8 @@ use {
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
     unlock_notification_ui::UnlockNotificationUiPlugin, unlocks::UnlocksPlugin,
-    village::VillagePlugin, village_ui::VillageUiPlugin, wallet::WalletPlugin,
-    widgets::WidgetsPlugin,
+    unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin, village_ui::VillageUiPlugin,
+    wallet::WalletPlugin, widgets::WidgetsPlugin,
 };
 
 pub struct CorePlugin;
@@ -39,6 +39,7 @@ impl Plugin for CorePlugin {
                 ResourcesUiPlugin,
                 SharedComponentsPlugin,
                 UnlocksPlugin,
+                UnlocksAssetsPlugin,
                 UnlockNotificationUiPlugin,
                 VillagePlugin,
                 VillageUiPlugin,

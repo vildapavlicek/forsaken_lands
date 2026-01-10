@@ -151,20 +151,17 @@
 //! - Signal propagation through the gate tree
 //! - Unlock completion events
 
-mod assets;
 pub mod compiler;
 mod systems;
 
-pub use {assets::*, unlocks_components::*, unlocks_events::*, unlocks_resources::*};
-use {bevy::prelude::*, bevy_common_assets::ron::RonAssetPlugin, systems::*};
+pub use {unlocks_components::*, unlocks_events::*, unlocks_resources::*};
+use {bevy::prelude::*, systems::*};
 
 pub struct UnlocksPlugin;
 
 impl Plugin for UnlocksPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Asset loading
-            .add_plugins(RonAssetPlugin::<UnlockDefinition>::new(&["unlock.ron"]))
             // Resources
             .init_resource::<TopicMap>()
             .init_resource::<UnlockState>()

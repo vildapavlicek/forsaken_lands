@@ -1,7 +1,17 @@
 use {
     bevy::prelude::*,
+    bevy_common_assets::ron::RonAssetPlugin,
     serde::{Deserialize, Serialize},
+    unlocks_components::{ResourceCheck, StatCheck},
 };
+
+pub struct UnlocksAssetsPlugin;
+
+impl Plugin for UnlocksAssetsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugins(RonAssetPlugin::<UnlockDefinition>::new(&["unlock.ron"]));
+    }
+}
 
 /// The top-level asset definition for an unlockable item.
 #[derive(Asset, TypePath, Debug, Clone, Deserialize)]
@@ -18,7 +28,6 @@ pub struct UnlockDefinition {
 
 /// A node in the logical condition tree.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-// #[serde(tag = "type", content = "data")]
 pub enum ConditionNode {
     // --- Logic Gates ---
     /// Requires ALL sub-conditions to be true.
@@ -38,5 +47,3 @@ pub enum ConditionNode {
     /// Checks if a specific research/recipe is already unlocked.
     Unlock(String),
 }
-
-pub use unlocks_components::{ComparisonOp, ResourceCheck, StatCheck};
