@@ -1,5 +1,5 @@
 [package]
-name = "game_assets"
+name = "loading"
 version = "0.1.0"
 edition = "2024"
 

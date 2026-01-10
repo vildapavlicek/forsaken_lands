@@ -1847,10 +1847,10 @@ dependencies = [
  "crafting_ui",
  "divinity_components",
  "enemy_encyclopedia",
- "game_assets",
  "hero_components",
  "hero_events",
  "heroes",
+ "loading",
  "portal_assets",
  "portal_ui",
  "portals",
@@ -2499,19 +2499,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "game_assets"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "portal_assets",
- "research",
- "states",
- "unlocks",
- "village_components",
- "wallet",
-]
-
-[[package]]
 name = "gethostname"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3064,6 +3051,19 @@ name = "litrs"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092"
+
+[[package]]
+name = "loading"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "portal_assets",
+ "research",
+ "states",
+ "unlocks",
+ "village_components",
+ "wallet",
+]
 
 [[package]]
 name = "lock_api"
@@ -3842,8 +3842,8 @@ dependencies = [
  "divinity_components",
  "divinity_events",
  "enemy_components",
- "game_assets",
  "hero_events",
+ "loading",
  "portal_assets",
  "portal_components",
  "rand",
@@ -4954,9 +4954,9 @@ dependencies = [
  "divinity_components",
  "divinity_events",
  "enemy_components",
- "game_assets",
  "hero_components",
  "hero_events",
+ "loading",
  "shared_components",
  "states",
  "village_components",

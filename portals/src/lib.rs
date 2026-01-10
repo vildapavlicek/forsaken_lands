@@ -6,7 +6,7 @@ use {
         Dead, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
         MovementSpeed, ResourceRewards, Reward, TargetDestination,
     },
-    game_assets::GameAssets,
+    loading::GameAssets,
     hero_events::EnemyKilled,
     portal_assets::{SpawnCondition, SpawnTable},
     portal_components::{Portal, SpawnTableId, SpawnTimer},
