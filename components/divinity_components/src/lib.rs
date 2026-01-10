@@ -13,10 +13,20 @@ impl Plugin for DivinityComponentsPlugin {
 
 pub const MAX_LEVEL: u32 = 99;
 
+/// Represents the power progression (Tier and Level) of a major entity (e.g., Portal, Village).
+///
+/// This component is the primary state machine for difficulty scaling and feature unlocking.
+/// It is used by:
+/// - `PortalsPlugin`: To gate enemy spawns based on `SpawnCondition`.
+/// - `VillagePlugin`: To track village growth and unlock recipes/buildings.
+///
+/// Use `DivinityStats` to track XP progress towards the next level.
 #[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 #[reflect(Component, Default)]
 pub struct Divinity {
+    /// The major power bracket (1-based). Increasing this resets `level` to 1.
     pub tier: u32,
+    /// The minor power increment (1-99). Reaching `MAX_LEVEL` allows a Tier up.
     pub level: u32,
 }
 
