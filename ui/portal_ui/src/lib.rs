@@ -6,7 +6,7 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        PanelPosition, UiTheme, spawn_action_button, spawn_item_card,
+        PanelConfig, UiTheme, spawn_action_button, spawn_item_card,
         spawn_panel_header_with_close, spawn_ui_panel,
     },
 };
@@ -87,9 +87,7 @@ fn on_portal_click(
 fn spawn_portal_ui(commands: &mut Commands, portal_entity: Entity) {
     let panel_entity = spawn_ui_panel(
         commands,
-        PanelPosition::CenterPopup { top: 50.0 },
-        350.0,
-        Val::Px(400.0),
+        PanelConfig::popup(350.0, 400.0),
         PortalUiRoot { portal_entity },
     );
 

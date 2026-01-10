@@ -5,7 +5,7 @@ use {
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
-    widgets::{PanelPosition, spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel},
+    widgets::{PanelConfig, spawn_menu_button, spawn_panel_header_with_close, spawn_ui_panel},
 };
 
 pub struct VillageUiPlugin;
@@ -90,9 +90,7 @@ fn on_village_clicked(
 fn spawn_village_ui(commands: &mut Commands) {
     let panel = spawn_ui_panel(
         commands,
-        PanelPosition::CenterPopup { top: 50.0 },
-        350.0,
-        Val::Px(400.0),
+        PanelConfig::centered(80.0, 80.0),
         VillageUiRoot {
             content: VillageContent::Menu,
         },
