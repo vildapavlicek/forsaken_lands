@@ -255,11 +255,7 @@ fn apply_melee_damage_observer(
     }
 }
 
-fn apply_hit_indicator_observer(
-    trigger: On<MeleeHit>,
-    mut commands: Commands,
-    query: Query<&Sprite, (With<Enemy>, Without<HitIndicator>, With<Sprite>)>,
-) {
+fn apply_hit_indicator_observer(trigger: On<MeleeHit>, mut commands: Commands) {
     let hit = trigger.event();
     commands.insert_batch(
         hit.targets
@@ -267,11 +263,7 @@ fn apply_hit_indicator_observer(
             .filter_map(|target| {
                 let target = *target;
 
-                let Ok(sprite) = query.get(target) else {
-                    return None;
-                };
-
-                Some((target, HitIndicator::new(sprite.color)))
+                Some((target, HitIndicator::new()))
             })
             .collect::<Vec<_>>(),
     );

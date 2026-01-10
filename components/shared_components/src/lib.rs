@@ -23,7 +23,7 @@ pub struct HitIndicator {
 }
 
 impl HitIndicator {
-    pub fn new(saved_color: Color) -> Self {
+    pub fn new() -> Self {
         Self {
             timer: Timer::from_seconds(0.1, TimerMode::Repeating),
             saved_color: bevy::color::palettes::basic::WHITE.into(),
