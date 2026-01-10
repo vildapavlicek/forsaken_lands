@@ -327,3 +327,31 @@ pub fn on_unlock_topic_updated(
         }
     }
 }
+
+/// Observer that cleans up the unlock logic graph when an unlock is completed.
+pub fn cleanup_finished_unlock(
+    trigger: On<UnlockAchieved>,
+    mut topic_map: ResMut<TopicMap>,
+    roots: Query<(Entity, &UnlockRoot)>,
+    mut commands: Commands,
+) {
+    let event = trigger.event();
+    let unlock_id = &event.unlock_id;
+
+    // Remove unlock topic
+    let topic_key = format!("unlock:{}", unlock_id);
+    if let Some(entity) = topic_map.topics.remove(&topic_key) {
+        commands.entity(entity).despawn();
+    }
+
+    // Find and despawn the root entity
+    // This will recursively despawn all children (gates, sensors)
+    for (entity, root) in &roots {
+        if &root.id == unlock_id {
+            debug!(unlock_id = %unlock_id, "cleaned up finished unlock");
+            commands.entity(entity).despawn();
+            break;
+        }
+    }
+}
+
