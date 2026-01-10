@@ -128,42 +128,41 @@ pub fn update_research_progress(
 
 /// Starts a research (validates Available + cost)
 pub fn start_research(
-    mut events: MessageReader<StartResearchRequest>,
+    trigger: On<StartResearchRequest>,
     research_map: Res<ResearchMap>,
     assets: Res<Assets<ResearchDefinition>>,
     query: Query<&ResearchNode, With<Available>>,
     mut wallet: ResMut<Wallet>,
     mut commands: Commands,
 ) {
-    for event in events.read() {
-        let Some(&entity) = research_map.entities.get(&event.0) else {
-            warn!("Research '{}' not found", event.0);
-            continue;
-        };
+    let event = trigger.event();
+    let Some(&entity) = research_map.entities.get(&event.0) else {
+        warn!("Research '{}' not found", event.0);
+        return;
+    };
 
-        let Ok(node) = query.get(entity) else {
-            warn!("Research '{}' not available", event.0);
-            continue;
-        };
+    let Ok(node) = query.get(entity) else {
+        warn!("Research '{}' not available", event.0);
+        return;
+    };
 
-        let Some(def) = assets.get(&node.handle) else {
-            warn!("Research definition not loaded for '{}'", event.0);
-            continue;
-        };
+    let Some(def) = assets.get(&node.handle) else {
+        warn!("Research definition not loaded for '{}'", event.0);
+        return;
+    };
 
-        // Deduct cost
-        for (res, amt) in &def.cost {
-            if let Some(resource_amt) = wallet.resources.get_mut(res) {
-                *resource_amt -= amt;
-            }
+    // Deduct cost
+    for (res, amt) in &def.cost {
+        if let Some(resource_amt) = wallet.resources.get_mut(res) {
+            *resource_amt -= amt;
         }
-
-        commands
-            .entity(entity)
-            .remove::<Available>()
-            .insert(InProgress {
-                timer: Timer::from_seconds(def.time_required, TimerMode::Once),
-            });
-        info!("Started researching: {}", def.name);
     }
+
+    commands
+        .entity(entity)
+        .remove::<Available>()
+        .insert(InProgress {
+            timer: Timer::from_seconds(def.time_required, TimerMode::Once),
+        });
+    info!("Started researching: {}", def.name);
 }

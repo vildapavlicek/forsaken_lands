@@ -67,7 +67,7 @@ pub struct ResearchCompleted {
     pub research_id: String,
 }
 
-#[derive(Message)]
+#[derive(Event)]
 pub struct StartResearchRequest(pub String);
 
 // --- Plugin ---
@@ -78,16 +78,14 @@ impl Plugin for ResearchPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RonAssetPlugin::<ResearchDefinition>::new(&["research.ron"]))
             .init_resource::<ResearchMap>()
-            .add_message::<StartResearchRequest>()
             .register_type::<UnlockEffect>()
             .add_systems(
                 Update,
-                (
-                    systems::start_research.in_set(GameSchedule::Effect),
-                    systems::update_research_progress.in_set(GameSchedule::FrameStart),
-                )
+                systems::update_research_progress
+                    .in_set(GameSchedule::FrameStart)
                     .run_if(in_state(states::GameState::Running)),
             )
-            .add_observer(systems::on_unlock_achieved);
+            .add_observer(systems::on_unlock_achieved)
+            .add_observer(systems::start_research);
     }
 }

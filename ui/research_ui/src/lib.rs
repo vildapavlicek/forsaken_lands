@@ -530,7 +530,7 @@ impl Command for PopulateResearchDirectCommand {
 
 #[allow(clippy::type_complexity)]
 fn handle_research_button(
-    mut events: MessageWriter<StartResearchRequest>,
+    mut commands: Commands,
     research_map: Res<ResearchMap>,
     assets: Res<Assets<ResearchDefinition>>,
     wallet: Res<Wallet>,
@@ -561,7 +561,7 @@ fn handle_research_button(
                 .all(|(res, amt)| wallet.resources.get(res).copied().unwrap_or(0) >= *amt);
 
             if can_afford {
-                events.write(StartResearchRequest(id.clone()));
+                commands.trigger(StartResearchRequest(id.clone()));
             }
         }
     }
