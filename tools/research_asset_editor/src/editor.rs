@@ -423,6 +423,15 @@ fn show_condition_editor(
                 }
                 ui.text_edit_singleline(research_id);
             });
+            
+            // Show warning if research ID is entered but not found
+            if !research_id.is_empty() && !existing_research_ids.contains(research_id) {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    format!("⚠ Research \"{}\" not found in assets", research_id),
+                );
+            }
+            
             ui.small("Will unlock after completing the specified research.");
         }
         UnlockConditionTemplate::Custom(custom_condition) => {
