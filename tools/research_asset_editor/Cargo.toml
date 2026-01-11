@@ -1,0 +1,18 @@
+[package]
+name = "research_asset_editor"
+version = "0.1.0"
+edition = "2024"
+
+# This is a standalone tool, not part of the main workspace
+[workspace]
+
+[dependencies]
+# GUI framework
+eframe = "0.31"
+
+# Ron serialization
+ron = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+
+# File dialogs
+rfd = "0.15"
