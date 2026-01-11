@@ -9,7 +9,10 @@ use crate::file_generator::{
     generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
     save_recipe_unlock_file, save_research_files,
 };
-use crate::models::{RecipeUnlockFormData, ResearchFormData, ResourceCost, UnlockConditionTemplate};
+use crate::models::{
+    CompareOp, LeafCondition, RecipeUnlockFormData, ResearchFormData, ResourceCost,
+    UnlockCondition,
+};
 
 /// Available editor tabs.
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -33,10 +36,6 @@ pub struct EditorState {
     status: String,
     /// List of existing research IDs for the dropdown.
     existing_research_ids: Vec<String>,
-    /// Currently selected template index for research.
-    research_template_idx: usize,
-    /// Currently selected template index for recipe.
-    recipe_template_idx: usize,
     /// Show RON preview.
     show_preview: bool,
 }
@@ -50,8 +49,6 @@ impl EditorState {
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
-            research_template_idx: 0,
-            recipe_template_idx: 1, // Default to "After Research" for recipes
             show_preview: false,
         }
     }
@@ -229,11 +226,10 @@ impl EditorState {
         // Unlock condition section
         ui.separator();
         ui.heading("Unlock Condition");
-
         show_condition_editor(
             ui,
+            "research",
             &self.existing_research_ids,
-            &mut self.research_template_idx,
             &mut self.research_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -289,7 +285,9 @@ impl EditorState {
     fn show_recipe_unlock_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Recipe Unlock Definition");
         ui.add_space(4.0);
-        ui.small("Define an unlock condition for an existing recipe. The recipe itself must be defined separately.");
+        ui.small(
+            "Define an unlock condition for an existing recipe. The recipe itself must be defined separately.",
+        );
         ui.add_space(8.0);
 
         // Recipe ID
@@ -311,15 +309,10 @@ impl EditorState {
         // Unlock condition section
         ui.separator();
         ui.heading("Unlock Condition");
-
-        // TODO: Replace text field with structured condition builder to prevent syntax errors.
-        // The builder should have dropdowns for condition types (Unlock, Stat, Resource, And, Or)
-        // and appropriate fields for each type.
-
         show_condition_editor(
             ui,
+            "recipe",
             &self.existing_research_ids,
-            &mut self.recipe_template_idx,
             &mut self.recipe_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -369,82 +362,170 @@ impl EditorState {
     }
 }
 
-/// Free function to show condition editor, avoiding borrow checker issues.
+/// Show the structured condition editor UI.
 fn show_condition_editor(
     ui: &mut egui::Ui,
+    id_prefix: &str,
     existing_research_ids: &[String],
-    template_idx: &mut usize,
-    condition: &mut UnlockConditionTemplate,
+    condition: &mut UnlockCondition,
 ) {
-    let templates = UnlockConditionTemplate::all_templates();
+    // Top-level condition type dropdown
+    let current_type = condition.display_name();
     ui.horizontal(|ui| {
-        ui.label("Template:");
-        egui::ComboBox::from_id_salt(format!("condition_template_{:?}", template_idx as *const _))
-            .selected_text(templates[*template_idx])
+        ui.label("Type:");
+        egui::ComboBox::from_id_salt(format!("{}_condition_type", id_prefix))
+            .selected_text(current_type)
             .show_ui(ui, |ui| {
-                for (idx, template_name) in templates.iter().enumerate() {
-                    if ui
-                        .selectable_label(*template_idx == idx, *template_name)
-                        .clicked()
-                    {
-                        *template_idx = idx;
-                        *condition = UnlockConditionTemplate::from_display_name(template_name);
+                for type_name in UnlockCondition::all_types() {
+                    if ui.selectable_label(current_type == type_name, type_name).clicked() {
+                        *condition = UnlockCondition::from_type_name(type_name);
                     }
                 }
             });
     });
 
-    // Show additional fields based on selected template
+    ui.add_space(4.0);
+
+    // Show condition-specific UI
     match condition {
-        UnlockConditionTemplate::AlwaysAvailable => {
-            ui.small("Will be available from the start.");
+        UnlockCondition::True => {
+            ui.small("Always available from the start.");
         }
-        UnlockConditionTemplate::AfterResearch(research_id) => {
+        UnlockCondition::Single(leaf) => {
+            show_leaf_editor(ui, &format!("{}_single", id_prefix), existing_research_ids, leaf);
+        }
+        UnlockCondition::And(leaves) => {
+            show_gate_editor(ui, id_prefix, existing_research_ids, leaves, "AND");
+        }
+        UnlockCondition::Or(leaves) => {
+            show_gate_editor(ui, id_prefix, existing_research_ids, leaves, "OR");
+        }
+    }
+}
+
+/// Show editor for And/Or gate with multiple leaf conditions.
+fn show_gate_editor(
+    ui: &mut egui::Ui,
+    id_prefix: &str,
+    existing_research_ids: &[String],
+    leaves: &mut Vec<LeafCondition>,
+    gate_name: &str,
+) {
+    ui.small(format!(
+        "{} gate: {} conditions must be met.",
+        gate_name,
+        if gate_name == "AND" { "All" } else { "Any" }
+    ));
+
+    ui.add_space(4.0);
+
+    let mut remove_idx: Option<usize> = None;
+    for (i, leaf) in leaves.iter_mut().enumerate() {
+        ui.group(|ui| {
             ui.horizontal(|ui| {
-                ui.label("Prerequisite Research ID:");
+                ui.label(format!("Condition #{}:", i + 1));
+                if ui.button("🗑").clicked() {
+                    remove_idx = Some(i);
+                }
+            });
+            show_leaf_editor(
+                ui,
+                &format!("{}_{}", id_prefix, i),
+                existing_research_ids,
+                leaf,
+            );
+        });
+    }
+
+    if let Some(idx) = remove_idx {
+        if leaves.len() > 1 {
+            leaves.remove(idx);
+        }
+    }
+
+    if ui.button("+ Add Condition").clicked() {
+        leaves.push(LeafCondition::default());
+    }
+}
+
+/// Show editor for a single leaf condition.
+fn show_leaf_editor(
+    ui: &mut egui::Ui,
+    id_prefix: &str,
+    existing_research_ids: &[String],
+    leaf: &mut LeafCondition,
+) {
+    // Leaf type dropdown
+    let current_type = leaf.display_name();
+    ui.horizontal(|ui| {
+        ui.label("Condition:");
+        egui::ComboBox::from_id_salt(format!("{}_leaf_type", id_prefix))
+            .selected_text(current_type)
+            .show_ui(ui, |ui| {
+                for type_name in LeafCondition::all_types() {
+                    if ui.selectable_label(current_type == type_name, type_name).clicked() {
+                        *leaf = LeafCondition::from_type_name(type_name);
+                    }
+                }
+            });
+    });
+
+    // Condition-specific fields
+    match leaf {
+        LeafCondition::Unlock { id } => {
+            ui.horizontal(|ui| {
+                ui.label("Research ID:");
                 if !existing_research_ids.is_empty() {
-                    egui::ComboBox::from_id_salt(format!(
-                        "prerequisite_research_{:?}",
-                        template_idx as *const _
-                    ))
-                    .selected_text(if research_id.is_empty() {
-                        "Select..."
-                    } else {
-                        research_id.as_str()
-                    })
+                    egui::ComboBox::from_id_salt(format!("{}_unlock_id", id_prefix))
+                        .selected_text(if id.is_empty() { "Select..." } else { id.as_str() })
+                        .show_ui(ui, |ui| {
+                            for research_id in existing_research_ids {
+                                if ui.selectable_label(id == research_id, research_id).clicked() {
+                                    *id = research_id.clone();
+                                }
+                            }
+                        });
+                    ui.label("or");
+                }
+                ui.text_edit_singleline(id);
+            });
+            // Warning if research ID not found
+            if !id.is_empty() && !existing_research_ids.contains(id) {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    format!("⚠ Research \"{}\" not found", id),
+                );
+            }
+        }
+        LeafCondition::Stat { stat_id, value, op } => {
+            ui.horizontal(|ui| {
+                ui.label("Stat ID:");
+                ui.add(egui::TextEdit::singleline(stat_id).desired_width(100.0));
+                ui.label("Op:");
+                egui::ComboBox::from_id_salt(format!("{}_stat_op", id_prefix))
+                    .selected_text(op.display_name())
+                    .width(50.0)
                     .show_ui(ui, |ui| {
-                        for id in existing_research_ids {
-                            if ui.selectable_label(research_id == id, id).clicked() {
-                                *research_id = id.clone();
+                        for op_name in CompareOp::all() {
+                            if ui.selectable_label(op.display_name() == op_name, op_name).clicked()
+                            {
+                                *op = CompareOp::from_display(op_name);
                             }
                         }
                     });
-                    ui.label("or");
-                }
-                ui.text_edit_singleline(research_id);
+                ui.label("Value:");
+                ui.add(egui::DragValue::new(value).speed(0.1));
             });
-            
-            // Show warning if research ID is entered but not found
-            if !research_id.is_empty() && !existing_research_ids.contains(research_id) {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    format!("⚠ Research \"{}\" not found in assets", research_id),
-                );
-            }
-            
-            ui.small("Will unlock after completing the specified research.");
+            ui.small("e.g., stat_id: \"goblin_kills\", op: >=, value: 10");
         }
-        UnlockConditionTemplate::Custom(custom_condition) => {
-            ui.label("Custom Condition:");
-            ui.add(
-                egui::TextEdit::multiline(custom_condition)
-                    .font(egui::TextStyle::Monospace)
-                    .desired_rows(3)
-                    .desired_width(f32::INFINITY),
-            );
-            ui.small(
-                "Enter a valid RON condition expression (e.g., And([Unlock(\"x\"), Stat(...)]))",
-            );
+        LeafCondition::Resource { resource_id, amount } => {
+            ui.horizontal(|ui| {
+                ui.label("Resource ID:");
+                ui.add(egui::TextEdit::singleline(resource_id).desired_width(100.0));
+                ui.label("Amount:");
+                ui.add(egui::DragValue::new(amount).range(1..=10000));
+            });
+            ui.small("Triggers when player has at least this amount");
         }
     }
 }
@@ -454,12 +535,10 @@ impl EditorState {
         match self.active_tab {
             EditorTab::Research => {
                 self.research_form = ResearchFormData::new();
-                self.research_template_idx = 0;
                 self.status = "New research form created".to_string();
             }
             EditorTab::RecipeUnlock => {
                 self.recipe_form = RecipeUnlockFormData::new();
-                self.recipe_template_idx = 1;
                 self.status = "New recipe unlock form created".to_string();
             }
         }
@@ -486,7 +565,6 @@ impl EditorState {
                 if let Some(filename) = path.file_name() {
                     let filename = filename.to_string_lossy();
                     if filename.ends_with(".research.ron") {
-                        // Extract ID from filename (remove .research.ron suffix)
                         if let Some(id) = filename.strip_suffix(".research.ron") {
                             self.existing_research_ids.push(id.to_string());
                         }
@@ -506,7 +584,6 @@ impl EditorState {
                         "✓ Saved: {} and {}",
                         result.research_path, result.unlock_path
                     );
-                    // Reload research IDs to include the new one
                     let assets_dir = assets_dir.clone();
                     self.load_existing_research_ids(&assets_dir);
                 }

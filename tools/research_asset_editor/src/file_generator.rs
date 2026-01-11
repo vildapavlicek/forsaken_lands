@@ -46,7 +46,7 @@ pub fn generate_unlock_ron(data: &ResearchFormData) -> String {
     ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
     ron.push_str(&format!(
         "    condition: {},\n",
-        data.unlock_condition.to_condition_string()
+        data.unlock_condition.to_ron()
     ));
     ron.push_str(")\n");
 
@@ -66,7 +66,7 @@ pub fn generate_recipe_unlock_ron(data: &RecipeUnlockFormData) -> String {
     ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
     ron.push_str(&format!(
         "    condition: {},\n",
-        data.unlock_condition.to_condition_string()
+        data.unlock_condition.to_ron()
     ));
     ron.push_str(")\n");
 

@@ -11,54 +11,237 @@ pub struct ResourceCost {
     pub amount: u32,
 }
 
-/// Unlock condition template options.
+// ==================== Structured Condition System ====================
+
+/// Comparison operators for stat checks.
 #[derive(Clone, Debug, PartialEq, Default)]
-pub enum UnlockConditionTemplate {
-    /// Always available (condition: True)
+pub enum CompareOp {
     #[default]
-    AlwaysAvailable,
-    /// Depends on completing another research
-    AfterResearch(String),
-    /// Custom condition string
-    Custom(String),
+    Ge, // >=
+    Gt, // >
+    Le, // <=
+    Lt, // <
+    Eq, // ==
 }
 
-impl UnlockConditionTemplate {
-    /// Returns the display name for the dropdown.
+impl CompareOp {
+    pub fn all() -> Vec<&'static str> {
+        vec![">=", ">", "<=", "<", "=="]
+    }
+
     pub fn display_name(&self) -> &'static str {
         match self {
-            UnlockConditionTemplate::AlwaysAvailable => "Always Available",
-            UnlockConditionTemplate::AfterResearch(_) => "After Research",
-            UnlockConditionTemplate::Custom(_) => "Custom",
+            CompareOp::Ge => ">=",
+            CompareOp::Gt => ">",
+            CompareOp::Le => "<=",
+            CompareOp::Lt => "<",
+            CompareOp::Eq => "==",
         }
     }
 
-    /// Converts the template to the RON condition string.
-    pub fn to_condition_string(&self) -> String {
+    pub fn from_display(s: &str) -> Self {
+        match s {
+            ">=" => CompareOp::Ge,
+            ">" => CompareOp::Gt,
+            "<=" => CompareOp::Le,
+            "<" => CompareOp::Lt,
+            "==" => CompareOp::Eq,
+            _ => CompareOp::Ge,
+        }
+    }
+
+    pub fn to_ron(&self) -> &'static str {
         match self {
-            UnlockConditionTemplate::AlwaysAvailable => "True".to_string(),
-            UnlockConditionTemplate::AfterResearch(research_id) => {
-                format!("Unlock(\"{}\")", research_id)
-            }
-            UnlockConditionTemplate::Custom(condition) => condition.clone(),
-        }
-    }
-
-    /// Available templates for the dropdown.
-    pub fn all_templates() -> Vec<&'static str> {
-        vec!["Always Available", "After Research", "Custom"]
-    }
-
-    /// Create a template from its display name.
-    pub fn from_display_name(name: &str) -> Self {
-        match name {
-            "Always Available" => UnlockConditionTemplate::AlwaysAvailable,
-            "After Research" => UnlockConditionTemplate::AfterResearch(String::new()),
-            "Custom" => UnlockConditionTemplate::Custom(String::new()),
-            _ => UnlockConditionTemplate::AlwaysAvailable,
+            CompareOp::Ge => "Ge",
+            CompareOp::Gt => "Gt",
+            CompareOp::Le => "Le",
+            CompareOp::Lt => "Lt",
+            CompareOp::Eq => "Eq",
         }
     }
 }
+
+/// A leaf condition (sensor) that can be used inside And/Or gates.
+#[derive(Clone, Debug, PartialEq)]
+pub enum LeafCondition {
+    /// Unlock condition: triggers when a research/unlock completes
+    Unlock { id: String },
+    /// Stat condition: triggers when a stat meets threshold
+    Stat {
+        stat_id: String,
+        value: f32,
+        op: CompareOp,
+    },
+    /// Resource condition: triggers when player has enough resources
+    Resource { resource_id: String, amount: u32 },
+}
+
+impl Default for LeafCondition {
+    fn default() -> Self {
+        LeafCondition::Unlock { id: String::new() }
+    }
+}
+
+impl LeafCondition {
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            LeafCondition::Unlock { .. } => "Unlock",
+            LeafCondition::Stat { .. } => "Stat",
+            LeafCondition::Resource { .. } => "Resource",
+        }
+    }
+
+    pub fn all_types() -> Vec<&'static str> {
+        vec!["Unlock", "Stat", "Resource"]
+    }
+
+    pub fn from_type_name(name: &str) -> Self {
+        match name {
+            "Unlock" => LeafCondition::Unlock { id: String::new() },
+            "Stat" => LeafCondition::Stat {
+                stat_id: String::new(),
+                value: 1.0,
+                op: CompareOp::Ge,
+            },
+            "Resource" => LeafCondition::Resource {
+                resource_id: String::new(),
+                amount: 1,
+            },
+            _ => LeafCondition::default(),
+        }
+    }
+
+    pub fn to_ron(&self) -> String {
+        match self {
+            LeafCondition::Unlock { id } => format!("Unlock(\"{}\")", id),
+            LeafCondition::Stat { stat_id, value, op } => {
+                format!(
+                    "Stat(StatCheck(stat_id: \"{}\", value: {}, op: {}))",
+                    stat_id, value, op.to_ron()
+                )
+            }
+            LeafCondition::Resource { resource_id, amount } => {
+                format!(
+                    "Resource(ResourceCheck(resource_id: \"{}\", amount: {}))",
+                    resource_id, amount
+                )
+            }
+        }
+    }
+
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        match self {
+            LeafCondition::Unlock { id } => {
+                if id.trim().is_empty() {
+                    errors.push("Unlock ID is required".to_string());
+                }
+            }
+            LeafCondition::Stat { stat_id, .. } => {
+                if stat_id.trim().is_empty() {
+                    errors.push("Stat ID is required".to_string());
+                }
+            }
+            LeafCondition::Resource { resource_id, amount } => {
+                if resource_id.trim().is_empty() {
+                    errors.push("Resource ID is required".to_string());
+                }
+                if *amount == 0 {
+                    errors.push("Resource amount must be > 0".to_string());
+                }
+            }
+        }
+        errors
+    }
+}
+
+/// The top-level unlock condition structure.
+/// Supports True, single leaf, or one-level And/Or gates.
+#[derive(Clone, Debug, PartialEq)]
+pub enum UnlockCondition {
+    /// Always available
+    True,
+    /// Single leaf condition
+    Single(LeafCondition),
+    /// All conditions must be met
+    And(Vec<LeafCondition>),
+    /// Any condition must be met
+    Or(Vec<LeafCondition>),
+}
+
+impl Default for UnlockCondition {
+    fn default() -> Self {
+        UnlockCondition::True
+    }
+}
+
+impl UnlockCondition {
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            UnlockCondition::True => "True (Always Available)",
+            UnlockCondition::Single(_) => "Single Condition",
+            UnlockCondition::And(_) => "And (All Required)",
+            UnlockCondition::Or(_) => "Or (Any Required)",
+        }
+    }
+
+    pub fn all_types() -> Vec<&'static str> {
+        vec![
+            "True (Always Available)",
+            "Single Condition",
+            "And (All Required)",
+            "Or (Any Required)",
+        ]
+    }
+
+    pub fn from_type_name(name: &str) -> Self {
+        match name {
+            "True (Always Available)" => UnlockCondition::True,
+            "Single Condition" => UnlockCondition::Single(LeafCondition::default()),
+            "And (All Required)" => UnlockCondition::And(vec![LeafCondition::default()]),
+            "Or (Any Required)" => UnlockCondition::Or(vec![LeafCondition::default()]),
+            _ => UnlockCondition::True,
+        }
+    }
+
+    pub fn to_ron(&self) -> String {
+        match self {
+            UnlockCondition::True => "True".to_string(),
+            UnlockCondition::Single(leaf) => leaf.to_ron(),
+            UnlockCondition::And(leaves) => {
+                let inner: Vec<String> = leaves.iter().map(|l| l.to_ron()).collect();
+                format!("And([\n        {},\n    ])", inner.join(",\n        "))
+            }
+            UnlockCondition::Or(leaves) => {
+                let inner: Vec<String> = leaves.iter().map(|l| l.to_ron()).collect();
+                format!("Or([\n        {},\n    ])", inner.join(",\n        "))
+            }
+        }
+    }
+
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        match self {
+            UnlockCondition::True => {}
+            UnlockCondition::Single(leaf) => {
+                errors.extend(leaf.validate());
+            }
+            UnlockCondition::And(leaves) | UnlockCondition::Or(leaves) => {
+                if leaves.is_empty() {
+                    errors.push("At least one condition is required".to_string());
+                }
+                for (i, leaf) in leaves.iter().enumerate() {
+                    for err in leaf.validate() {
+                        errors.push(format!("Condition #{}: {}", i + 1, err));
+                    }
+                }
+            }
+        }
+        errors
+    }
+}
+
+// ==================== Form Data Structures ====================
 
 /// The main form data for a research asset.
 #[derive(Clone, Debug, Default)]
@@ -73,8 +256,8 @@ pub struct ResearchFormData {
     pub costs: Vec<ResourceCost>,
     /// Time required in seconds
     pub time_required: f32,
-    /// Unlock condition template
-    pub unlock_condition: UnlockConditionTemplate,
+    /// Unlock condition
+    pub unlock_condition: UnlockCondition,
 }
 
 impl ResearchFormData {
@@ -89,7 +272,7 @@ impl ResearchFormData {
                 amount: 10,
             }],
             time_required: 30.0,
-            unlock_condition: UnlockConditionTemplate::AlwaysAvailable,
+            unlock_condition: UnlockCondition::True,
         }
     }
 
@@ -142,17 +325,8 @@ impl ResearchFormData {
             errors.push("Time required must be greater than 0".to_string());
         }
 
-        // Validate condition template
-        if let UnlockConditionTemplate::AfterResearch(ref research_id) = self.unlock_condition {
-            if research_id.trim().is_empty() {
-                errors.push("Prerequisite research ID is required".to_string());
-            }
-        }
-        if let UnlockConditionTemplate::Custom(ref condition) = self.unlock_condition {
-            if condition.trim().is_empty() {
-                errors.push("Custom condition is required".to_string());
-            }
-        }
+        // Validate unlock condition
+        errors.extend(self.unlock_condition.validate());
 
         errors
     }
@@ -165,8 +339,8 @@ pub struct RecipeUnlockFormData {
     pub id: String,
     /// Display name (e.g., "Bone Sword Recipe")
     pub display_name: String,
-    /// Unlock condition template
-    pub unlock_condition: UnlockConditionTemplate,
+    /// Unlock condition
+    pub unlock_condition: UnlockCondition,
 }
 
 impl RecipeUnlockFormData {
@@ -175,7 +349,7 @@ impl RecipeUnlockFormData {
         Self {
             id: String::new(),
             display_name: String::new(),
-            unlock_condition: UnlockConditionTemplate::AfterResearch(String::new()),
+            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock { id: String::new() }),
         }
     }
 
@@ -208,17 +382,8 @@ impl RecipeUnlockFormData {
             errors.push("Display name is required".to_string());
         }
 
-        // Validate condition template
-        if let UnlockConditionTemplate::AfterResearch(ref research_id) = self.unlock_condition {
-            if research_id.trim().is_empty() {
-                errors.push("Prerequisite research ID is required".to_string());
-            }
-        }
-        if let UnlockConditionTemplate::Custom(ref condition) = self.unlock_condition {
-            if condition.trim().is_empty() {
-                errors.push("Custom condition is required".to_string());
-            }
-        }
+        // Validate unlock condition
+        errors.extend(self.unlock_condition.validate());
 
         errors
     }
