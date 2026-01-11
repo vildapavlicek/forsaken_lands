@@ -4,12 +4,10 @@
     display_name: Some("Invaders.."),
     reward_id: "research_invaders",
     condition: And([
-        Stat(
-            StatCheck(
-                stat_id: "goblin_kills",
-                value: 5.0,
-                op: Ge,
-            )
-        ),
+        Stat(Kills(
+            monster_id: "goblin",
+            value: 5.0,
+            op: Ge,
+        )),
     ]),
 )

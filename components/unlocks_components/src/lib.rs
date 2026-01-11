@@ -76,11 +76,37 @@ pub enum ComparisonOp {
 }
 
 #[derive(Debug, Clone, PartialEq, Reflect, serde::Deserialize, serde::Serialize)]
-pub struct StatCheck {
-    pub stat_id: String,
-    pub value: f32,
-    #[serde(default)]
-    pub op: ComparisonOp,
+pub enum StatCheck {
+    Kills {
+        monster_id: String,
+        #[serde(default)]
+        op: ComparisonOp,
+        value: f32,
+    },
+    Resource {
+        resource_id: String,
+        #[serde(default)]
+        op: ComparisonOp,
+        value: f32,
+    },
+}
+
+impl StatCheck {
+    /// Generates the topic key for this stat check.
+    pub fn topic_key(&self) -> String {
+        match self {
+            StatCheck::Kills { monster_id, .. } => format!("stat:{}_kills", monster_id),
+            StatCheck::Resource { resource_id, .. } => format!("stat:resource_{}", resource_id),
+        }
+    }
+
+    /// Returns the comparison operator and target value.
+    pub fn comparison(&self) -> (ComparisonOp, f32) {
+        match self {
+            StatCheck::Kills { op, value, .. } => (*op, *value),
+            StatCheck::Resource { op, value, .. } => (*op, *value),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize)]

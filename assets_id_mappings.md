@@ -90,7 +90,7 @@ This triggers when the research appears in the UI (before player starts it).
 ### To unlock based on **stats or resources**:
 ```ron
 condition: And([
-    Stat(StatCheck(stat_id: "goblin_kills", value: 10.0, op: Ge)),
+    Stat(Kills(monster_id: "goblin", value: 10.0, op: Ge)),
     Resource(ResourceCheck(resource_id: "bones", amount: 5)),
 ])
 ```
@@ -103,7 +103,7 @@ condition: And([
 |--------------------------|-------------------|
 | Research "X" is **completed** | `Unlock("X")` where X = research_id |
 | Research "X" becomes **available** | `Unlock("research_X_unlock")` |
-| Player kills N enemies | `Stat(StatCheck(...))` |
+| Player kills N enemies | `Stat(Kills(...))` |
 | Player has N resources | `Resource(ResourceCheck(...))` |
 | Multiple conditions (all) | `And([...])` |
 | Any condition (one of) | `Or([...])` |

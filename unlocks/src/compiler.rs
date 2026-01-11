@@ -98,16 +98,21 @@ pub fn build_condition_node(
             gate
         }
         ConditionNode::Stat(check) => {
-            let topic_key = format!("stat:{}", check.stat_id);
+            let topic_key = check.topic_key();
             let topic_entity = topic_map.get_or_create(commands, &topic_key);
 
-            // Hydrate from encyclopedia if available
-            let current_val = ctx
-                .encyclopedia
-                .and_then(|enc| enc.inner.get(&check.stat_id))
-                .map(|e| e.kill_count as f32)
-                .unwrap_or(0.0);
-            let initially_met = compare_op(current_val, check.value, check.op);
+            // Hydrate current value based on stat type
+            let current_val = match check {
+                StatCheck::Kills { monster_id, .. } => ctx
+                    .encyclopedia
+                    .and_then(|enc| enc.inner.get(monster_id))
+                    .map(|e| e.kill_count as f32)
+                    .unwrap_or(0.0),
+                StatCheck::Resource { .. } => 0.0, // Resources don't hydrate from encyclopedia
+            };
+
+            let (op, target_value) = check.comparison();
+            let initially_met = compare_op(current_val, target_value, op);
 
             let sensor = commands
                 .spawn((

@@ -241,17 +241,30 @@ pub fn on_stat_changed(
     if let Ok(subs) = subscribers.get(topic_entity) {
         for &sensor_entity in &subs.sensors {
             if let Ok((entity, mut condition, stat_sensor)) = sensors.get_mut(sensor_entity) {
-                // Double check stat ID matches (should be guaranteed by topic wiring but good for safety)
-                if stat_sensor.0.stat_id != event.stat_id {
+                // Match against enum to get expected stat_id and comparison params
+                let (expected_stat_id, op, target_value) = match &stat_sensor.0 {
+                    StatCheck::Kills {
+                        monster_id,
+                        op,
+                        value,
+                    } => (format!("{}_kills", monster_id), *op, *value),
+                    StatCheck::Resource {
+                        resource_id,
+                        op,
+                        value,
+                    } => (format!("resource_{}", resource_id), *op, *value),
+                };
+
+                if expected_stat_id != event.stat_id {
                     continue;
                 }
 
-                let is_met = compare_op(event.new_value, stat_sensor.0.value, stat_sensor.0.op);
+                let is_met = compare_op(event.new_value, target_value, op);
 
                 debug!(
                     stat_id = %event.stat_id,
                     new_value = %event.new_value,
-                    target_value = %stat_sensor.0.value,
+                    target_value = %target_value,
                     was_met = %condition.is_met,
                     is_met = %is_met,
                     "evaluating stat condition"
