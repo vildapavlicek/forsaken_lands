@@ -66,9 +66,9 @@ impl CompareOp {
 pub enum LeafCondition {
     /// Unlock condition: triggers when a research/unlock completes
     Unlock { id: String },
-    /// Stat condition: triggers when a stat meets threshold
-    Stat {
-        stat_id: String,
+    /// Kills condition: triggers when player kills enough of a monster type
+    Kills {
+        monster_id: String,
         value: f32,
         op: CompareOp,
     },
@@ -86,20 +86,20 @@ impl LeafCondition {
     pub fn display_name(&self) -> &'static str {
         match self {
             LeafCondition::Unlock { .. } => "Unlock",
-            LeafCondition::Stat { .. } => "Stat",
+            LeafCondition::Kills { .. } => "Kills",
             LeafCondition::Resource { .. } => "Resource",
         }
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Unlock", "Stat", "Resource"]
+        vec!["Unlock", "Kills", "Resource"]
     }
 
     pub fn from_type_name(name: &str) -> Self {
         match name {
             "Unlock" => LeafCondition::Unlock { id: String::new() },
-            "Stat" => LeafCondition::Stat {
-                stat_id: String::new(),
+            "Kills" => LeafCondition::Kills {
+                monster_id: String::new(),
                 value: 1.0,
                 op: CompareOp::Ge,
             },
@@ -114,10 +114,10 @@ impl LeafCondition {
     pub fn to_ron(&self) -> String {
         match self {
             LeafCondition::Unlock { id } => format!("Unlock(\"{}\")", id),
-            LeafCondition::Stat { stat_id, value, op } => {
+            LeafCondition::Kills { monster_id, value, op } => {
                 format!(
-                    "Stat(StatCheck(stat_id: \"{}\", value: {}, op: {}))",
-                    stat_id, value, op.to_ron()
+                    "Stat(Kills(monster_id: \"{}\", value: {}, op: {}))",
+                    monster_id, value, op.to_ron()
                 )
             }
             LeafCondition::Resource { resource_id, amount } => {
@@ -137,9 +137,9 @@ impl LeafCondition {
                     errors.push("Unlock ID is required".to_string());
                 }
             }
-            LeafCondition::Stat { stat_id, .. } => {
-                if stat_id.trim().is_empty() {
-                    errors.push("Stat ID is required".to_string());
+            LeafCondition::Kills { monster_id, .. } => {
+                if monster_id.trim().is_empty() {
+                    errors.push("Monster ID is required".to_string());
                 }
             }
             LeafCondition::Resource { resource_id, amount } => {

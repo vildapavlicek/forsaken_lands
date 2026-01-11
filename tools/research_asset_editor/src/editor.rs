@@ -36,6 +36,8 @@ pub struct EditorState {
     status: String,
     /// List of existing research IDs for the dropdown.
     existing_research_ids: Vec<String>,
+    /// List of existing monster IDs for the dropdown.
+    existing_monster_ids: Vec<String>,
     /// Show RON preview.
     show_preview: bool,
 }
@@ -49,6 +51,7 @@ impl EditorState {
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
+            existing_monster_ids: Vec::new(),
             show_preview: false,
         }
     }
@@ -230,6 +233,7 @@ impl EditorState {
             ui,
             "research",
             &self.existing_research_ids,
+            &self.existing_monster_ids,
             &mut self.research_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -313,6 +317,7 @@ impl EditorState {
             ui,
             "recipe",
             &self.existing_research_ids,
+            &self.existing_monster_ids,
             &mut self.recipe_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -367,6 +372,7 @@ fn show_condition_editor(
     ui: &mut egui::Ui,
     id_prefix: &str,
     existing_research_ids: &[String],
+    existing_monster_ids: &[String],
     condition: &mut UnlockCondition,
 ) {
     // Top-level condition type dropdown
@@ -392,13 +398,33 @@ fn show_condition_editor(
             ui.small("Always available from the start.");
         }
         UnlockCondition::Single(leaf) => {
-            show_leaf_editor(ui, &format!("{}_single", id_prefix), existing_research_ids, leaf);
+            show_leaf_editor(
+                ui,
+                &format!("{}_single", id_prefix),
+                existing_research_ids,
+                existing_monster_ids,
+                leaf,
+            );
         }
         UnlockCondition::And(leaves) => {
-            show_gate_editor(ui, id_prefix, existing_research_ids, leaves, "AND");
+            show_gate_editor(
+                ui,
+                id_prefix,
+                existing_research_ids,
+                existing_monster_ids,
+                leaves,
+                "AND",
+            );
         }
         UnlockCondition::Or(leaves) => {
-            show_gate_editor(ui, id_prefix, existing_research_ids, leaves, "OR");
+            show_gate_editor(
+                ui,
+                id_prefix,
+                existing_research_ids,
+                existing_monster_ids,
+                leaves,
+                "OR",
+            );
         }
     }
 }
@@ -408,6 +434,7 @@ fn show_gate_editor(
     ui: &mut egui::Ui,
     id_prefix: &str,
     existing_research_ids: &[String],
+    existing_monster_ids: &[String],
     leaves: &mut Vec<LeafCondition>,
     gate_name: &str,
 ) {
@@ -432,6 +459,7 @@ fn show_gate_editor(
                 ui,
                 &format!("{}_{}", id_prefix, i),
                 existing_research_ids,
+                existing_monster_ids,
                 leaf,
             );
         });
@@ -453,6 +481,7 @@ fn show_leaf_editor(
     ui: &mut egui::Ui,
     id_prefix: &str,
     existing_research_ids: &[String],
+    existing_monster_ids: &[String],
     leaf: &mut LeafCondition,
 ) {
     // Leaf type dropdown
@@ -497,12 +526,40 @@ fn show_leaf_editor(
                 );
             }
         }
-        LeafCondition::Stat { stat_id, value, op } => {
+        LeafCondition::Kills {
+            monster_id,
+            value,
+            op,
+        } => {
             ui.horizontal(|ui| {
-                ui.label("Stat ID:");
-                ui.add(egui::TextEdit::singleline(stat_id).desired_width(100.0));
+                ui.label("Monster ID:");
+                if !existing_monster_ids.is_empty() {
+                    egui::ComboBox::from_id_salt(format!("{}_monster_id", id_prefix))
+                        .selected_text(if monster_id.is_empty() {
+                            "Select..."
+                        } else {
+                            monster_id.as_str()
+                        })
+                        .show_ui(ui, |ui| {
+                            for id in existing_monster_ids {
+                                if ui.selectable_label(monster_id == id, id).clicked() {
+                                    *monster_id = id.clone();
+                                }
+                            }
+                        });
+                    ui.label("or");
+                }
+                ui.add(egui::TextEdit::singleline(monster_id).desired_width(100.0));
+                // Warning if monster ID not found
+                if !monster_id.is_empty() && !existing_monster_ids.contains(monster_id) {
+                    ui.colored_label(
+                        egui::Color32::YELLOW,
+                        format!("⚠ Monster \"{}\" not found", monster_id),
+                    );
+                }
+
                 ui.label("Op:");
-                egui::ComboBox::from_id_salt(format!("{}_stat_op", id_prefix))
+                egui::ComboBox::from_id_salt(format!("{}_kills_op", id_prefix))
                     .selected_text(op.display_name())
                     .width(50.0)
                     .show_ui(ui, |ui| {
@@ -514,9 +571,9 @@ fn show_leaf_editor(
                         }
                     });
                 ui.label("Value:");
-                ui.add(egui::DragValue::new(value).speed(0.1));
+                ui.add(egui::DragValue::new(value).speed(1.0).range(1.0..=10000.0));
             });
-            ui.small("e.g., stat_id: \"goblin_kills\", op: >=, value: 10");
+            ui.small("e.g., monster_id: \"goblin\", op: >=, value: 10 (kills 10 goblins)");
         }
         LeafCondition::Resource { resource_id, amount } => {
             ui.horizontal(|ui| {
@@ -550,14 +607,15 @@ impl EditorState {
             .pick_folder()
         {
             self.assets_dir = Some(path.clone());
-            self.load_existing_research_ids(&path);
+            self.assets_dir = Some(path.clone());
+            self.load_existing_ids(&path);
             self.status = format!("Assets directory set: {}", path.display());
         }
     }
 
-    fn load_existing_research_ids(&mut self, assets_dir: &PathBuf) {
+    fn load_existing_ids(&mut self, assets_dir: &PathBuf) {
+        // Load research IDs
         self.existing_research_ids.clear();
-
         let research_dir = assets_dir.join("research");
         if let Ok(entries) = std::fs::read_dir(research_dir) {
             for entry in entries.flatten() {
@@ -572,8 +630,25 @@ impl EditorState {
                 }
             }
         }
-
         self.existing_research_ids.sort();
+
+        // Load monster IDs from prefabs/enemies
+        self.existing_monster_ids.clear();
+        let enemies_dir = assets_dir.join("prefabs").join("enemies");
+        if let Ok(entries) = std::fs::read_dir(enemies_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename = filename.to_string_lossy();
+                    if filename.ends_with(".scn.ron") {
+                        if let Some(id) = filename.strip_suffix(".scn.ron") {
+                            self.existing_monster_ids.push(id.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_monster_ids.sort();
     }
 
     fn save_research(&mut self) {
@@ -585,7 +660,7 @@ impl EditorState {
                         result.research_path, result.unlock_path
                     );
                     let assets_dir = assets_dir.clone();
-                    self.load_existing_research_ids(&assets_dir);
+                    self.load_existing_ids(&assets_dir);
                 }
                 Err(e) => {
                     self.status = format!("✗ Failed to save: {}", e);
