@@ -157,3 +157,69 @@ impl ResearchFormData {
         errors
     }
 }
+
+/// The form data for a recipe unlock.
+#[derive(Clone, Debug, Default)]
+pub struct RecipeUnlockFormData {
+    /// The base recipe ID (e.g., "bone_sword")
+    pub id: String,
+    /// Display name (e.g., "Bone Sword Recipe")
+    pub display_name: String,
+    /// Unlock condition template
+    pub unlock_condition: UnlockConditionTemplate,
+}
+
+impl RecipeUnlockFormData {
+    /// Creates a new form with default values.
+    pub fn new() -> Self {
+        Self {
+            id: String::new(),
+            display_name: String::new(),
+            unlock_condition: UnlockConditionTemplate::AfterResearch(String::new()),
+        }
+    }
+
+    /// Derives the unlock file ID from the base recipe ID.
+    /// Pattern: recipe_{id}_unlock
+    pub fn unlock_id(&self) -> String {
+        format!("recipe_{}_unlock", self.id)
+    }
+
+    /// Derives the reward ID from the base recipe ID.
+    /// Pattern: recipe_{id}
+    pub fn reward_id(&self) -> String {
+        format!("recipe_{}", self.id)
+    }
+
+    /// Derives the unlock file name.
+    /// Pattern: recipe_{id}.unlock.ron
+    pub fn unlock_filename(&self) -> String {
+        format!("recipe_{}.unlock.ron", self.id)
+    }
+
+    /// Validates the form data and returns a list of errors.
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        if self.id.trim().is_empty() {
+            errors.push("Recipe ID is required".to_string());
+        }
+        if self.display_name.trim().is_empty() {
+            errors.push("Display name is required".to_string());
+        }
+
+        // Validate condition template
+        if let UnlockConditionTemplate::AfterResearch(ref research_id) = self.unlock_condition {
+            if research_id.trim().is_empty() {
+                errors.push("Prerequisite research ID is required".to_string());
+            }
+        }
+        if let UnlockConditionTemplate::Custom(ref condition) = self.unlock_condition {
+            if condition.trim().is_empty() {
+                errors.push("Custom condition is required".to_string());
+            }
+        }
+
+        errors
+    }
+}

@@ -2,7 +2,7 @@
 //!
 //! Generates RON content and handles file saving.
 
-use crate::models::ResearchFormData;
+use crate::models::{RecipeUnlockFormData, ResearchFormData};
 use std::path::Path;
 
 /// Generates the .research.ron file content.
@@ -33,7 +33,7 @@ pub fn generate_research_ron(data: &ResearchFormData) -> String {
     ron
 }
 
-/// Generates the .unlock.ron file content.
+/// Generates the .unlock.ron file content for research.
 pub fn generate_unlock_ron(data: &ResearchFormData) -> String {
     let mut ron = String::new();
 
@@ -42,6 +42,26 @@ pub fn generate_unlock_ron(data: &ResearchFormData) -> String {
     ron.push_str(&format!(
         "    display_name: Some(\"{} Research\"),\n",
         data.name
+    ));
+    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
+    ron.push_str(&format!(
+        "    condition: {},\n",
+        data.unlock_condition.to_condition_string()
+    ));
+    ron.push_str(")\n");
+
+    ron
+}
+
+/// Generates the .unlock.ron file content for recipe.
+pub fn generate_recipe_unlock_ron(data: &RecipeUnlockFormData) -> String {
+    let mut ron = String::new();
+
+    ron.push_str("(\n");
+    ron.push_str(&format!("    id: \"{}\",\n", data.unlock_id()));
+    ron.push_str(&format!(
+        "    display_name: Some(\"{}\"),\n",
+        data.display_name
     ));
     ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
     ron.push_str(&format!(
@@ -62,14 +82,19 @@ fn escape_string(s: &str) -> String {
         .replace('\t', "\\t")
 }
 
-/// Result of saving files.
+/// Result of saving research files.
 pub struct SaveResult {
     pub research_path: String,
     pub unlock_path: String,
 }
 
+/// Result of saving recipe unlock file.
+pub struct RecipeSaveResult {
+    pub unlock_path: String,
+}
+
 /// Saves both research and unlock files to the specified assets directory.
-pub fn save_files(
+pub fn save_research_files(
     data: &ResearchFormData,
     assets_dir: &Path,
 ) -> Result<SaveResult, std::io::Error> {
@@ -98,6 +123,32 @@ pub fn save_files(
         unlock_path: unlock_path.display().to_string(),
     })
 }
+
+/// Saves recipe unlock file to the specified assets directory.
+pub fn save_recipe_unlock_file(
+    data: &RecipeUnlockFormData,
+    assets_dir: &Path,
+) -> Result<RecipeSaveResult, std::io::Error> {
+    // Generate content
+    let unlock_content = generate_recipe_unlock_ron(data);
+
+    // Build paths
+    let unlock_dir = assets_dir.join("unlocks").join("recipes");
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&unlock_dir)?;
+
+    // Build file path
+    let unlock_path = unlock_dir.join(data.unlock_filename());
+
+    // Write file
+    std::fs::write(&unlock_path, unlock_content)?;
+
+    Ok(RecipeSaveResult {
+        unlock_path: unlock_path.display().to_string(),
+    })
+}
+
 
 #[cfg(test)]
 mod tests {
