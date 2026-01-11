@@ -4,5 +4,4 @@
     description: "Will this please gods?",
     cost: { "xikegos": 10, "bones": 50 },
     time_required: 30.0,
-    unlocks: [],
 )

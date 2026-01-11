@@ -4,5 +4,4 @@
     description: "Allows crafting of crude bows.",
     cost: { "wood": 10, "bones": 20 },
     time_required: 10.0,
-    unlocks: [],
 )

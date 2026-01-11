@@ -4,5 +4,4 @@
     description: "Sharpened bone swords.",
     cost: { "bones": 10 },
     time_required: 20.0,
-    unlocks: [],
 )

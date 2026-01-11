@@ -19,7 +19,6 @@ pub struct ResearchDefinition {
     pub description: String,
     pub cost: HashMap<String, u32>,
     pub time_required: f32,
-    pub unlocks: Vec<UnlockEffect>,
 }
 
 #[derive(Reflect, Debug, Clone, Deserialize)]
