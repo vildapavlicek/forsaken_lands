@@ -11,10 +11,21 @@ impl Plugin for HeroEventsPlugin {
     }
 }
 
+/// Represents an entity's decision and readiness to attack a specific target.
+///
+/// This **Observer** event acts as the bridge between the "Decision Phase" (AI, Input, Cooldowns)
+/// and the "Execution Phase" (Weapon-specific logic). It allows the system to declare *that*
+/// an attack should happen, without knowing *how* (Melee vs Ranged) it will be performed.
+///
+/// # Observers
+/// - `hero_projectile_spawn_system`: Spawns a projectile if `attacker` is a `RangedWeapon`.
+/// - `hero_melee_attack_system`: Calculates damage arcs if `attacker` is a `MeleeWeapon`.
 #[derive(Event, Reflect)]
 #[reflect(Default)]
 pub struct AttackIntent {
+    /// The entity (typically a weapon) attempting to attack.
     pub attacker: Entity,
+    /// The intended victim of the attack.
     pub target: Entity,
 }
 
