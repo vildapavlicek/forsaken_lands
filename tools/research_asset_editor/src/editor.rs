@@ -632,17 +632,16 @@ impl EditorState {
         }
         self.existing_research_ids.sort();
 
-        // Load monster IDs from prefabs/enemies
+        // Load monster IDs from prefabs/enemies by parsing MonsterId from file content
         self.existing_monster_ids.clear();
         let enemies_dir = assets_dir.join("prefabs").join("enemies");
         if let Ok(entries) = std::fs::read_dir(enemies_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename = filename.to_string_lossy();
-                    if filename.ends_with(".scn.ron") {
-                        if let Some(id) = filename.strip_suffix(".scn.ron") {
-                            self.existing_monster_ids.push(id.to_string());
+                if path.extension().and_then(|e| e.to_str()) == Some("ron") {
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        if let Some(monster_id) = extract_monster_id_from_ron(&content) {
+                            self.existing_monster_ids.push(monster_id);
                         }
                     }
                 }
@@ -681,4 +680,12 @@ impl EditorState {
             }
         }
     }
+}
+
+/// Extracts MonsterId value from a RON prefab file content.
+/// Looks for the pattern: "enemy_components::MonsterId": ("value")
+fn extract_monster_id_from_ron(content: &str) -> Option<String> {
+    let pattern = r#""enemy_components::MonsterId":\s*\("([^"]+)"\)"#;
+    let re = regex::Regex::new(pattern).ok()?;
+    re.captures(content)?.get(1).map(|m| m.as_str().to_string())
 }

@@ -3076,6 +3076,7 @@ dependencies = [
  "bevy",
  "crafting",
  "crafting_resources",
+ "enemy_components",
  "portal_assets",
  "recipes_assets",
  "research",

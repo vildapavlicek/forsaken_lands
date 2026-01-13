@@ -89,14 +89,14 @@ fn enemy_spawn_system(
                 let mut rng = rand::rng();
                 let selected_entry = valid_entries[dist.sample(&mut rng)];
 
-                debug!("Spawning monster: {}", selected_entry.monster_file);
+                debug!("Spawning monster: {}", selected_entry.monster_id);
 
                 let Some(prefab_handle) = game_assets
                     .enemies
-                    .get(&selected_entry.monster_file)
+                    .get(&selected_entry.monster_id)
                     .cloned()
                 else {
-                    error!(%selected_entry.monster_file, "failed to spawn monster, not found in enemies library");
+                    error!(%selected_entry.monster_id, "failed to spawn monster, not found in enemies library");
                     return;
                 };
 

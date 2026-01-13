@@ -2,12 +2,12 @@
     entries: [
         (
             condition: Min((tier: 1, level: 1)),
-            monster_file: "goblin_scout",
+            monster_id: "goblin_scout",
             weight: 100,
             ),
         (
             condition: Min((tier: 1, level: 1)),
-            monster_file: "goblin",
+            monster_id: "goblin",
             weight: 100,
         ),
     ],

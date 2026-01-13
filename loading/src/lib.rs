@@ -6,11 +6,11 @@ use {
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,
+    enemy_components::MonsterId,
     portal_assets::SpawnTable,
     recipes_assets::RecipeDefinition,
     research::{ResearchDefinition, ResearchMap},
     states::{GameState, LoadingPhase},
-    std::ffi::OsStr,
     unlocks::{
         compiler::{build_condition_node, CompilerContext},
         CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
@@ -125,6 +125,8 @@ fn check_assets_loaded(
     research: Res<ResearchFolderHandle>,
     recipes: Res<RecipesFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
+    scenes: Res<Assets<DynamicScene>>,
+    type_registry: Res<AppTypeRegistry>,
 ) {
     status.current_phase = "Loading Assets".into();
     status.detail = "Loading files from disk...".into();
@@ -152,26 +154,51 @@ fn check_assets_loaded(
                 continue;
             };
 
-            let path = asset_path
-                .path()
-                .file_name()
-                .and_then(OsStr::to_str)
-                .expect("expected only files, but got also something else?");
+            let path = asset_path.path().display().to_string();
 
-            let key = path
-                .split_once('.')
-                .map(|(name, _suffix)| name)
-                .map(ToString::to_string)
-                .expect("invalid file name, missing suffix");
+            let Ok(handle) = untyped_handle.try_typed::<DynamicScene>() else {
+                continue;
+            };
 
-            if let Ok(handle) = untyped_handle.try_typed::<DynamicScene>() {
-                debug!(%key, %path, "succesfully typed enemy prefab asset to DynamicScene");
-                loading_manager.enemies.insert(key, handle);
-            }
+            // Extract MonsterId from the loaded scene
+            let key = extract_monster_id(&scenes, &handle, &type_registry)
+                .unwrap_or_else(|| panic!("MonsterId component not found in enemy prefab: {}", path));
+
+            debug!(%key, %path, "loaded enemy prefab with MonsterId");
+            loading_manager.enemies.insert(key, handle);
         }
 
         next_phase.set(LoadingPhase::SpawnEntities);
     }
+}
+
+/// Extracts the MonsterId component value from a loaded DynamicScene.
+fn extract_monster_id(
+    scenes: &Assets<DynamicScene>,
+    handle: &Handle<DynamicScene>,
+    _type_registry: &AppTypeRegistry,
+) -> Option<String> {
+    let scene = scenes.get(handle)?;
+
+    for entity in &scene.entities {
+        for component in &entity.components {
+            // Check if this component is a MonsterId
+            let type_info = component.try_as_reflect()?.get_represented_type_info()?;
+            if type_info.type_id() == std::any::TypeId::of::<MonsterId>() {
+                // MonsterId is a tuple struct: MonsterId(String)
+                // Access field 0 to get the inner String
+                if let bevy::reflect::ReflectRef::TupleStruct(ts) = component.reflect_ref() {
+                    if let Some(field) = ts.field(0) {
+                        if let Some(s) = field.try_downcast_ref::<String>() {
+                            return Some(s.clone());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
 
 // --- Phase: SpawnEntities ---

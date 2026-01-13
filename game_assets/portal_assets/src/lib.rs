@@ -34,7 +34,7 @@ impl Default for SpawnCondition {
 #[derive(Reflect, Debug, Clone, Default, Deserialize)]
 pub struct SpawnEntry {
     pub condition: SpawnCondition,
-    pub monster_file: String, // e.g. "goblin"
+    pub monster_id: String, // References MonsterId component value
     pub weight: u32,
 }
 
