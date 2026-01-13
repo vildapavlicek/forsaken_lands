@@ -1,7 +1,0 @@
-(
-    id: "theology_i",
-    name: "Theology I",
-    description: "Is there more than physical?",
-    cost: { "xikegos": 1 },
-    time_required: 30.0,
-)

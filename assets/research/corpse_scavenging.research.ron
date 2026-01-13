@@ -1,0 +1,7 @@
+(
+    id: "corpse_scavenging",
+    name: "Dead scavenging",
+    description: "Their deaths are blessing to us",
+    cost: { "bones": 10 },
+    time_required: 30,
+)
