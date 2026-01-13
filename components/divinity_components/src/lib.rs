@@ -72,10 +72,20 @@ impl Default for Divinity {
     }
 }
 
+/// Tracks the experience progress for a `Divinity` entity.
+///
+/// This component acts as a buffer for raw experience points. When `current_xp` exceeds
+/// `required_xp`, it triggers a level-up in the `Divinity` component.
+///
+/// It is queried by:
+/// - `PortalsPlugin` and `VillagePlugin`: To accumulate XP and handle level-ups.
+/// - UI Systems: To display the progress bar (current / required).
 #[derive(Component, Reflect, Default, Debug, Clone, Copy, PartialEq)]
 #[reflect(Component, Default)]
 pub struct DivinityStats {
+    /// The accumulated raw experience points.
     pub current_xp: f32,
+    /// The raw experience threshold required to advance to the next `Divinity` level.
     pub required_xp: f32,
 }
 
