@@ -1,14 +1,32 @@
 (
     entries: [
         (
-            condition: Min((tier: 1, level: 1)),
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 1,
+                ),
+                max: (
+                    tier: 1,
+                    level: 3,
+                ),
+            ),
             monster_id: "goblin_scout",
             weight: 100,
-            ),
+        ),
         (
-            condition: Min((tier: 1, level: 1)),
-            monster_id: "goblin",
-            weight: 100,
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 1,
+                ),
+                max: (
+                    tier: 1,
+                    level: 4,
+                ),
+            ),
+            monster_id: "elite_goblin_scout",
+            weight: 50,
         ),
     ],
 )
