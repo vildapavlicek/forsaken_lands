@@ -1,6 +1,6 @@
 //! Editor UI implementation.
 //!
-//! Main egui-based editor interface with tabbed forms for research and recipe unlocks.
+//! Main egui-based editor interface with tabbed forms for research, recipe unlocks, and monster prefabs.
 
 use eframe::egui;
 use std::path::PathBuf;
@@ -13,6 +13,10 @@ use crate::models::{
     CompareOp, LeafCondition, RecipeUnlockFormData, ResearchFormData, ResourceCost,
     UnlockCondition,
 };
+use crate::monster_prefab::{
+    build_scene_ron, default_required_components, optional_components, parse_components_from_ron,
+    EnemyComponent, Reward,
+};
 
 /// Available editor tabs.
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -20,6 +24,7 @@ pub enum EditorTab {
     #[default]
     Research,
     RecipeUnlock,
+    MonsterPrefab,
 }
 
 /// Current state of the editor.
@@ -40,10 +45,24 @@ pub struct EditorState {
     existing_monster_ids: Vec<String>,
     /// Show RON preview.
     show_preview: bool,
+
+    // Monster prefab editor state
+    /// All components currently in the monster prefab.
+    monster_components: Vec<EnemyComponent>,
+    /// List of existing enemy prefab filenames (without extension).
+    existing_prefabs: Vec<String>,
+    /// Editable filename for the monster prefab (without path or extension).
+    monster_filename: String,
+    /// Currently selected prefab index in the list.
+    selected_prefab_index: Option<usize>,
+    /// Live RON preview for monster prefab.
+    monster_ron_preview: String,
 }
 
 impl EditorState {
     pub fn new() -> Self {
+        let monster_components = default_required_components();
+        let monster_ron_preview = build_scene_ron(&monster_components);
         Self {
             active_tab: EditorTab::Research,
             research_form: ResearchFormData::new(),
@@ -53,6 +72,11 @@ impl EditorState {
             existing_research_ids: Vec::new(),
             existing_monster_ids: Vec::new(),
             show_preview: false,
+            monster_components,
+            existing_prefabs: Vec::new(),
+            monster_filename: "new_enemy".to_string(),
+            selected_prefab_index: None,
+            monster_ron_preview,
         }
     }
 
@@ -130,6 +154,14 @@ impl EditorState {
                                         .desired_width(f32::INFINITY),
                                 );
                             }
+                            EditorTab::MonsterPrefab => {
+                                ui.label("Monster Prefab Scene:");
+                                ui.add(
+                                    egui::TextEdit::multiline(&mut self.monster_ron_preview.as_str())
+                                        .font(egui::TextStyle::Monospace)
+                                        .desired_width(f32::INFINITY),
+                                );
+                            }
                         }
                     });
                 });
@@ -145,6 +177,11 @@ impl EditorState {
                     EditorTab::RecipeUnlock,
                     "🔧 Recipe Unlock",
                 );
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::MonsterPrefab,
+                    "🐲 Monster Prefabs",
+                );
             });
             ui.separator();
 
@@ -152,6 +189,7 @@ impl EditorState {
                 match self.active_tab {
                     EditorTab::Research => self.show_research_form(ui),
                     EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
+                    EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
                 }
             });
         });
@@ -598,6 +636,13 @@ impl EditorState {
                 self.recipe_form = RecipeUnlockFormData::new();
                 self.status = "New recipe unlock form created".to_string();
             }
+            EditorTab::MonsterPrefab => {
+                self.monster_components = default_required_components();
+                self.monster_filename = "new_enemy".to_string();
+                self.selected_prefab_index = None;
+                self.update_monster_preview();
+                self.status = "New monster prefab created".to_string();
+            }
         }
     }
 
@@ -633,20 +678,31 @@ impl EditorState {
         self.existing_research_ids.sort();
 
         // Load monster IDs from prefabs/enemies by parsing MonsterId from file content
+        // Also load prefab filenames for the monster prefab list
         self.existing_monster_ids.clear();
+        self.existing_prefabs.clear();
         let enemies_dir = assets_dir.join("prefabs").join("enemies");
-        if let Ok(entries) = std::fs::read_dir(enemies_dir) {
+        if let Ok(entries) = std::fs::read_dir(&enemies_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.extension().and_then(|e| e.to_str()) == Some("ron") {
-                    if let Ok(content) = std::fs::read_to_string(&path) {
-                        if let Some(monster_id) = extract_monster_id_from_ron(&content) {
-                            self.existing_monster_ids.push(monster_id);
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".scn.ron") {
+                        // Add to prefab list (filename without extension)
+                        if let Some(id) = filename_str.strip_suffix(".scn.ron") {
+                            self.existing_prefabs.push(id.to_string());
+                        }
+                        // Also extract MonsterId for validation dropdowns
+                        if let Ok(content) = std::fs::read_to_string(&path) {
+                            if let Some(monster_id) = extract_monster_id_from_ron(&content) {
+                                self.existing_monster_ids.push(monster_id);
+                            }
                         }
                     }
                 }
             }
         }
+        self.existing_prefabs.sort();
         self.existing_monster_ids.sort();
     }
 
@@ -673,6 +729,352 @@ impl EditorState {
             match save_recipe_unlock_file(&self.recipe_form, assets_dir) {
                 Ok(result) => {
                     self.status = format!("✓ Saved: {}", result.unlock_path);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to save: {}", e);
+                }
+            }
+        }
+    }
+
+    fn show_monster_prefab_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Monster Prefab Editor");
+        ui.add_space(4.0);
+
+        // Prefab selection section
+        ui.group(|ui| {
+            ui.heading("Prefab Selection");
+            ui.separator();
+
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_prefabs.is_empty() {
+                ui.label("No enemy prefabs found in assets/prefabs/enemies/");
+            } else {
+                let mut load_idx: Option<usize> = None;
+                ui.horizontal_wrapped(|ui| {
+                    for (idx, prefab_name) in self.existing_prefabs.iter().enumerate() {
+                        let is_selected = self.selected_prefab_index == Some(idx);
+                        if ui.selectable_label(is_selected, prefab_name).clicked() {
+                            load_idx = Some(idx);
+                        }
+                    }
+                });
+                if let Some(idx) = load_idx {
+                    self.load_prefab_by_index(idx);
+                }
+            }
+        });
+
+        ui.add_space(8.0);
+
+        // Filename input
+        ui.horizontal(|ui| {
+            ui.label("Filename:");
+            if ui.text_edit_singleline(&mut self.monster_filename).changed() {
+                self.selected_prefab_index = None;
+            }
+            ui.label(".scn.ron");
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+
+        // Component editors
+        ui.heading("Components");
+        ui.add_space(4.0);
+
+        let mut to_remove: Option<usize> = None;
+        let mut changed = false;
+
+        for (idx, component) in self.monster_components.iter_mut().enumerate() {
+            let is_required = component.is_required();
+
+            egui::CollapsingHeader::new(component.display_name())
+                .default_open(true)
+                .show(ui, |ui| {
+                    if Self::edit_component(ui, component) {
+                        changed = true;
+                    }
+
+                    if !is_required {
+                        ui.separator();
+                        if ui.button("Remove").clicked() {
+                            to_remove = Some(idx);
+                        }
+                    }
+                });
+
+            ui.add_space(4.0);
+        }
+
+        if let Some(idx) = to_remove {
+            self.monster_components.remove(idx);
+            changed = true;
+        }
+
+        if changed {
+            self.update_monster_preview();
+        }
+
+        // Add optional components section
+        ui.add_space(8.0);
+        ui.separator();
+        ui.heading("Add Optional Components");
+        ui.add_space(4.0);
+
+        ui.horizontal_wrapped(|ui| {
+            for (name, template) in optional_components() {
+                let already_added = self.monster_components.iter().any(|c| {
+                    std::mem::discriminant(c) == std::mem::discriminant(&template)
+                });
+
+                ui.add_enabled_ui(!already_added, |ui| {
+                    if ui.button(name).clicked() {
+                        self.monster_components.push(template.clone());
+                        self.update_monster_preview();
+                    }
+                });
+            }
+        });
+
+        ui.add_space(16.0);
+        ui.separator();
+
+        // Save button
+        ui.horizontal(|ui| {
+            ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
+                if ui.button("💾 Save Monster Prefab").clicked() {
+                    self.save_monster_prefab();
+                }
+            });
+
+            if ui.button("🆕 New Prefab").clicked() {
+                self.monster_components = default_required_components();
+                self.monster_filename = "new_enemy".to_string();
+                self.selected_prefab_index = None;
+                self.update_monster_preview();
+                self.status = "New monster prefab created".to_string();
+            }
+        });
+    }
+
+    /// Edit a single component and return true if changed.
+    fn edit_component(ui: &mut egui::Ui, component: &mut EnemyComponent) -> bool {
+        let mut changed = false;
+
+        match component {
+            EnemyComponent::Enemy => {
+                ui.label("(Marker component, no fields)");
+            }
+            EnemyComponent::MonsterId(id) => {
+                ui.horizontal(|ui| {
+                    ui.label("ID:");
+                    if ui.text_edit_singleline(id).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::DisplayName(name) => {
+                ui.horizontal(|ui| {
+                    ui.label("Name:");
+                    if ui.text_edit_singleline(name).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::Health { current, max } => {
+                ui.horizontal(|ui| {
+                    ui.label("Current:");
+                    if ui.add(egui::DragValue::new(current).speed(0.1)).changed() {
+                        changed = true;
+                    }
+                    ui.label("Max:");
+                    if ui.add(egui::DragValue::new(max).speed(0.1)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::MovementSpeed(speed) => {
+                ui.horizontal(|ui| {
+                    ui.label("Speed:");
+                    if ui.add(egui::DragValue::new(speed).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::Lifetime { secs, nanos } => {
+                ui.horizontal(|ui| {
+                    ui.label("Seconds:");
+                    if ui.add(egui::DragValue::new(secs).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                    ui.label("Nanos:");
+                    if ui.add(egui::DragValue::new(nanos).speed(1000000.0)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::Transform { x, y, z } => {
+                ui.horizontal(|ui| {
+                    ui.label("X:");
+                    if ui.add(egui::DragValue::new(x).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                    ui.label("Y:");
+                    if ui.add(egui::DragValue::new(y).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                    ui.label("Z:");
+                    if ui.add(egui::DragValue::new(z).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::Sprite {
+                r,
+                g,
+                b,
+                a,
+                width,
+                height,
+            } => {
+                ui.horizontal(|ui| {
+                    ui.label("Color RGBA:");
+                    let mut color = [*r, *g, *b, *a];
+                    if ui.color_edit_button_rgba_unmultiplied(&mut color).changed() {
+                        *r = color[0];
+                        *g = color[1];
+                        *b = color[2];
+                        *a = color[3];
+                        changed = true;
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Width:");
+                    if ui.add(egui::DragValue::new(width).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                    ui.label("Height:");
+                    if ui.add(egui::DragValue::new(height).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::ResourceRewards(rewards) => {
+                let mut remove_idx: Option<usize> = None;
+
+                for (i, reward) in rewards.iter_mut().enumerate() {
+                    ui.horizontal(|ui| {
+                        ui.label("ID:");
+                        if ui.text_edit_singleline(&mut reward.id).changed() {
+                            changed = true;
+                        }
+                        ui.label("Value:");
+                        if ui
+                            .add(egui::DragValue::new(&mut reward.value).speed(1.0))
+                            .changed()
+                        {
+                            changed = true;
+                        }
+                        if ui.button("🗑").clicked() {
+                            remove_idx = Some(i);
+                        }
+                    });
+                }
+
+                if let Some(idx) = remove_idx {
+                    rewards.remove(idx);
+                    changed = true;
+                }
+
+                if ui.button("+ Add Reward").clicked() {
+                    rewards.push(Reward::default());
+                    changed = true;
+                }
+            }
+            EnemyComponent::RewardCoefficient(coeff) => {
+                ui.horizontal(|ui| {
+                    ui.label("Coefficient:");
+                    if ui.add(egui::DragValue::new(coeff).speed(0.1)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::NeedsHydration => {
+                ui.label("(Marker component, no fields)");
+            }
+        }
+
+        changed
+    }
+
+    fn update_monster_preview(&mut self) {
+        self.monster_ron_preview = build_scene_ron(&self.monster_components);
+    }
+
+    fn load_prefab_by_index(&mut self, idx: usize) {
+        if let Some(assets_dir) = &self.assets_dir.clone() {
+            if let Some(prefab_name) = self.existing_prefabs.get(idx).cloned() {
+                let file_path = assets_dir
+                    .join("prefabs")
+                    .join("enemies")
+                    .join(format!("{}.scn.ron", prefab_name));
+
+                match std::fs::read_to_string(&file_path) {
+                    Ok(content) => {
+                        // Try to parse the content into components
+                        if let Some(components) = parse_components_from_ron(&content) {
+                            self.monster_components = components;
+                            self.update_monster_preview();
+                            self.monster_filename = prefab_name;
+                            self.selected_prefab_index = Some(idx);
+                            self.status = format!("✓ Loaded: {}", file_path.display());
+                        } else {
+                            // If parsing failed, just show the raw content in preview
+                            self.monster_ron_preview = content;
+                            self.monster_filename = prefab_name;
+                            self.selected_prefab_index = Some(idx);
+                            self.status =
+                                "File opened (parsing failed, showing raw content)".to_string();
+                        }
+                    }
+                    Err(e) => {
+                        self.status = format!("Failed to open file: {}", e);
+                    }
+                }
+            }
+        }
+    }
+
+    fn save_monster_prefab(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            let enemies_dir = assets_dir.join("prefabs").join("enemies");
+
+            // Ensure directory exists
+            if let Err(e) = std::fs::create_dir_all(&enemies_dir) {
+                self.status = format!("✗ Failed to create directory: {}", e);
+                return;
+            }
+
+            let file_path = enemies_dir.join(format!("{}.scn.ron", self.monster_filename));
+
+            match std::fs::write(&file_path, &self.monster_ron_preview) {
+                Ok(()) => {
+                    self.status = format!("✓ Saved to {}", file_path.display());
+
+                    // Reload the prefabs list to include newly created files
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
+
+                    // Update selected index to match saved file
+                    self.selected_prefab_index = self
+                        .existing_prefabs
+                        .iter()
+                        .position(|p| p == &self.monster_filename);
                 }
                 Err(e) => {
                     self.status = format!("✗ Failed to save: {}", e);
