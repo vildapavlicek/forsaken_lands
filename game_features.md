@@ -21,3 +21,12 @@ Monsters would drop skill fragments. If enough fragments are dropped, skill coul
 
 ## Example: Trap
 Goblin Scout would drop `trap_skill_fragment` item with chance of 10%. For research we would need 10 skill fragments. To learn we would need 10 fragments. For level up 10, 20, 50, 100 etc..
+
+# Totems
+totems crafted and placed at predetermined(?) places providing buffs/debuffs (slow, damage, reduce HP, etc)
+
+# Missions
+Send heroes on mission, can reward technology unlock, xp, skill shard
+
+# Great goal
+revitalization of planet?
