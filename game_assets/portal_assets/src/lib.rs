@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*, bevy_common_assets::ron::RonAssetPlugin, divinity_components::Divinity,
-    serde::Deserialize,
+    serde::{Deserialize, Serialize},
 };
 
 pub struct PortalAssetsPlugin;
@@ -15,7 +15,7 @@ impl Plugin for PortalAssetsPlugin {
     }
 }
 
-#[derive(Reflect, Debug, Clone, Deserialize)]
+#[derive(Reflect, Debug, Clone, Deserialize, Serialize)]
 pub enum SpawnCondition {
     /// Spawns only at this exact Divinity.
     Specific(Divinity),
@@ -31,14 +31,14 @@ impl Default for SpawnCondition {
     }
 }
 
-#[derive(Reflect, Debug, Clone, Default, Deserialize)]
+#[derive(Reflect, Debug, Clone, Default, Deserialize, Serialize)]
 pub struct SpawnEntry {
     pub condition: SpawnCondition,
     pub monster_id: String, // References MonsterId component value
     pub weight: u32,
 }
 
-#[derive(Asset, TypePath, Default, Debug, Deserialize)]
+#[derive(Asset, TypePath, Default, Debug, Deserialize, Serialize)]
 pub struct SpawnTable {
     pub entries: Vec<SpawnEntry>,
 }

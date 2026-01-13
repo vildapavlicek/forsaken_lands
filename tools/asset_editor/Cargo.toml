@@ -19,3 +19,8 @@ rfd = "0.15"
 
 # Regex for parsing RON files
 regex = "1.0"
+
+portal_assets = { path = "../../game_assets/portal_assets" }
+divinity_components = { path = "../../components/divinity_components" }
+bevy = { version = "0.17", default-features = false, features = [] }
+

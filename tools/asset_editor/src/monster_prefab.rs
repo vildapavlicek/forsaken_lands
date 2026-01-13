@@ -5,12 +5,33 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Defines which distance range section an enemy belongs to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum EnemyRange {
+    #[default]
+    CloseRange,
+    MediumRange,
+    LongRange,
+}
+
+impl EnemyRange {
+    pub fn all() -> &'static [EnemyRange] {
+        &[
+            EnemyRange::CloseRange,
+            EnemyRange::MediumRange,
+            EnemyRange::LongRange,
+        ]
+    }
+}
+
+
 /// All available enemy components that can be added to a prefab.
 #[derive(Clone, Debug)]
 pub enum EnemyComponent {
     // Required components (auto-added)
     Enemy,
     MonsterId(String),
+    EnemyRange(EnemyRange),
     DisplayName(String),
     Health {
         current: f32,
@@ -47,6 +68,7 @@ impl EnemyComponent {
         match self {
             EnemyComponent::Enemy => "Enemy",
             EnemyComponent::MonsterId(_) => "Monster ID",
+            EnemyComponent::EnemyRange(_) => "Enemy Range",
             EnemyComponent::DisplayName(_) => "Display Name",
             EnemyComponent::Health { .. } => "Health",
             EnemyComponent::MovementSpeed(_) => "Movement Speed",
@@ -65,6 +87,7 @@ impl EnemyComponent {
             self,
             EnemyComponent::Enemy
                 | EnemyComponent::MonsterId(_)
+                | EnemyComponent::EnemyRange(_)
                 | EnemyComponent::DisplayName(_)
                 | EnemyComponent::Health { .. }
                 | EnemyComponent::MovementSpeed(_)
@@ -96,6 +119,7 @@ pub fn default_required_components() -> Vec<EnemyComponent> {
     vec![
         EnemyComponent::Enemy,
         EnemyComponent::MonsterId("new_enemy".to_string()),
+        EnemyComponent::EnemyRange(EnemyRange::CloseRange),
         EnemyComponent::DisplayName("New Enemy".to_string()),
         EnemyComponent::Health {
             current: 1.0,
@@ -157,6 +181,10 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
         EnemyComponent::MonsterId(id) => Some(format!(
             r#""enemy_components::MonsterId": ("{}")"#,
             escape_ron_string(id)
+        )),
+        EnemyComponent::EnemyRange(range) => Some(format!(
+            r#""enemy_components::EnemyRange": {:?}"#,
+            range
         )),
         EnemyComponent::DisplayName(name) => Some(format!(
             r#""shared_components::DisplayName": ("{}")"#,
@@ -253,6 +281,20 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
     let monster_id_re = Regex::new(r#""enemy_components::MonsterId":\s*\("([^"]+)"\)"#).ok()?;
     if let Some(caps) = monster_id_re.captures(content) {
         components.push(EnemyComponent::MonsterId(caps.get(1)?.as_str().to_string()));
+    }
+
+    // EnemyRange
+    // Matches "enemy_components::EnemyRange": VariantName
+    let range_re = Regex::new(r#""enemy_components::EnemyRange":\s*(\w+)"#).ok()?;
+    if let Some(caps) = range_re.captures(content) {
+        let variant_str = caps.get(1)?.as_str();
+        let range = match variant_str {
+            "CloseRange" => EnemyComponent::EnemyRange(EnemyRange::CloseRange),
+            "MediumRange" => EnemyComponent::EnemyRange(EnemyRange::MediumRange),
+            "LongRange" => EnemyComponent::EnemyRange(EnemyRange::LongRange),
+            _ => EnemyComponent::EnemyRange(EnemyRange::CloseRange), // Fallback
+        };
+        components.push(range);
     }
     
     // DisplayName
