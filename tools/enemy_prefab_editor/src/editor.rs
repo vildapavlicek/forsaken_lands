@@ -3,7 +3,9 @@
 //! Main egui-based editor interface with component editors.
 
 use eframe::egui;
-use crate::components::{EnemyComponent, Reward, default_required_components, optional_components};
+use std::path::PathBuf;
+
+use crate::components::{default_required_components, optional_components, EnemyComponent, Reward};
 use crate::scene_builder::build_scene_ron;
 
 /// Current state of the editor.
@@ -16,6 +18,14 @@ pub struct EditorState {
     ron_preview: String,
     /// Status message.
     status: String,
+    /// Path to the assets directory.
+    assets_dir: Option<PathBuf>,
+    /// List of existing enemy prefab filenames (without extension).
+    existing_prefabs: Vec<String>,
+    /// Editable filename for the prefab (without path or extension).
+    filename: String,
+    /// Currently selected prefab index in the list.
+    selected_prefab_index: Option<usize>,
 }
 
 impl EditorState {
@@ -26,7 +36,11 @@ impl EditorState {
             components,
             current_file: None,
             ron_preview,
-            status: "New prefab created".to_string(),
+            status: "Select assets directory to begin".to_string(),
+            assets_dir: None,
+            existing_prefabs: Vec::new(),
+            filename: "new_enemy".to_string(),
+            selected_prefab_index: None,
         }
     }
 
@@ -39,12 +53,19 @@ impl EditorState {
                         self.new_prefab();
                         ui.close_menu();
                     }
-                    if ui.button("Open...").clicked() {
-                        self.open_file();
+                    if ui.button("Select Assets Directory...").clicked() {
+                        self.select_assets_directory();
                         ui.close_menu();
                     }
+                    ui.separator();
+                    ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
+                        if ui.button("Save").clicked() {
+                            self.save_to_assets();
+                            ui.close_menu();
+                        }
+                    });
                     if ui.button("Save As...").clicked() {
-                        self.save_file();
+                        self.save_file_as();
                         ui.close_menu();
                     }
                 });
@@ -55,9 +76,13 @@ impl EditorState {
         egui::TopBottomPanel::bottom("status_bar").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.label(&self.status);
-                if let Some(path) = &self.current_file {
+                if let Some(path) = &self.assets_dir {
                     ui.separator();
-                    ui.label(format!("File: {}", path));
+                    ui.label(format!("Assets: {}", path.display()));
+                }
+                if let Some(file) = &self.current_file {
+                    ui.separator();
+                    ui.label(format!("File: {}", file));
                 }
             });
         });
@@ -78,11 +103,48 @@ impl EditorState {
                 });
             });
 
-        // Left panel: Add optional components
-        egui::SidePanel::left("components_panel")
+        // Left panel: Enemy list for quick access
+        egui::SidePanel::left("enemy_list_panel")
             .resizable(true)
             .default_width(180.0)
             .show(ctx, |ui| {
+                ui.heading("Enemy Prefabs");
+                ui.separator();
+
+                if self.assets_dir.is_none() {
+                    ui.colored_label(
+                        egui::Color32::YELLOW,
+                        "Select assets directory\nto see enemy list",
+                    );
+                } else if self.existing_prefabs.is_empty() {
+                    ui.label("No enemy prefabs found");
+                } else {
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        let mut load_idx: Option<usize> = None;
+
+                        for (idx, prefab_name) in self.existing_prefabs.iter().enumerate() {
+                            let is_selected = self.selected_prefab_index == Some(idx);
+                            let label = if is_selected {
+                                format!("▶ {}", prefab_name)
+                            } else {
+                                prefab_name.clone()
+                            };
+
+                            if ui
+                                .selectable_label(is_selected, label)
+                                .clicked()
+                            {
+                                load_idx = Some(idx);
+                            }
+                        }
+
+                        if let Some(idx) = load_idx {
+                            self.load_prefab_by_index(idx);
+                        }
+                    });
+                }
+
+                ui.separator();
                 ui.heading("Add Component");
                 ui.separator();
 
@@ -104,6 +166,18 @@ impl EditorState {
         // Central panel: Component editors
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Enemy Prefab Components");
+            ui.separator();
+
+            // Filename input
+            ui.horizontal(|ui| {
+                ui.label("Filename:");
+                if ui.text_edit_singleline(&mut self.filename).changed() {
+                    // Clear selected index when manually editing filename
+                    self.selected_prefab_index = None;
+                }
+                ui.label(".scn.ron");
+            });
+            ui.add_space(8.0);
             ui.separator();
 
             egui::ScrollArea::vertical().show(ui, |ui| {
@@ -215,7 +289,14 @@ impl EditorState {
                     }
                 });
             }
-            EnemyComponent::Sprite { r, g, b, a, width, height } => {
+            EnemyComponent::Sprite {
+                r,
+                g,
+                b,
+                a,
+                width,
+                height,
+            } => {
                 ui.horizontal(|ui| {
                     ui.label("Color RGBA:");
                     let mut color = [*r, *g, *b, *a];
@@ -248,7 +329,10 @@ impl EditorState {
                             changed = true;
                         }
                         ui.label("Value:");
-                        if ui.add(egui::DragValue::new(&mut reward.value).speed(1.0)).changed() {
+                        if ui
+                            .add(egui::DragValue::new(&mut reward.value).speed(1.0))
+                            .changed()
+                        {
                             changed = true;
                         }
                         if ui.button("🗑").clicked() {
@@ -290,43 +374,124 @@ impl EditorState {
     fn new_prefab(&mut self) {
         self.components = default_required_components();
         self.current_file = None;
+        self.filename = "new_enemy".to_string();
+        self.selected_prefab_index = None;
         self.update_preview();
         self.status = "New prefab created".to_string();
     }
 
-    fn open_file(&mut self) {
+    fn select_assets_directory(&mut self) {
         if let Some(path) = rfd::FileDialog::new()
-            .add_filter("Bevy Scene", &["scn.ron"])
-            .pick_file()
+            .set_title("Select assets directory")
+            .pick_folder()
         {
-            match std::fs::read_to_string(&path) {
-                Ok(content) => {
-                    // For now, just show the content in preview
-                    // Full parsing would require more complex deserialization
-                    self.ron_preview = content;
-                    self.current_file = Some(path.display().to_string());
-                    self.status = "File opened (edit mode limited for loaded files)".to_string();
+            self.assets_dir = Some(path.clone());
+            self.load_existing_prefabs(&path);
+            self.status = format!("Assets directory set: {}", path.display());
+        }
+    }
+
+    fn load_existing_prefabs(&mut self, assets_dir: &PathBuf) {
+        self.existing_prefabs.clear();
+
+        let enemies_dir = assets_dir.join("prefabs").join("enemies");
+        if let Ok(entries) = std::fs::read_dir(&enemies_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename = filename.to_string_lossy();
+                    if filename.ends_with(".scn.ron") {
+                        if let Some(id) = filename.strip_suffix(".scn.ron") {
+                            self.existing_prefabs.push(id.to_string());
+                        }
+                    }
                 }
-                Err(e) => {
-                    self.status = format!("Failed to open file: {}", e);
+            }
+        }
+        self.existing_prefabs.sort();
+    }
+
+    fn load_prefab_by_index(&mut self, idx: usize) {
+        if let Some(assets_dir) = &self.assets_dir.clone() {
+            if let Some(prefab_name) = self.existing_prefabs.get(idx).cloned() {
+                let file_path = assets_dir
+                    .join("prefabs")
+                    .join("enemies")
+                    .join(format!("{}.scn.ron", prefab_name));
+
+                match std::fs::read_to_string(&file_path) {
+                    Ok(content) => {
+                        // For now, just show the content in preview
+                        // Full parsing would require more complex deserialization
+                        self.ron_preview = content;
+                        self.filename = prefab_name;
+                        self.current_file = Some(file_path.display().to_string());
+                        self.selected_prefab_index = Some(idx);
+                        self.status =
+                            "File opened (edit mode limited for loaded files)".to_string();
+                    }
+                    Err(e) => {
+                        self.status = format!("Failed to open file: {}", e);
+                    }
                 }
             }
         }
     }
 
-    fn save_file(&mut self) {
+    fn save_to_assets(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            let file_path = assets_dir
+                .join("prefabs")
+                .join("enemies")
+                .join(format!("{}.scn.ron", self.filename));
+
+            match std::fs::write(&file_path, &self.ron_preview) {
+                Ok(()) => {
+                    self.current_file = Some(file_path.display().to_string());
+                    self.status = format!("✓ Saved to {}", file_path.display());
+
+                    // Reload the prefabs list to include newly created files
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_prefabs(&assets_dir);
+
+                    // Update selected index to match saved file
+                    self.selected_prefab_index = self
+                        .existing_prefabs
+                        .iter()
+                        .position(|p| p == &self.filename);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to save: {}", e);
+                }
+            }
+        }
+    }
+
+    fn save_file_as(&mut self) {
+        // Use filename without extension - the filter will add .scn.ron
+        let default_name = &self.filename;
+
         if let Some(path) = rfd::FileDialog::new()
             .add_filter("Bevy Scene", &["scn.ron"])
-            .set_file_name("new_enemy.scn.ron")
+            .set_file_name(default_name)
             .save_file()
         {
             match std::fs::write(&path, &self.ron_preview) {
                 Ok(()) => {
                     self.current_file = Some(path.display().to_string());
-                    self.status = format!("Saved to {}", path.display());
+
+                    // Extract filename from path for the filename field
+                    if let Some(file_name) = path.file_name() {
+                        let file_name = file_name.to_string_lossy();
+                        if let Some(name) = file_name.strip_suffix(".scn.ron") {
+                            self.filename = name.to_string();
+                        }
+                    }
+
+                    self.status = format!("✓ Saved to {}", path.display());
                 }
                 Err(e) => {
-                    self.status = format!("Failed to save: {}", e);
+                    self.status = format!("✗ Failed to save: {}", e);
                 }
             }
         }

@@ -12,11 +12,28 @@ pub enum EnemyComponent {
     Enemy,
     MonsterId(String),
     DisplayName(String),
-    Health { current: f32, max: f32 },
+    Health {
+        current: f32,
+        max: f32,
+    },
     MovementSpeed(f32),
-    Lifetime { secs: u64, nanos: u32 },
-    Transform { x: f32, y: f32, z: f32 },
-    Sprite { r: f32, g: f32, b: f32, a: f32, width: f32, height: f32 },
+    Lifetime {
+        secs: u64,
+        nanos: u32,
+    },
+    Transform {
+        x: f32,
+        y: f32,
+        z: f32,
+    },
+    Sprite {
+        r: f32,
+        g: f32,
+        b: f32,
+        a: f32,
+        width: f32,
+        height: f32,
+    },
 
     // Optional components
     ResourceRewards(Vec<Reward>),
@@ -89,10 +106,17 @@ pub fn default_required_components() -> Vec<EnemyComponent> {
         EnemyComponent::Enemy,
         EnemyComponent::MonsterId("new_enemy".to_string()),
         EnemyComponent::DisplayName("New Enemy".to_string()),
-        EnemyComponent::Health { current: 1.0, max: 1.0 },
-        EnemyComponent::MovementSpeed(100.0),
+        EnemyComponent::Health {
+            current: 1.0,
+            max: 1.0,
+        },
+        EnemyComponent::MovementSpeed(170.0),
         EnemyComponent::Lifetime { secs: 5, nanos: 0 },
-        EnemyComponent::Transform { x: 0.0, y: 290.0, z: 0.0 },
+        EnemyComponent::Transform {
+            x: 0.0,
+            y: 290.0,
+            z: 0.0,
+        },
         EnemyComponent::Sprite {
             r: 1.0,
             g: 0.0,
