@@ -420,9 +420,25 @@ fn update_research_ui(
     available_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Available>>,
     in_progress_query: Query<(Entity, &ResearchNode, &InProgress, &ResearchCompletionCount)>,
     completed_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Completed>>,
+    mut removed_available: RemovedComponents<Available>,
+    mut removed_in_progress: RemovedComponents<InProgress>,
+    mut removed_completed: RemovedComponents<Completed>,
+    added_available: Query<(), Added<Available>>,
+    added_in_progress: Query<(), Added<InProgress>>,
+    added_completed: Query<(), Added<Completed>>,
+    changed_count: Query<(), Changed<ResearchCompletionCount>>,
 ) {
-    // Only update if wallet or research map changed
-    if !wallet.is_changed() && !research_map.is_changed() {
+    // Only update if wallet, research map, or components changed
+    if !wallet.is_changed()
+        && !research_map.is_changed()
+        && removed_available.len() == 0
+        && removed_in_progress.len() == 0
+        && removed_completed.len() == 0
+        && added_available.is_empty()
+        && added_in_progress.is_empty()
+        && added_completed.is_empty()
+        && changed_count.is_empty()
+    {
         return;
     }
 

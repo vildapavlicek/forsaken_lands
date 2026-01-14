@@ -3,7 +3,8 @@ use {
     crafting::{Available, RecipeNode},
     recipes_assets::{RecipeCategory, RecipeDefinition},
     research::{
-        Completed, InProgress, ResearchCompletionCount, ResearchDefinition, ResearchNode,
+        Completed, InProgress, ResearchCompletionCount, ResearchDefinition, ResearchMap,
+        ResearchNode,
     },
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
@@ -19,7 +20,12 @@ impl Plugin for VillageUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(on_village_clicked).add_systems(
             Update,
-            (handle_menu_button, handle_back_button, handle_close_button)
+            (
+                handle_menu_button,
+                handle_back_button,
+                handle_close_button,
+                update_village_research_ui,
+            )
                 .run_if(in_state(GameState::Running)),
         );
     }
@@ -531,5 +537,46 @@ fn handle_close_button(
                 }
             }
         }
+    }
+}
+
+// ============================================================================
+// Update Village Research UI
+// ============================================================================
+
+fn update_village_research_ui(
+    mut commands: Commands,
+    ui_query: Query<&VillageUiRoot>,
+    wallet: Res<Wallet>,
+    research_map: Res<ResearchMap>,
+    mut removed_available: RemovedComponents<research::Available>,
+    mut removed_in_progress: RemovedComponents<research::InProgress>,
+    mut removed_completed: RemovedComponents<research::Completed>,
+    added_available: Query<(), Added<research::Available>>,
+    added_in_progress: Query<(), Added<research::InProgress>>,
+    added_completed: Query<(), Added<research::Completed>>,
+    changed_count: Query<(), Changed<ResearchCompletionCount>>,
+) {
+    let Ok(ui_root) = ui_query.single() else {
+        return;
+    };
+
+    // Only update if currently showing research
+    if ui_root.content != VillageContent::Research {
+        return;
+    }
+
+    // Check for changes
+    if wallet.is_changed()
+        || research_map.is_changed()
+        || removed_available.len() > 0
+        || removed_in_progress.len() > 0
+        || removed_completed.len() > 0
+        || !added_available.is_empty()
+        || !added_in_progress.is_empty()
+        || !added_completed.is_empty()
+        || !changed_count.is_empty()
+    {
+        commands.queue(SpawnResearchContentCommand);
     }
 }
