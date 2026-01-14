@@ -1,7 +1,6 @@
 //! Resources for the crafting system.
 
 use bevy::{platform::collections::HashMap, prelude::*};
-
 // Re-export types from recipes_assets for backwards compatibility
 pub use recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition};
 

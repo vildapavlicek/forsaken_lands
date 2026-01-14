@@ -1,5 +1,7 @@
 use {
-    bevy::prelude::*, bevy_common_assets::ron::RonAssetPlugin, divinity_components::Divinity,
+    bevy::prelude::*,
+    bevy_common_assets::ron::RonAssetPlugin,
+    divinity_components::Divinity,
     serde::{Deserialize, Serialize},
 };
 

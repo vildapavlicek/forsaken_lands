@@ -6,7 +6,9 @@ use {
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
-    widgets::{PanelWrapperRef, spawn_menu_button, spawn_menu_panel, spawn_panel_header_with_close},
+    widgets::{
+        PanelWrapperRef, spawn_menu_button, spawn_menu_panel, spawn_panel_header_with_close,
+    },
 };
 
 pub struct VillageUiPlugin;

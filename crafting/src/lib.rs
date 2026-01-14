@@ -1,16 +1,15 @@
 use {
-    bevy::prelude::*,
-    crafting_resources::CraftingOutcome,
-    recipes_assets::RecipeDefinition,
-    states::GameState,
-    system_schedule::GameSchedule,
+    bevy::prelude::*, crafting_resources::CraftingOutcome, recipes_assets::RecipeDefinition,
+    states::GameState, system_schedule::GameSchedule,
 };
 
 pub mod systems;
 
 // Re-export for convenience
-pub use crafting_components::RecipeNode;
-pub use unlock_states::{Available, Locked};
+pub use {
+    crafting_components::RecipeNode,
+    unlock_states::{Available, Locked},
+};
 
 /// Component to track an in-progress crafting operation.
 /// Derives Reflect for save file inclusion.

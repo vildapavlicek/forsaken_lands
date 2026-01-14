@@ -12,8 +12,8 @@ use {
     research::{ResearchDefinition, ResearchMap},
     states::{GameState, LoadingPhase},
     unlocks::{
-        compiler::{build_condition_node, CompilerContext},
         CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
+        compiler::{CompilerContext, build_condition_node},
     },
     unlocks_assets::UnlockDefinition,
     village_components::{EnemyEncyclopedia, Village},
@@ -161,8 +161,9 @@ fn check_assets_loaded(
             };
 
             // Extract MonsterId from the loaded scene
-            let key = extract_monster_id(&scenes, &handle, &type_registry)
-                .unwrap_or_else(|| panic!("MonsterId component not found in enemy prefab: {}", path));
+            let key = extract_monster_id(&scenes, &handle, &type_registry).unwrap_or_else(|| {
+                panic!("MonsterId component not found in enemy prefab: {}", path)
+            });
 
             debug!(%key, %path, "loaded enemy prefab with MonsterId");
             loading_manager.enemies.insert(key, handle);
@@ -358,7 +359,10 @@ fn spawn_startup_scene(
     scene_spawner.spawn_dynamic(loading_manager.startup_scene.clone());
 }
 
-fn check_scene_spawned(mut next_phase: ResMut<NextState<LoadingPhase>>, query: Query<(), With<Village>>) {
+fn check_scene_spawned(
+    mut next_phase: ResMut<NextState<LoadingPhase>>,
+    query: Query<(), With<Village>>,
+) {
     if !query.is_empty() {
         info!("scene spawned and validated, entering Ready state");
         next_phase.set(LoadingPhase::Ready);

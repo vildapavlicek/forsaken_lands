@@ -6,8 +6,8 @@ use {
     states::GameState,
     wallet::Wallet,
     widgets::{
-        PanelWrapperRef, UiTheme, spawn_action_button, spawn_item_card,
-        spawn_menu_panel, spawn_panel_header_with_close,
+        PanelWrapperRef, UiTheme, spawn_action_button, spawn_item_card, spawn_menu_panel,
+        spawn_panel_header_with_close,
     },
 };
 

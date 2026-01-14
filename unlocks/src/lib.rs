@@ -154,8 +154,8 @@
 pub mod compiler;
 mod systems;
 
-pub use {unlocks_components::*, unlocks_events::*, unlocks_resources::*};
 use {bevy::prelude::*, systems::*};
+pub use {unlocks_components::*, unlocks_events::*, unlocks_resources::*};
 
 pub struct UnlocksPlugin;
 

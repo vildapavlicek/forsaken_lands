@@ -1,8 +1,8 @@
 use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
-    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, loading::LoadingManagerPlugin,
-    hero_events::HeroEventsPlugin, heroes::HeroesPlugin, portal_assets::PortalAssetsPlugin,
+    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, hero_events::HeroEventsPlugin,
+    heroes::HeroesPlugin, loading::LoadingManagerPlugin, portal_assets::PortalAssetsPlugin,
     portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
     research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,

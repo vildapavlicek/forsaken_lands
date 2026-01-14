@@ -103,7 +103,7 @@ fn build_recipe_list(
         .iter()
         .filter_map(|node| {
             let def = assets.get(&node.handle)?;
-            
+
             // Filter by category
             if &def.category != category {
                 return None;
@@ -250,12 +250,8 @@ fn handle_tab_switch(
                     }
 
                     // Repopulate recipes
-                    let recipes = build_recipe_list(
-                        &recipe_query,
-                        &assets,
-                        &wallet,
-                        &tab_btn.category,
-                    );
+                    let recipes =
+                        build_recipe_list(&recipe_query, &assets, &wallet, &tab_btn.category);
                     commands.queue(PopulateRecipesDirectCommand {
                         recipes_data: recipes
                             .into_iter()
@@ -384,11 +380,11 @@ fn handle_crafting_button(
             let Some(&entity) = recipe_map.entities.get(&btn.recipe_id) else {
                 continue;
             };
-            
+
             let Ok(node) = recipe_query.get(entity) else {
                 continue;
             };
-            
+
             let Some(def) = assets.get(&node.handle) else {
                 continue;
             };
