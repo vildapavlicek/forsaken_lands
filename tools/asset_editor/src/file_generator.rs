@@ -198,4 +198,21 @@ mod tests {
         assert!(ron.contains("reward_id: \"research_test_research\""));
         assert!(ron.contains("condition: Unlock(\"bone_crafting\")"));
     }
+
+    #[test]
+    fn test_generate_research_ron_empty_cost() {
+        let data = ResearchFormData {
+            id: "free_research".to_string(),
+            name: "Free Research".to_string(),
+            description: "Free stuff".to_string(),
+            costs: vec![],
+            time_required: 10.0,
+            max_repeats: 1,
+            unlock_condition: UnlockCondition::True,
+        };
+
+        let ron = generate_research_ron(&data);
+        assert!(ron.contains("id: \"free_research\""));
+        assert!(ron.contains("cost: {  }"));
+    }
 }

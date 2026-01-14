@@ -13,6 +13,8 @@ use crate::models::{
     CompareOp, LeafCondition, RecipeUnlockFormData, ResearchFormData, ResourceCost,
     UnlockCondition,
 };
+use research_assets::ResearchDefinition;
+use unlocks_assets::UnlockDefinition;
 use crate::monster_prefab::{
     build_scene_ron, default_required_components, optional_components, parse_components_from_ron,
     EnemyComponent, Reward,
@@ -233,6 +235,36 @@ impl EditorState {
         ui.heading("Research Definition");
         ui.add_space(4.0);
 
+        // Load existing research
+        ui.group(|ui| {
+            ui.heading("Load Existing Research");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_research_ids.is_empty() {
+                ui.label("No research assets found in assets/research/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_id = None;
+                    for id in &self.existing_research_ids {
+                        if ui.button(id).clicked() {
+                           load_id = Some(id.clone());
+                        }
+                    }
+                    if let Some(id) = load_id {
+                        self.load_research(&id);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+
         // Research ID
         ui.horizontal(|ui| {
             ui.label("Research ID:");
@@ -275,9 +307,7 @@ impl EditorState {
         }
 
         if let Some(idx) = remove_idx {
-            if self.research_form.costs.len() > 1 {
-                self.research_form.costs.remove(idx);
-            }
+            self.research_form.costs.remove(idx);
         }
 
         if ui.button("+ Add Resource").clicked() {
@@ -790,6 +820,53 @@ impl EditorState {
                     self.status = format!("✗ Failed to save: {}", e);
                 }
             }
+        }
+    }
+
+    fn load_research(&mut self, id: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            // Construct paths
+            let research_path = assets_dir.join("research").join(format!("{}.research.ron", id));
+            let unlock_path = assets_dir
+                .join("unlocks")
+                .join("research")
+                .join(format!("research_{}.unlock.ron", id));
+
+            // Read files
+            let research_content = match std::fs::read_to_string(&research_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read research file: {}", e);
+                    return;
+                }
+            };
+            let unlock_content = match std::fs::read_to_string(&unlock_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read unlock file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse RON
+            let research_def: ResearchDefinition = match ron::from_str(&research_content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse research RON: {}", e);
+                    return;
+                }
+            };
+            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
+                    return;
+                }
+            };
+
+            // Convert and populate form
+            self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def);
+            self.status = format!("✓ Loaded research: {}", id);
         }
     }
 

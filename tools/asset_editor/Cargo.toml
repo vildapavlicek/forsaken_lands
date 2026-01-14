@@ -21,6 +21,9 @@ rfd = "0.15"
 regex = "1.0"
 
 portal_assets = { path = "../../game_assets/portal_assets" }
+research_assets = { path = "../../game_assets/research_assets" }
+unlocks_assets = { path = "../../game_assets/unlocks_assets" }
+unlocks_components = { path = "../../components/unlocks_components" }
 divinity_components = { path = "../../components/divinity_components" }
 bevy = { version = "0.17", default-features = false, features = [] }
 

@@ -1,8 +1,10 @@
-//! Data models for the research asset editor.
-//!
-//! Contains the form data structures and ID mapping logic.
-
-use serde::{Deserialize, Serialize};
+use {
+    bevy::platform::collections::HashMap,
+    research_assets::ResearchDefinition,
+    serde::{Deserialize, Serialize},
+    unlocks_assets::{ConditionNode, UnlockDefinition},
+    unlocks_components::{ResourceCheck, StatCheck},
+};
 
 /// A single resource cost entry.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -14,7 +16,7 @@ pub struct ResourceCost {
 // ==================== Structured Condition System ====================
 
 /// Comparison operators for stat checks.
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq, Default, Copy)]
 pub enum CompareOp {
     #[default]
     Ge, // >=
@@ -23,6 +25,31 @@ pub enum CompareOp {
     Lt, // <
     Eq, // ==
 }
+
+impl From<unlocks_components::ComparisonOp> for CompareOp {
+    fn from(op: unlocks_components::ComparisonOp) -> Self {
+        match op {
+            unlocks_components::ComparisonOp::Ge => CompareOp::Ge,
+            unlocks_components::ComparisonOp::Gt => CompareOp::Gt,
+            unlocks_components::ComparisonOp::Le => CompareOp::Le,
+            unlocks_components::ComparisonOp::Lt => CompareOp::Lt,
+            unlocks_components::ComparisonOp::Eq => CompareOp::Eq,
+        }
+    }
+}
+
+impl From<CompareOp> for unlocks_components::ComparisonOp {
+    fn from(op: CompareOp) -> Self {
+        match op {
+            CompareOp::Ge => unlocks_components::ComparisonOp::Ge,
+            CompareOp::Gt => unlocks_components::ComparisonOp::Gt,
+            CompareOp::Le => unlocks_components::ComparisonOp::Le,
+            CompareOp::Lt => unlocks_components::ComparisonOp::Lt,
+            CompareOp::Eq => unlocks_components::ComparisonOp::Eq,
+        }
+    }
+}
+
 
 impl CompareOp {
     pub fn all() -> Vec<&'static str> {
@@ -241,6 +268,74 @@ impl UnlockCondition {
     }
 }
 
+// Conversion Logic
+
+impl From<&ConditionNode> for UnlockCondition {
+    fn from(node: &ConditionNode) -> Self {
+        match node {
+            ConditionNode::True => UnlockCondition::True,
+            ConditionNode::Not(_) => UnlockCondition::True, // Not supported in editor yet
+            ConditionNode::And(nodes) => {
+                let leaves: Vec<LeafCondition> = nodes.iter().map(|n| n.into()).collect();
+                // If any child was NOT a simple leaf (e.g. nested AND/OR), it might have returned default/empty
+                // For simplicity, we flatten one level if possible, but recursive structures are hard to edit.
+                // We'll trust that complex nested structures degrade gracefully or are part of "Single" that unwraps.
+                // Actually, the editor supports 1-level And/Or.
+                // If the input is deeply nested, we might lose data.
+                // For now, map direct children.
+                UnlockCondition::And(leaves)
+            }
+            ConditionNode::Or(nodes) => {
+                let leaves: Vec<LeafCondition> = nodes.iter().map(|n| n.into()).collect();
+                UnlockCondition::Or(leaves)
+            }
+            // Leaf types in ConditionNode are direct variants
+            ConditionNode::Stat(stat) => UnlockCondition::Single(LeafCondition::from(stat)),
+            ConditionNode::Resource(res) => UnlockCondition::Single(LeafCondition::from(res)),
+            ConditionNode::Unlock(id) => UnlockCondition::Single(LeafCondition::Unlock { id: id.clone() }),
+            ConditionNode::PortalsMaxUnlockedDivinity(_) => UnlockCondition::True, // Not supported in editor yet
+        }
+    }
+}
+
+// Helper to convert ConditionNode directly to LeafCondition if possible
+impl From<&ConditionNode> for LeafCondition {
+    fn from(node: &ConditionNode) -> Self {
+         match node {
+            ConditionNode::Stat(stat) => LeafCondition::from(stat),
+            ConditionNode::Resource(res) => LeafCondition::from(res),
+            ConditionNode::Unlock(id) => LeafCondition::Unlock { id: id.clone() },
+            _ => LeafCondition::default(), // Fallback for logical nodes if forced into leaf
+         }
+    }
+}
+
+impl From<&StatCheck> for LeafCondition {
+    fn from(stat: &StatCheck) -> Self {
+        match stat {
+            StatCheck::Kills { monster_id, op, value } => LeafCondition::Kills {
+                monster_id: monster_id.clone(),
+                value: *value,
+                op: CompareOp::from(*op),
+            },
+            StatCheck::Resource { resource_id, op, value } => LeafCondition::Resource {
+                resource_id: resource_id.clone(),
+                amount: *value as u32,
+            },
+        }
+    }
+}
+
+impl From<&ResourceCheck> for LeafCondition {
+    fn from(res: &ResourceCheck) -> Self {
+        LeafCondition::Resource {
+            resource_id: res.resource_id.clone(),
+            amount: res.amount,
+        }
+    }
+}
+
+
 // ==================== Form Data Structures ====================
 
 /// The main form data for a research asset.
@@ -313,9 +408,7 @@ impl ResearchFormData {
         if self.name.trim().is_empty() {
             errors.push("Display name is required".to_string());
         }
-        if self.costs.is_empty() {
-            errors.push("At least one resource cost is required".to_string());
-        }
+
         for (i, cost) in self.costs.iter().enumerate() {
             if cost.resource_id.trim().is_empty() {
                 errors.push(format!("Cost #{}: resource ID is required", i + 1));
@@ -335,6 +428,27 @@ impl ResearchFormData {
         errors.extend(self.unlock_condition.validate());
 
         errors
+    }
+
+    pub fn from_assets(research: &ResearchDefinition, unlock: &UnlockDefinition) -> Self {
+        let costs = research
+            .cost
+            .iter()
+            .map(|(k, v)| ResourceCost {
+                resource_id: k.clone(),
+                amount: *v,
+            })
+            .collect();
+
+        Self {
+            id: research.id.clone(),
+            name: research.name.clone(),
+            description: research.description.clone(),
+            costs,
+            time_required: research.time_required,
+            max_repeats: research.max_repeats,
+            unlock_condition: UnlockCondition::from(&unlock.condition),
+        }
     }
 }
 
