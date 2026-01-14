@@ -10,6 +10,7 @@ impl Plugin for DivinityComponentsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Divinity>();
         app.register_type::<DivinityStats>();
+        app.register_type::<MaxUnlockedDivinity>();
     }
 }
 
@@ -23,7 +24,7 @@ pub const MAX_LEVEL: u32 = 99;
 /// - `VillagePlugin`: To track village growth and unlock recipes/buildings.
 ///
 /// Use `DivinityStats` to track XP progress towards the next level.
-#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[reflect(Component, Default)]
 pub struct Divinity {
     /// The major power bracket (1-based). Increasing this resets `level` to 1.
@@ -87,6 +88,19 @@ pub struct DivinityStats {
     pub current_xp: f32,
     /// The raw experience threshold required to advance to the next `Divinity` level.
     pub required_xp: f32,
+}
+
+/// Tracks the highest unlocked Divinity level for this Portal.
+/// This allows the player to potentially lower the current Divinity level
+/// while knowing what the maximum achievable level they've reached is.
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+#[reflect(Component, Default)]
+pub struct MaxUnlockedDivinity(pub Divinity);
+
+impl Default for MaxUnlockedDivinity {
+    fn default() -> Self {
+        Self(Divinity::default())
+    }
 }
 
 impl DivinityStats {

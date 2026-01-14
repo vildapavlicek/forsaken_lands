@@ -9,8 +9,7 @@ pub struct UnlockStatesPlugin;
 
 impl Plugin for UnlockStatesPlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<Locked>()
-            .register_type::<Available>();
+        app.register_type::<Locked>().register_type::<Available>();
     }
 }
 

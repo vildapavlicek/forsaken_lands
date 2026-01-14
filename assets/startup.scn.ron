@@ -17,6 +17,9 @@
             current_xp: 0.0,
             required_xp: 100.0,
         ),
+        "divinity_components::MaxUnlockedDivinity": (
+            (tier: 1, level: 1),
+        ),
         "portal_components::SpawnTableId": ("default"),
         "portal_components::SpawnTimer": (
              (
