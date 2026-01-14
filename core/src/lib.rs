@@ -2,13 +2,12 @@ use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
     enemy_encyclopedia::EnemyEncyclopediaUiPlugin, hero_events::HeroEventsPlugin,
-    heroes::HeroesPlugin, loading::LoadingManagerPlugin, portal_assets::PortalAssetsPlugin,
-    portal_ui::PortalUiPlugin, portals::PortalsPlugin, research::ResearchPlugin,
-    research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
+    heroes::HeroesPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
+    portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
+    research::ResearchPlugin, research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
     shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
-    unlock_notification_ui::UnlockNotificationUiPlugin, unlocks::UnlocksPlugin,
-    unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin, village_ui::VillageUiPlugin,
-    wallet::WalletPlugin, widgets::WidgetsPlugin,
+    unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin,
+    village_ui::VillageUiPlugin, wallet::WalletPlugin, widgets::WidgetsPlugin,
 };
 
 pub struct CorePlugin;
@@ -40,7 +39,7 @@ impl Plugin for CorePlugin {
                 SharedComponentsPlugin,
                 UnlocksPlugin,
                 UnlocksAssetsPlugin,
-                UnlockNotificationUiPlugin,
+                NotificationUiPlugin,
                 VillagePlugin,
                 VillageUiPlugin,
                 WalletPlugin,

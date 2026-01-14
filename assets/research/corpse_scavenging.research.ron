@@ -2,6 +2,7 @@
     id: "corpse_scavenging",
     name: "Dead scavenging",
     description: "Their deaths are blessing to us",
-    cost: { "bones": 10 },
+    cost: { },
     time_required: 30,
+    max_repeats: 1,
 )

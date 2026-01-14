@@ -35,7 +35,7 @@ members = [
   "ui/resources_ui",
   "ui/portal_ui",
   "ui/enemy_encyclopedia",
-  "ui/unlock_notification_ui",
+  "ui/notification_ui",
   "ui/village_ui",
   "ui/widgets",
   "components/unlocks_components",
@@ -80,7 +80,7 @@ unlock_states = { path = "components/unlock_states" }
 village = { path = "village" }
 village_components = { path = "components/village_components" }
 village_ui = { path = "ui/village_ui" }
-unlock_notification_ui = { path = "ui/unlock_notification_ui" }
+notification_ui = { path = "ui/notification_ui" }
 unlocks = { path = "unlocks" }
 unlocks_assets = { path = "game_assets/unlocks_assets" }
 unlocks_components = { path = "components/unlocks_components" }

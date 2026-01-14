@@ -1851,6 +1851,7 @@ dependencies = [
  "hero_events",
  "heroes",
  "loading",
+ "notification_ui",
  "portal_assets",
  "portal_ui",
  "portals",
@@ -1860,7 +1861,6 @@ dependencies = [
  "shared_components",
  "states",
  "system_schedule",
- "unlock_notification_ui",
  "unlocks",
  "unlocks_assets",
  "village",
@@ -3312,6 +3312,17 @@ name = "nonmax"
 version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "610a5acd306ec67f907abe5567859a3c693fb9886eb1f012ab8f2a47bef3db51"
+
+[[package]]
+name = "notification_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "research",
+ "states",
+ "unlocks",
+ "widgets",
+]
 
 [[package]]
 name = "ntapi"
@@ -4898,16 +4909,6 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
-
-[[package]]
-name = "unlock_notification_ui"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "states",
- "unlocks",
- "widgets",
-]
 
 [[package]]
 name = "unlock_states"
