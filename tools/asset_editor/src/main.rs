@@ -8,8 +8,7 @@ mod file_generator;
 mod models;
 mod monster_prefab;
 
-use eframe::egui;
-use editor::EditorState;
+use {editor::EditorState, eframe::egui};
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {

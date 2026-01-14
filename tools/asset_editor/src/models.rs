@@ -50,7 +50,6 @@ impl From<CompareOp> for unlocks_components::ComparisonOp {
     }
 }
 
-
 impl CompareOp {
     pub fn all() -> Vec<&'static str> {
         vec![">=", ">", "<=", "<", "=="]
@@ -141,13 +140,22 @@ impl LeafCondition {
     pub fn to_ron(&self) -> String {
         match self {
             LeafCondition::Unlock { id } => format!("Unlock(\"{}\")", id),
-            LeafCondition::Kills { monster_id, value, op } => {
+            LeafCondition::Kills {
+                monster_id,
+                value,
+                op,
+            } => {
                 format!(
                     "Stat(Kills(monster_id: \"{}\", value: {}, op: {}))",
-                    monster_id, value, op.to_ron()
+                    monster_id,
+                    value,
+                    op.to_ron()
                 )
             }
-            LeafCondition::Resource { resource_id, amount } => {
+            LeafCondition::Resource {
+                resource_id,
+                amount,
+            } => {
                 format!(
                     "Resource(ResourceCheck(resource_id: \"{}\", amount: {}))",
                     resource_id, amount
@@ -169,7 +177,10 @@ impl LeafCondition {
                     errors.push("Monster ID is required".to_string());
                 }
             }
-            LeafCondition::Resource { resource_id, amount } => {
+            LeafCondition::Resource {
+                resource_id,
+                amount,
+            } => {
                 if resource_id.trim().is_empty() {
                     errors.push("Resource ID is required".to_string());
                 }
@@ -292,7 +303,9 @@ impl From<&ConditionNode> for UnlockCondition {
             // Leaf types in ConditionNode are direct variants
             ConditionNode::Stat(stat) => UnlockCondition::Single(LeafCondition::from(stat)),
             ConditionNode::Resource(res) => UnlockCondition::Single(LeafCondition::from(res)),
-            ConditionNode::Unlock(id) => UnlockCondition::Single(LeafCondition::Unlock { id: id.clone() }),
+            ConditionNode::Unlock(id) => {
+                UnlockCondition::Single(LeafCondition::Unlock { id: id.clone() })
+            }
             ConditionNode::PortalsMaxUnlockedDivinity(_) => UnlockCondition::True, // Not supported in editor yet
         }
     }
@@ -301,24 +314,32 @@ impl From<&ConditionNode> for UnlockCondition {
 // Helper to convert ConditionNode directly to LeafCondition if possible
 impl From<&ConditionNode> for LeafCondition {
     fn from(node: &ConditionNode) -> Self {
-         match node {
+        match node {
             ConditionNode::Stat(stat) => LeafCondition::from(stat),
             ConditionNode::Resource(res) => LeafCondition::from(res),
             ConditionNode::Unlock(id) => LeafCondition::Unlock { id: id.clone() },
             _ => LeafCondition::default(), // Fallback for logical nodes if forced into leaf
-         }
+        }
     }
 }
 
 impl From<&StatCheck> for LeafCondition {
     fn from(stat: &StatCheck) -> Self {
         match stat {
-            StatCheck::Kills { monster_id, op, value } => LeafCondition::Kills {
+            StatCheck::Kills {
+                monster_id,
+                op,
+                value,
+            } => LeafCondition::Kills {
                 monster_id: monster_id.clone(),
                 value: *value,
                 op: CompareOp::from(*op),
             },
-            StatCheck::Resource { resource_id, op, value } => LeafCondition::Resource {
+            StatCheck::Resource {
+                resource_id,
+                op,
+                value,
+            } => LeafCondition::Resource {
                 resource_id: resource_id.clone(),
                 amount: *value as u32,
             },
@@ -334,7 +355,6 @@ impl From<&ResourceCheck> for LeafCondition {
         }
     }
 }
-
 
 // ==================== Form Data Structures ====================
 

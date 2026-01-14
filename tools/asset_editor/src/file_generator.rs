@@ -2,8 +2,10 @@
 //!
 //! Generates RON content and handles file saving.
 
-use crate::models::{RecipeUnlockFormData, ResearchFormData};
-use std::path::Path;
+use {
+    crate::models::{RecipeUnlockFormData, ResearchFormData},
+    std::path::Path,
+};
 
 /// Generates the .research.ron file content.
 pub fn generate_research_ron(data: &ResearchFormData) -> String {
@@ -150,11 +152,12 @@ pub fn save_recipe_unlock_file(
     })
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::models::{LeafCondition, ResourceCost, UnlockCondition};
+    use {
+        super::*,
+        crate::models::{LeafCondition, ResourceCost, UnlockCondition},
+    };
 
     #[test]
     fn test_generate_research_ron() {

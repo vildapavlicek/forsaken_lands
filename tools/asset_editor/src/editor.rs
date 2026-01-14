@@ -2,25 +2,28 @@
 //!
 //! Main egui-based editor interface with tabbed forms for research, recipe unlocks, and monster prefabs.
 
-use eframe::egui;
-use std::path::PathBuf;
-
-use crate::file_generator::{
-    generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
-    save_recipe_unlock_file, save_research_files,
+use {
+    crate::{
+        file_generator::{
+            generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
+            save_recipe_unlock_file, save_research_files,
+        },
+        models::{
+            CompareOp, LeafCondition, RecipeUnlockFormData, ResearchFormData, ResourceCost,
+            UnlockCondition,
+        },
+        monster_prefab::{
+            EnemyComponent, Reward, build_scene_ron, default_required_components,
+            optional_components, parse_components_from_ron,
+        },
+    },
+    divinity_components::Divinity,
+    eframe::egui,
+    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable},
+    research_assets::ResearchDefinition,
+    std::path::PathBuf,
+    unlocks_assets::UnlockDefinition,
 };
-use crate::models::{
-    CompareOp, LeafCondition, RecipeUnlockFormData, ResearchFormData, ResourceCost,
-    UnlockCondition,
-};
-use research_assets::ResearchDefinition;
-use unlocks_assets::UnlockDefinition;
-use crate::monster_prefab::{
-    build_scene_ron, default_required_components, optional_components, parse_components_from_ron,
-    EnemyComponent, Reward,
-};
-use divinity_components::Divinity;
-use portal_assets::{SpawnCondition, SpawnEntry, SpawnTable};
 
 /// Available editor tabs.
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -145,52 +148,50 @@ impl EditorState {
                     ui.heading("RON Preview");
                     ui.separator();
 
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        match self.active_tab {
-                            EditorTab::Research => {
-                                ui.label("Research File:");
-                                let research_ron = generate_research_ron(&self.research_form);
-                                ui.add(
-                                    egui::TextEdit::multiline(&mut research_ron.as_str())
-                                        .font(egui::TextStyle::Monospace)
-                                        .desired_width(f32::INFINITY),
-                                );
+                    egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
+                        EditorTab::Research => {
+                            ui.label("Research File:");
+                            let research_ron = generate_research_ron(&self.research_form);
+                            ui.add(
+                                egui::TextEdit::multiline(&mut research_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
 
-                                ui.add_space(10.0);
-                                ui.label("Unlock File:");
-                                let unlock_ron = generate_unlock_ron(&self.research_form);
-                                ui.add(
-                                    egui::TextEdit::multiline(&mut unlock_ron.as_str())
-                                        .font(egui::TextStyle::Monospace)
-                                        .desired_width(f32::INFINITY),
-                                );
-                            }
-                            EditorTab::RecipeUnlock => {
-                                ui.label("Recipe Unlock File:");
-                                let unlock_ron = generate_recipe_unlock_ron(&self.recipe_form);
-                                ui.add(
-                                    egui::TextEdit::multiline(&mut unlock_ron.as_str())
-                                        .font(egui::TextStyle::Monospace)
-                                        .desired_width(f32::INFINITY),
-                                );
-                            }
-                            EditorTab::MonsterPrefab => {
-                                ui.label("Monster Prefab Scene:");
-                                ui.add(
-                                    egui::TextEdit::multiline(&mut self.monster_ron_preview.as_str())
-                                        .font(egui::TextStyle::Monospace)
-                                        .desired_width(f32::INFINITY),
-                                );
-                            }
+                            ui.add_space(10.0);
+                            ui.label("Unlock File:");
+                            let unlock_ron = generate_unlock_ron(&self.research_form);
+                            ui.add(
+                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
+                        EditorTab::RecipeUnlock => {
+                            ui.label("Recipe Unlock File:");
+                            let unlock_ron = generate_recipe_unlock_ron(&self.recipe_form);
+                            ui.add(
+                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
+                        EditorTab::MonsterPrefab => {
+                            ui.label("Monster Prefab Scene:");
+                            ui.add(
+                                egui::TextEdit::multiline(&mut self.monster_ron_preview.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
 
-                            EditorTab::SpawnTable => {
-                                ui.label("Spawn Table:");
-                                ui.add(
-                                    egui::TextEdit::multiline(&mut self.spawn_table_preview.as_str())
-                                        .font(egui::TextStyle::Monospace)
-                                        .desired_width(f32::INFINITY),
-                                );
-                            }
+                        EditorTab::SpawnTable => {
+                            ui.label("Spawn Table:");
+                            ui.add(
+                                egui::TextEdit::multiline(&mut self.spawn_table_preview.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
                         }
                     });
                 });
@@ -219,14 +220,12 @@ impl EditorState {
             });
             ui.separator();
 
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                match self.active_tab {
-                    EditorTab::Research => self.show_research_form(ui),
-                    EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
+            egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
+                EditorTab::Research => self.show_research_form(ui),
+                EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
 
-                    EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
-                    EditorTab::SpawnTable => self.show_spawn_table_form(ui),
-                }
+                EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
+                EditorTab::SpawnTable => self.show_spawn_table_form(ui),
             });
         });
     }
@@ -251,7 +250,7 @@ impl EditorState {
                     let mut load_id = None;
                     for id in &self.existing_research_ids {
                         if ui.button(id).clicked() {
-                           load_id = Some(id.clone());
+                            load_id = Some(id.clone());
                         }
                     }
                     if let Some(id) = load_id {
@@ -495,7 +494,10 @@ fn show_condition_editor(
             .selected_text(current_type)
             .show_ui(ui, |ui| {
                 for type_name in UnlockCondition::all_types() {
-                    if ui.selectable_label(current_type == type_name, type_name).clicked() {
+                    if ui
+                        .selectable_label(current_type == type_name, type_name)
+                        .clicked()
+                    {
                         *condition = UnlockCondition::from_type_name(type_name);
                     }
                 }
@@ -604,7 +606,10 @@ fn show_leaf_editor(
             .selected_text(current_type)
             .show_ui(ui, |ui| {
                 for type_name in LeafCondition::all_types() {
-                    if ui.selectable_label(current_type == type_name, type_name).clicked() {
+                    if ui
+                        .selectable_label(current_type == type_name, type_name)
+                        .clicked()
+                    {
                         *leaf = LeafCondition::from_type_name(type_name);
                     }
                 }
@@ -618,10 +623,17 @@ fn show_leaf_editor(
                 ui.label("Research ID:");
                 if !existing_research_ids.is_empty() {
                     egui::ComboBox::from_id_salt(format!("{}_unlock_id", id_prefix))
-                        .selected_text(if id.is_empty() { "Select..." } else { id.as_str() })
+                        .selected_text(if id.is_empty() {
+                            "Select..."
+                        } else {
+                            id.as_str()
+                        })
                         .show_ui(ui, |ui| {
                             for research_id in existing_research_ids {
-                                if ui.selectable_label(id == research_id, research_id).clicked() {
+                                if ui
+                                    .selectable_label(id == research_id, research_id)
+                                    .clicked()
+                                {
                                     *id = research_id.clone();
                                 }
                             }
@@ -676,7 +688,9 @@ fn show_leaf_editor(
                     .width(50.0)
                     .show_ui(ui, |ui| {
                         for op_name in CompareOp::all() {
-                            if ui.selectable_label(op.display_name() == op_name, op_name).clicked()
+                            if ui
+                                .selectable_label(op.display_name() == op_name, op_name)
+                                .clicked()
                             {
                                 *op = CompareOp::from_display(op_name);
                             }
@@ -687,7 +701,10 @@ fn show_leaf_editor(
             });
             ui.small("e.g., monster_id: \"goblin\", op: >=, value: 10 (kills 10 goblins)");
         }
-        LeafCondition::Resource { resource_id, amount } => {
+        LeafCondition::Resource {
+            resource_id,
+            amount,
+        } => {
             ui.horizontal(|ui| {
                 ui.label("Resource ID:");
                 ui.add(egui::TextEdit::singleline(resource_id).desired_width(100.0));
@@ -790,17 +807,17 @@ impl EditorState {
         // Assuming spawn tables can be anywhere or just in root assets? User mentioned assets/default.spawn_table.ron
         // We'll search in assets root for now.
         if let Ok(entries) = std::fs::read_dir(assets_dir) {
-             for entry in entries.flatten() {
-                 let path = entry.path();
-                 if let Some(filename) = path.file_name() {
-                     let filename = filename.to_string_lossy();
-                     if filename.ends_with(".spawn_table.ron") {
-                         if let Some(id) = filename.strip_suffix(".spawn_table.ron") {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename = filename.to_string_lossy();
+                    if filename.ends_with(".spawn_table.ron") {
+                        if let Some(id) = filename.strip_suffix(".spawn_table.ron") {
                             self.existing_spawn_tables.push(id.to_string());
-                         }
-                     }
-                 }
-             }
+                        }
+                    }
+                }
+            }
         }
         self.existing_spawn_tables.sort();
     }
@@ -826,7 +843,9 @@ impl EditorState {
     fn load_research(&mut self, id: &str) {
         if let Some(assets_dir) = &self.assets_dir {
             // Construct paths
-            let research_path = assets_dir.join("research").join(format!("{}.research.ron", id));
+            let research_path = assets_dir
+                .join("research")
+                .join(format!("{}.research.ron", id));
             let unlock_path = assets_dir
                 .join("unlocks")
                 .join("research")
@@ -920,7 +939,10 @@ impl EditorState {
         // Filename input
         ui.horizontal(|ui| {
             ui.label("Filename:");
-            if ui.text_edit_singleline(&mut self.monster_filename).changed() {
+            if ui
+                .text_edit_singleline(&mut self.monster_filename)
+                .changed()
+            {
                 self.selected_prefab_index = None;
             }
             ui.label(".scn.ron");
@@ -974,9 +996,10 @@ impl EditorState {
 
         ui.horizontal_wrapped(|ui| {
             for (name, template) in optional_components() {
-                let already_added = self.monster_components.iter().any(|c| {
-                    std::mem::discriminant(c) == std::mem::discriminant(&template)
-                });
+                let already_added = self
+                    .monster_components
+                    .iter()
+                    .any(|c| std::mem::discriminant(c) == std::mem::discriminant(&template));
 
                 ui.add_enabled_ui(!already_added, |ui| {
                     if ui.button(name).clicked() {
@@ -1031,7 +1054,10 @@ impl EditorState {
                         .selected_text(format!("{:?}", range))
                         .show_ui(ui, |ui| {
                             for r in crate::monster_prefab::EnemyRange::all() {
-                                if ui.selectable_label(*range == *r, format!("{:?}", r)).clicked() {
+                                if ui
+                                    .selectable_label(*range == *r, format!("{:?}", r))
+                                    .clicked()
+                                {
                                     *range = *r;
                                     changed = true;
                                 }
@@ -1074,7 +1100,10 @@ impl EditorState {
                         changed = true;
                     }
                     ui.label("Nanos:");
-                    if ui.add(egui::DragValue::new(nanos).speed(1000000.0)).changed() {
+                    if ui
+                        .add(egui::DragValue::new(nanos).speed(1000000.0))
+                        .changed()
+                    {
                         changed = true;
                     }
                 });
@@ -1251,7 +1280,6 @@ fn extract_monster_id_from_ron(content: &str) -> Option<String> {
     re.captures(content)?.get(1).map(|m| m.as_str().to_string())
 }
 
-
 impl EditorState {
     fn show_spawn_table_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Spawn Table Editor");
@@ -1273,7 +1301,7 @@ impl EditorState {
                     let mut load_name = None;
                     for table_name in &self.existing_spawn_tables {
                         if ui.button(table_name).clicked() {
-                           load_name = Some(table_name.clone());
+                            load_name = Some(table_name.clone());
                         }
                     }
                     if let Some(name) = load_name {
@@ -1309,14 +1337,14 @@ impl EditorState {
                         remove_idx = Some(i);
                     }
                 });
-                
+
                 ui.add_space(4.0);
 
                 // Monster ID
                 ui.horizontal(|ui| {
                     ui.label("Monster ID:");
                     if !self.existing_monster_ids.is_empty() {
-                         egui::ComboBox::from_id_salt(format!("spawn_table_monster_{}", i))
+                        egui::ComboBox::from_id_salt(format!("spawn_table_monster_{}", i))
                             .selected_text(&entry.monster_id)
                             .show_ui(ui, |ui| {
                                 for id in &self.existing_monster_ids {
@@ -1326,13 +1354,15 @@ impl EditorState {
                                     }
                                 }
                             });
-                         ui.label("or");
+                        ui.label("or");
                     }
                     if ui.text_edit_singleline(&mut entry.monster_id).changed() {
                         changed = true;
                     }
                 });
-                 if !entry.monster_id.is_empty() && !self.existing_monster_ids.contains(&entry.monster_id) {
+                if !entry.monster_id.is_empty()
+                    && !self.existing_monster_ids.contains(&entry.monster_id)
+                {
                     ui.colored_label(
                         egui::Color32::YELLOW,
                         format!("⚠ Monster \"{}\" not found", entry.monster_id),
@@ -1340,11 +1370,14 @@ impl EditorState {
                 }
 
                 ui.add_space(4.0);
-                
+
                 // Weight
                 ui.horizontal(|ui| {
                     ui.label("Weight:");
-                    if ui.add(egui::DragValue::new(&mut entry.weight).range(1..=10000)).changed() {
+                    if ui
+                        .add(egui::DragValue::new(&mut entry.weight).range(1..=10000))
+                        .changed()
+                    {
                         changed = true;
                     }
                 });
@@ -1354,63 +1387,133 @@ impl EditorState {
                 // Condition
                 ui.label("Condition:");
                 let condition = &mut entry.condition;
-                
+
                 // Condition Type Selector
-                 ui.horizontal(|ui| {
+                ui.horizontal(|ui| {
                     let type_name = match condition {
                         SpawnCondition::Specific(_) => "Specific",
                         SpawnCondition::Range { .. } => "Range",
                         SpawnCondition::Min(_) => "Min",
                     };
-                    
+
                     egui::ComboBox::from_id_salt(format!("spawn_condition_type_{}", i))
                         .selected_text(type_name)
                         .show_ui(ui, |ui| {
-                             if ui.selectable_label(match condition { SpawnCondition::Min(_) => true, _ => false }, "Min").clicked() {
-                                 *condition = SpawnCondition::Min(Divinity::default());
-                                 changed = true;
-                             }
-                             if ui.selectable_label(match condition { SpawnCondition::Range { .. } => true, _ => false }, "Range").clicked() {
-                                 *condition = SpawnCondition::Range { min: Divinity::default(), max: Divinity::default() };
-                                 changed = true;
-                             }
-                             if ui.selectable_label(match condition { SpawnCondition::Specific(_) => true, _ => false }, "Specific").clicked() {
-                                 *condition = SpawnCondition::Specific(Divinity::default());
-                                 changed = true;
-                             }
+                            if ui
+                                .selectable_label(
+                                    match condition {
+                                        SpawnCondition::Min(_) => true,
+                                        _ => false,
+                                    },
+                                    "Min",
+                                )
+                                .clicked()
+                            {
+                                *condition = SpawnCondition::Min(Divinity::default());
+                                changed = true;
+                            }
+                            if ui
+                                .selectable_label(
+                                    match condition {
+                                        SpawnCondition::Range { .. } => true,
+                                        _ => false,
+                                    },
+                                    "Range",
+                                )
+                                .clicked()
+                            {
+                                *condition = SpawnCondition::Range {
+                                    min: Divinity::default(),
+                                    max: Divinity::default(),
+                                };
+                                changed = true;
+                            }
+                            if ui
+                                .selectable_label(
+                                    match condition {
+                                        SpawnCondition::Specific(_) => true,
+                                        _ => false,
+                                    },
+                                    "Specific",
+                                )
+                                .clicked()
+                            {
+                                *condition = SpawnCondition::Specific(Divinity::default());
+                                changed = true;
+                            }
                         });
                 });
 
                 // Condition Data
                 match condition {
                     SpawnCondition::Min(div) => {
-                         ui.horizontal(|ui| {
+                        ui.horizontal(|ui| {
                             ui.label("Min Tier:");
-                            if ui.add(egui::DragValue::new(&mut div.tier).range(1..=10)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut div.tier).range(1..=10))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                             ui.label("Level:");
-                            if ui.add(egui::DragValue::new(&mut div.level).range(1..=99)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut div.level).range(1..=99))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                         });
                     }
-                     SpawnCondition::Specific(div) => {
-                         ui.horizontal(|ui| {
+                    SpawnCondition::Specific(div) => {
+                        ui.horizontal(|ui| {
                             ui.label("Tier:");
-                            if ui.add(egui::DragValue::new(&mut div.tier).range(1..=10)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut div.tier).range(1..=10))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                             ui.label("Level:");
-                            if ui.add(egui::DragValue::new(&mut div.level).range(1..=99)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut div.level).range(1..=99))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                         });
                     }
                     SpawnCondition::Range { min, max } => {
                         ui.horizontal(|ui| {
                             ui.label("Min Tier:");
-                            if ui.add(egui::DragValue::new(&mut min.tier).range(1..=10)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut min.tier).range(1..=10))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                             ui.label("Level:");
-                            if ui.add(egui::DragValue::new(&mut min.level).range(1..=99)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut min.level).range(1..=99))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                         });
-                         ui.horizontal(|ui| {
+                        ui.horizontal(|ui| {
                             ui.label("Max Tier:");
-                            if ui.add(egui::DragValue::new(&mut max.tier).range(1..=10)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut max.tier).range(1..=10))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                             ui.label("Level:");
-                            if ui.add(egui::DragValue::new(&mut max.level).range(1..=99)).changed() { changed = true; }
+                            if ui
+                                .add(egui::DragValue::new(&mut max.level).range(1..=99))
+                                .changed()
+                            {
+                                changed = true;
+                            }
                         });
                     }
                 }
@@ -1434,15 +1537,15 @@ impl EditorState {
 
         ui.add_space(16.0);
         ui.separator();
-        
+
         // Save
-         ui.horizontal(|ui| {
+        ui.horizontal(|ui| {
             ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
                 if ui.button("💾 Save Spawn Table").clicked() {
                     self.save_spawn_table();
                 }
             });
-            
+
             if ui.button("🆕 New Table").clicked() {
                 self.spawn_table_form = SpawnTable::default();
                 self.spawn_table_filename = "new_spawn_table".to_string();
@@ -1453,7 +1556,9 @@ impl EditorState {
     }
 
     fn update_spawn_table_preview(&mut self) {
-        if let Ok(ron_str) = ron::ser::to_string_pretty(&self.spawn_table_form, ron::ser::PrettyConfig::default()) {
+        if let Ok(ron_str) =
+            ron::ser::to_string_pretty(&self.spawn_table_form, ron::ser::PrettyConfig::default())
+        {
             self.spawn_table_preview = ron_str;
         } else {
             self.spawn_table_preview = "Error serializing Spawn Table".to_string();
@@ -1461,33 +1566,32 @@ impl EditorState {
     }
 
     fn load_spawn_table(&mut self, filename: &str) {
-         if let Some(assets_dir) = &self.assets_dir.clone() {
-             let file_path = assets_dir.join(format!("{}.spawn_table.ron", filename));
-             match std::fs::read_to_string(&file_path) {
-                 Ok(content) => {
-                     match ron::from_str::<SpawnTable>(&content) {
-                         Ok(table) => {
-                             self.spawn_table_form = table;
-                             self.spawn_table_filename = filename.to_string();
-                             self.update_spawn_table_preview();
-                             self.status = format!("✓ Loaded: {}", file_path.display());
-                         }
-                         Err(e) => {
-                              self.status = format!("✗ Failed to parse: {}", e);
-                         }
-                     }
-                 }
-                 Err(e) => {
-                     self.status = format!("✗ Failed to read: {}", e);
-                 }
-             }
-         }
+        if let Some(assets_dir) = &self.assets_dir.clone() {
+            let file_path = assets_dir.join(format!("{}.spawn_table.ron", filename));
+            match std::fs::read_to_string(&file_path) {
+                Ok(content) => match ron::from_str::<SpawnTable>(&content) {
+                    Ok(table) => {
+                        self.spawn_table_form = table;
+                        self.spawn_table_filename = filename.to_string();
+                        self.update_spawn_table_preview();
+                        self.status = format!("✓ Loaded: {}", file_path.display());
+                    }
+                    Err(e) => {
+                        self.status = format!("✗ Failed to parse: {}", e);
+                    }
+                },
+                Err(e) => {
+                    self.status = format!("✗ Failed to read: {}", e);
+                }
+            }
+        }
     }
 
     fn save_spawn_table(&mut self) {
         if let Some(assets_dir) = &self.assets_dir {
-            let file_path = assets_dir.join(format!("{}.spawn_table.ron", self.spawn_table_filename));
-             match std::fs::write(&file_path, &self.spawn_table_preview) {
+            let file_path =
+                assets_dir.join(format!("{}.spawn_table.ron", self.spawn_table_filename));
+            match std::fs::write(&file_path, &self.spawn_table_preview) {
                 Ok(()) => {
                     self.status = format!("✓ Saved to {}", file_path.display());
                     // Reload list

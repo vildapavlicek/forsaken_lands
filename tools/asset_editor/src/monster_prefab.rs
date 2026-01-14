@@ -24,7 +24,6 @@ impl EnemyRange {
     }
 }
 
-
 /// All available enemy components that can be added to a prefab.
 #[derive(Clone, Debug)]
 pub enum EnemyComponent {
@@ -182,10 +181,9 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
             r#""enemy_components::MonsterId": ("{}")"#,
             escape_ron_string(id)
         )),
-        EnemyComponent::EnemyRange(range) => Some(format!(
-            r#""enemy_components::EnemyRange": {:?}"#,
-            range
-        )),
+        EnemyComponent::EnemyRange(range) => {
+            Some(format!(r#""enemy_components::EnemyRange": {:?}"#, range))
+        }
         EnemyComponent::DisplayName(name) => Some(format!(
             r#""shared_components::DisplayName": ("{}")"#,
             escape_ron_string(name)
@@ -231,7 +229,13 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
             } else {
                 let rewards_str = rewards
                     .iter()
-                    .map(|r| format!(r#"(id: "{}", value: {})"#, escape_ron_string(&r.id), r.value))
+                    .map(|r| {
+                        format!(
+                            r#"(id: "{}", value: {})"#,
+                            escape_ron_string(&r.id),
+                            r.value
+                        )
+                    })
                     .collect::<Vec<_>>()
                     .join(", ");
                 Some(format!(
@@ -269,14 +273,14 @@ fn escape_ron_string(s: &str) -> String {
 /// Returns a vector of EnemyComponent if parsing is successful.
 pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
     use regex::Regex;
-    
+
     let mut components = Vec::new();
-    
+
     // Enemy marker
     if content.contains("\"enemy_components::Enemy\"") {
         components.push(EnemyComponent::Enemy);
     }
-    
+
     // MonsterId
     let monster_id_re = Regex::new(r#""enemy_components::MonsterId":\s*\("([^"]+)"\)"#).ok()?;
     if let Some(caps) = monster_id_re.captures(content) {
@@ -296,28 +300,33 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         };
         components.push(range);
     }
-    
+
     // DisplayName
-    let display_name_re = Regex::new(r#""shared_components::DisplayName":\s*\("([^"]+)"\)"#).ok()?;
+    let display_name_re =
+        Regex::new(r#""shared_components::DisplayName":\s*\("([^"]+)"\)"#).ok()?;
     if let Some(caps) = display_name_re.captures(content) {
-        components.push(EnemyComponent::DisplayName(caps.get(1)?.as_str().to_string()));
+        components.push(EnemyComponent::DisplayName(
+            caps.get(1)?.as_str().to_string(),
+        ));
     }
-    
+
     // Health
-    let health_re = Regex::new(r#""enemy_components::Health":\s*\(current:\s*([\d.]+),\s*max:\s*([\d.]+)\)"#).ok()?;
+    let health_re =
+        Regex::new(r#""enemy_components::Health":\s*\(current:\s*([\d.]+),\s*max:\s*([\d.]+)\)"#)
+            .ok()?;
     if let Some(caps) = health_re.captures(content) {
         let current: f32 = caps.get(1)?.as_str().parse().ok()?;
         let max: f32 = caps.get(2)?.as_str().parse().ok()?;
         components.push(EnemyComponent::Health { current, max });
     }
-    
+
     // MovementSpeed
     let speed_re = Regex::new(r#""enemy_components::MovementSpeed":\s*\(([\d.]+)\)"#).ok()?;
     if let Some(caps) = speed_re.captures(content) {
         let speed: f32 = caps.get(1)?.as_str().parse().ok()?;
         components.push(EnemyComponent::MovementSpeed(speed));
     }
-    
+
     // Lifetime - extract duration secs and nanos
     let lifetime_re = Regex::new(r#"duration:\s*\(secs:\s*(\d+),\s*nanos:\s*(\d+)\)"#).ok()?;
     if let Some(caps) = lifetime_re.captures(content) {
@@ -325,7 +334,7 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         let nanos: u32 = caps.get(2)?.as_str().parse().ok()?;
         components.push(EnemyComponent::Lifetime { secs, nanos });
     }
-    
+
     // Transform
     let transform_re = Regex::new(r#""bevy_transform::components::transform::Transform":\s*\(translation:\s*\(([-\d.]+),\s*([-\d.]+),\s*([-\d.]+)\)\)"#).ok()?;
     if let Some(caps) = transform_re.captures(content) {
@@ -334,7 +343,7 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         let z: f32 = caps.get(3)?.as_str().parse().ok()?;
         components.push(EnemyComponent::Transform { x, y, z });
     }
-    
+
     // Sprite
     let sprite_re = Regex::new(r#"red:\s*([\d.]+),\s*green:\s*([\d.]+),\s*blue:\s*([\d.]+),\s*alpha:\s*([\d.]+).*?custom_size:\s*Some\(\(([\d.]+),\s*([\d.]+)\)\)"#).ok()?;
     if let Some(caps) = sprite_re.captures(content) {
@@ -344,9 +353,16 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         let a: f32 = caps.get(4)?.as_str().parse().ok()?;
         let width: f32 = caps.get(5)?.as_str().parse().ok()?;
         let height: f32 = caps.get(6)?.as_str().parse().ok()?;
-        components.push(EnemyComponent::Sprite { r, g, b, a, width, height });
+        components.push(EnemyComponent::Sprite {
+            r,
+            g,
+            b,
+            a,
+            width,
+            height,
+        });
     }
-    
+
     // ResourceRewards
     if content.contains("\"enemy_components::ResourceRewards\"") {
         let rewards_re = Regex::new(r#"\(id:\s*"([^"]+)",\s*value:\s*(\d+)\)"#).ok()?;
@@ -361,19 +377,19 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         }
         components.push(EnemyComponent::ResourceRewards(rewards));
     }
-    
+
     // RewardCoefficient
     let coeff_re = Regex::new(r#""enemy_components::RewardCoefficient":\s*\(([\d.]+)\)"#).ok()?;
     if let Some(caps) = coeff_re.captures(content) {
         let coeff: f32 = caps.get(1)?.as_str().parse().ok()?;
         components.push(EnemyComponent::RewardCoefficient(coeff));
     }
-    
+
     // NeedsHydration marker
     if content.contains("\"enemy_components::NeedsHydration\"") {
         components.push(EnemyComponent::NeedsHydration);
     }
-    
+
     if components.is_empty() {
         None
     } else {
