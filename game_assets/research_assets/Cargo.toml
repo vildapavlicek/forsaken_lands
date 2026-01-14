@@ -4,6 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy = { version = "0.17", default-features = false }
+bevy.workspace = true
 serde = { version = "1", features = ["derive"] }
-bevy_common_assets = { version = "0.12", features = ["ron"] }
+bevy_common_assets.workspace = true

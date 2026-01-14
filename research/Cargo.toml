@@ -13,3 +13,4 @@ unlocks_resources.workspace = true
 wallet.workspace = true
 system_schedule.workspace = true
 states.workspace = true
+research_assets.workspace = true
