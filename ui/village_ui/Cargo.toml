@@ -16,3 +16,4 @@ unlock_states.workspace = true
 village_components.workspace = true
 wallet.workspace = true
 widgets.workspace = true
+research_assets.workspace = true

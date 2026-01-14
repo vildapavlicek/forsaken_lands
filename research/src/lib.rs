@@ -3,14 +3,13 @@ use {
     bevy_common_assets::ron::RonAssetPlugin,
     serde::Deserialize,
     system_schedule::GameSchedule,
-    research_assets::ResearchDefinition,
 };
 
 pub mod systems;
 
+use research_assets::ResearchDefinition;
 // Re-export shared unlock states for backwards compatibility
 pub use unlock_states::{Available, Locked};
-
 
 #[derive(Reflect, Debug, Clone, Deserialize)]
 pub enum UnlockEffect {

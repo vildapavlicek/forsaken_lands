@@ -10,7 +10,8 @@ use {
     enemy_components::MonsterId,
     portal_assets::SpawnTable,
     recipes_assets::RecipeDefinition,
-    research::{ResearchCompletionCount, ResearchDefinition, ResearchMap},
+    research::ResearchMap,
+    research_assets::ResearchDefinition,
     states::{GameState, LoadingPhase},
     unlocks::{
         CompiledUnlock, TopicMap, UnlockRoot, UnlockState,

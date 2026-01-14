@@ -3081,6 +3081,7 @@ dependencies = [
  "portal_assets",
  "recipes_assets",
  "research",
+ "research_assets",
  "states",
  "unlocks",
  "unlocks_assets",
@@ -4137,6 +4138,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "research",
+ "research_assets",
  "states",
  "wallet",
  "widgets",
@@ -5045,6 +5047,7 @@ dependencies = [
  "enemy_encyclopedia",
  "recipes_assets",
  "research",
+ "research_assets",
  "research_ui",
  "states",
  "unlock_states",

@@ -2,10 +2,8 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     crafting::{Available, RecipeNode},
     recipes_assets::{RecipeCategory, RecipeDefinition},
-    research::{
-        Completed, InProgress, ResearchCompletionCount, ResearchDefinition,
-        ResearchNode,
-    },
+    research::{Completed, InProgress, ResearchCompletionCount, ResearchNode},
+    research_assets::ResearchDefinition,
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
@@ -20,11 +18,7 @@ impl Plugin for VillageUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(on_village_clicked).add_systems(
             Update,
-            (
-                handle_menu_button,
-                handle_back_button,
-                handle_close_button,
-            )
+            (handle_menu_button, handle_back_button, handle_close_button)
                 .run_if(in_state(GameState::Running)),
         );
     }
@@ -298,23 +292,16 @@ impl Command for SpawnResearchContentCommand {
             .map(|(e, n, c)| (e, n.id.clone(), c.0))
             .collect();
 
-        let mut in_progress_query = world.query::<(
-            Entity,
-            &ResearchNode,
-            &InProgress,
-            &ResearchCompletionCount,
-        )>();
+        let mut in_progress_query =
+            world.query::<(Entity, &ResearchNode, &InProgress, &ResearchCompletionCount)>();
         let in_progress_ids: Vec<(Entity, String, u32)> = in_progress_query
             .iter(world)
             .map(|(e, n, _, c)| (e, n.id.clone(), c.0))
             .collect();
 
-        let mut completed_query = world.query_filtered::<(
-            Entity,
-            &ResearchNode,
-            &ResearchCompletionCount,
-        ), With<Completed>>();
-        
+        let mut completed_query = world
+            .query_filtered::<(Entity, &ResearchNode, &ResearchCompletionCount), With<Completed>>();
+
         // Now get resources needed for research content
         let assets = world.resource::<Assets<ResearchDefinition>>();
         let wallet = world.resource::<Wallet>();
@@ -534,4 +521,3 @@ fn handle_close_button(
         }
     }
 }
-

@@ -1,9 +1,10 @@
 use {
     bevy::prelude::*,
     research::{
-        Available, Completed, InProgress, ResearchCompletionCount, ResearchDefinition,
-        ResearchMap, ResearchNode, StartResearchRequest,
+        Available, Completed, InProgress, ResearchCompletionCount, ResearchMap, ResearchNode,
+        StartResearchRequest,
     },
+    research_assets::ResearchDefinition,
     states::GameState,
     wallet::Wallet,
     widgets::{
@@ -489,17 +490,17 @@ fn update_research_ui(
 struct PopulateResearchDirectCommand {
     #[allow(clippy::type_complexity)]
     research_data: Vec<(
-        String,          // id
-        String,          // name
-        String,          // description
-        f32,             // time
-        String,          // cost_str
-        bool,            // can_afford
-        bool,            // is_completed
-        String,          // btn_text
-        Color,           // btn_color
-        Color,           // btn_border
-        Option<String>,  // progress_info
+        String,         // id
+        String,         // name
+        String,         // description
+        f32,            // time
+        String,         // cost_str
+        bool,           // can_afford
+        bool,           // is_completed
+        String,         // btn_text
+        Color,          // btn_color
+        Color,          // btn_border
+        Option<String>, // progress_info
     )>,
 }
 
@@ -623,10 +624,16 @@ fn handle_research_button(
     }
 }
 
-fn set_research_state_open(_trigger: On<Add, ResearchUiRoot>, mut state: ResMut<NextState<ResearchUiState>>) {
+fn set_research_state_open(
+    _trigger: On<Add, ResearchUiRoot>,
+    mut state: ResMut<NextState<ResearchUiState>>,
+) {
     state.set(ResearchUiState::Open);
 }
 
-fn set_research_state_closed(_trigger: On<Remove, ResearchUiRoot>, mut state: ResMut<NextState<ResearchUiState>>) {
+fn set_research_state_closed(
+    _trigger: On<Remove, ResearchUiRoot>,
+    mut state: ResMut<NextState<ResearchUiState>>,
+) {
     state.set(ResearchUiState::Closed);
 }
