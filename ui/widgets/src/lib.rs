@@ -279,6 +279,7 @@ pub fn spawn_panel_header(parent: &mut ChildSpawnerCommands, title: &str) -> Ent
 }
 
 /// Spawns a header row with title and close button in one call.
+/// The title is centered with the close button positioned on the right.
 pub fn spawn_panel_header_with_close<M: Component>(
     parent: &mut ChildSpawnerCommands,
     title: &str,
@@ -287,12 +288,21 @@ pub fn spawn_panel_header_with_close<M: Component>(
     parent
         .spawn(Node {
             display: Display::Flex,
-            justify_content: JustifyContent::SpaceBetween,
+            flex_direction: FlexDirection::Row,
             align_items: AlignItems::Center,
+            width: Val::Percent(100.0),
             margin: UiRect::bottom(Val::Px(10.0)),
             ..default()
         })
         .with_children(|header| {
+            // Left spacer to balance the close button
+            header.spawn(Node {
+                flex_grow: 1.0,
+                flex_basis: Val::Px(0.0),
+                ..default()
+            });
+
+            // Centered title
             header.spawn((
                 Text::new(title),
                 TextFont {
@@ -302,7 +312,17 @@ pub fn spawn_panel_header_with_close<M: Component>(
                 TextColor(UiTheme::TEXT_HEADER),
             ));
 
-            spawn_close_button(header, close_marker);
+            // Right spacer containing the close button
+            header
+                .spawn(Node {
+                    flex_grow: 1.0,
+                    flex_basis: Val::Px(0.0),
+                    justify_content: JustifyContent::FlexEnd,
+                    ..default()
+                })
+                .with_children(|right| {
+                    spawn_close_button(right, close_marker);
+                });
         });
 }
 
