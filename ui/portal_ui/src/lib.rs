@@ -1,12 +1,10 @@
 use {
     bevy::{picking::events::Click, prelude::*},
-    divinity_components::{Divinity, DivinityStats},
-    divinity_events::IncreaseDivinity,
+    divinity_components::{Divinity, MaxUnlockedDivinity},
     portal_components::Portal,
     states::GameState,
-    wallet::Wallet,
     widgets::{
-        PanelWrapperRef, UiTheme, spawn_action_button, spawn_item_card, spawn_menu_panel,
+        PanelWrapperRef, UiTheme, spawn_menu_panel,
         spawn_panel_header_with_close,
     },
 };
@@ -19,7 +17,7 @@ impl Plugin for PortalUiPlugin {
             Update,
             (
                 update_portal_ui,
-                handle_level_up_button,
+                handle_tier_navigation,
                 handle_close_button,
             )
                 .run_if(in_state(GameState::Running)),
@@ -37,21 +35,23 @@ struct PortalUiRoot {
 }
 
 #[derive(Component)]
-struct PortalDivinityText;
+struct CurrentDivinityText;
 
 #[derive(Component)]
-struct PortalCostText;
+struct MaxDivinityText;
 
 #[derive(Component)]
-struct LevelUpButton {
+struct DecreaseTierButton {
+    portal_entity: Entity,
+}
+
+#[derive(Component)]
+struct IncreaseTierButton {
     portal_entity: Entity,
 }
 
 #[derive(Component)]
 struct PortalCloseButton;
-
-#[derive(Component)]
-struct DivinityCard;
 
 // ============================================================================
 // Portal Click Observer
@@ -94,62 +94,113 @@ fn spawn_portal_ui(commands: &mut Commands, portal_entity: Entity) {
 
     commands.entity(panel_entity).with_children(|parent| {
         // Header with close button
-        spawn_panel_header_with_close(parent, "Portal", PortalCloseButton);
+        spawn_panel_header_with_close(parent, "Portal Menu", PortalCloseButton);
 
-        // Divinity Card
-        let card = spawn_item_card(parent, DivinityCard);
-        parent.commands().entity(card).with_children(|card_parent| {
-            card_parent.spawn((
-                Text::new("Divinity"),
-                TextFont {
-                    font_size: 18.0,
-                    ..default()
-                },
-                TextColor(UiTheme::TEXT_HEADER),
-                Node {
-                    margin: UiRect::bottom(Val::Px(10.0)),
-                    ..default()
-                },
-            ));
-
-            // Divinity level text
-            card_parent.spawn((
-                Text::new("Tier - Level -"),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-                TextColor(Color::WHITE),
-                PortalDivinityText,
-            ));
-
-            // Cost text
-            card_parent.spawn((
-                Text::new("Cost: - / - xikegos"),
-                TextFont {
-                    font_size: 14.0,
-                    ..default()
-                },
-                TextColor(UiTheme::TEXT_INFO),
-                PortalCostText,
-                Node {
-                    margin: UiRect {
-                        top: Val::Px(5.0),
-                        bottom: Val::Px(10.0),
+        // Tier navigation row: [<] Tier X - Level Y [>]
+        parent
+            .spawn(Node {
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                width: Val::Percent(100.0),
+                padding: UiRect::vertical(Val::Px(15.0)),
+                column_gap: Val::Px(15.0),
+                ..default()
+            })
+            .with_children(|row| {
+                // Decrease button [<]
+                row.spawn((
+                    Button,
+                    Node {
+                        width: Val::Px(40.0),
+                        height: Val::Px(40.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        border: UiRect::all(Val::Px(2.0)),
                         ..default()
                     },
-                    ..default()
-                },
-            ));
+                    BorderColor::all(UiTheme::CARD_BORDER),
+                    BackgroundColor(UiTheme::BUTTON_NORMAL),
+                    DecreaseTierButton { portal_entity },
+                ))
+                .with_child((
+                    Text::new("<"),
+                    TextFont {
+                        font_size: 20.0,
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                ));
 
-            spawn_action_button(
-                card_parent,
-                "Level Up",
-                Color::WHITE,
-                UiTheme::BORDER_DISABLED,
-                LevelUpButton { portal_entity },
-            );
-        });
+                // Current tier/level text
+                row.spawn((
+                    Text::new("Tier 1 - Level 1"),
+                    TextFont {
+                        font_size: 18.0,
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    CurrentDivinityText,
+                ));
+
+                // Increase button [>]
+                row.spawn((
+                    Button,
+                    Node {
+                        width: Val::Px(40.0),
+                        height: Val::Px(40.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        border: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    BorderColor::all(UiTheme::CARD_BORDER),
+                    BackgroundColor(UiTheme::BUTTON_NORMAL),
+                    IncreaseTierButton { portal_entity },
+                ))
+                .with_child((
+                    Text::new(">"),
+                    TextFont {
+                        font_size: 20.0,
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                ));
+            });
+
+        // Max tier available section
+        parent
+            .spawn(Node {
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                width: Val::Percent(100.0),
+                padding: UiRect::vertical(Val::Px(10.0)),
+                ..default()
+            })
+            .with_children(|col| {
+                col.spawn((
+                    Text::new("Max tier available:"),
+                    TextFont {
+                        font_size: 14.0,
+                        ..default()
+                    },
+                    TextColor(UiTheme::TEXT_INFO),
+                ));
+
+                col.spawn((
+                    Text::new("Tier 1 - Level 1"),
+                    TextFont {
+                        font_size: 16.0,
+                        ..default()
+                    },
+                    TextColor(Color::WHITE),
+                    MaxDivinityText,
+                    Node {
+                        margin: UiRect::top(Val::Px(5.0)),
+                        ..default()
+                    },
+                ));
+            });
     });
 }
 
@@ -176,140 +227,72 @@ fn handle_close_button(
     }
 }
 
-/// Context for recursive UI update
-struct UpdateContext {
-    divinity: Divinity,
-    have: u32,
-    cost: u32,
-    can_afford: bool,
-}
-
 fn update_portal_ui(
-    wallet: Res<Wallet>,
-    portal_query: Query<(&Divinity, &DivinityStats), With<Portal>>,
-    ui_query: Query<(Entity, &PortalUiRoot)>,
-    mut text_query: Query<(
-        &mut Text,
-        Option<&PortalDivinityText>,
-        Option<&PortalCostText>,
-    )>,
-    mut color_query: Query<&mut TextColor>,
-    mut border_query: Query<&mut BorderColor, With<LevelUpButton>>,
-    children_query: Query<&Children>,
+    portal_query: Query<(&Divinity, &MaxUnlockedDivinity), With<Portal>>,
+    ui_query: Query<&PortalUiRoot>,
+    mut current_text_query: Query<&mut Text, (With<CurrentDivinityText>, Without<MaxDivinityText>)>,
+    mut max_text_query: Query<&mut Text, (With<MaxDivinityText>, Without<CurrentDivinityText>)>,
 ) {
-    for (ui_entity, ui_root) in ui_query.iter() {
-        let Ok((divinity, stats)) = portal_query.get(ui_root.portal_entity) else {
+    for ui_root in ui_query.iter() {
+        let Ok((divinity, max_divinity)) = portal_query.get(ui_root.portal_entity) else {
             continue;
         };
 
-        let cost = (stats.required_xp / 10.0).ceil() as u32;
-        let have = wallet.resources.get("xikegos").copied().unwrap_or(0);
-        let can_afford = have >= cost;
+        // Update current divinity text
+        for mut text in current_text_query.iter_mut() {
+            text.0 = format!("Tier {} - Level {}", divinity.tier, divinity.level);
+        }
 
-        let ctx = UpdateContext {
-            divinity: divinity.clone(),
-            have,
-            cost,
-            can_afford,
-        };
-
-        update_children_recursive(
-            ui_entity,
-            &ctx,
-            &children_query,
-            &mut text_query,
-            &mut color_query,
-            &mut border_query,
-        );
+        // Update max divinity text
+        for mut text in max_text_query.iter_mut() {
+            text.0 = format!("Tier {} - Level {}", max_divinity.0.tier, max_divinity.0.level);
+        }
     }
 }
 
 #[allow(clippy::type_complexity)]
-fn update_children_recursive(
-    entity: Entity,
-    ctx: &UpdateContext,
-    children_query: &Query<&Children>,
-    text_query: &mut Query<(
-        &mut Text,
-        Option<&PortalDivinityText>,
-        Option<&PortalCostText>,
-    )>,
-    color_query: &mut Query<&mut TextColor>,
-    border_query: &mut Query<&mut BorderColor, With<LevelUpButton>>,
+fn handle_tier_navigation(
+    mut portal_query: Query<(&mut Divinity, &MaxUnlockedDivinity), With<Portal>>,
+    decrease_query: Query<(&Interaction, &DecreaseTierButton), (Changed<Interaction>, With<Button>)>,
+    increase_query: Query<(&Interaction, &IncreaseTierButton), (Changed<Interaction>, With<Button>)>,
 ) {
-    if let Ok((mut text, is_div, is_cost)) = text_query.get_mut(entity) {
-        if is_div.is_some() {
-            text.0 = format!("Tier {} Level {}", ctx.divinity.tier, ctx.divinity.level);
-        } else if is_cost.is_some() {
-            text.0 = format!("Cost: {} / {} xikegos", ctx.have, ctx.cost);
-            if let Ok(mut color) = color_query.get_mut(entity) {
-                color.0 = if ctx.can_afford {
-                    UiTheme::AFFORDABLE
-                } else {
-                    UiTheme::NOT_AFFORDABLE
-                };
+    // Handle decrease button
+    for (interaction, btn) in decrease_query.iter() {
+        if *interaction == Interaction::Pressed {
+            if let Ok((mut divinity, _)) = portal_query.get_mut(btn.portal_entity) {
+                // Decrease level, wrapping to previous tier if needed
+                if divinity.level > 1 {
+                    divinity.level -= 1;
+                } else if divinity.tier > 1 {
+                    divinity.tier -= 1;
+                    divinity.level = divinity_components::MAX_LEVEL;
+                }
+                // If already at tier 1 level 1, do nothing
             }
         }
     }
 
-    if let Ok(mut border) = border_query.get_mut(entity) {
-        *border = BorderColor::all(if ctx.can_afford {
-            UiTheme::BORDER_SUCCESS
-        } else {
-            UiTheme::BORDER_ERROR
-        });
-
-        if let Ok(mut text_color) = color_query.get_mut(entity) {
-            text_color.0 = if ctx.can_afford {
-                Color::WHITE
-            } else {
-                UiTheme::BORDER_DISABLED
-            };
-        }
-    }
-
-    if let Ok(children) = children_query.get(entity) {
-        for child in children.iter() {
-            update_children_recursive(
-                child,
-                ctx,
-                children_query,
-                text_query,
-                color_query,
-                border_query,
-            );
-        }
-    }
-}
-
-#[allow(clippy::type_complexity)]
-fn handle_level_up_button(
-    mut commands: Commands,
-    mut wallet: ResMut<Wallet>,
-    portal_query: Query<&DivinityStats, With<Portal>>,
-    interaction_query: Query<(&Interaction, &LevelUpButton), (Changed<Interaction>, With<Button>)>,
-) {
-    for (interaction, btn) in interaction_query.iter() {
-        if *interaction == Interaction::Pressed
-            && btn.portal_entity != Entity::PLACEHOLDER
-            && let Ok(stats) = portal_query.get(btn.portal_entity)
-        {
-            let cost = (stats.required_xp / 10.0).ceil() as u32;
-            let have = wallet.resources.get("xikegos").copied().unwrap_or(0);
-
-            if have >= cost {
-                // Deduct xikegos
-                if let Some(res) = wallet.resources.get_mut("xikegos") {
-                    *res -= cost;
+    // Handle increase button
+    for (interaction, btn) in increase_query.iter() {
+        if *interaction == Interaction::Pressed {
+            if let Ok((mut divinity, max_divinity)) = portal_query.get_mut(btn.portal_entity) {
+                // Only allow increase up to max unlocked divinity
+                let current = *divinity;
+                let max = max_divinity.0;
+                
+                if current < max {
+                    if divinity.level < divinity_components::MAX_LEVEL {
+                        divinity.level += 1;
+                    } else {
+                        divinity.tier += 1;
+                        divinity.level = 1;
+                    }
+                    
+                    // Clamp to max
+                    if *divinity > max {
+                        *divinity = max;
+                    }
                 }
-
-                // Add XP
-                commands.trigger(IncreaseDivinity {
-                    entity: btn.portal_entity,
-                    xp_amount: stats.required_xp, // Exactly enough to level up
-                });
-
-                info!("Portal Leveled Up! Spent {} xikegos", cost);
             }
         }
     }
