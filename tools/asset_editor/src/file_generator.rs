@@ -28,6 +28,7 @@ pub fn generate_research_ron(data: &ResearchFormData) -> String {
     ron.push_str(" },\n");
 
     ron.push_str(&format!("    time_required: {},\n", data.time_required));
+    ron.push_str(&format!("    max_repeats: {},\n", data.max_repeats));
     ron.push_str(")\n");
 
     ron
@@ -153,7 +154,7 @@ pub fn save_recipe_unlock_file(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{ResourceCost, UnlockConditionTemplate};
+    use crate::models::{LeafCondition, ResourceCost, UnlockCondition};
 
     #[test]
     fn test_generate_research_ron() {
@@ -166,7 +167,8 @@ mod tests {
                 amount: 10,
             }],
             time_required: 30.0,
-            unlock_condition: UnlockConditionTemplate::AlwaysAvailable,
+            max_repeats: 5,
+            unlock_condition: UnlockCondition::True,
         };
 
         let ron = generate_research_ron(&data);
@@ -174,6 +176,7 @@ mod tests {
         assert!(ron.contains("name: \"Test Research\""));
         assert!(ron.contains("\"bones\": 10"));
         assert!(ron.contains("time_required: 30"));
+        assert!(ron.contains("max_repeats: 5"));
     }
 
     #[test]
@@ -184,7 +187,10 @@ mod tests {
             description: "A test description".to_string(),
             costs: vec![],
             time_required: 30.0,
-            unlock_condition: UnlockConditionTemplate::AfterResearch("bone_crafting".to_string()),
+            max_repeats: 1,
+            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock {
+                id: "bone_crafting".to_string(),
+            }),
         };
 
         let ron = generate_unlock_ron(&data);

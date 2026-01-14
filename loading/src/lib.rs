@@ -10,7 +10,7 @@ use {
     enemy_components::MonsterId,
     portal_assets::SpawnTable,
     recipes_assets::RecipeDefinition,
-    research::{ResearchDefinition, ResearchMap},
+    research::{ResearchCompletionCount, ResearchDefinition, ResearchMap},
     states::{GameState, LoadingPhase},
     unlocks::{
         CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
@@ -255,6 +255,7 @@ fn spawn_all_entities(
                         handle,
                     },
                     research::Available,
+                    research::ResearchCompletionCount(0),
                 ))
                 .id()
         } else {
@@ -265,6 +266,7 @@ fn spawn_all_entities(
                         handle,
                     },
                     research::Locked,
+                    research::ResearchCompletionCount(0),
                 ))
                 .id()
         };

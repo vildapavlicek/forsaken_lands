@@ -295,6 +295,16 @@ impl EditorState {
                     .speed(1.0),
             );
             ui.label("seconds");
+
+            ui.add_space(20.0);
+
+            ui.label("Max Repeats:");
+            ui.add(
+                egui::DragValue::new(&mut self.research_form.max_repeats)
+                    .range(1..=1000)
+                    .speed(1.0),
+            );
+            ui.small("(1 = one-time)");
         });
         ui.add_space(8.0);
 

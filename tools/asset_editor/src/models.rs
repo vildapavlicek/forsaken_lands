@@ -256,6 +256,8 @@ pub struct ResearchFormData {
     pub costs: Vec<ResourceCost>,
     /// Time required in seconds
     pub time_required: f32,
+    /// Maximum times this research can be completed
+    pub max_repeats: u32,
     /// Unlock condition
     pub unlock_condition: UnlockCondition,
 }
@@ -272,6 +274,7 @@ impl ResearchFormData {
                 amount: 10,
             }],
             time_required: 30.0,
+            max_repeats: 1,
             unlock_condition: UnlockCondition::True,
         }
     }
@@ -323,6 +326,9 @@ impl ResearchFormData {
         }
         if self.time_required <= 0.0 {
             errors.push("Time required must be greater than 0".to_string());
+        }
+        if self.max_repeats == 0 {
+            errors.push("Max repeats must be at least 1".to_string());
         }
 
         // Validate unlock condition
