@@ -153,6 +153,8 @@
 
 pub mod compiler;
 mod systems;
+#[cfg(test)]
+mod tests;
 
 use {bevy::prelude::*, systems::*};
 pub use {unlocks_components::*, unlocks_events::*, unlocks_resources::*};
@@ -169,7 +171,7 @@ impl Plugin for UnlocksPlugin {
             .register_type::<UnlockState>()
             .register_type::<TopicSubscribers>()
             // Systems for compilation and change detection
-            .add_systems(Update, check_wallet_changes)
+            .add_systems(Update, (check_wallet_changes, check_max_divinity_changes))
             // Observers for gate logic and event interception
             .add_observer(propagate_logic_signal)
             .add_observer(handle_unlock_completion)
@@ -179,6 +181,7 @@ impl Plugin for UnlocksPlugin {
             .add_observer(on_stat_changed)
             .add_observer(on_resource_changed)
             .add_observer(on_unlock_topic_updated)
-            .add_observer(cleanup_finished_unlock);
+            .add_observer(cleanup_finished_unlock)
+            .add_observer(on_max_divinity_changed);
     }
 }

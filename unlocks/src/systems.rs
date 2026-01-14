@@ -1,6 +1,7 @@
 use {
     crate::compiler::*,
     bevy::prelude::*,
+    divinity_components::*,
     enemy_components::MonsterId,
     hero_events::EnemyKilled,
     unlocks_assets::*,
@@ -22,14 +23,17 @@ pub fn compile_pending_unlocks(
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     unlock_state: Res<UnlockState>,
+    max_divinity_query: Query<&MaxUnlockedDivinity, With<portal_components::Portal>>,
     compiled: Query<&CompiledUnlock>,
 ) {
     let encyclopedia = encyclopedia_query.single().ok();
+    let max_divinity = max_divinity_query.iter().next();
 
     let ctx = CompilerContext {
         wallet: &wallet,
         encyclopedia,
         unlock_state: &unlock_state,
+        max_divinity,
     };
 
     // Collect already-compiled IDs for filtering
@@ -370,6 +374,55 @@ pub fn cleanup_finished_unlock(
             debug!(unlock_id = %unlock_id, "cleaned up finished unlock");
             commands.entity(entity).despawn();
             break;
+        }
+    }
+}
+
+/// System that checks for MaxUnlockedDivinity changes and emits signal.
+pub fn check_max_divinity_changes(
+    query: Query<(Entity, &MaxUnlockedDivinity), Changed<MaxUnlockedDivinity>>,
+    mut topic_map: ResMut<TopicMap>,
+    mut commands: Commands,
+) {
+    for (_entity, max_divinity) in &query {
+        let topic_key = "stat:max_unlocked_divinity".to_string();
+        let topic_entity = topic_map.get_or_create(&mut commands, &topic_key);
+
+        commands.trigger(MaxUnlockedDivinityChangedEvent {
+            entity: topic_entity,
+            new_divinity: max_divinity.0,
+        });
+    }
+}
+
+/// Observer that updates MaxUnlockedDivinity sensors when the value changes.
+pub fn on_max_divinity_changed(
+    trigger: On<MaxUnlockedDivinityChangedEvent>,
+    subscribers: Query<&TopicSubscribers>,
+    mut sensors: Query<(
+        Entity,
+        &mut ConditionSensor,
+        &MaxUnlockedDivinitySensor,
+    )>,
+    mut commands: Commands,
+) {
+    let event = trigger.event();
+    let topic_entity = event.entity;
+
+    if let Ok(subs) = subscribers.get(topic_entity) {
+        for &sensor_entity in &subs.sensors {
+            if let Ok((entity, mut condition, divinity_sensor)) = sensors.get_mut(sensor_entity)
+            {
+                let is_met = event.new_divinity >= divinity_sensor.0;
+
+                if condition.is_met != is_met {
+                    condition.is_met = is_met;
+                    commands.entity(entity).trigger(|e| LogicSignalEvent {
+                        entity: e,
+                        is_high: is_met,
+                    });
+                }
+            }
         }
     }
 }

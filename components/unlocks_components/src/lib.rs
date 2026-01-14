@@ -55,6 +55,9 @@ pub struct ResourceSensor(pub ResourceCheck);
 #[derive(Component)]
 pub struct UnlockSensor(pub String);
 
+#[derive(Component)]
+pub struct MaxUnlockedDivinitySensor(pub divinity_components::Divinity);
+
 /// Tracks which unlock definitions have been compiled.
 #[derive(Component)]
 pub struct CompiledUnlock {

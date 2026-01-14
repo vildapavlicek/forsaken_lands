@@ -1,8 +1,8 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
 use {
-    bevy::prelude::*, unlocks_assets::*, unlocks_components::*, unlocks_events::*,
-    unlocks_resources::*, village_components::EnemyEncyclopedia, wallet::Wallet,
+    bevy::prelude::*, divinity_components::*, unlocks_assets::*, unlocks_components::*,
+    unlocks_events::*, unlocks_resources::*, village_components::EnemyEncyclopedia, wallet::Wallet,
 };
 
 /// Compares values using the specified operator.
@@ -21,6 +21,7 @@ pub struct CompilerContext<'a> {
     pub wallet: &'a Wallet,
     pub encyclopedia: Option<&'a EnemyEncyclopedia>,
     pub unlock_state: &'a UnlockState,
+    pub max_divinity: Option<&'a MaxUnlockedDivinity>,
 }
 
 pub struct AddTopicSubscriber {
@@ -187,6 +188,37 @@ pub fn build_condition_node(
                         is_met: initially_met,
                     },
                     UnlockSensor(unlock_id.clone()),
+                ))
+                .id();
+
+            commands.queue(AddTopicSubscriber {
+                topic: topic_entity,
+                sensor,
+            });
+
+            if initially_met {
+                commands.entity(sensor).trigger(|entity| LogicSignalEvent {
+                    entity,
+                    is_high: true,
+                });
+            }
+
+            sensor
+        }
+        ConditionNode::PortalsMaxUnlockedDivinity(required_divinity) => {
+            let topic_key = "stat:max_unlocked_divinity".to_string();
+            let topic_entity = topic_map.get_or_create(commands, &topic_key);
+
+            let current_divinity = ctx.max_divinity.map(|d| d.0).unwrap_or_default();
+            let initially_met = current_divinity >= *required_divinity;
+
+            let sensor = commands
+                .spawn((
+                    ChildOf(parent),
+                    ConditionSensor {
+                        is_met: initially_met,
+                    },
+                    MaxUnlockedDivinitySensor(*required_divinity),
                 ))
                 .id();
 

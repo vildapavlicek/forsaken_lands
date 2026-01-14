@@ -8,6 +8,7 @@ bevy.workspace = true
 crafting.workspace = true
 crafting_resources.workspace = true
 enemy_components.workspace = true
+divinity_components.workspace = true
 portal_assets.workspace = true
 recipes_assets.workspace = true
 research.workspace = true

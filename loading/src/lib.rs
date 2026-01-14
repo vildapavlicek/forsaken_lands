@@ -6,6 +6,7 @@ use {
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,
+    divinity_components::MaxUnlockedDivinity,
     enemy_components::MonsterId,
     portal_assets::SpawnTable,
     recipes_assets::RecipeDefinition,
@@ -293,6 +294,7 @@ fn compile_unlocks(
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     unlock_state: Res<UnlockState>,
+    max_divinity_query: Query<&MaxUnlockedDivinity>,
     compiled: Query<&CompiledUnlock>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
@@ -301,11 +303,13 @@ fn compile_unlocks(
     status.detail = "Building logic graphs...".into();
 
     let encyclopedia = encyclopedia_query.single().ok();
+    let max_divinity = max_divinity_query.iter().next();
 
     let ctx = CompilerContext {
         wallet: &wallet,
         encyclopedia,
         unlock_state: &unlock_state,
+        max_divinity,
     };
 
     let compiled_ids: std::collections::HashSet<_> =

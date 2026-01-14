@@ -49,3 +49,12 @@ pub struct UnlockTopicUpdated {
     pub entity: Entity,
     pub unlock_id: String,
 }
+
+/// Triggered on a Topic Entity when MaxUnlockedDivinity changes.
+#[derive(EntityEvent)]
+pub struct MaxUnlockedDivinityChangedEvent {
+    /// The topic entity this event targets.
+    #[event_target]
+    pub entity: Entity,
+    pub new_divinity: divinity_components::Divinity,
+}

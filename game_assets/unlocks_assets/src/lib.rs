@@ -46,4 +46,6 @@ pub enum ConditionNode {
     Resource(ResourceCheck),
     /// Checks if a specific research/recipe is already unlocked.
     Unlock(String),
+    /// Checks if the portal's max unlocked divinity is at least this high.
+    PortalsMaxUnlockedDivinity(divinity_components::Divinity),
 }
