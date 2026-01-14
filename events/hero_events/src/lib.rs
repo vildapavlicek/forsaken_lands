@@ -38,11 +38,22 @@ impl Default for AttackIntent {
     }
 }
 
+/// Represents a successful collision between a projectile and a target.
+///
+/// This **Observer** event (triggered via `commands.trigger`) decouples the physics/collision
+/// detection from the gameplay effects (damage application).
+///
+/// # Observers
+/// - `apply_damage_system`: Reduces health of the `target`.
 #[derive(Event, Reflect)]
 #[reflect(Default)]
 pub struct ProjectileHit {
+    /// The projectile entity that made contact.
+    /// Note: This entity is typically despawned immediately after this event is triggered.
     pub projectile: Entity,
+    /// The entity that was hit.
     pub target: Entity,
+    /// The raw damage amount to apply to the target.
     pub damage: f32,
 }
 
