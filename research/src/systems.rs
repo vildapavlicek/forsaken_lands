@@ -1,7 +1,7 @@
 use {
     crate::{
-        Available, Completed, InProgress, Locked, ResearchCompleted, ResearchDefinition,
-        ResearchMap, ResearchNode, StartResearchRequest,
+        Available, Completed, InProgress, Locked, ResearchCompleted, ResearchCompletionCount,
+        ResearchDefinition, ResearchMap, ResearchNode, StartResearchRequest,
     },
     bevy::prelude::*,
     unlocks_resources::UnlockState,
@@ -59,6 +59,7 @@ pub fn spawn_research_entities(
                         handle,
                     },
                     Available,
+                    ResearchCompletionCount(0),
                 ))
                 .id()
         } else {
@@ -69,6 +70,7 @@ pub fn spawn_research_entities(
                         handle,
                     },
                     Locked,
+                    ResearchCompletionCount(0),
                 ))
                 .id()
         };
@@ -105,23 +107,52 @@ pub fn on_unlock_achieved(
     }
 }
 
-/// Ticks timers for in-progress research
+/// Ticks timers for in-progress research and handles completion/repeat logic.
 pub fn update_research_progress(
     time: Res<Time>,
+    assets: Res<Assets<ResearchDefinition>>,
     mut commands: Commands,
-    mut query: Query<(Entity, &ResearchNode, &mut InProgress)>,
+    mut query: Query<(Entity, &ResearchNode, &mut InProgress, &mut ResearchCompletionCount)>,
 ) {
-    for (entity, node, mut progress) in query.iter_mut() {
+    for (entity, node, mut progress, mut count) in query.iter_mut() {
         progress.timer.tick(time.delta());
         if progress.timer.just_finished() {
-            commands
-                .entity(entity)
-                .remove::<InProgress>()
-                .insert(Completed);
+            // Increment completion count
+            count.0 += 1;
+            let current_count = count.0;
+
+            // Always trigger completion event (for effects/bonuses)
             commands.trigger(ResearchCompleted {
                 research_id: node.id.clone(),
             });
-            info!("Research completed: {}", node.id);
+
+            // Check max_repeats from definition
+            let max_repeats = assets
+                .get(&node.handle)
+                .map(|def| def.max_repeats)
+                .unwrap_or(1);
+
+            if current_count >= max_repeats {
+                // Fully completed - no more repeats
+                commands
+                    .entity(entity)
+                    .remove::<InProgress>()
+                    .insert(Completed);
+                info!(
+                    "Research fully completed: {} ({}/{})",
+                    node.id, current_count, max_repeats
+                );
+            } else {
+                // More repeats available - back to Available
+                commands
+                    .entity(entity)
+                    .remove::<InProgress>()
+                    .insert(Available);
+                info!(
+                    "Research completed iteration: {} ({}/{})",
+                    node.id, current_count, max_repeats
+                );
+            }
         }
     }
 }

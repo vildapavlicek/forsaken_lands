@@ -5,7 +5,7 @@
     reward_id: "research_invaders",
     condition: And([
         Stat(Kills(
-            monster_id: "goblin",
+            monster_id: "goblin_scout",
             value: 5.0,
             op: Ge,
         )),

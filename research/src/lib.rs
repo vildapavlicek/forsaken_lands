@@ -19,6 +19,13 @@ pub struct ResearchDefinition {
     pub description: String,
     pub cost: HashMap<String, u32>,
     pub time_required: f32,
+    /// Maximum times this research can be completed. Default is 1 (one-time).
+    #[serde(default = "default_max_repeats")]
+    pub max_repeats: u32,
+}
+
+fn default_max_repeats() -> u32 {
+    1
 }
 
 #[derive(Reflect, Debug, Clone, Deserialize)]
@@ -36,13 +43,18 @@ pub struct ResearchNode {
     pub handle: Handle<ResearchDefinition>,
 }
 
+/// Tracks how many times a repeatable research has been completed.
+#[derive(Component, Default, Reflect)]
+#[reflect(Component)]
+pub struct ResearchCompletionCount(pub u32);
+
 /// Currently being researched
 #[derive(Component)]
 pub struct InProgress {
     pub timer: Timer,
 }
 
-/// Research completed
+/// Research completed (all repeats exhausted)
 #[derive(Component)]
 pub struct Completed;
 
@@ -73,6 +85,7 @@ impl Plugin for ResearchPlugin {
         app.add_plugins(RonAssetPlugin::<ResearchDefinition>::new(&["research.ron"]))
             .init_resource::<ResearchMap>()
             .register_type::<UnlockEffect>()
+            .register_type::<ResearchCompletionCount>()
             .add_systems(
                 Update,
                 systems::update_research_progress

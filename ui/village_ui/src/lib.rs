@@ -2,7 +2,9 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     crafting::{Available, RecipeNode},
     recipes_assets::{RecipeCategory, RecipeDefinition},
-    research::{Completed, InProgress, ResearchDefinition, ResearchNode},
+    research::{
+        Completed, InProgress, ResearchCompletionCount, ResearchDefinition, ResearchNode,
+    },
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
@@ -281,24 +283,35 @@ impl Command for SpawnResearchContentCommand {
         }
 
         // Query research entities by state FIRST - collect into owned data
-        let mut available_query =
-            world.query_filtered::<(Entity, &ResearchNode), With<research::Available>>();
-        let available_ids: Vec<(Entity, String)> = available_query
+        let mut available_query = world.query_filtered::<(
+            Entity,
+            &ResearchNode,
+            &ResearchCompletionCount,
+        ), With<research::Available>>();
+        let available_ids: Vec<(Entity, String, u32)> = available_query
             .iter(world)
-            .map(|(e, n)| (e, n.id.clone()))
+            .map(|(e, n, c)| (e, n.id.clone(), c.0))
             .collect();
 
-        let mut in_progress_query = world.query::<(Entity, &ResearchNode, &InProgress)>();
-        let in_progress_ids: Vec<(Entity, String)> = in_progress_query
+        let mut in_progress_query = world.query::<(
+            Entity,
+            &ResearchNode,
+            &InProgress,
+            &ResearchCompletionCount,
+        )>();
+        let in_progress_ids: Vec<(Entity, String, u32)> = in_progress_query
             .iter(world)
-            .map(|(e, n, _)| (e, n.id.clone()))
+            .map(|(e, n, _, c)| (e, n.id.clone(), c.0))
             .collect();
 
-        let mut completed_query =
-            world.query_filtered::<(Entity, &ResearchNode), With<Completed>>();
-        let completed_ids: Vec<(Entity, String)> = completed_query
+        let mut completed_query = world.query_filtered::<(
+            Entity,
+            &ResearchNode,
+            &ResearchCompletionCount,
+        ), With<Completed>>();
+        let completed_ids: Vec<(Entity, String, u32)> = completed_query
             .iter(world)
-            .map(|(e, n)| (e, n.id.clone()))
+            .map(|(e, n, c)| (e, n.id.clone(), c.0))
             .collect();
 
         // Now get resources needed for research content
@@ -309,7 +322,7 @@ impl Command for SpawnResearchContentCommand {
         let mut items = Vec::new();
 
         // Available research
-        for (_, id) in &available_ids {
+        for (_, id, count) in &available_ids {
             if let Some((_handle, def)) = assets.iter().find(|(_, d)| &d.id == id) {
                 let mut can_afford = true;
                 let mut cost_str = String::from("Cost: ");
@@ -320,6 +333,13 @@ impl Command for SpawnResearchContentCommand {
                         can_afford = false;
                     }
                 }
+
+                // Build progress info for repeatable research
+                let progress_info = if def.max_repeats > 1 {
+                    Some(format!("{}/{}", count, def.max_repeats))
+                } else {
+                    None
+                };
 
                 items.push(research_ui::ResearchDisplayData {
                     id: id.clone(),
@@ -344,13 +364,21 @@ impl Command for SpawnResearchContentCommand {
                     } else {
                         widgets::UiTheme::BORDER_DISABLED
                     },
+                    progress_info,
                 });
             }
         }
 
         // In-progress research
-        for (_, id) in &in_progress_ids {
+        for (_, id, count) in &in_progress_ids {
             if let Some((_handle, def)) = assets.iter().find(|(_, d)| &d.id == id) {
+                // Build progress info for repeatable research
+                let progress_info = if def.max_repeats > 1 {
+                    Some(format!("{}/{}", count, def.max_repeats))
+                } else {
+                    None
+                };
+
                 items.push(research_ui::ResearchDisplayData {
                     id: id.clone(),
                     name: def.name.clone(),
@@ -362,6 +390,7 @@ impl Command for SpawnResearchContentCommand {
                     btn_text: "Researching...".to_string(),
                     btn_color: widgets::UiTheme::TEXT_INFO,
                     btn_border: bevy::color::Color::srgba(0.4, 0.4, 1.0, 1.0),
+                    progress_info,
                 });
             }
         }

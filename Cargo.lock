@@ -3076,6 +3076,7 @@ dependencies = [
  "bevy",
  "crafting",
  "crafting_resources",
+ "divinity_components",
  "enemy_components",
  "portal_assets",
  "recipes_assets",
@@ -4908,8 +4909,10 @@ name = "unlocks"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "divinity_components",
  "enemy_components",
  "hero_events",
+ "portal_components",
  "research",
  "serde",
  "states",
@@ -4927,6 +4930,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
+ "divinity_components",
  "serde",
  "unlocks_components",
 ]
@@ -4937,6 +4941,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
+ "divinity_components",
  "serde",
 ]
 
@@ -4945,6 +4950,7 @@ name = "unlocks_events"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "divinity_components",
 ]
 
 [[package]]
