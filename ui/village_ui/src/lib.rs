@@ -3,7 +3,7 @@ use {
     crafting::{Available, RecipeNode},
     recipes_assets::{RecipeCategory, RecipeDefinition},
     research::{
-        Completed, InProgress, ResearchCompletionCount, ResearchDefinition, ResearchMap,
+        Completed, InProgress, ResearchCompletionCount, ResearchDefinition,
         ResearchNode,
     },
     states::{EnemyEncyclopediaState, GameState},
@@ -24,7 +24,6 @@ impl Plugin for VillageUiPlugin {
                 handle_menu_button,
                 handle_back_button,
                 handle_close_button,
-                update_village_research_ui,
             )
                 .run_if(in_state(GameState::Running)),
         );
@@ -315,11 +314,7 @@ impl Command for SpawnResearchContentCommand {
             &ResearchNode,
             &ResearchCompletionCount,
         ), With<Completed>>();
-        let completed_ids: Vec<(Entity, String, u32)> = completed_query
-            .iter(world)
-            .map(|(e, n, c)| (e, n.id.clone(), c.0))
-            .collect();
-
+        
         // Now get resources needed for research content
         let assets = world.resource::<Assets<ResearchDefinition>>();
         let wallet = world.resource::<Wallet>();
@@ -540,43 +535,3 @@ fn handle_close_button(
     }
 }
 
-// ============================================================================
-// Update Village Research UI
-// ============================================================================
-
-fn update_village_research_ui(
-    mut commands: Commands,
-    ui_query: Query<&VillageUiRoot>,
-    wallet: Res<Wallet>,
-    research_map: Res<ResearchMap>,
-    mut removed_available: RemovedComponents<research::Available>,
-    mut removed_in_progress: RemovedComponents<research::InProgress>,
-    mut removed_completed: RemovedComponents<research::Completed>,
-    added_available: Query<(), Added<research::Available>>,
-    added_in_progress: Query<(), Added<research::InProgress>>,
-    added_completed: Query<(), Added<research::Completed>>,
-    changed_count: Query<(), Changed<ResearchCompletionCount>>,
-) {
-    let Ok(ui_root) = ui_query.single() else {
-        return;
-    };
-
-    // Only update if currently showing research
-    if ui_root.content != VillageContent::Research {
-        return;
-    }
-
-    // Check for changes
-    if wallet.is_changed()
-        || research_map.is_changed()
-        || removed_available.len() > 0
-        || removed_in_progress.len() > 0
-        || removed_completed.len() > 0
-        || !added_available.is_empty()
-        || !added_in_progress.is_empty()
-        || !added_completed.is_empty()
-        || !changed_count.is_empty()
-    {
-        commands.queue(SpawnResearchContentCommand);
-    }
-}

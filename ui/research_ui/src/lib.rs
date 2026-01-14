@@ -12,20 +12,34 @@ use {
     },
 };
 
+#[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ResearchUiState {
+    #[default]
+    Closed,
+    Open,
+}
+
 pub struct ResearchUiPlugin;
 
 impl Plugin for ResearchUiPlugin {
     fn build(&self, app: &mut App) {
+        app.init_state::<ResearchUiState>();
         app.add_systems(
             Update,
             (
                 handle_research_close_button,
                 handle_tab_switch,
-                update_research_ui,
                 handle_research_button,
             )
                 .run_if(in_state(GameState::Running)),
-        );
+        )
+        .add_systems(
+            Update,
+            update_research_ui
+                .run_if(in_state(GameState::Running).and(in_state(ResearchUiState::Open))),
+        )
+        .add_observer(set_research_state_open)
+        .add_observer(set_research_state_closed);
     }
 }
 
@@ -74,6 +88,7 @@ pub struct ResearchData {
 }
 
 /// Display data for a single research item
+#[derive(PartialEq, Clone, Debug)]
 pub struct ResearchDisplayData {
     pub id: String,
     pub name: String,
@@ -415,33 +430,12 @@ fn update_research_ui(
     mut commands: Commands,
     assets: Res<Assets<ResearchDefinition>>,
     wallet: Res<Wallet>,
-    research_map: Res<ResearchMap>,
     ui_query: Query<&ResearchUiRoot>,
     available_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Available>>,
     in_progress_query: Query<(Entity, &ResearchNode, &InProgress, &ResearchCompletionCount)>,
     completed_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Completed>>,
-    mut removed_available: RemovedComponents<Available>,
-    mut removed_in_progress: RemovedComponents<InProgress>,
-    mut removed_completed: RemovedComponents<Completed>,
-    added_available: Query<(), Added<Available>>,
-    added_in_progress: Query<(), Added<InProgress>>,
-    added_completed: Query<(), Added<Completed>>,
-    changed_count: Query<(), Changed<ResearchCompletionCount>>,
+    mut last_data: Local<Option<Vec<ResearchDisplayData>>>,
 ) {
-    // Only update if wallet, research map, or components changed
-    if !wallet.is_changed()
-        && !research_map.is_changed()
-        && removed_available.len() == 0
-        && removed_in_progress.len() == 0
-        && removed_completed.len() == 0
-        && added_available.is_empty()
-        && added_in_progress.is_empty()
-        && added_completed.is_empty()
-        && changed_count.is_empty()
-    {
-        return;
-    }
-
     if let Ok(ui_root) = ui_query.single() {
         let available: Vec<_> = available_query.iter().collect();
         let in_progress: Vec<_> = in_progress_query.iter().collect();
@@ -455,6 +449,15 @@ fn update_research_ui(
             &in_progress,
             &completed,
         );
+
+        // Check for changes to avoid unnecessary rebuilds
+        if let Some(last) = last_data.as_ref() {
+            if *last == items {
+                return;
+            }
+        }
+        *last_data = Some(items.clone());
+
         commands.queue(PopulateResearchDirectCommand {
             research_data: items
                 .into_iter()
@@ -584,10 +587,10 @@ impl Command for PopulateResearchDirectCommand {
 #[allow(clippy::type_complexity)]
 fn handle_research_button(
     mut commands: Commands,
-    research_map: Res<ResearchMap>,
     assets: Res<Assets<ResearchDefinition>>,
     wallet: Res<Wallet>,
     available_query: Query<&ResearchNode, With<Available>>,
+    research_map: Res<ResearchMap>,
     interaction_query: Query<(&Interaction, &ResearchButton), (Changed<Interaction>, With<Button>)>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
@@ -618,4 +621,12 @@ fn handle_research_button(
             }
         }
     }
+}
+
+fn set_research_state_open(_trigger: On<Add, ResearchUiRoot>, mut state: ResMut<NextState<ResearchUiState>>) {
+    state.set(ResearchUiState::Open);
+}
+
+fn set_research_state_closed(_trigger: On<Remove, ResearchUiRoot>, mut state: ResMut<NextState<ResearchUiState>>) {
+    state.set(ResearchUiState::Closed);
 }
