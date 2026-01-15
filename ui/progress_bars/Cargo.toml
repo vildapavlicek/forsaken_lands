@@ -1,0 +1,13 @@
+[package]
+name = "progress_bars"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+crafting.workspace = true
+research.workspace = true
+research_assets.workspace = true
+recipes_assets.workspace = true
+village_components.workspace = true
+states.workspace = true

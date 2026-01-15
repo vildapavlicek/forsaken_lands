@@ -38,6 +38,7 @@ members = [
   "ui/notification_ui",
   "ui/village_ui",
   "ui/widgets",
+  "ui/progress_bars",
   "components/unlocks_components",
   "events/unlocks_events",
   "resources/unlocks_resources",
