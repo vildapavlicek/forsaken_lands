@@ -3,9 +3,16 @@ use {
     std::collections::HashMap,
 };
 
+/// Central storage for all collected player resources (the game's economy state).
+///
+/// This **Resource** acts as the single source of truth for resource quantities.
+/// It is:
+/// - **Updated by:** `process_enemy_killed_rewards` (Observer) when enemies die.
+/// - **Queried by:** UI systems (display), Crafting/Research systems (affordability checks).
 #[derive(Resource, Reflect, Default, Debug, Clone)]
 #[reflect(Resource, Default)]
 pub struct Wallet {
+    /// Maps resource IDs (e.g., "wood", "iron") to their current quantity.
     pub resources: HashMap<String, u32>,
 }
 
