@@ -39,6 +39,7 @@ members = [
   "ui/village_ui",
   "ui/widgets",
   "ui/progress_bars",
+  "ui/hero_ui",
   "components/unlocks_components",
   "events/unlocks_events",
   "resources/unlocks_resources",
@@ -90,6 +91,8 @@ unlocks_resources = { path = "resources/unlocks_resources" }
 wallet = { path = "wallet" }
 wallet_components = { path = "components/wallet_components" }
 widgets = { path = "ui/widgets" }
+progress_bars = { path = "ui/progress_bars" }
+hero_ui = { path = "ui/hero_ui" }
 
 [dependencies]
 bevy.workspace = true

@@ -4,10 +4,11 @@ use {
     enemy_encyclopedia::EnemyEncyclopediaUiPlugin, hero_events::HeroEventsPlugin,
     heroes::HeroesPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
     portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
-    research::ResearchPlugin, research_ui::ResearchUiPlugin, resources_ui::ResourcesUiPlugin,
-    shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
-    unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin,
-    village_ui::VillageUiPlugin, wallet::WalletPlugin, widgets::WidgetsPlugin,
+    progress_bars::ProgressBarsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
+    resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin, states::GameState,
+    system_schedule::GameSchedule::*, unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin,
+    village::VillagePlugin, village_ui::VillageUiPlugin, wallet::WalletPlugin,
+    widgets::WidgetsPlugin,
 };
 
 pub struct CorePlugin;
@@ -44,6 +45,7 @@ impl Plugin for CorePlugin {
                 VillageUiPlugin,
                 WalletPlugin,
                 WidgetsPlugin,
+                ProgressBarsPlugin,
             ))
             .add_systems(Startup, setup_camera);
     }

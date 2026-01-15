@@ -1,9 +1,12 @@
 use {
     bevy::{picking::prelude::*, prelude::*},
     crafting::{Available, RecipeNode},
+    hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
+    hero_ui::{spawn_hero_content, HeroUiRoot},
     recipes_assets::{RecipeCategory, RecipeDefinition},
     research::{Completed, InProgress, ResearchCompletionCount, ResearchNode},
     research_assets::ResearchDefinition,
+    shared_components::DisplayName,
     states::{EnemyEncyclopediaState, GameState},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
@@ -36,6 +39,7 @@ pub enum VillageContent {
     Crafting,
     Research,
     Encyclopedia,
+    Heroes,
 }
 
 /// Root of the village UI
@@ -169,6 +173,13 @@ impl Command for SpawnMenuContentCommand {
                 "📖 Encyclopedia",
                 VillageMenuButton {
                     target: VillageContent::Encyclopedia,
+                },
+            );
+            spawn_menu_button(
+                parent,
+                "🦸 Heroes",
+                VillageMenuButton {
+                    target: VillageContent::Heroes,
                 },
             );
         });
@@ -443,6 +454,109 @@ impl Command for SpawnEncyclopediaContentCommand {
 }
 
 // ============================================================================
+// Heroes Content Command
+// ============================================================================
+
+struct SpawnHeroesContentCommand;
+
+impl Command for SpawnHeroesContentCommand {
+    fn apply(self, world: &mut World) {
+        let mut query =
+            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
+
+        let Some((container, children)) = query.iter(world).next() else {
+            return;
+        };
+
+        // Despawn existing children
+        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
+        for child in to_despawn {
+            world.commands().entity(child).despawn();
+        }
+
+        // Query all heroes
+        let mut hero_query = world.query_filtered::<Entity, With<Hero>>();
+        let hero_entities: Vec<Entity> = hero_query.iter(world).collect();
+
+        // Build display data for each hero
+        let mut heroes_data: Vec<(Entity, hero_ui::HeroDisplayData)> = Vec::new();
+
+        for hero_entity in &hero_entities {
+            // Placeholder hero name (heroes don't have names yet)
+            let name = "Hero".to_string();
+
+            // Find weapon child
+            let mut children_query = world.query::<&Children>();
+            let weapon_children: Vec<Entity> = children_query
+                .get(world, *hero_entity)
+                .map(|c| c.iter().collect())
+                .unwrap_or_default();
+
+            let mut weapon_data = None;
+            for child in weapon_children {
+                let mut weapon_query = world.query_filtered::<(
+                    Option<&DisplayName>,
+                    &Damage,
+                    &AttackRange,
+                    &AttackSpeed,
+                    Option<&MeleeArc>,
+                ), With<Weapon>>();
+
+                if let Ok((display_name, damage, range, speed, melee_arc)) =
+                    weapon_query.get(world, child)
+                {
+                    // Extract all values before doing melee check to end the immutable borrow
+                    let weapon_name = display_name
+                        .map(|d| d.0.clone())
+                        .unwrap_or_else(|| "Unknown Weapon".to_string());
+                    let speed_secs = speed.timer.duration().as_secs_f32();
+                    let damage_val = damage.0;
+                    let range_val = range.0;
+                    let arc_radians = melee_arc.map(|arc| arc.width);
+
+                    // Check if it's a melee weapon for arc display
+                    let mut melee_check = world.query_filtered::<(), With<MeleeWeapon>>();
+                    let arc_degrees = if melee_check.get(world, child).is_ok() {
+                        arc_radians.map(|arc| arc.to_degrees())
+                    } else {
+                        None
+                    };
+
+                    weapon_data = Some(hero_ui::WeaponDisplayData {
+                        name: weapon_name,
+                        damage: damage_val,
+                        range: range_val,
+                        speed_secs,
+                        melee_arc: arc_degrees,
+                    });
+                    break;
+                }
+            }
+
+            heroes_data.push((
+                *hero_entity,
+                hero_ui::HeroDisplayData {
+                    name,
+                    weapon: weapon_data,
+                },
+            ));
+        }
+
+        // Spawn back button and heroes content
+        world.commands().entity(container).with_children(|parent| {
+            // Back button
+            spawn_menu_button(parent, "← Back", VillageBackButton);
+
+            // Add HeroUiRoot marker for state tracking
+            parent.spawn(HeroUiRoot);
+
+            // Spawn hero content
+            spawn_hero_content(parent, heroes_data, 0);
+        });
+    }
+}
+
+// ============================================================================
 // Button Handlers
 // ============================================================================
 
@@ -477,6 +591,10 @@ fn handle_menu_button(
                     VillageContent::Menu => {
                         next_state.set(EnemyEncyclopediaState::Closed);
                         commands.queue(SpawnMenuContentCommand);
+                    }
+                    VillageContent::Heroes => {
+                        next_state.set(EnemyEncyclopediaState::Closed);
+                        commands.queue(SpawnHeroesContentCommand);
                     }
                 }
             }
