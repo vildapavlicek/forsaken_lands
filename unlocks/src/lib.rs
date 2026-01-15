@@ -170,7 +170,7 @@ impl Plugin for UnlocksPlugin {
             // Registration
             .register_type::<UnlockState>()
             .register_type::<TopicSubscribers>()
-            // Systems for compilation and change detection
+            // Systems for change detection
             .add_systems(Update, (check_wallet_changes, check_max_divinity_changes))
             // Observers for gate logic and event interception
             .add_observer(propagate_logic_signal)

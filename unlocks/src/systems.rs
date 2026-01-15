@@ -15,7 +15,10 @@ use {
 /// System that compiles newly loaded unlock definitions.
 /// Note: This function is now called inline by LoadingManager, but is kept
 /// for potential reuse or dynamic recompilation needs.
-#[allow(dead_code)]
+#[expect(
+    unused,
+    reason = "this is kept around in case we would need runtime compilation in the future"
+)]
 pub fn compile_pending_unlocks(
     mut commands: Commands,
     unlock_assets: Res<Assets<UnlockDefinition>>,
@@ -195,7 +198,7 @@ pub fn on_enemy_killed_stat_update(
 
 /// System that checks for Wallet changes and emits resource change signals.
 pub fn check_wallet_changes(wallet: Res<Wallet>, topic_map: Res<TopicMap>, mut commands: Commands) {
-    // Only run if wallet changed
+    // TODO: Replace with `run_if.(resouce_changed_or_removed::<Wallet>)` condition for the system instead of internal check
     if !wallet.is_changed() {
         return;
     }
@@ -203,6 +206,7 @@ pub fn check_wallet_changes(wallet: Res<Wallet>, topic_map: Res<TopicMap>, mut c
     // Emit resource updates for all resources
     for (resource_id, &amount) in wallet.resources.iter() {
         let topic_key = format!("resource:{}", resource_id);
+        // TODO: refactor to `let else` to flatten structure
         if let Some(&topic_entity) = topic_map.topics.get(&topic_key) {
             commands.trigger(ResourceChangedEvent {
                 entity: topic_entity,
@@ -224,6 +228,7 @@ pub fn on_research_completed(
 
     // Emit unlock events for completed research
     let topic_key = format!("unlock:{}", research_id);
+    // TODO: use let-else pattern to flatten
     if let Some(&topic_entity) = topic_map.topics.get(&topic_key) {
         commands.trigger(UnlockTopicUpdated {
             entity: topic_entity,
@@ -399,11 +404,7 @@ pub fn check_max_divinity_changes(
 pub fn on_max_divinity_changed(
     trigger: On<MaxUnlockedDivinityChangedEvent>,
     subscribers: Query<&TopicSubscribers>,
-    mut sensors: Query<(
-        Entity,
-        &mut ConditionSensor,
-        &MaxUnlockedDivinitySensor,
-    )>,
+    mut sensors: Query<(Entity, &mut ConditionSensor, &MaxUnlockedDivinitySensor)>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
@@ -411,8 +412,7 @@ pub fn on_max_divinity_changed(
 
     if let Ok(subs) = subscribers.get(topic_entity) {
         for &sensor_entity in &subs.sensors {
-            if let Ok((entity, mut condition, divinity_sensor)) = sensors.get_mut(sensor_entity)
-            {
+            if let Ok((entity, mut condition, divinity_sensor)) = sensors.get_mut(sensor_entity) {
                 let is_met = event.new_divinity >= divinity_sensor.0;
 
                 if condition.is_met != is_met {

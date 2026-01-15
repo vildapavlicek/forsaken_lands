@@ -1,3 +1,5 @@
+// TODO! move this under `components\unlocks_components` as unlocks_components::states,
+//       there is no need for it to be separate micro-crate
 //! Shared unlock state components for entities that can be locked/unlocked.
 //!
 //! These components are used by both research and recipe systems to track
