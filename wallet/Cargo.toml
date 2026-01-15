@@ -8,3 +8,4 @@ bevy.workspace = true
 enemy_components.workspace = true
 hero_events.workspace = true
 system_schedule.workspace = true
+unlocks_events.workspace = true

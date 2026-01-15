@@ -5075,6 +5075,7 @@ dependencies = [
  "enemy_components",
  "hero_events",
  "system_schedule",
+ "unlocks_events",
 ]
 
 [[package]]
