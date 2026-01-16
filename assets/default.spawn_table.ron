@@ -18,7 +18,7 @@
             condition: Range(
                 min: (
                     tier: 1,
-                    level: 1,
+                    level: 2,
                 ),
                 max: (
                     tier: 1,
@@ -26,7 +26,7 @@
                 ),
             ),
             monster_id: "elite_goblin_scout",
-            weight: 50,
+            weight: 100,
         ),
     ],
 )
