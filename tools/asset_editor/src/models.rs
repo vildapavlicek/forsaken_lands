@@ -373,6 +373,8 @@ pub struct ResearchFormData {
     pub time_required: f32,
     /// Maximum times this research can be completed
     pub max_repeats: u32,
+    /// The filename stem (without extension)
+    pub filename: String,
     /// Unlock condition
     pub unlock_condition: UnlockCondition,
 }
@@ -390,6 +392,7 @@ impl ResearchFormData {
             }],
             time_required: 30.0,
             max_repeats: 1,
+            filename: "new_research".to_string(),
             unlock_condition: UnlockCondition::True,
         }
     }
@@ -407,9 +410,9 @@ impl ResearchFormData {
     }
 
     /// Derives the research file name.
-    /// Pattern: {id}.research.ron
+    /// Pattern: {filename}.research.ron
     pub fn research_filename(&self) -> String {
-        format!("{}.research.ron", self.id)
+        format!("{}.research.ron", self.filename)
     }
 
     /// Derives the unlock file name.
@@ -450,7 +453,11 @@ impl ResearchFormData {
         errors
     }
 
-    pub fn from_assets(research: &ResearchDefinition, unlock: &UnlockDefinition) -> Self {
+    pub fn from_assets(
+        research: &ResearchDefinition,
+        unlock: &UnlockDefinition,
+        filename: String,
+    ) -> Self {
         let costs = research
             .cost
             .iter()
@@ -467,6 +474,7 @@ impl ResearchFormData {
             costs,
             time_required: research.time_required,
             max_repeats: research.max_repeats,
+            filename,
             unlock_condition: UnlockCondition::from(&unlock.condition),
         }
     }
@@ -526,5 +534,20 @@ impl RecipeUnlockFormData {
         errors.extend(self.unlock_condition.validate());
 
         errors
+    }
+
+    pub fn from_assets(unlock: &UnlockDefinition) -> Self {
+        // Extract recipe ID from reward_id (recipe_{id})
+        let id = unlock
+            .reward_id
+            .strip_prefix("recipe_")
+            .unwrap_or(&unlock.reward_id)
+            .to_string();
+
+        Self {
+            id,
+            display_name: unlock.display_name.clone().unwrap_or_default(),
+            unlock_condition: UnlockCondition::from(&unlock.condition),
+        }
     }
 }

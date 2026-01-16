@@ -171,6 +171,7 @@ mod tests {
             }],
             time_required: 30.0,
             max_repeats: 5,
+            filename: "test_research".to_string(),
             unlock_condition: UnlockCondition::True,
         };
 
@@ -191,6 +192,7 @@ mod tests {
             costs: vec![],
             time_required: 30.0,
             max_repeats: 1,
+            filename: "test_research".to_string(),
             unlock_condition: UnlockCondition::Single(LeafCondition::Unlock {
                 id: "bone_crafting".to_string(),
             }),
@@ -211,6 +213,7 @@ mod tests {
             costs: vec![],
             time_required: 10.0,
             max_repeats: 1,
+            filename: "free_research".to_string(),
             unlock_condition: UnlockCondition::True,
         };
 

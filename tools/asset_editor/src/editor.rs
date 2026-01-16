@@ -49,6 +49,8 @@ pub struct EditorState {
     status: String,
     /// List of existing research IDs for the dropdown.
     existing_research_ids: Vec<String>,
+    /// List of existing recipe unlock IDs.
+    existing_recipe_unlock_ids: Vec<String>,
     /// List of existing monster IDs for the dropdown.
     existing_monster_ids: Vec<String>,
     /// Show RON preview.
@@ -88,6 +90,7 @@ impl EditorState {
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
+            existing_recipe_unlock_ids: Vec::new(),
             existing_monster_ids: Vec::new(),
             show_preview: false,
             monster_components,
@@ -269,7 +272,16 @@ impl EditorState {
             ui.label("Research ID:");
             ui.text_edit_singleline(&mut self.research_form.id);
         });
-        ui.small("The base ID used for file naming and ID mapping (e.g., \"bone_weaponry\")");
+        ui.small("The internal ID used for logic (e.g., \"bone_weaponry\")");
+        ui.add_space(8.0);
+
+        // Filename
+        ui.horizontal(|ui| {
+            ui.label("Filename:");
+            ui.text_edit_singleline(&mut self.research_form.filename);
+            ui.label(".research.ron");
+        });
+        ui.small("The file name on disk. Useful for ordering (e.g., \"01_basic_research\")");
         ui.add_space(8.0);
 
         // Display Name
@@ -400,6 +412,37 @@ impl EditorState {
     fn show_recipe_unlock_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Recipe Unlock Definition");
         ui.add_space(4.0);
+
+        // Load existing recipe unlocks
+        ui.group(|ui| {
+            ui.heading("Load Existing Recipe Unlock");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_recipe_unlock_ids.is_empty() {
+                ui.label("No recipe unlock assets found in assets/unlocks/recipes/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_id = None;
+                    for id in &self.existing_recipe_unlock_ids {
+                        if ui.button(id).clicked() {
+                            load_id = Some(id.clone());
+                        }
+                    }
+                    if let Some(id) = load_id {
+                        self.load_recipe_unlock(&id);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+
         ui.small(
             "Define an unlock condition for an existing recipe. The recipe itself must be defined separately.",
         );
@@ -773,6 +816,28 @@ impl EditorState {
         }
         self.existing_research_ids.sort();
 
+        // Load recipe unlock IDs
+        self.existing_recipe_unlock_ids.clear();
+        let recipes_unlock_dir = assets_dir.join("unlocks").join("recipes");
+        if let Ok(entries) = std::fs::read_dir(recipes_unlock_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename = filename.to_string_lossy();
+                    if filename.ends_with(".unlock.ron") {
+                        if let Some(id) = filename.strip_suffix(".unlock.ron") {
+                            // filename is recipe_{id}.unlock.ron
+                            // we want just {id}
+                            if let Some(pure_id) = id.strip_prefix("recipe_") {
+                                self.existing_recipe_unlock_ids.push(pure_id.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_recipe_unlock_ids.sort();
+
         // Load monster IDs from prefabs/enemies by parsing MonsterId from file content
         // Also load prefab filenames for the monster prefab list
         self.existing_monster_ids.clear();
@@ -884,8 +949,40 @@ impl EditorState {
             };
 
             // Convert and populate form
-            self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def);
+            self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def, id.to_string());
             self.status = format!("✓ Loaded research: {}", id);
+        }
+    }
+
+    fn load_recipe_unlock(&mut self, id: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            // Construct path
+            let unlock_path = assets_dir
+                .join("unlocks")
+                .join("recipes")
+                .join(format!("recipe_{}.unlock.ron", id));
+
+            // Read file
+            let unlock_content = match std::fs::read_to_string(&unlock_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read unlock file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse RON
+            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
+                    return;
+                }
+            };
+
+            // Convert and populate form
+            self.recipe_form = RecipeUnlockFormData::from_assets(&unlock_def);
+            self.status = format!("✓ Loaded recipe unlock: {}", id);
         }
     }
 
@@ -894,6 +991,8 @@ impl EditorState {
             match save_recipe_unlock_file(&self.recipe_form, assets_dir) {
                 Ok(result) => {
                     self.status = format!("✓ Saved: {}", result.unlock_path);
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
                 }
                 Err(e) => {
                     self.status = format!("✗ Failed to save: {}", e);
