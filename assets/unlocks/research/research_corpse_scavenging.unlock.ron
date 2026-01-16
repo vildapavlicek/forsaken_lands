@@ -1,6 +1,6 @@
 (
     id: "research_corpse_scavenging_unlock",
-    display_name: Some("Dead scavenging Research"),
+    display_name: Some("Corpse Scavenging Research"),
     reward_id: "research_corpse_scavenging",
     condition: And([
         Unlock("invaders"),

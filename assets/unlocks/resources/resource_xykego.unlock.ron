@@ -1,0 +1,6 @@
+(
+    id: "resource_xykego_unlock",
+    display_name: Some("Xykego resource"),
+    reward_id: "resource_xykego",
+    condition: Unlock("corpse_scavenging"),
+)

@@ -1,13 +1,8 @@
-
 (
-    id: "invaders_research",
-    display_name: Some("Invaders.."),
+    id: "research_invaders_unlock",
+    display_name: Some("Invaders Research"),
     reward_id: "research_invaders",
     condition: And([
-        Stat(Kills(
-            monster_id: "goblin_scout",
-            value: 5.0,
-            op: Ge,
-        )),
+        Stat(Kills(monster_id: "goblin_scout", value: 5, op: Ge)),
     ]),
 )

@@ -1,0 +1,9 @@
+(
+    id: "research_xykego_unlock",
+    display_name: Some("What is it..? Research"),
+    reward_id: "research_xykego",
+    condition: And([
+        Unlock("corpse_scavenging"),
+        Resource(ResourceCheck(resource_id: "xykego", amount: 5)),
+    ]),
+)

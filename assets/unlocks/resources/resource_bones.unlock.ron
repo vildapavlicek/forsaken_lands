@@ -1,0 +1,7 @@
+
+(
+    id: "resource_bones_unlock",
+    display_name: Some("Bones resource"),
+    reward_id: "resource_bones",
+    condition: Unlock("corpse_scavenging"),
+)
