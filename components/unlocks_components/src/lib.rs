@@ -78,18 +78,34 @@ pub enum ComparisonOp {
     Lt, // <
 }
 
+/// Defines a specific statistical condition that must be met to trigger an unlock signal.
+///
+/// This enum represents the "leaf nodes" of the unlock logic tree. It is deserialized from
+/// RON assets (e.g., in `UnlockDefinition`) and wrapped by `StatSensor` components at runtime.
+///
+/// # Usage
+/// - **Serialization**: Defined in `.unlock.ron` files (e.g., `Stat(StatCheck(stat_id: "goblin_kills", ...))`).
+/// - **Runtime**: Used by `StatSensor` to verify if the current game state (kill counts, resources) meets the criteria.
 #[derive(Debug, Clone, PartialEq, Reflect, serde::Deserialize, serde::Serialize)]
 pub enum StatCheck {
+    /// Checks if the player has killed a specific number of monsters.
+    ///
+    /// The condition matches against the `EnemyEncyclopedia` kill counts.
     Kills {
         monster_id: String,
         #[serde(default)]
         op: ComparisonOp,
+        /// The required number of kills to trigger the condition.
         value: f32,
     },
+    /// Checks if the player possesses a specific amount of a resource.
+    ///
+    /// The condition matches against the `Wallet` resource amounts.
     Resource {
         resource_id: String,
         #[serde(default)]
         op: ComparisonOp,
+        /// The required quantity of the resource.
         value: f32,
     },
 }
