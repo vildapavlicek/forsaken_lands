@@ -87,16 +87,18 @@ fn process_enemy_killed_rewards(
     let event = trigger.event();
     if let Ok(rewards) = enemies.get(event.entity) {
         for reward in rewards.0.iter() {
+            // check resource is unlocked and thus can actually be rewarded
+            if !wallet.unlocked_resources.contains(&reward.id) {
+                continue;
+            }
+
             let rate = rates.get_rate(&reward.id);
             let modified_value = (reward.value as f32 * rate).round() as u32;
             let current = wallet.resources.entry(reward.id.clone()).or_insert(0);
             *current += modified_value;
             trace!(
                 "Added {} {} to wallet (base: {}, rate: {})",
-                modified_value,
-                reward.id,
-                reward.value,
-                rate
+                modified_value, reward.id, reward.value, rate
             );
         }
     }
