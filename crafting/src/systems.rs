@@ -81,6 +81,7 @@ pub fn update_crafting_progress(
     mut commands: Commands,
     time: Res<Time>,
     asset_server: Res<AssetServer>,
+    mut scene_spawner: ResMut<SceneSpawner>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
     village_query: Query<Entity, With<Village>>,
 ) {
@@ -95,7 +96,7 @@ pub fn update_crafting_progress(
                 match outcome {
                     crafting_resources::CraftingOutcome::SpawnPrefab(path) => {
                         let scene_handle: Handle<DynamicScene> = asset_server.load(path);
-                        commands.spawn(DynamicSceneRoot(scene_handle));
+                        scene_spawner.spawn_dynamic(scene_handle);
                         info!("Spawned prefab: {}", path);
                     }
                     crafting_resources::CraftingOutcome::AddResource { id, amount } => {
@@ -112,7 +113,7 @@ pub fn update_crafting_progress(
                         if let Ok(village_entity) = village_query.single() {
                             commands.trigger(IncreaseDivinity {
                                 entity: village_entity,
-                                xp_amount: *amount as f32,
+                                 xp_amount: *amount as f32,
                             });
                             info!("Triggered IncreaseDivinity with {} XP for Village", amount);
                         } else {
