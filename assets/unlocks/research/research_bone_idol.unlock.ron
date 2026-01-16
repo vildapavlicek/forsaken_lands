@@ -1,0 +1,9 @@
+(
+    id: "research_bone_idol_unlock",
+    display_name: Some("Bone Idol Research"),
+    reward_id: "research_bone_idol",
+    condition: And([
+        Unlock("bone_crafting"),
+        Unlock("theology_i"),
+    ]),
+)

@@ -1,8 +1,8 @@
 (
     id: "xykego",
     name: "What is it..?",
-    description: "Every corpse has on of these... balls?",
-    cost: {  },
+    description: "Every corpse has one of these... balls?",
+    cost: { "xykego": 5 },
     time_required: 30,
     max_repeats: 1,
 )

@@ -1,0 +1,6 @@
+(
+    id: "research_portal_discovery_unlock",
+    display_name: Some("Where did they come from? Research"),
+    reward_id: "research_portal_discovery",
+    condition: Unlock("invaders"),
+)

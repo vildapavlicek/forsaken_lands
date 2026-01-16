@@ -4,6 +4,5 @@
     reward_id: "research_xykego",
     condition: And([
         Unlock("corpse_scavenging"),
-        Resource(ResourceCheck(resource_id: "xykego", amount: 5)),
     ]),
 )

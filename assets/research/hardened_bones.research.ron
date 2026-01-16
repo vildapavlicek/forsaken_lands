@@ -1,0 +1,8 @@
+(
+    id: "hardened_bones",
+    name: "Hardened Bones",
+    description: "We can grind bones to dust and use it to enhance other bones.",
+    cost: { "bones": 100 },
+    time_required: 60,
+    max_repeats: 10,
+)

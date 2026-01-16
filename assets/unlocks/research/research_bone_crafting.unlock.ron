@@ -1,0 +1,6 @@
+(
+    id: "research_bone_crafting_unlock",
+    display_name: Some("Bone crafting Research"),
+    reward_id: "research_bone_crafting",
+    condition: Unlock("corpse_scavenging"),
+)

@@ -1,0 +1,6 @@
+(
+    id: "research_portal_creator_unlock",
+    display_name: Some("Who made it? Research"),
+    reward_id: "research_portal_creator",
+    condition: Unlock("portal_discovery"),
+)
