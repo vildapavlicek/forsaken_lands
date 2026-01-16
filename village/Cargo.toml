@@ -7,6 +7,7 @@ edition = "2024"
 bevy.workspace = true
 divinity_components.workspace = true
 divinity_events.workspace = true
+equipment_events.workspace = true
 loading.workspace = true
 states.workspace = true
 village_components.workspace = true

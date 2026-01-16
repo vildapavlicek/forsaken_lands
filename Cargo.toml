@@ -18,6 +18,7 @@ members = [
   "crafting",
   "events/crafting_events",
   "events/divinity_events",
+  "events/equipment_events",
   "events/hero_events",
   "loading",
   "game_assets/portal_assets",
@@ -62,6 +63,7 @@ divinity_components = { path = "components/divinity_components" }
 divinity_events = { path = "events/divinity_events" }
 enemy_components = { path = "components/enemy_components" }
 enemy_encyclopedia = { path = "ui/enemy_encyclopedia" }
+equipment_events = { path = "events/equipment_events" }
 loading = { path = "loading" }
 hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }

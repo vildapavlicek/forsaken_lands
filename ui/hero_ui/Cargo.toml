@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+equipment_events.workspace = true
 hero_components.workspace = true
 shared_components.workspace = true
 states.workspace = true

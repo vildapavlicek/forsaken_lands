@@ -1849,6 +1849,7 @@ dependencies = [
  "enemy_encyclopedia",
  "hero_components",
  "hero_events",
+ "hero_ui",
  "heroes",
  "loading",
  "notification_ui",
@@ -2300,6 +2301,13 @@ dependencies = [
  "states",
  "village_components",
  "widgets",
+]
+
+[[package]]
+name = "equipment_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
@@ -2804,6 +2812,7 @@ name = "hero_ui"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "equipment_events",
  "hero_components",
  "shared_components",
  "states",
@@ -5048,6 +5057,7 @@ dependencies = [
  "divinity_components",
  "divinity_events",
  "enemy_components",
+ "equipment_events",
  "hero_components",
  "hero_events",
  "loading",

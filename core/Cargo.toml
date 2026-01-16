@@ -33,3 +33,4 @@ notification_ui.workspace = true
 unlocks.workspace = true
 unlocks_assets.workspace = true
 progress_bars.workspace = true
+hero_ui.workspace = true

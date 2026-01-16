@@ -474,8 +474,9 @@ pub fn spawn_action_button<M: Component>(
         .spawn((
             Button,
             Node {
-                width: Val::Px(100.0),
+                min_width: Val::Px(100.0),
                 height: Val::Px(30.0),
+                padding: UiRect::axes(Val::Px(10.0), Val::Px(5.0)),
                 margin: UiRect::top(Val::Px(5.0)),
                 border: UiRect::all(Val::Px(2.0)),
                 justify_content: JustifyContent::Center,
@@ -489,6 +490,7 @@ pub fn spawn_action_button<M: Component>(
                 hover_color: UiTheme::BUTTON_HOVER,
                 pressed_color: UiTheme::BUTTON_PRESSED,
             },
+            Interaction::default(),
             marker,
         ))
         .with_children(|btn| {
@@ -502,6 +504,7 @@ pub fn spawn_action_button<M: Component>(
             ));
         });
 }
+
 
 // ============================================================================
 // Tab Bar Widget

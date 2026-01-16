@@ -46,6 +46,7 @@ impl Plugin for CorePlugin {
                 WalletPlugin,
                 WidgetsPlugin,
                 ProgressBarsPlugin,
+                hero_ui::HeroUiPlugin,
             ))
             .add_systems(Startup, setup_camera);
     }

@@ -523,6 +523,7 @@ impl Command for SpawnHeroesContentCommand {
                     };
 
                     weapon_data = Some(hero_ui::WeaponDisplayData {
+                        entity: child,
                         name: weapon_name,
                         damage: damage_val,
                         range: range_val,
@@ -536,11 +537,13 @@ impl Command for SpawnHeroesContentCommand {
             heroes_data.push((
                 *hero_entity,
                 hero_ui::HeroDisplayData {
+                    entity: *hero_entity,
                     name,
                     weapon: weapon_data,
                 },
             ));
         }
+
 
         // Spawn back button and heroes content
         world.commands().entity(container).with_children(|parent| {
