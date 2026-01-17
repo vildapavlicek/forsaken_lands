@@ -32,8 +32,10 @@ pub struct ResearchNode {
 pub struct ResearchCompletionCount(pub u32);
 
 /// Currently being researched
-#[derive(Component)]
+#[derive(Component, Reflect)]
+#[reflect(Component)]
 pub struct InProgress {
+    pub research_id: String,
     pub timer: Timer,
 }
 

@@ -193,6 +193,7 @@ pub fn start_research(
         .entity(entity)
         .remove::<Available>()
         .insert(InProgress {
+            research_id: node.id.clone(),
             timer: Timer::from_seconds(def.time_required, TimerMode::Once),
         });
     info!("Started researching: {}", def.name);
