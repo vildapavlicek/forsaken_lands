@@ -13,7 +13,6 @@ members = [
   "components/shared_components",
   "components/unlock_states",
   "components/village_components",
-  "components/wallet_components",
   "core",
   "crafting",
   "events/crafting_events",
@@ -98,7 +97,6 @@ unlocks_components = { path = "components/unlocks_components" }
 unlocks_events = { path = "events/unlocks_events" }
 unlocks_resources = { path = "resources/unlocks_resources" }
 wallet = { path = "wallet" }
-wallet_components = { path = "components/wallet_components" }
 widgets = { path = "ui/widgets" }
 progress_bars = { path = "ui/progress_bars" }
 hero_ui = { path = "ui/hero_ui" }
