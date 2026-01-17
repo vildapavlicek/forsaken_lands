@@ -47,6 +47,7 @@ members = [
   "unlocks",
   "village",
   "wallet",
+  "save_load",
 ]
 
 [workspace.dependencies]
@@ -95,6 +96,7 @@ wallet_components = { path = "components/wallet_components" }
 widgets = { path = "ui/widgets" }
 progress_bars = { path = "ui/progress_bars" }
 hero_ui = { path = "ui/hero_ui" }
+save_load = { path = "save_load" }
 
 [dependencies]
 bevy.workspace = true

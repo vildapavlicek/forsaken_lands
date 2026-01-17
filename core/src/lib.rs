@@ -5,10 +5,10 @@ use {
     heroes::HeroesPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
     portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
     progress_bars::ProgressBarsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
-    resources_ui::ResourcesUiPlugin, shared_components::SharedComponentsPlugin, states::GameState,
-    system_schedule::GameSchedule::*, unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin,
-    village::VillagePlugin, village_ui::VillageUiPlugin, wallet::WalletPlugin,
-    widgets::WidgetsPlugin,
+    resources_ui::ResourcesUiPlugin, save_load::SaveLoadPlugin, shared_components::SharedComponentsPlugin,
+    states::GameState, system_schedule::GameSchedule::*, unlocks::UnlocksPlugin,
+    unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin, village_ui::VillageUiPlugin,
+    wallet::WalletPlugin, widgets::WidgetsPlugin,
 };
 
 pub struct CorePlugin;
@@ -47,6 +47,7 @@ impl Plugin for CorePlugin {
                 WidgetsPlugin,
                 ProgressBarsPlugin,
                 hero_ui::HeroUiPlugin,
+                SaveLoadPlugin,
             ))
             .add_systems(Startup, setup_camera);
     }
