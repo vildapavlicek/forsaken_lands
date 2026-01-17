@@ -75,11 +75,13 @@ impl Plugin for SaveLoadPlugin {
                     reconstruction::reconstruct_weapons_from_inventory,
                     reconstruction::relink_in_progress_research,
                     reconstruction::reconstruct_resource_rates,
-                ).chain(),
+                )
+                    .chain(),
             )
             .add_systems(
                 OnEnter(LoadingPhase::PostLoadReconstruction),
-                reconstruction::finish_reconstruction.after(reconstruction::reconstruct_resource_rates),
+                reconstruction::finish_reconstruction
+                    .after(reconstruction::reconstruct_resource_rates),
             )
             .add_systems(OnExit(GameState::Running), clean_up_save_load);
     }
@@ -176,7 +178,6 @@ fn execute_load(
     // Despawn/Cleanup is now handled by OnExit(GameState::Running) systems in each plugin.
     info!("Manual cleanup delegated to OnExit(GameState::Running) systems");
 
-
     // Configure loading state
     let relative_path = latest_save.strip_prefix("assets").unwrap_or(&latest_save);
     scene_to_load.path = relative_path.to_string_lossy().to_string();
@@ -258,11 +259,38 @@ fn build_save_scene(world: &World) -> DynamicScene {
         // === Resources ===
         .allow_resource::<Wallet>()
         .allow_resource::<UnlockState>()
-        // Extract all entities from the world, except those with Weapon component
+        // Extract all entities from the world, except those with Weapon component or ProgressBars
         .extract_entities(
             world
                 .iter_entities()
-                .filter(|e| !e.contains::<hero_components::Weapon>())
+                .filter(|e| {
+                    // Filter out Weapons (handled by reconstruction)
+                    if e.contains::<hero_components::Weapon>() {
+                        return false;
+                    }
+
+                    // Recursive filter for ProgressBars to catch children (sprites, text)
+                    let mut current = e.id();
+                    loop {
+                        if let Ok(entity_ref) = world.get_entity(current) {
+                            if let Some(name) = entity_ref.get::<Name>() {
+                                if name.as_str().contains("ProgressBar") {
+                                    return false;
+                                }
+                            }
+                            // Move up to parent
+                            if let Some(child_of) = entity_ref.get::<ChildOf>() {
+                                current = child_of.parent();
+                            } else {
+                                break; // No more parents
+                            }
+                        } else {
+                            break; // Entity not found (should be rare)
+                        }
+                    }
+
+                    true
+                })
                 .map(|e| e.id()),
         )
         // Extract the allowed resources
@@ -275,4 +303,3 @@ pub fn clean_up_save_load(mut timer: ResMut<AutosaveTimer>) {
     // Reset timer to default (1 minute)
     *timer = AutosaveTimer::default();
 }
-

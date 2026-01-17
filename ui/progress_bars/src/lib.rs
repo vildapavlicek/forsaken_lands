@@ -263,6 +263,7 @@ fn spawn_progress_root(commands: &mut Commands, village: Entity) -> Entity {
     let root = commands
         .spawn((
             ProgressBarsRoot,
+            Name::new("ProgressBarsRoot"),
             Transform::from_translation(Vec3::new(0.0, BAR_Y_OFFSET, 10.0)),
             Visibility::Inherited,
         ))
@@ -285,6 +286,8 @@ fn spawn_progress_bar<M: Component>(
     let bar = commands
         .spawn((
             marker,
+            // Name for filtering in save/load (prevents zombie bars)
+            Name::new("ProgressBar"),
             Transform::from_translation(Vec3::new(0.0, y_offset, 0.0)),
             Visibility::Inherited,
         ))
