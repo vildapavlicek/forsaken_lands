@@ -7,11 +7,17 @@ edition = "2024"
 bevy.workspace = true
 chrono = "0.4"
 crafting.workspace = true
+crafting_resources.workspace = true
 divinity_components.workspace = true
 hero_components.workspace = true
 portal_components.workspace = true
+recipes_assets.workspace = true
 research.workspace = true
+research_assets.workspace = true
 states.workspace = true
+unlock_states.workspace = true
+unlocks.workspace = true
 unlocks_resources.workspace = true
 village_components.workspace = true
 wallet.workspace = true
+
