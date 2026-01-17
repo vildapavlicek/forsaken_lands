@@ -28,6 +28,7 @@ impl Plugin for LoadingManagerPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<LoadingManager>()
             .init_resource::<LoadingStatus>()
+            .init_resource::<SceneToLoad>()
             .init_state::<LoadingPhase>()
             // Phase: Assets - load all asset folders
             .add_systems(
@@ -49,8 +50,8 @@ impl Plugin for LoadingManagerPlugin {
             .add_systems(OnEnter(LoadingPhase::SpawnEntities), spawn_all_entities)
             // Phase: CompileUnlocks - build unlock logic graphs
             .add_systems(OnEnter(LoadingPhase::CompileUnlocks), compile_unlocks)
-            // Phase: SpawnScene - spawn startup scene
-            .add_systems(OnEnter(LoadingPhase::SpawnScene), spawn_startup_scene)
+            // Phase: SpawnScene - spawn scene (startup or save)
+            .add_systems(OnEnter(LoadingPhase::SpawnScene), spawn_scene)
             .add_systems(
                 Update,
                 check_scene_spawned.run_if(in_state(LoadingPhase::SpawnScene)),
@@ -68,6 +69,21 @@ impl Plugin for LoadingManagerPlugin {
 }
 
 // --- Resources ---
+
+#[derive(Resource)]
+pub struct SceneToLoad {
+    pub path: String,
+    pub is_save: bool,
+}
+
+impl Default for SceneToLoad {
+    fn default() -> Self {
+        Self {
+            path: "startup.scn.ron".to_string(),
+            is_save: false,
+        }
+    }
+}
 
 #[derive(Resource, Default)]
 pub struct LoadingManager {
@@ -87,9 +103,13 @@ pub struct LoadingStatus {
 
 // --- Phase: Assets ---
 
-fn start_loading(mut assets: ResMut<LoadingManager>, asset_server: Res<AssetServer>) {
-    info!("started loading assets");
-    assets.startup_scene = asset_server.load("startup.scn.ron");
+fn start_loading(
+    mut assets: ResMut<LoadingManager>,
+    asset_server: Res<AssetServer>,
+    scene_to_load: Res<SceneToLoad>,
+) {
+    info!("started loading assets, scene: {}", scene_to_load.path);
+    assets.startup_scene = asset_server.load(&scene_to_load.path);
     let default_spawn_table = asset_server.load("default.spawn_table.ron");
 
     assets
@@ -138,6 +158,9 @@ fn check_assets_loaded(
         .values()
         .all(|handle| asset_server.is_loaded_with_dependencies(handle));
 
+    // For the scene file, we only need to check if it's loaded.
+    // However, if we are loading a save, we might have already loaded assets in a previous run.
+    // But `asset_server.is_loaded_with_dependencies` is generally cheap if already loaded.
     if asset_server.is_loaded_with_dependencies(&loading_manager.startup_scene)
         && spawn_tables_loaded
         && asset_server.is_loaded_with_dependencies(enemy_prefabs.0.id())
@@ -354,7 +377,7 @@ fn compile_unlocks(
 
 // --- Phase: SpawnScene ---
 
-fn spawn_startup_scene(
+fn spawn_scene(
     mut scene_spawner: ResMut<SceneSpawner>,
     loading_manager: Res<LoadingManager>,
     mut status: ResMut<LoadingStatus>,
@@ -362,17 +385,24 @@ fn spawn_startup_scene(
     status.current_phase = "Spawning Scene".into();
     status.detail = "Loading world...".into();
 
-    info!("spawning starting scene");
+    info!("spawning scene");
     scene_spawner.spawn_dynamic(loading_manager.startup_scene.clone());
 }
 
 fn check_scene_spawned(
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     query: Query<(), With<Village>>,
+    scene_to_load: Res<SceneToLoad>,
 ) {
     if !query.is_empty() {
-        info!("scene spawned and validated, entering Ready state");
-        next_phase.set(LoadingPhase::Ready);
+        info!("scene spawned and validated");
+        if scene_to_load.is_save {
+            info!("entering PostLoadReconstruction phase");
+            next_phase.set(LoadingPhase::PostLoadReconstruction);
+        } else {
+            info!("entering Ready state");
+            next_phase.set(LoadingPhase::Ready);
+        }
     }
 }
 

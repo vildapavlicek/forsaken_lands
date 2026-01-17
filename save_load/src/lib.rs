@@ -20,9 +20,10 @@ use {
         TargetDestination,
     },
     hero_components::{EquippedWeaponId, Hero, WeaponId},
+    loading::SceneToLoad,
     portal_components::{Portal, SpawnTableId, SpawnTimer},
     research::{InProgress, ResearchCompletionCount, ResearchMap},
-    states::{GameState, LoadingSavePhase},
+    states::{GameState, LoadingPhase},
     std::{fs, io::Write, path::Path},
     unlocks::{CompiledUnlock, UnlockRoot},
     unlocks_resources::UnlockState,
@@ -37,10 +38,6 @@ pub struct SaveGame;
 /// Event to trigger loading the latest save file.
 #[derive(Event)]
 pub struct LoadGame;
-
-/// Holds the handle to the save scene being loaded.
-#[derive(Resource, Default)]
-pub struct LoadingSaveHandle(pub Option<Handle<DynamicScene>>);
 
 /// Timer resource for automatic saves.
 #[derive(Resource)]
@@ -58,8 +55,6 @@ pub struct SaveLoadPlugin;
 impl Plugin for SaveLoadPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AutosaveTimer>()
-            .init_resource::<LoadingSaveHandle>()
-            .add_sub_state::<LoadingSavePhase>()
             // Save systems (only in Running state)
             .add_systems(
                 Update,
@@ -73,33 +68,19 @@ impl Plugin for SaveLoadPlugin {
             )
             .add_observer(execute_save)
             .add_observer(execute_load)
-            // Reconstruction phases
+            // Reconstruction phases - Unified Loading
             .add_systems(
-                OnEnter(LoadingSavePhase::WaitingForSceneSpawn),
-                reconstruction::spawn_save_scene,
+                OnEnter(LoadingPhase::PostLoadReconstruction),
+                (
+                    reconstruction::reconstruct_weapons_from_inventory,
+                    reconstruction::relink_in_progress_research,
+                    reconstruction::reconstruct_resource_rates,
+                ).chain(),
             )
             .add_systems(
-                Update,
-                reconstruction::check_scene_loaded
-                    .run_if(in_state(LoadingSavePhase::WaitingForSceneSpawn)),
-            )
-            .add_systems(
-                OnEnter(LoadingSavePhase::ReconstructingWeapons),
-                reconstruction::reconstruct_weapons_from_inventory,
-            )
-            .add_systems(
-                OnEnter(LoadingSavePhase::RebuildingMaps),
-                reconstruction::rebuild_research_recipe_maps,
-            )
-            .add_systems(
-                OnEnter(LoadingSavePhase::RelinkingResearch),
-                reconstruction::relink_in_progress_research,
-            )
-            .add_systems(
-                OnEnter(LoadingSavePhase::ReconstructingRates),
-                reconstruction::reconstruct_resource_rates,
-            )
-            .add_systems(OnEnter(LoadingSavePhase::Complete), finish_loading_save);
+                OnEnter(LoadingPhase::PostLoadReconstruction),
+                reconstruction::finish_reconstruction.after(reconstruction::reconstruct_resource_rates),
+            );
     }
 }
 
@@ -175,8 +156,7 @@ fn execute_save(_trigger: On<SaveGame>, world: &World) {
 fn execute_load(
     _trigger: On<LoadGame>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut save_handle: ResMut<LoadingSaveHandle>,
+    mut scene_to_load: ResMut<loading::SceneToLoad>,
     mut next_state: ResMut<NextState<GameState>>,
     // Entities to despawn
     villages: Query<Entity, With<Village>>,
@@ -235,14 +215,14 @@ fn execute_load(
     research_map.entities.clear();
     recipe_map.entities.clear();
 
-    // Load the save scene (must be relative to assets/ directory)
+    // Configure loading state
     let relative_path = latest_save.strip_prefix("assets").unwrap_or(&latest_save);
-    let handle: Handle<DynamicScene> = asset_server.load(relative_path.to_string_lossy().to_string());
-    save_handle.0 = Some(handle);
+    scene_to_load.path = relative_path.to_string_lossy().to_string();
+    scene_to_load.is_save = true;
 
-    // Transition to LoadingSave state
-    info!("Transitioning to LoadingSave state");
-    next_state.set(GameState::LoadingSave);
+    // Transition to unified Loading state
+    info!("Transitioning to unified Loading state");
+    next_state.set(GameState::Loading);
 }
 
 /// Finds the most recent save file in the saves directory.
@@ -267,23 +247,6 @@ fn find_latest_save(saves_dir: &Path) -> Option<std::path::PathBuf> {
         })
         .max_by_key(|e| e.metadata().and_then(|m| m.modified()).ok())
         .map(|e| e.path())
-}
-
-/// Finishes the load process and transitions back to Running state.
-fn finish_loading_save(
-    mut next_state: ResMut<NextState<GameState>>,
-    mut save_handle: ResMut<LoadingSaveHandle>,
-    villages: Query<Entity, With<Village>>,
-) {
-    if let Ok(entity) = villages.single() {
-        info!("finish_loading_save: Village found (Entity: {:?}). Transitioning to Running.", entity);
-    } else {
-        error!("finish_loading_save: NO VILLAGE FOUND! Something went wrong during reconstruction.");
-    }
-    
-    info!("Load reconstruction complete, transitioning to Running");
-    save_handle.0 = None;
-    next_state.set(GameState::Running);
 }
 
 /// Builds a DynamicScene containing only saveable components and resources.

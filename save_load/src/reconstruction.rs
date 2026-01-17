@@ -1,49 +1,18 @@
 //! Post-load reconstruction systems for the save/load system.
 //!
 //! These systems run in sequence after a save file is loaded to:
-//! 1. Wait for the scene to spawn
-//! 2. Reconstruct weapon entities from WeaponInventory
-//! 3. Rebuild Research and Recipe entity maps
-//! 4. Relink in-progress research to research entities
-//! 5. Reconstruct resource rates from completed research
+//! 1. Reconstruct weapon entities from WeaponInventory
+//! 2. Relink in-progress research to research entities
+//! 3. Reconstruct resource rates from completed research
 
 use {
     bevy::prelude::*,
-    crafting_resources::RecipeMap,
     hero_components::WeaponId,
-    recipes_assets::RecipeDefinition,
     research::{ResearchCompletionCount, ResearchMap, ResearchNode},
-    research_assets::ResearchDefinition,
-    states::LoadingSavePhase,
-    unlocks_resources::UnlockState,
+    states::LoadingPhase,
     village_components::{Village, WeaponInventory},
     wallet::ResourceRates,
 };
-
-use crate::LoadingSaveHandle;
-
-/// Spawns the save scene.
-pub fn spawn_save_scene(save_handle: Res<LoadingSaveHandle>, mut scene_spawner: ResMut<SceneSpawner>) {
-    let Some(handle) = &save_handle.0 else {
-        warn!("No save handle set, cannot spawn scene");
-        return;
-    };
-
-    info!("Spawning save scene");
-    scene_spawner.spawn_dynamic(handle.clone());
-}
-
-/// Checks if the save scene is fully spawned and transitions to next phase.
-pub fn check_scene_loaded(
-    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
-    village_query: Query<&Transform, With<Village>>,
-) {
-    // Check if village entity exists AND has Transform (scene is fully spawned)
-    if let Ok(transform) = village_query.single() {
-        info!("Save scene spawned. Village found with Transform at {:?}. Proceeding to weapon reconstruction.", transform.translation);
-        next_phase.set(LoadingSavePhase::ReconstructingWeapons);
-    }
-}
 
 /// Reconstructs weapon entities from the WeaponInventory.
 /// Weapons owned but not equipped need to be spawned from prefabs.
@@ -52,11 +21,9 @@ pub fn reconstruct_weapons_from_inventory(
     mut scene_spawner: ResMut<SceneSpawner>,
     village_query: Query<&WeaponInventory, With<Village>>,
     existing_weapons: Query<&WeaponId>,
-    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
 ) {
     let Ok(inventory) = village_query.single() else {
         warn!("No village found, skipping weapon reconstruction");
-        next_phase.set(LoadingSavePhase::RebuildingMaps);
         return;
     };
 
@@ -82,131 +49,7 @@ pub fn reconstruct_weapons_from_inventory(
         info!("Spawning weapon '{}' from prefab", weapon_id);
     }
 
-    info!("Weapon reconstruction complete, proceeding to map rebuilding");
-    next_phase.set(LoadingSavePhase::RebuildingMaps);
-}
-
-/// Rebuilds the ResearchMap and RecipeMap from assets.
-#[allow(clippy::too_many_arguments)]
-pub fn rebuild_research_recipe_maps(
-    mut commands: Commands,
-    mut research_map: ResMut<ResearchMap>,
-    mut recipe_map: ResMut<RecipeMap>,
-    mut research_assets: ResMut<Assets<ResearchDefinition>>,
-    mut recipe_assets: ResMut<Assets<RecipeDefinition>>,
-    unlock_state: Res<UnlockState>,
-    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
-) {
-    info!("Rebuilding research and recipe maps from assets");
-
-    // Collect research IDs first to avoid borrow conflicts
-    let research_ids: Vec<_> = research_assets.ids().collect();
-
-    for id in research_ids {
-        let (def_id, already_unlocked) = {
-            let Some(def) = research_assets.get(id) else {
-                continue;
-            };
-
-            if research_map.entities.contains_key(&def.id) {
-                continue;
-            }
-
-            let already_unlocked = unlock_state.completed.iter().any(|unlock_id| {
-                unlock_id.ends_with(&format!("{}_unlock", def.id))
-                    || unlock_id.starts_with(&format!("research_{}", def.id))
-            });
-
-            (def.id.clone(), already_unlocked)
-        };
-
-        let Some(handle) = research_assets.get_strong_handle(id) else {
-            warn!("Could not get strong handle for research '{}'", def_id);
-            continue;
-        };
-
-        let entity = if already_unlocked {
-            commands
-                .spawn((
-                    ResearchNode {
-                        id: def_id.clone(),
-                        handle,
-                    },
-                    research::Available,
-                    ResearchCompletionCount(0),
-                ))
-                .id()
-        } else {
-            commands
-                .spawn((
-                    ResearchNode {
-                        id: def_id.clone(),
-                        handle,
-                    },
-                    research::Locked,
-                    ResearchCompletionCount(0),
-                ))
-                .id()
-        };
-
-        research_map.entities.insert(def_id.clone(), entity);
-        debug!("Spawned research entity: {} -> {:?}", def_id, entity);
-    }
-
-    // Collect recipe IDs first to avoid borrow conflicts
-    let recipe_ids: Vec<_> = recipe_assets.ids().collect();
-
-    for id in recipe_ids {
-        let (def_id, already_unlocked) = {
-            let Some(def) = recipe_assets.get(id) else {
-                continue;
-            };
-
-            if recipe_map.entities.contains_key(&def.id) {
-                continue;
-            }
-
-            let already_unlocked = unlock_state.completed.iter().any(|unlock_id| {
-                unlock_id == &format!("recipe_{}_unlock", def.id)
-                    || unlock_id.starts_with(&format!("recipe_{}", def.id))
-            });
-
-            (def.id.clone(), already_unlocked)
-        };
-
-        let Some(handle) = recipe_assets.get_strong_handle(id) else {
-            warn!("Could not get strong handle for recipe '{}'", def_id);
-            continue;
-        };
-
-        let entity = if already_unlocked {
-            commands
-                .spawn((
-                    crafting::RecipeNode {
-                        id: def_id.clone(),
-                        handle,
-                    },
-                    unlock_states::Available,
-                ))
-                .id()
-        } else {
-            commands
-                .spawn((
-                    crafting::RecipeNode {
-                        id: def_id.clone(),
-                        handle,
-                    },
-                    unlock_states::Locked,
-                ))
-                .id()
-        };
-
-        recipe_map.entities.insert(def_id.clone(), entity);
-        debug!("Spawned recipe entity: {} -> {:?}", def_id, entity);
-    }
-
-    info!("Map rebuilding complete, proceeding to research relinking");
-    next_phase.set(LoadingSavePhase::RelinkingResearch);
+    info!("Weapon reconstruction complete");
 }
 
 /// Relinks in-progress research components to the correct research entities.
@@ -215,7 +58,6 @@ pub fn relink_in_progress_research(
     research_map: Res<ResearchMap>,
     in_progress_query: Query<(Entity, &research::InProgress)>,
     research_nodes: Query<Entity, With<ResearchNode>>,
-    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
 ) {
     info!("Relinking in-progress research to research entities");
 
@@ -258,8 +100,7 @@ pub fn relink_in_progress_research(
         }
     }
 
-    info!("Research relinking complete, proceeding to rate reconstruction");
-    next_phase.set(LoadingSavePhase::ReconstructingRates);
+    info!("Research relinking complete");
 }
 
 /// Reconstructs ResourceRates from completed research.
@@ -273,7 +114,6 @@ pub fn relink_in_progress_research(
 pub fn reconstruct_resource_rates(
     mut rates: ResMut<ResourceRates>,
     research_query: Query<(&ResearchNode, &ResearchCompletionCount)>,
-    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
 ) {
     info!("Reconstructing resource rates from completed research");
 
@@ -293,5 +133,10 @@ pub fn reconstruct_resource_rates(
     // TODO: Implement effect replay when ResearchDefinition includes effects,
     // or consider saving ResourceRates directly in the save file.
     info!("Resource rate reconstruction complete (placeholder - effects not stored in definitions)");
-    next_phase.set(LoadingSavePhase::Complete);
+}
+
+/// Finishes the reconstruction phase and transitions to Ready.
+pub fn finish_reconstruction(mut next_phase: ResMut<NextState<LoadingPhase>>) {
+    info!("Reconstruction complete, transitioning to LoadingPhase::Ready");
+    next_phase.set(LoadingPhase::Ready);
 }

@@ -4384,6 +4384,7 @@ dependencies = [
  "divinity_components",
  "enemy_components",
  "hero_components",
+ "loading",
  "portal_components",
  "recipes_assets",
  "research",

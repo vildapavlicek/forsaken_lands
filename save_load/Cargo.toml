@@ -11,6 +11,7 @@ crafting_resources.workspace = true
 divinity_components.workspace = true
 enemy_components.workspace = true
 hero_components.workspace = true
+loading.workspace = true
 portal_components.workspace = true
 recipes_assets.workspace = true
 research.workspace = true
