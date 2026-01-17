@@ -45,7 +45,6 @@ impl Plugin for HeroesPlugin {
         app.add_observer(hero_melee_attack_system);
         app.add_observer(apply_damage_system);
         app.add_observer(apply_melee_damage_observer);
-        app.add_observer(apply_melee_damage_observer);
         app.add_observer(apply_hit_indicator_observer);
         app.add_systems(OnExit(GameState::Running), clean_up_heroes);
     }
@@ -187,9 +186,9 @@ fn hero_melee_attack_system(
                 };
 
                 // Check 2: Angle within MeleeArc
-                // angle_between returns value in [0, PI], so we just check if it's <= half the width
+                // angle_to returns value in [-PI, PI], so we check its absolute value
                 let angle = attack_direction.angle_to(to_enemy.truncate());
-                if angle > arc.width / 2.0 {
+                if angle.abs() > arc.width / 2.0 {
                     return None;
                 }
 
@@ -278,18 +277,22 @@ fn apply_melee_damage_observer(
     }
 }
 
-fn apply_hit_indicator_observer(trigger: On<MeleeHit>, mut commands: Commands) {
+fn apply_hit_indicator_observer(
+    trigger: On<MeleeHit>,
+    mut commands: Commands,
+    mut sprites: Query<&mut Sprite>,
+) {
     let hit = trigger.event();
-    commands.insert_batch(
-        hit.targets
-            .iter()
-            .filter_map(|target| {
-                let target = *target;
-
-                Some((target, HitIndicator::new()))
-            })
-            .collect::<Vec<_>>(),
-    );
+    for &target in &hit.targets {
+        if let Ok(mut sprite) = sprites.get_mut(target) {
+            let mut indicator = HitIndicator::new();
+            // Swap immediately for instant feedback
+            std::mem::swap(&mut sprite.color, &mut indicator.saved_color);
+            // Since we already did 1 swap, we need 3 more (total 4) to end back on original color.
+            indicator.blink_count = 3;
+            commands.entity(target).insert(indicator);
+        }
+    }
 }
 
 fn hit_indicator_system(
