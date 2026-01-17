@@ -15,4 +15,5 @@ hero_components.workspace = true
 enemy_components.workspace = true
 hero_events.workspace = true
 shared_components.workspace = true
+crafting_events.workspace = true
 

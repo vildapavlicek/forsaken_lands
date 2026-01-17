@@ -1,7 +1,7 @@
 use {
     crate::{Available, CraftingInProgress, Locked, RecipeNode},
     bevy::prelude::*,
-    crafting_events::StartCraftingRequest,
+    crafting_events::{StartCraftingRequest, WeaponCrafted},
     crafting_resources::RecipeMap,
     divinity_events::IncreaseDivinity,
     recipes_assets::RecipeDefinition,
@@ -84,12 +84,31 @@ pub fn update_crafting_progress(
     mut scene_spawner: ResMut<SceneSpawner>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
     village_query: Query<Entity, With<Village>>,
+    recipe_map: Res<RecipeMap>,
+    recipe_nodes: Query<&RecipeNode>,
+    recipe_assets: Res<Assets<RecipeDefinition>>,
 ) {
     for (entity, mut crafting) in query.iter_mut() {
         crafting.timer.tick(time.delta());
 
         if crafting.timer.is_finished() {
             info!("Crafting complete for: {}", crafting.recipe_id);
+
+            // Check if this is a weapon and add to inventory
+            if recipe_map
+                .entities
+                .get(&crafting.recipe_id)
+                .and_then(|&e| recipe_nodes.get(e).ok())
+                .and_then(|node| recipe_assets.get(&node.handle))
+                .map_or(false, |def| {
+                    matches!(def.category, recipes_assets::RecipeCategory::Weapons)
+                })
+            {
+                commands.trigger(WeaponCrafted {
+                    weapon_id: crafting.recipe_id.clone(),
+                });
+                info!("Triggered WeaponCrafted for '{}'", crafting.recipe_id);
+            }
 
             // Process all outcomes
             for outcome in &crafting.outcomes {
@@ -113,7 +132,7 @@ pub fn update_crafting_progress(
                         if let Ok(village_entity) = village_query.single() {
                             commands.trigger(IncreaseDivinity {
                                 entity: village_entity,
-                                 xp_amount: *amount as f32,
+                                xp_amount: *amount as f32,
                             });
                             info!("Triggered IncreaseDivinity with {} XP for Village", amount);
                         } else {

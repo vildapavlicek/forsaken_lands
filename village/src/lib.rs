@@ -9,6 +9,7 @@ use {
 };
 
 pub mod equipment;
+pub mod inventory;
 
 pub struct VillagePlugin;
 
@@ -22,6 +23,7 @@ impl Plugin for VillagePlugin {
         app.add_observer(handle_divinity_increase);
         app.add_observer(equipment::handle_equip_weapon);
         app.add_observer(equipment::handle_unequip_weapon);
+        app.add_observer(inventory::handle_weapon_crafted);
     }
 }
 

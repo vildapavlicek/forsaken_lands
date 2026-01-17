@@ -5054,6 +5054,7 @@ name = "village"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "crafting_events",
  "divinity_components",
  "divinity_events",
  "enemy_components",
