@@ -58,7 +58,11 @@ fn hero_attack_intent_system(
     villages: Query<&Transform, With<Village>>,
 ) {
     let Ok(village_transform) = villages.single() else {
-        error!("village without transform");
+        if villages.is_empty() {
+             error!("hero_attack_intent_system: No village with Transform found.");
+        } else {
+             error!("hero_attack_intent_system: Multiple villages with Transform found! Count: {}", villages.iter().count());
+        }
         return;
     };
 
@@ -104,7 +108,11 @@ fn hero_projectile_spawn_system(
     villages: Query<&Transform, With<Village>>,
 ) {
     let Ok(village_transform) = villages.single() else {
-        error!("village without transform");
+        if villages.is_empty() {
+             error!("hero_projectile_spawn_system: No village with Transform found.");
+        } else {
+             error!("hero_projectile_spawn_system: Multiple villages with Transform found! Count: {}", villages.iter().count());
+        }
         return;
     };
 
@@ -137,7 +145,11 @@ fn hero_melee_attack_system(
     enemies: Query<(Entity, &Transform), With<Enemy>>,
 ) {
     let Ok(village_transform) = villages.single() else {
-        error!("village without transform");
+        if villages.is_empty() {
+             error!("hero_melee_attack_system: No village with Transform found.");
+        } else {
+             error!("hero_melee_attack_system: Multiple villages with Transform found! Count: {}", villages.iter().count());
+        }
         return;
     };
 

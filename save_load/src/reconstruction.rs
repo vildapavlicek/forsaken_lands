@@ -22,26 +22,25 @@ use {
 
 use crate::LoadingSaveHandle;
 
-/// Waits for the save scene to be fully spawned by checking for Village entity.
-pub fn wait_for_scene_loaded(
-    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
-    save_handle: Res<LoadingSaveHandle>,
-    mut scene_spawner: ResMut<SceneSpawner>,
-    village_query: Query<(), With<Village>>,
-) {
-    // Check if scene is spawning
+/// Spawns the save scene.
+pub fn spawn_save_scene(save_handle: Res<LoadingSaveHandle>, mut scene_spawner: ResMut<SceneSpawner>) {
     let Some(handle) = &save_handle.0 else {
-        warn!("No save handle set, cannot wait for scene");
+        warn!("No save handle set, cannot spawn scene");
         return;
     };
 
-    // Spawn the scene if not already done
-    // SceneSpawner will handle deduplication
+    info!("Spawning save scene");
     scene_spawner.spawn_dynamic(handle.clone());
+}
 
-    // Check if village entity exists (scene is fully spawned)
-    if !village_query.is_empty() {
-        info!("Save scene spawned, proceeding to weapon reconstruction");
+/// Checks if the save scene is fully spawned and transitions to next phase.
+pub fn check_scene_loaded(
+    mut next_phase: ResMut<NextState<LoadingSavePhase>>,
+    village_query: Query<&Transform, With<Village>>,
+) {
+    // Check if village entity exists AND has Transform (scene is fully spawned)
+    if let Ok(transform) = village_query.single() {
+        info!("Save scene spawned. Village found with Transform at {:?}. Proceeding to weapon reconstruction.", transform.translation);
         next_phase.set(LoadingSavePhase::ReconstructingWeapons);
     }
 }

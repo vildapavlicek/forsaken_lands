@@ -75,8 +75,12 @@ impl Plugin for SaveLoadPlugin {
             .add_observer(execute_load)
             // Reconstruction phases
             .add_systems(
+                OnEnter(LoadingSavePhase::WaitingForSceneSpawn),
+                reconstruction::spawn_save_scene,
+            )
+            .add_systems(
                 Update,
-                reconstruction::wait_for_scene_loaded
+                reconstruction::check_scene_loaded
                     .run_if(in_state(LoadingSavePhase::WaitingForSceneSpawn)),
             )
             .add_systems(
@@ -269,7 +273,14 @@ fn find_latest_save(saves_dir: &Path) -> Option<std::path::PathBuf> {
 fn finish_loading_save(
     mut next_state: ResMut<NextState<GameState>>,
     mut save_handle: ResMut<LoadingSaveHandle>,
+    villages: Query<Entity, With<Village>>,
 ) {
+    if let Ok(entity) = villages.single() {
+        info!("finish_loading_save: Village found (Entity: {:?}). Transitioning to Running.", entity);
+    } else {
+        error!("finish_loading_save: NO VILLAGE FOUND! Something went wrong during reconstruction.");
+    }
+    
     info!("Load reconstruction complete, transitioning to Running");
     save_handle.0 = None;
     next_state.set(GameState::Running);
@@ -304,6 +315,7 @@ fn build_save_scene(world: &World) -> DynamicScene {
         .allow_component::<Visibility>()
         .allow_component::<InheritedVisibility>()
         .allow_component::<ViewVisibility>()
+        .allow_component::<Sprite>()
         // Portal state & timers
         .allow_component::<SpawnTimer>()
         .allow_component::<SpawnTableId>()
