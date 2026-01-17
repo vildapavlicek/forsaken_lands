@@ -59,6 +59,7 @@
     ),
     4: (
       components: {
+        "hero_components::WeaponId": ("melee_rock"),
         "hero_components::Weapon": (),
         "hero_components::MeleeWeapon": (),
         "bevy_ecs::hierarchy::ChildOf": (3),
@@ -80,6 +81,7 @@
     ),
     5: (
       components: {
+        "hero_components::WeaponId": ("throwing_rock"),
         "hero_components::Weapon": (),
         "hero_components::RangedWeapon": (),
         "shared_components::DisplayName": ("Legendary throwing rock"),

@@ -3,6 +3,7 @@
   entities: {
     1: (
       components: {
+        "hero_components::WeaponId": ("bone_sword"),
         "hero_components::Weapon": (),
         "hero_components::MeleeWeapon": (),
         "shared_components::DisplayName": ("Bone Sword"),

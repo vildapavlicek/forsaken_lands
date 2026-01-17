@@ -2,7 +2,20 @@ use bevy::prelude::*;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(EquippedWeaponId)]
 pub struct Hero;
+
+/// Stable identifier for weapons that persists across save/load.
+/// This ID is used to reference weapons by name rather than entity ID.
+#[derive(Component, Reflect, Default, Clone)]
+#[reflect(Component)]
+pub struct WeaponId(pub String);
+
+/// References which weapon a hero has equipped by its WeaponId.
+/// Uses Option<String> to represent no weapon equipped (None).
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct EquippedWeaponId(pub Option<String>);
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]

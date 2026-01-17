@@ -3,6 +3,7 @@
   entities: {
     1: (
       components: {
+        "hero_components::WeaponId": ("wooden_bow"),
         "hero_components::Weapon": (),
         "hero_components::RangedWeapon": (),
         "hero_components::Damage": (2.0),

@@ -15,9 +15,17 @@ pub struct EnemyEncyclopedia {
     pub inner: HashMap<String, EncyclopediaEntry>,
 }
 
+/// Tracks all crafted/owned weapons at the village level.
+/// Stores weapon IDs that can be used to spawn weapons from prefabs.
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
-#[require(EnemyEncyclopedia, Pickable)]
+pub struct WeaponInventory {
+    pub weapons: Vec<String>,
+}
+
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Component)]
+#[require(EnemyEncyclopedia, WeaponInventory, Pickable)]
 pub struct Village;
 
 impl EnemyEncyclopedia {
