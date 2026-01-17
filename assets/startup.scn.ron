@@ -53,6 +53,7 @@
     3: (
       components: {
         "hero_components::Hero": (),
+        "hero_components::EquippedWeaponId": (Some("melee_rock")),
         "bevy_ecs::hierarchy::ChildOf": (2),
         "bevy_ecs::hierarchy::Children": ([4]),
       },
