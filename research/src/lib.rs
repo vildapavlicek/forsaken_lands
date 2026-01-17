@@ -71,6 +71,7 @@ impl Plugin for ResearchPlugin {
             .init_resource::<ResearchMap>()
             .register_type::<UnlockEffect>()
             .register_type::<ResearchCompletionCount>()
+            .register_type::<InProgress>()
             .add_systems(
                 Update,
                 systems::update_research_progress
