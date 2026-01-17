@@ -55,11 +55,26 @@ pub struct BonusValue {
     pub percentage: f32, // e.g. 0.1 for 10%
 }
 
+/// Aggregates damage modifiers for an entity's attacks, separating source types.
+///
+/// This component is the primary data source for damage calculation systems to apply
+/// buffs, gear stats, or passive abilities to outgoing damage.
+///
+/// Systems should query this component on the *attacker* entity and apply bonuses
+/// by summing the `all` value with the specific attack type value (`melee` or `ranged`).
+///
+/// Example formula:
+/// `total_flat = base + bonus.all.flat + bonus.specific.flat`
+/// `total_mult = 1.0 + bonus.all.percentage + bonus.specific.percentage`
+/// `final_damage = total_flat * total_mult`
 #[derive(Component, Reflect, Default, Debug, Clone, Copy, PartialEq)]
 #[reflect(Component, Default)]
 pub struct AttackBonus {
+    /// Bonuses applied to *all* forms of attack damage.
     pub all: BonusValue,
+    /// Bonuses applied specifically to melee attacks.
     pub melee: BonusValue,
+    /// Bonuses applied specifically to ranged/projectile attacks.
     pub ranged: BonusValue,
 }
 
