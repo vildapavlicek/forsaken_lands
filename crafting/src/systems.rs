@@ -1,12 +1,12 @@
 use {
     crate::{Available, CraftingInProgress, Locked, RecipeNode},
     bevy::prelude::*,
-    crafting_events::{StartCraftingRequest, WeaponCrafted},
+    crafting_events::StartCraftingRequest,
     crafting_resources::RecipeMap,
     divinity_events::IncreaseDivinity,
     recipes_assets::RecipeDefinition,
     village_components::Village,
-    weapon_assets::{WeaponDefinition, WeaponMap},
+    weapon_factory_events,
 };
 
 /// Observer that handles StartCraftingRequest events.
@@ -81,8 +81,6 @@ pub fn on_recipe_unlock_achieved(
 pub fn update_crafting_progress(
     mut commands: Commands,
     time: Res<Time>,
-    weapon_map: Res<WeaponMap>,
-    weapon_assets: Res<Assets<WeaponDefinition>>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
     village_query: Query<Entity, With<Village>>,
     recipe_map: Res<RecipeMap>,
@@ -95,7 +93,7 @@ pub fn update_crafting_progress(
         if crafting.timer.is_finished() {
             info!("Crafting complete for: {}", crafting.recipe_id);
 
-            // Check if this is a weapon and add to inventory
+            // Check if this is a weapon and spawn it via factory
             if recipe_map
                 .entities
                 .get(&crafting.recipe_id)
@@ -105,27 +103,17 @@ pub fn update_crafting_progress(
                     matches!(def.category, recipes_assets::RecipeCategory::Weapons)
                 })
             {
-                commands.trigger(WeaponCrafted {
+                commands.trigger(weapon_factory_events::SpawnWeaponRequest {
                     weapon_id: crafting.recipe_id.clone(),
+                    parent: None,
+                    add_to_inventory: true,
                 });
-                info!("Triggered WeaponCrafted for '{}'", crafting.recipe_id);
+                info!("Triggered SpawnWeaponRequest for '{}'", crafting.recipe_id);
             }
 
             // Process all outcomes
             for outcome in &crafting.outcomes {
                 match outcome {
-                    crafting_resources::CraftingOutcome::SpawnWeapon(weapon_id) => {
-                        if let Some(handle) = weapon_map.handles.get(weapon_id) {
-                            if let Some(def) = weapon_assets.get(handle) {
-                                weapon_assets::spawn_weapon(&mut commands, def);
-                                info!("Spawned weapon: {}", weapon_id);
-                            } else {
-                                warn!("Weapon definition not loaded for: {}", weapon_id);
-                            }
-                        } else {
-                            warn!("Weapon '{}' not found in WeaponMap", weapon_id);
-                        }
-                    }
                     crafting_resources::CraftingOutcome::AddResource { id, amount } => {
                         // TODO: Add to wallet
                         info!("Would add {} x {} to wallet", amount, id);

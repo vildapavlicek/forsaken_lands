@@ -20,6 +20,7 @@ members = [
   "events/divinity_events",
   "events/equipment_events",
   "events/hero_events",
+  "events/weapon_factory_events",
   "loading",
   "game_assets/portal_assets",
   "game_assets/recipes_assets",
@@ -48,6 +49,7 @@ members = [
   "unlocks",
   "village",
   "wallet",
+  "weapon_factory",
   "save_load",
 ]
 
@@ -78,6 +80,8 @@ portals = { path = "portals" }
 research = { path = "research" }
 research_assets = { path = "game_assets/research_assets" }
 weapon_assets = { path = "game_assets/weapon_assets" }
+weapon_factory = { path = "weapon_factory" }
+weapon_factory_events = { path = "events/weapon_factory_events" }
 research_ui = { path = "ui/research_ui" }
 resources_ui = { path = "ui/resources_ui" }
 shared_components = { path = "components/shared_components" }

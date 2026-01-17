@@ -6,7 +6,5 @@
     cost: {
         "bones": 15,
     },
-    outcomes: [
-        SpawnWeapon("bone_sword"),
-    ],
+    outcomes: [],
 )

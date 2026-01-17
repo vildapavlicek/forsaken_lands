@@ -6,10 +6,3 @@ use bevy::prelude::*;
 pub struct StartCraftingRequest {
     pub recipe_id: String,
 }
-
-/// Event triggered when a weapon has been crafted.
-/// Observer in village crate listens to this to add to inventory.
-#[derive(Event)]
-pub struct WeaponCrafted {
-    pub weapon_id: String,
-}

@@ -1884,6 +1884,7 @@ dependencies = [
  "village_ui",
  "wallet",
  "weapon_assets",
+ "weapon_factory",
  "widgets",
 ]
 
@@ -2030,7 +2031,7 @@ dependencies = [
  "unlocks_events",
  "unlocks_resources",
  "village_components",
- "weapon_assets",
+ "weapon_factory_events",
 ]
 
 [[package]]
@@ -4398,7 +4399,7 @@ dependencies = [
  "unlocks_resources",
  "village_components",
  "wallet",
- "weapon_assets",
+ "weapon_factory_events",
 ]
 
 [[package]]
@@ -5375,6 +5376,23 @@ dependencies = [
  "hero_components",
  "serde",
  "shared_components",
+]
+
+[[package]]
+name = "weapon_factory"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "village_components",
+ "weapon_assets",
+ "weapon_factory_events",
+]
+
+[[package]]
+name = "weapon_factory_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

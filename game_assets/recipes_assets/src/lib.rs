@@ -46,8 +46,6 @@ pub enum RecipeCategory {
 /// Actions that occur upon crafting completion.
 #[derive(Reflect, Clone, Debug, Deserialize)]
 pub enum CraftingOutcome {
-    /// Spawns a weapon by its weapon_id
-    SpawnWeapon(String),
     /// Adds a quantity of a resource to the player's wallet
     AddResource { id: String, amount: u32 },
     /// Unlocks a specific tech or feature

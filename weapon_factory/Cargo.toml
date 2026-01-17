@@ -1,0 +1,10 @@
+[package]
+name = "weapon_factory"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+village_components.workspace = true
+weapon_assets.workspace = true
+weapon_factory_events.workspace = true
