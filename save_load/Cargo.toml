@@ -9,6 +9,7 @@ chrono = "0.4"
 crafting.workspace = true
 crafting_resources.workspace = true
 divinity_components.workspace = true
+enemy_components.workspace = true
 hero_components.workspace = true
 portal_components.workspace = true
 recipes_assets.workspace = true

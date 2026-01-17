@@ -15,8 +15,12 @@ use {
     crafting::CraftingInProgress,
     crafting_resources::RecipeMap,
     divinity_components::{Divinity, DivinityStats, MaxUnlockedDivinity},
+    enemy_components::{
+        Enemy, EnemyRange, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards,
+        TargetDestination,
+    },
     hero_components::{EquippedWeaponId, Hero, WeaponId},
-    portal_components::Portal,
+    portal_components::{Portal, SpawnTableId, SpawnTimer},
     research::{InProgress, ResearchCompletionCount, ResearchMap},
     states::{GameState, LoadingSavePhase},
     std::{fs, io::Write, path::Path},
@@ -59,7 +63,12 @@ impl Plugin for SaveLoadPlugin {
             // Save systems (only in Running state)
             .add_systems(
                 Update,
-                (trigger_save_on_keypress, trigger_load_on_keypress, autosave_tick)
+                (
+                    trigger_save_on_keypress,
+                    trigger_load_on_keypress,
+                    //  disable auto save for testing purposes
+                    // autosave_tick
+                )
                     .run_if(in_state(GameState::Running)),
             )
             .add_observer(execute_save)
@@ -86,10 +95,7 @@ impl Plugin for SaveLoadPlugin {
                 OnEnter(LoadingSavePhase::ReconstructingRates),
                 reconstruction::reconstruct_resource_rates,
             )
-            .add_systems(
-                OnEnter(LoadingSavePhase::Complete),
-                finish_loading_save,
-            );
+            .add_systems(OnEnter(LoadingSavePhase::Complete), finish_loading_save);
     }
 }
 
@@ -122,7 +128,7 @@ fn execute_save(_trigger: On<SaveGame>, world: &World) {
     // Generate filename with timestamp
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let filename = format!("save_{}.scn.ron", timestamp);
-    let saves_dir = Path::new("saves");
+    let saves_dir = Path::new("assets/saves");
     let filepath = saves_dir.join(&filename);
 
     // Ensure saves directory exists
@@ -180,7 +186,7 @@ fn execute_load(
     mut research_map: ResMut<ResearchMap>,
     mut recipe_map: ResMut<RecipeMap>,
 ) {
-    let saves_dir = Path::new("saves");
+    let saves_dir = Path::new("assets/saves");
 
     // Find the latest save file
     let latest_save = match find_latest_save(saves_dir) {
@@ -225,8 +231,9 @@ fn execute_load(
     research_map.entities.clear();
     recipe_map.entities.clear();
 
-    // Load the save scene
-    let handle: Handle<DynamicScene> = asset_server.load(latest_save);
+    // Load the save scene (must be relative to assets/ directory)
+    let relative_path = latest_save.strip_prefix("assets").unwrap_or(&latest_save);
+    let handle: Handle<DynamicScene> = asset_server.load(relative_path.to_string_lossy().to_string());
     save_handle.0 = Some(handle);
 
     // Transition to LoadingSave state
@@ -290,6 +297,25 @@ fn build_save_scene(world: &World) -> DynamicScene {
         .allow_component::<InProgress>()
         .allow_component::<ResearchCompletionCount>()
         .allow_component::<CraftingInProgress>()
+        // Positioning
+        .allow_component::<Transform>()
+        .allow_component::<GlobalTransform>()
+        // Visibility
+        .allow_component::<Visibility>()
+        .allow_component::<InheritedVisibility>()
+        .allow_component::<ViewVisibility>()
+        // Portal state & timers
+        .allow_component::<SpawnTimer>()
+        .allow_component::<SpawnTableId>()
+        // Enemy state & timers
+        .allow_component::<Enemy>()
+        .allow_component::<Lifetime>()
+        .allow_component::<Health>()
+        .allow_component::<MovementSpeed>()
+        .allow_component::<MonsterId>()
+        .allow_component::<EnemyRange>()
+        .allow_component::<TargetDestination>()
+        .allow_component::<ResourceRewards>()
         // Hierarchy preservation
         .allow_component::<ChildOf>()
         // === Resources ===
@@ -302,4 +328,3 @@ fn build_save_scene(world: &World) -> DynamicScene {
         // Build the scene
         .build()
 }
-

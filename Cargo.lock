@@ -4382,6 +4382,7 @@ dependencies = [
  "crafting",
  "crafting_resources",
  "divinity_components",
+ "enemy_components",
  "hero_components",
  "portal_components",
  "recipes_assets",
