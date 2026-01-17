@@ -1,0 +1,24 @@
+(
+  resources: {},
+  entities: {
+    1: (
+      components: {
+        "hero_components::WeaponId": ("throwing_rock"),
+        "hero_components::Weapon": (),
+        "hero_components::RangedWeapon": (),
+        "shared_components::DisplayName": ("Legendary throwing rock"),
+        "hero_components::Damage": (0.5),
+        "hero_components::AttackRange": (250.0),
+        "hero_components::AttackSpeed": (
+          timer: (
+            stopwatch: ( elapsed: ( secs: 0, nanos: 0 ), is_paused: false ),
+            duration: ( secs: 0, nanos: 500_000_000 ),
+            mode: Repeating,
+            finished: false,
+            times_finished_this_tick: 0,
+          ),
+        ),
+      },
+    ),
+  },
+)
