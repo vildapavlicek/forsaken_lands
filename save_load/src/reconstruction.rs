@@ -7,46 +7,72 @@
 
 use {
     bevy::prelude::*,
-    hero_components::WeaponId,
+    hero_components::{EquippedWeaponId, Hero, WeaponId},
     research::{ResearchCompletionCount, ResearchMap, ResearchNode},
     states::LoadingPhase,
     village_components::{Village, WeaponInventory},
     wallet::ResourceRates,
 };
 
-/// Reconstructs weapon entities from the WeaponInventory.
-/// Weapons owned but not equipped need to be spawned from prefabs.
+/// Reconstructs weapon entities from the WeaponInventory and EquippedWeaponId.
+/// 
+/// 1. Spawns equipped weapons directly as children of Heroes.
+/// 2. Spawns remaining unequipped weapons from inventory as loose entities.
 pub fn reconstruct_weapons_from_inventory(
     asset_server: Res<AssetServer>,
     mut scene_spawner: ResMut<SceneSpawner>,
     village_query: Query<&WeaponInventory, With<Village>>,
-    existing_weapons: Query<&WeaponId>,
+    // We iterate heroes to find what they should have equipped
+    hero_query: Query<(Entity, &EquippedWeaponId), With<Hero>>,
 ) {
     let Ok(inventory) = village_query.single() else {
         warn!("No village found, skipping weapon reconstruction");
         return;
     };
 
-    // Collect existing weapon IDs to avoid duplicates
-    let existing_ids: std::collections::HashSet<_> = existing_weapons
-        .iter()
-        .map(|w| w.0.as_str())
-        .collect();
+    // Track how many of each weapon we spawn for heroes
+    let mut spawned_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
-    // Spawn weapons that are in inventory but not yet spawned
-    for weapon_id in &inventory.weapons {
-        if existing_ids.contains(weapon_id.as_str()) {
-            debug!("Weapon '{}' already exists, skipping", weapon_id);
-            continue;
+    // 1. Spawn equipped weapons for Heroes
+    for (hero_entity, equipped) in hero_query.iter() {
+        if let Some(weapon_id) = &equipped.0 {
+            let prefab_path = format!("recipes/prefabs/{}.scn.ron", weapon_id);
+            let handle: Handle<DynamicScene> = asset_server.load(&prefab_path);
+            
+            // Spawn directly as child of the hero
+            scene_spawner.spawn_dynamic_as_child(handle, hero_entity);
+            
+            *spawned_counts.entry(weapon_id.clone()).or_insert(0) += 1;
+            
+            info!("Spawning equipped weapon '{}' for hero {:?}", weapon_id, hero_entity);
         }
+    }
 
-        // Load weapon prefab from recipes/prefabs/{id}.scn.ron
-        let prefab_path = format!("recipes/prefabs/{}.scn.ron", weapon_id);
-        let handle: Handle<DynamicScene> = asset_server.load(&prefab_path);
-        
-        // Spawn the weapon scene
-        scene_spawner.spawn_dynamic(handle);
-        info!("Spawning weapon '{}' from prefab", weapon_id);
+    // 2. Spawn remaining unequipped weapons from Inventory
+    // TODO: Detailed tracking of equipped vs inventory items is out of scope. 
+    // Currently equipped items remain in inventory count. Future refactor should 
+    // remove equipped items from inventory and re-add them when unequipped.
+    
+    // Count total inventory
+    let mut inventory_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    for weapon_id in &inventory.weapons {
+        *inventory_counts.entry(weapon_id.clone()).or_insert(0) += 1;
+    }
+
+    // Spawn difference
+    for (weapon_id, total_count) in inventory_counts {
+        let spawned = spawned_counts.get(&weapon_id).copied().unwrap_or(0);
+        let remaining = total_count.saturating_sub(spawned);
+
+        if remaining > 0 {
+            info!("Spawning {} unequipped copies of '{}'", remaining, weapon_id);
+            let prefab_path = format!("recipes/prefabs/{}.scn.ron", weapon_id);
+            let handle: Handle<DynamicScene> = asset_server.load(&prefab_path);
+
+            for _ in 0..remaining {
+                scene_spawner.spawn_dynamic(handle.clone());
+            }
+        }
     }
 
     info!("Weapon reconstruction complete");

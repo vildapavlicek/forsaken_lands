@@ -156,7 +156,7 @@ fn execute_save(_trigger: On<SaveGame>, world: &World) {
 /// Observer that handles the LoadGame event.
 fn execute_load(
     _trigger: On<LoadGame>,
-    mut commands: Commands,
+    _commands: Commands,
     mut scene_to_load: ResMut<loading::SceneToLoad>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
@@ -258,8 +258,13 @@ fn build_save_scene(world: &World) -> DynamicScene {
         // === Resources ===
         .allow_resource::<Wallet>()
         .allow_resource::<UnlockState>()
-        // Extract all entities from the world
-        .extract_entities(world.iter_entities().map(|e| e.id()))
+        // Extract all entities from the world, except those with Weapon component
+        .extract_entities(
+            world
+                .iter_entities()
+                .filter(|e| !e.contains::<hero_components::Weapon>())
+                .map(|e| e.id()),
+        )
         // Extract the allowed resources
         .extract_resources()
         // Build the scene
