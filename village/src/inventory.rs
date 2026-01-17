@@ -1,6 +1,8 @@
-use bevy::prelude::*;
-use crafting_events::WeaponCrafted;
-use village_components::{Village, WeaponInventory};
+use {
+    bevy::prelude::*,
+    crafting_events::WeaponCrafted,
+    village_components::{Village, WeaponInventory},
+};
 
 pub fn handle_weapon_crafted(
     trigger: On<WeaponCrafted>,
@@ -12,6 +14,9 @@ pub fn handle_weapon_crafted(
         inventory.weapons.push(event.weapon_id.clone());
         info!("Added crafted weapon '{}' to inventory", event.weapon_id);
     } else {
-        warn!("Could not find Village to add crafted weapon '{}'", event.weapon_id);
+        warn!(
+            "Could not find Village to add crafted weapon '{}'",
+            event.weapon_id
+        );
     }
 }

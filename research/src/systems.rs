@@ -112,7 +112,12 @@ pub fn update_research_progress(
     time: Res<Time>,
     assets: Res<Assets<ResearchDefinition>>,
     mut commands: Commands,
-    mut query: Query<(Entity, &ResearchNode, &mut InProgress, &mut ResearchCompletionCount)>,
+    mut query: Query<(
+        Entity,
+        &ResearchNode,
+        &mut InProgress,
+        &mut ResearchCompletionCount,
+    )>,
 ) {
     for (entity, node, mut progress, mut count) in query.iter_mut() {
         progress.timer.tick(time.delta());

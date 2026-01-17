@@ -3,10 +3,7 @@
 //! Handles unlock achievements, research completions, and other notification events.
 
 use {
-    bevy::prelude::*,
-    research::ResearchCompleted,
-    states::GameState,
-    unlocks::UnlockAchieved,
+    bevy::prelude::*, research::ResearchCompleted, states::GameState, unlocks::UnlockAchieved,
     widgets::UiTheme,
 };
 

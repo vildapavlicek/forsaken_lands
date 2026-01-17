@@ -1,6 +1,8 @@
-use bevy::prelude::*;
-use equipment_events::{EquipWeaponRequest, UnequipWeaponRequest};
-use hero_components::{EquippedWeaponId, Hero, Weapon, WeaponId};
+use {
+    bevy::prelude::*,
+    equipment_events::{EquipWeaponRequest, UnequipWeaponRequest},
+    hero_components::{EquippedWeaponId, Hero, Weapon, WeaponId},
+};
 
 pub fn handle_equip_weapon(
     trigger: On<EquipWeaponRequest>,
@@ -13,7 +15,10 @@ pub fn handle_equip_weapon(
 
     // Validate weapon exists and get ID
     let Ok(weapon_id) = weapon_query.get(event.weapon) else {
-        warn!("Weapon entity {:?} not found or missing WeaponId", event.weapon);
+        warn!(
+            "Weapon entity {:?} not found or missing WeaponId",
+            event.weapon
+        );
         return;
     };
     let weapon_id_str = weapon_id.0.clone();
@@ -32,7 +37,9 @@ pub fn handle_equip_weapon(
     commands.entity(event.weapon).insert(ChildOf(event.hero));
 
     // Update persistence component
-    commands.entity(event.hero).insert(EquippedWeaponId(Some(weapon_id_str)));
+    commands
+        .entity(event.hero)
+        .insert(EquippedWeaponId(Some(weapon_id_str)));
 
     info!(
         "Equipped weapon {:?} to hero {:?}",
@@ -53,14 +60,11 @@ pub fn handle_unequip_weapon(
             if weapon_query.get(child).is_ok() {
                 // Remove parent relationship (weapon becomes unequipped)
                 commands.entity(child).remove::<ChildOf>();
-                
-                 // Update persistence component
+
+                // Update persistence component
                 commands.entity(event.hero).insert(EquippedWeaponId(None));
 
-                info!(
-                    "Unequipped weapon {:?} from hero {:?}",
-                    child, event.hero
-                );
+                info!("Unequipped weapon {:?} from hero {:?}", child, event.hero);
             }
         }
     }

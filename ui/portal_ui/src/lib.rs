@@ -3,10 +3,7 @@ use {
     divinity_components::{Divinity, MaxUnlockedDivinity},
     portal_components::Portal,
     states::GameState,
-    widgets::{
-        PanelWrapperRef, UiTheme, spawn_menu_panel,
-        spawn_panel_header_with_close,
-    },
+    widgets::{PanelWrapperRef, UiTheme, spawn_menu_panel, spawn_panel_header_with_close},
 };
 
 pub struct PortalUiPlugin;
@@ -245,7 +242,10 @@ fn update_portal_ui(
 
         // Update max divinity text
         for mut text in max_text_query.iter_mut() {
-            text.0 = format!("Tier {} - Level {}", max_divinity.0.tier, max_divinity.0.level);
+            text.0 = format!(
+                "Tier {} - Level {}",
+                max_divinity.0.tier, max_divinity.0.level
+            );
         }
     }
 }
@@ -253,8 +253,14 @@ fn update_portal_ui(
 #[allow(clippy::type_complexity)]
 fn handle_tier_navigation(
     mut portal_query: Query<(&mut Divinity, &MaxUnlockedDivinity), With<Portal>>,
-    decrease_query: Query<(&Interaction, &DecreaseTierButton), (Changed<Interaction>, With<Button>)>,
-    increase_query: Query<(&Interaction, &IncreaseTierButton), (Changed<Interaction>, With<Button>)>,
+    decrease_query: Query<
+        (&Interaction, &DecreaseTierButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    increase_query: Query<
+        (&Interaction, &IncreaseTierButton),
+        (Changed<Interaction>, With<Button>),
+    >,
 ) {
     // Handle decrease button
     for (interaction, btn) in decrease_query.iter() {
@@ -279,7 +285,7 @@ fn handle_tier_navigation(
                 // Only allow increase up to max unlocked divinity
                 let current = *divinity;
                 let max = max_divinity.0;
-                
+
                 if current < max {
                     if divinity.level < divinity_components::MAX_LEVEL {
                         divinity.level += 1;
@@ -287,7 +293,7 @@ fn handle_tier_navigation(
                         divinity.tier += 1;
                         divinity.level = 1;
                     }
-                    
+
                     // Clamp to max
                     if *divinity > max {
                         *divinity = max;

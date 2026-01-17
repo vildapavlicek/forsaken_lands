@@ -493,14 +493,18 @@ pub fn spawn_equipment_popup(
                             .with_children(|scroll_container| {
                                 // Spawn weapons directly here
                                 for weapon in &unequipped_weapons {
-                                    spawn_popup_weapon_card(scroll_container, hero_entity, weapon, false);
+                                    spawn_popup_weapon_card(
+                                        scroll_container,
+                                        hero_entity,
+                                        weapon,
+                                        false,
+                                    );
                                 }
                             });
                     }
                 });
         });
 }
-
 
 fn spawn_popup_weapon_card(
     parent: &mut ChildSpawnerCommands,
@@ -690,7 +694,6 @@ fn handle_change_equipment_button(
 
             // Build unequipped weapons list
 
-
             let unequipped_weapons: Vec<WeaponDisplayData> = unequipped_weapons_query
                 .iter()
                 .map(|(entity, display_name, damage, range, speed, melee_arc)| {
@@ -704,7 +707,6 @@ fn handle_change_equipment_button(
                         None
                     };
                     WeaponDisplayData {
-
                         entity,
                         name,
                         damage: damage.0,
@@ -727,7 +729,6 @@ fn handle_change_equipment_button(
 }
 
 fn handle_close_equipment_popup(
-
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<CloseEquipmentPopupButton>)>,
     popup_query: Query<Entity, With<EquipmentPopup>>,

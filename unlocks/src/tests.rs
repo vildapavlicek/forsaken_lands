@@ -1,15 +1,13 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use bevy::prelude::*;
-    use divinity_components::Divinity;
     // Assuming these are available via super usage in lib.rs or I need correct imports
     // Since this is unlocks/src/tests.rs, it is a module of unlocks.
     // So `super` refers to `unlocks`.
     use crate::{
-        ConditionSensor, LogicSignalEvent, MaxUnlockedDivinityChangedEvent, MaxUnlockedDivinitySensor,
-        TopicEntity, TopicMap, TopicSubscribers,
+        ConditionSensor, LogicSignalEvent, MaxUnlockedDivinityChangedEvent,
+        MaxUnlockedDivinitySensor, TopicEntity, TopicMap, TopicSubscribers,
     };
+    use {super::*, bevy::prelude::*, divinity_components::Divinity};
 
     #[test]
     fn test_divinity_sensor_updateds() {
@@ -23,9 +21,11 @@ mod tests {
         #[derive(Resource, Default)]
         struct SignalTracker(Vec<bool>);
         app.init_resource::<SignalTracker>();
-        app.add_observer(|trigger: On<LogicSignalEvent>, mut tracker: ResMut<SignalTracker>| {
-            tracker.0.push(trigger.event().is_high);
-        });
+        app.add_observer(
+            |trigger: On<LogicSignalEvent>, mut tracker: ResMut<SignalTracker>| {
+                tracker.0.push(trigger.event().is_high);
+            },
+        );
 
         // 1. Setup Topic
         let topic_key = "stat:max_unlocked_divinity".to_string();
@@ -70,10 +70,13 @@ mod tests {
         };
         app.world_mut().trigger(event);
         app.update();
-        
+
         {
             let tracker = app.world().resource::<SignalTracker>();
-            assert!(tracker.0.is_empty(), "Should not trigger if state remains false");
+            assert!(
+                tracker.0.is_empty(),
+                "Should not trigger if state remains false"
+            );
         }
 
         // 5. Test: Level met (Tier 1, Level 10) => Signal High

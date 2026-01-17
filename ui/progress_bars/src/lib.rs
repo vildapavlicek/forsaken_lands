@@ -196,7 +196,13 @@ fn update_progress_bars(
         if let Ok(progress) = research_query.get(bar.research_entity) {
             let fraction = progress.timer.fraction();
             let remaining = progress.timer.remaining_secs();
-            update_bar_visuals(children, fraction, remaining, &mut fill_query, &mut text_query);
+            update_bar_visuals(
+                children,
+                fraction,
+                remaining,
+                &mut fill_query,
+                &mut text_query,
+            );
         } else {
             // Research no longer in progress, despawn bar
             commands.entity(bar_entity).despawn();
@@ -208,7 +214,13 @@ fn update_progress_bars(
         if let Ok(crafting) = crafting_query.get(bar.crafting_entity) {
             let fraction = crafting.timer.fraction();
             let remaining = crafting.timer.remaining_secs();
-            update_bar_visuals(children, fraction, remaining, &mut fill_query, &mut text_query);
+            update_bar_visuals(
+                children,
+                fraction,
+                remaining,
+                &mut fill_query,
+                &mut text_query,
+            );
         } else {
             // Crafting entity despawned, remove bar
             commands.entity(bar_entity).despawn();
@@ -331,8 +343,9 @@ struct CleanupEmptyRootCommand;
 
 impl Command for CleanupEmptyRootCommand {
     fn apply(self, world: &mut World) {
-        let mut root_query = world.query_filtered::<(Entity, Option<&Children>), With<ProgressBarsRoot>>();
-        
+        let mut root_query =
+            world.query_filtered::<(Entity, Option<&Children>), With<ProgressBarsRoot>>();
+
         if let Some((root, children)) = root_query.iter(world).next() {
             let is_empty = children.is_none_or(|c| c.is_empty());
             if is_empty {

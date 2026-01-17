@@ -27,7 +27,6 @@ impl Plugin for VillagePlugin {
     }
 }
 
-
 fn update_encyclopedia(
     trigger: On<EnemyKilled>,
     mut village_query: Query<&mut EnemyEncyclopedia, With<Village>>,

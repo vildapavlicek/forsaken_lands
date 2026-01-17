@@ -2,7 +2,7 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     crafting::{Available, RecipeNode},
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
-    hero_ui::{spawn_hero_content, HeroUiRoot},
+    hero_ui::{HeroUiRoot, spawn_hero_content},
     recipes_assets::{RecipeCategory, RecipeDefinition},
     research::{Completed, InProgress, ResearchCompletionCount, ResearchNode},
     research_assets::ResearchDefinition,
@@ -543,7 +543,6 @@ impl Command for SpawnHeroesContentCommand {
                 },
             ));
         }
-
 
         // Spawn back button and heroes content
         world.commands().entity(container).with_children(|parent| {
