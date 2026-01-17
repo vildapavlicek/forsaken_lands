@@ -9,8 +9,9 @@ use {
             save_recipe_unlock_file, save_research_files,
         },
         models::{
-            CompareOp, LeafCondition, RecipeUnlockFormData, ResearchFormData, ResourceCost,
-            UnlockCondition,
+            CompareOp, EditorCraftingOutcome, EditorRecipeCategory, EditorWeaponType,
+            LeafCondition, RecipeFormData, RecipeUnlockFormData, ResearchFormData, ResourceCost,
+            UnlockCondition, WeaponFormData,
         },
         monster_prefab::{
             EnemyComponent, Reward, build_scene_ron, default_required_components,
@@ -21,7 +22,7 @@ use {
     eframe::egui,
     portal_assets::{SpawnCondition, SpawnEntry, SpawnTable},
     research_assets::ResearchDefinition,
-    std::path::PathBuf,
+    std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
 };
 
@@ -31,6 +32,8 @@ pub enum EditorTab {
     #[default]
     Research,
     RecipeUnlock,
+    Weapon,
+    Recipe,
     MonsterPrefab,
     SpawnTable,
 }
@@ -42,7 +45,11 @@ pub struct EditorState {
     /// Form data for the current research.
     research_form: ResearchFormData,
     /// Form data for the current recipe unlock.
-    recipe_form: RecipeUnlockFormData,
+    recipe_unlock_form: RecipeUnlockFormData,
+    /// Form data for the current weapon.
+    weapon_form: WeaponFormData,
+    /// Form data for the current recipe.
+    recipe_data_form: RecipeFormData,
     /// Path to the assets directory.
     assets_dir: Option<PathBuf>,
     /// Status message.
@@ -51,8 +58,24 @@ pub struct EditorState {
     existing_research_ids: Vec<String>,
     /// List of existing recipe unlock IDs.
     existing_recipe_unlock_ids: Vec<String>,
+    /// List of existing weapon IDs.
+    existing_weapon_ids: Vec<String>,
+    /// List of existing recipe IDs.
+    existing_recipe_ids: Vec<String>,
+    /// List of existing research filenames for the UI.
+    existing_research_filenames: Vec<String>,
+    /// List of existing weapon filenames for the UI.
+    existing_weapon_filenames: Vec<String>,
+    /// List of existing recipe filenames for the UI.
+    existing_recipe_filenames: Vec<String>,
     /// List of existing monster IDs for the dropdown.
     existing_monster_ids: Vec<String>,
+    /// Mapping of research internal ID to filename stem.
+    research_id_to_file: HashMap<String, String>,
+    /// Mapping of recipe internal ID to filename stem.
+    recipe_id_to_file: HashMap<String, String>,
+    /// Mapping of weapon internal ID to filename stem.
+    weapon_id_to_file: HashMap<String, String>,
     /// Show RON preview.
     show_preview: bool,
 
@@ -86,12 +109,22 @@ impl EditorState {
         Self {
             active_tab: EditorTab::Research,
             research_form: ResearchFormData::new(),
-            recipe_form: RecipeUnlockFormData::new(),
+            recipe_unlock_form: RecipeUnlockFormData::new(),
+            weapon_form: WeaponFormData::new(),
+            recipe_data_form: RecipeFormData::new(),
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
             existing_recipe_unlock_ids: Vec::new(),
+            existing_weapon_ids: Vec::new(),
+            existing_recipe_ids: Vec::new(),
+            existing_research_filenames: Vec::new(),
+            existing_weapon_filenames: Vec::new(),
+            existing_recipe_filenames: Vec::new(),
             existing_monster_ids: Vec::new(),
+            research_id_to_file: HashMap::new(),
+            recipe_id_to_file: HashMap::new(),
+            weapon_id_to_file: HashMap::new(),
             show_preview: false,
             monster_components,
             existing_prefabs: Vec::new(),
@@ -172,9 +205,27 @@ impl EditorState {
                         }
                         EditorTab::RecipeUnlock => {
                             ui.label("Recipe Unlock File:");
-                            let unlock_ron = generate_recipe_unlock_ron(&self.recipe_form);
+                            let unlock_ron = generate_recipe_unlock_ron(&self.recipe_unlock_form);
                             ui.add(
                                 egui::TextEdit::multiline(&mut unlock_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
+                        EditorTab::Weapon => {
+                            ui.label("Weapon File:");
+                            let weapon_ron = self.weapon_form.to_ron();
+                            ui.add(
+                                egui::TextEdit::multiline(&mut weapon_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
+                        EditorTab::Recipe => {
+                            ui.label("Recipe File:");
+                            let recipe_ron = self.recipe_data_form.to_ron();
+                            ui.add(
+                                egui::TextEdit::multiline(&mut recipe_ron.as_str())
                                     .font(egui::TextStyle::Monospace)
                                     .desired_width(f32::INFINITY),
                             );
@@ -210,6 +261,8 @@ impl EditorState {
                     EditorTab::RecipeUnlock,
                     "🔧 Recipe Unlock",
                 );
+                ui.selectable_value(&mut self.active_tab, EditorTab::Weapon, "⚔ Weapon");
+                ui.selectable_value(&mut self.active_tab, EditorTab::Recipe, "🧪 Recipe");
                 ui.selectable_value(
                     &mut self.active_tab,
                     EditorTab::MonsterPrefab,
@@ -226,7 +279,8 @@ impl EditorState {
             egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
                 EditorTab::Research => self.show_research_form(ui),
                 EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
-
+                EditorTab::Weapon => self.show_weapon_form(ui),
+                EditorTab::Recipe => self.show_recipe_form(ui),
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
                 EditorTab::SpawnTable => self.show_spawn_table_form(ui),
             });
@@ -250,14 +304,14 @@ impl EditorState {
                 ui.label("No research assets found in assets/research/.");
             } else {
                 ui.horizontal_wrapped(|ui| {
-                    let mut load_id = None;
-                    for id in &self.existing_research_ids {
-                        if ui.button(id).clicked() {
-                            load_id = Some(id.clone());
+                    let mut load_filename = None;
+                    for filename in &self.existing_research_filenames {
+                        if ui.button(filename).clicked() {
+                            load_filename = Some(filename.clone());
                         }
                     }
-                    if let Some(id) = load_id {
-                        self.load_research(&id);
+                    if let Some(filename) = load_filename {
+                        self.load_research(&filename);
                     }
                 });
             }
@@ -451,7 +505,7 @@ impl EditorState {
         // Recipe ID
         ui.horizontal(|ui| {
             ui.label("Recipe ID:");
-            ui.text_edit_singleline(&mut self.recipe_form.id);
+            ui.text_edit_singleline(&mut self.recipe_unlock_form.id);
         });
         ui.small("The ID of the recipe to unlock (e.g., \"bone_sword\")");
         ui.add_space(8.0);
@@ -459,7 +513,7 @@ impl EditorState {
         // Display Name
         ui.horizontal(|ui| {
             ui.label("Display Name:");
-            ui.text_edit_singleline(&mut self.recipe_form.display_name);
+            ui.text_edit_singleline(&mut self.recipe_unlock_form.display_name);
         });
         ui.small("Shown in unlock notifications (e.g., \"Bone Sword Recipe\")");
         ui.add_space(8.0);
@@ -472,7 +526,7 @@ impl EditorState {
             "recipe",
             &self.existing_research_ids,
             &self.existing_monster_ids,
-            &mut self.recipe_form.unlock_condition,
+            &mut self.recipe_unlock_form.unlock_condition,
         );
         ui.add_space(16.0);
 
@@ -482,22 +536,22 @@ impl EditorState {
         ui.add_enabled_ui(false, |ui| {
             ui.horizontal(|ui| {
                 ui.label("Unlock file:");
-                ui.monospace(self.recipe_form.unlock_filename());
+                ui.monospace(self.recipe_unlock_form.unlock_filename());
             });
             ui.horizontal(|ui| {
                 ui.label("Unlock ID:");
-                ui.monospace(self.recipe_form.unlock_id());
+                ui.monospace(self.recipe_unlock_form.unlock_id());
             });
             ui.horizontal(|ui| {
                 ui.label("Reward ID:");
-                ui.monospace(self.recipe_form.reward_id());
+                ui.monospace(self.recipe_unlock_form.reward_id());
             });
         });
         ui.add_space(16.0);
 
         // Validation and Save
         ui.separator();
-        let errors = self.recipe_form.validate();
+        let errors = self.recipe_unlock_form.validate();
         if !errors.is_empty() {
             ui.colored_label(egui::Color32::RED, "Validation Errors:");
             for error in &errors {
@@ -519,8 +573,341 @@ impl EditorState {
             );
         }
     }
-}
 
+    fn show_weapon_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Weapon Definition");
+        ui.add_space(4.0);
+
+        // Load existing weapons
+        ui.group(|ui| {
+            ui.heading("Load Existing Weapon");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_weapon_ids.is_empty() {
+                ui.label("No weapon assets found in assets/weapons/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_filename = None;
+                    for filename in &self.existing_weapon_filenames {
+                        if ui.button(filename).clicked() {
+                            load_filename = Some(filename.clone());
+                        }
+                    }
+                    if let Some(filename) = load_filename {
+                        self.load_weapon(&filename);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+
+        // Weapon ID
+        ui.horizontal(|ui| {
+            ui.label("Weapon ID:");
+            ui.text_edit_singleline(&mut self.weapon_form.id);
+        });
+        ui.small("The internal ID (e.g., \"bone_sword\")");
+        ui.add_space(8.0);
+
+        // Display Name
+        ui.horizontal(|ui| {
+            ui.label("Display Name:");
+            ui.text_edit_singleline(&mut self.weapon_form.display_name);
+        });
+        ui.add_space(8.0);
+
+        // Weapon Type
+        ui.separator();
+        ui.heading("Weapon Type");
+        let current_type = self.weapon_form.weapon_type.display_name();
+        ui.horizontal(|ui| {
+            ui.label("Type:");
+            egui::ComboBox::from_id_salt("weapon_type")
+                .selected_text(current_type)
+                .show_ui(ui, |ui| {
+                    for type_name in EditorWeaponType::all_types() {
+                        if ui
+                            .selectable_label(current_type == type_name, type_name)
+                            .clicked()
+                        {
+                            self.weapon_form.weapon_type = EditorWeaponType::from_type_name(type_name);
+                        }
+                    }
+                });
+        });
+
+        // Melee-specific: arc width
+        if let EditorWeaponType::Melee { arc_width } = &mut self.weapon_form.weapon_type {
+            ui.horizontal(|ui| {
+                ui.label("Arc Width (radians):");
+                ui.add(egui::DragValue::new(arc_width).speed(0.01).range(0.1..=6.28));
+            });
+            ui.small("Melee attack arc width (1.047 = 60 degrees)");
+        }
+        ui.add_space(8.0);
+
+        // Stats
+        ui.separator();
+        ui.heading("Stats");
+        ui.horizontal(|ui| {
+            ui.label("Damage:");
+            ui.add(egui::DragValue::new(&mut self.weapon_form.damage).speed(0.1).range(0.1..=1000.0));
+        });
+        ui.horizontal(|ui| {
+            ui.label("Attack Range:");
+            ui.add(egui::DragValue::new(&mut self.weapon_form.attack_range).speed(1.0).range(1.0..=1000.0));
+        });
+        ui.horizontal(|ui| {
+            ui.label("Attack Speed (ms):");
+            ui.add(egui::DragValue::new(&mut self.weapon_form.attack_speed_ms).speed(10).range(100..=10000));
+        });
+        ui.add_space(8.0);
+
+        // Preview
+        ui.separator();
+        ui.heading("Generated File (Preview)");
+        ui.add_enabled_ui(false, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Filename:");
+                ui.monospace(self.weapon_form.weapon_filename());
+            });
+        });
+        ui.add_space(16.0);
+
+        // Validation and Save
+        ui.separator();
+        let errors = self.weapon_form.validate();
+        if !errors.is_empty() {
+            ui.colored_label(egui::Color32::RED, "Validation Errors:");
+            for error in &errors {
+                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
+            }
+            ui.add_space(8.0);
+        }
+
+        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
+            if ui.button("💾 Save Weapon").clicked() {
+                self.save_weapon();
+            }
+        });
+
+        if self.assets_dir.is_none() {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ Select assets directory first (File → Select Assets Directory)",
+            );
+        }
+    }
+
+    fn show_recipe_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Recipe Definition");
+        ui.add_space(4.0);
+
+        // Load existing recipes
+        ui.group(|ui| {
+            ui.heading("Load Existing Recipe");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_recipe_ids.is_empty() {
+                ui.label("No recipe assets found in assets/recipes/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_filename = None;
+                    for filename in &self.existing_recipe_filenames {
+                        if ui.button(filename).clicked() {
+                            load_filename = Some(filename.clone());
+                        }
+                    }
+                    if let Some(filename) = load_filename {
+                        self.load_recipe(&filename);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+
+        // Recipe ID
+        ui.horizontal(|ui| {
+            ui.label("Recipe ID:");
+            ui.text_edit_singleline(&mut self.recipe_data_form.id);
+        });
+        ui.small("The internal ID (e.g., \"bone_sword\")");
+        ui.add_space(8.0);
+
+        // Display Name
+        ui.horizontal(|ui| {
+            ui.label("Display Name:");
+            ui.text_edit_singleline(&mut self.recipe_data_form.display_name);
+        });
+        ui.add_space(8.0);
+
+        // Category
+        let current_category = self.recipe_data_form.category.display_name();
+        ui.horizontal(|ui| {
+            ui.label("Category:");
+            egui::ComboBox::from_id_salt("recipe_category")
+                .selected_text(current_category)
+                .show_ui(ui, |ui| {
+                    for cat_name in EditorRecipeCategory::all_types() {
+                        if ui
+                            .selectable_label(current_category == cat_name, cat_name)
+                            .clicked()
+                        {
+                            self.recipe_data_form.category = EditorRecipeCategory::from_type_name(cat_name);
+                        }
+                    }
+                });
+        });
+        ui.add_space(8.0);
+
+        // Craft Time
+        ui.horizontal(|ui| {
+            ui.label("Craft Time:");
+            ui.add(egui::DragValue::new(&mut self.recipe_data_form.craft_time).speed(0.1).range(0.1..=3600.0));
+            ui.label("seconds");
+        });
+        ui.add_space(8.0);
+
+        // Costs
+        ui.separator();
+        ui.heading("Resource Costs");
+        let mut remove_cost_idx: Option<usize> = None;
+        for (i, cost) in self.recipe_data_form.costs.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label("Resource:");
+                ui.add(egui::TextEdit::singleline(&mut cost.resource_id).desired_width(120.0));
+                ui.label("Amount:");
+                ui.add(egui::DragValue::new(&mut cost.amount).range(1..=10000));
+                if ui.button("🗑").clicked() {
+                    remove_cost_idx = Some(i);
+                }
+            });
+        }
+        if let Some(idx) = remove_cost_idx {
+            self.recipe_data_form.costs.remove(idx);
+        }
+        if ui.button("+ Add Resource").clicked() {
+            self.recipe_data_form.costs.push(ResourceCost::default());
+        }
+        ui.add_space(8.0);
+
+        // Outcomes
+        ui.separator();
+        ui.heading("Crafting Outcomes");
+        let mut remove_outcome_idx: Option<usize> = None;
+        for (i, outcome) in self.recipe_data_form.outcomes.iter_mut().enumerate() {
+            ui.group(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(format!("Outcome #{}:", i + 1));
+                    if ui.button("🗑").clicked() {
+                        remove_outcome_idx = Some(i);
+                    }
+                });
+                let current_outcome = outcome.display_name();
+                ui.horizontal(|ui| {
+                    ui.label("Type:");
+                    egui::ComboBox::from_id_salt(format!("outcome_type_{}", i))
+                        .selected_text(current_outcome)
+                        .show_ui(ui, |ui| {
+                            for out_name in EditorCraftingOutcome::all_types() {
+                                if ui
+                                    .selectable_label(current_outcome == out_name, out_name)
+                                    .clicked()
+                                {
+                                    *outcome = EditorCraftingOutcome::from_type_name(out_name);
+                                }
+                            }
+                        });
+                });
+                // Outcome-specific fields
+                match outcome {
+                    EditorCraftingOutcome::AddResource { id, amount } => {
+                        ui.horizontal(|ui| {
+                            ui.label("Resource ID:");
+                            ui.add(egui::TextEdit::singleline(id).desired_width(100.0));
+                            ui.label("Amount:");
+                            ui.add(egui::DragValue::new(amount).range(1..=10000));
+                        });
+                    }
+                    EditorCraftingOutcome::UnlockFeature(feature) => {
+                        ui.horizontal(|ui| {
+                            ui.label("Feature ID:");
+                            ui.text_edit_singleline(feature);
+                        });
+                    }
+                    EditorCraftingOutcome::GrantXp(xp) => {
+                        ui.horizontal(|ui| {
+                            ui.label("XP Amount:");
+                            ui.add(egui::DragValue::new(xp).range(1..=100000));
+                        });
+                    }
+                    EditorCraftingOutcome::IncreaseDivinity(amount) => {
+                        ui.horizontal(|ui| {
+                            ui.label("Divinity Amount:");
+                            ui.add(egui::DragValue::new(amount).range(1..=100000));
+                        });
+                    }
+                }
+            });
+        }
+        if let Some(idx) = remove_outcome_idx {
+            self.recipe_data_form.outcomes.remove(idx);
+        }
+        if ui.button("+ Add Outcome").clicked() {
+            self.recipe_data_form.outcomes.push(EditorCraftingOutcome::default());
+        }
+        ui.add_space(16.0);
+
+        // Preview
+        ui.separator();
+        ui.heading("Generated File (Preview)");
+        ui.add_enabled_ui(false, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Filename:");
+                ui.monospace(self.recipe_data_form.recipe_filename());
+            });
+        });
+        ui.add_space(16.0);
+
+        // Validation and Save
+        ui.separator();
+        let errors = self.recipe_data_form.validate();
+        if !errors.is_empty() {
+            ui.colored_label(egui::Color32::RED, "Validation Errors:");
+            for error in &errors {
+                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
+            }
+            ui.add_space(8.0);
+        }
+
+        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
+            if ui.button("💾 Save Recipe").clicked() {
+                self.save_recipe();
+            }
+        });
+
+        if self.assets_dir.is_none() {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ Select assets directory first (File → Select Assets Directory)",
+            );
+        }
+    }
+}
 /// Show the structured condition editor UI.
 fn show_condition_editor(
     ui: &mut egui::Ui,
@@ -767,8 +1154,16 @@ impl EditorState {
                 self.status = "New research form created".to_string();
             }
             EditorTab::RecipeUnlock => {
-                self.recipe_form = RecipeUnlockFormData::new();
+                self.recipe_unlock_form = RecipeUnlockFormData::new();
                 self.status = "New recipe unlock form created".to_string();
+            }
+            EditorTab::Weapon => {
+                self.weapon_form = WeaponFormData::new();
+                self.status = "New weapon form created".to_string();
+            }
+            EditorTab::Recipe => {
+                self.recipe_data_form = RecipeFormData::new();
+                self.status = "New recipe form created".to_string();
             }
             EditorTab::MonsterPrefab => {
                 self.monster_components = default_required_components();
@@ -800,35 +1195,44 @@ impl EditorState {
     fn load_existing_ids(&mut self, assets_dir: &PathBuf) {
         // Load research IDs
         self.existing_research_ids.clear();
+        self.existing_research_filenames.clear();
+        self.research_id_to_file.clear();
         let research_dir = assets_dir.join("research");
         if let Ok(entries) = std::fs::read_dir(research_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if let Some(filename) = path.file_name() {
-                    let filename = filename.to_string_lossy();
-                    if filename.ends_with(".research.ron") {
-                        if let Some(id) = filename.strip_suffix(".research.ron") {
-                            self.existing_research_ids.push(id.to_string());
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".research.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".research.ron") {
+                            self.existing_research_filenames.push(stem.to_string());
+                            // Extract actual internal ID
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                let id = extract_id_from_ron(&content)
+                                    .unwrap_or_else(|| stem.to_string());
+                                self.existing_research_ids.push(id.clone());
+                                self.research_id_to_file.insert(id, stem.to_string());
+                            }
                         }
                     }
                 }
             }
         }
         self.existing_research_ids.sort();
+        self.existing_research_filenames.sort();
 
-        // Load recipe unlock IDs
+        // Load recipe unlock IDs (these are a bit special as they have "recipe_" prefix in file but not in ID?)
         self.existing_recipe_unlock_ids.clear();
         let recipes_unlock_dir = assets_dir.join("unlocks").join("recipes");
         if let Ok(entries) = std::fs::read_dir(recipes_unlock_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if let Some(filename) = path.file_name() {
-                    let filename = filename.to_string_lossy();
-                    if filename.ends_with(".unlock.ron") {
-                        if let Some(id) = filename.strip_suffix(".unlock.ron") {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".unlock.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".unlock.ron") {
                             // filename is recipe_{id}.unlock.ron
-                            // we want just {id}
-                            if let Some(pure_id) = id.strip_prefix("recipe_") {
+                            if let Some(pure_id) = stem.strip_prefix("recipe_") {
                                 self.existing_recipe_unlock_ids.push(pure_id.to_string());
                             }
                         }
@@ -838,8 +1242,7 @@ impl EditorState {
         }
         self.existing_recipe_unlock_ids.sort();
 
-        // Load monster IDs from prefabs/enemies by parsing MonsterId from file content
-        // Also load prefab filenames for the monster prefab list
+        // Load monster IDs from prefabs/enemies
         self.existing_monster_ids.clear();
         self.existing_prefabs.clear();
         let enemies_dir = assets_dir.join("prefabs").join("enemies");
@@ -849,14 +1252,12 @@ impl EditorState {
                 if let Some(filename) = path.file_name() {
                     let filename_str = filename.to_string_lossy();
                     if filename_str.ends_with(".scn.ron") {
-                        // Add to prefab list (filename without extension)
-                        if let Some(id) = filename_str.strip_suffix(".scn.ron") {
-                            self.existing_prefabs.push(id.to_string());
-                        }
-                        // Also extract MonsterId for validation dropdowns
-                        if let Ok(content) = std::fs::read_to_string(&path) {
-                            if let Some(monster_id) = extract_monster_id_from_ron(&content) {
-                                self.existing_monster_ids.push(monster_id);
+                        if let Some(stem) = filename_str.strip_suffix(".scn.ron") {
+                            self.existing_prefabs.push(stem.to_string());
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                if let Some(monster_id) = extract_monster_id_from_ron(&content) {
+                                    self.existing_monster_ids.push(monster_id);
+                                }
                             }
                         }
                     }
@@ -864,27 +1265,78 @@ impl EditorState {
             }
         }
         self.existing_prefabs.sort();
-        self.existing_prefabs.sort();
         self.existing_monster_ids.sort();
 
         // Load spawn tables (.spawn_table.ron)
         self.existing_spawn_tables.clear();
-        // Assuming spawn tables can be anywhere or just in root assets? User mentioned assets/default.spawn_table.ron
-        // We'll search in assets root for now.
         if let Ok(entries) = std::fs::read_dir(assets_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if let Some(filename) = path.file_name() {
-                    let filename = filename.to_string_lossy();
-                    if filename.ends_with(".spawn_table.ron") {
-                        if let Some(id) = filename.strip_suffix(".spawn_table.ron") {
-                            self.existing_spawn_tables.push(id.to_string());
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".spawn_table.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".spawn_table.ron") {
+                            self.existing_spawn_tables.push(stem.to_string());
                         }
                     }
                 }
             }
         }
         self.existing_spawn_tables.sort();
+
+        // Load weapon IDs
+        self.existing_weapon_ids.clear();
+        self.existing_weapon_filenames.clear();
+        self.weapon_id_to_file.clear();
+        let weapons_dir = assets_dir.join("weapons");
+        if let Ok(entries) = std::fs::read_dir(weapons_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".weapon.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".weapon.ron") {
+                            self.existing_weapon_filenames.push(stem.to_string());
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                let id = extract_id_from_ron(&content)
+                                    .unwrap_or_else(|| stem.to_string());
+                                self.existing_weapon_ids.push(id.clone());
+                                self.weapon_id_to_file.insert(id, stem.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_weapon_ids.sort();
+        self.existing_weapon_filenames.sort();
+
+        // Load recipe IDs
+        self.existing_recipe_ids.clear();
+        self.existing_recipe_filenames.clear();
+        self.recipe_id_to_file.clear();
+        let recipes_dir = assets_dir.join("recipes");
+        if let Ok(entries) = std::fs::read_dir(recipes_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".recipe.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".recipe.ron") {
+                            self.existing_recipe_filenames.push(stem.to_string());
+                            if let Ok(content) = std::fs::read_to_string(&path) {
+                                let id = extract_id_from_ron(&content)
+                                    .unwrap_or_else(|| stem.to_string());
+                                self.existing_recipe_ids.push(id.clone());
+                                self.recipe_id_to_file.insert(id, stem.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_recipe_ids.sort();
+        self.existing_recipe_filenames.sort();
     }
 
     fn save_research(&mut self) {
@@ -905,18 +1357,14 @@ impl EditorState {
         }
     }
 
-    fn load_research(&mut self, id: &str) {
+    fn load_research(&mut self, filename_stem: &str) {
         if let Some(assets_dir) = &self.assets_dir {
-            // Construct paths
+            // Construct research path
             let research_path = assets_dir
                 .join("research")
-                .join(format!("{}.research.ron", id));
-            let unlock_path = assets_dir
-                .join("unlocks")
-                .join("research")
-                .join(format!("research_{}.unlock.ron", id));
+                .join(format!("{}.research.ron", filename_stem));
 
-            // Read files
+            // Read research file
             let research_content = match std::fs::read_to_string(&research_path) {
                 Ok(c) => c,
                 Err(e) => {
@@ -924,10 +1372,28 @@ impl EditorState {
                     return;
                 }
             };
+
+            // Parse research RON to get the internal ID
+            let research_def: ResearchDefinition = match ron::from_str(&research_content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse research RON: {}", e);
+                    return;
+                }
+            };
+
+            // Construct unlock path using the actual internal ID
+            let internal_id = &research_def.id;
+            let unlock_path = assets_dir
+                .join("unlocks")
+                .join("research")
+                .join(format!("research_{}.unlock.ron", internal_id));
+
+            // Read unlock file
             let unlock_content = match std::fs::read_to_string(&unlock_path) {
                 Ok(c) => c,
                 Err(e) => {
-                    self.status = format!("✗ Failed to read unlock file: {}", e);
+                    self.status = format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
                     return;
                 }
             };
@@ -949,8 +1415,8 @@ impl EditorState {
             };
 
             // Convert and populate form
-            self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def, id.to_string());
-            self.status = format!("✓ Loaded research: {}", id);
+            self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def, filename_stem.to_string());
+            self.status = format!("✓ Loaded research: {} (Internal ID: {})", filename_stem, internal_id);
         }
     }
 
@@ -981,14 +1447,210 @@ impl EditorState {
             };
 
             // Convert and populate form
-            self.recipe_form = RecipeUnlockFormData::from_assets(&unlock_def);
+            self.recipe_unlock_form = RecipeUnlockFormData::from_assets(&unlock_def);
             self.status = format!("✓ Loaded recipe unlock: {}", id);
         }
     }
 
+    fn save_weapon(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            let weapons_dir = assets_dir.join("weapons");
+            let file_path = weapons_dir.join(self.weapon_form.weapon_filename());
+            
+            // Ensure weapons directory exists
+            if let Err(e) = std::fs::create_dir_all(&weapons_dir) {
+                self.status = format!("✗ Failed to create weapons directory: {}", e);
+                return;
+            }
+
+            // Write file
+            let ron_content = self.weapon_form.to_ron();
+            match std::fs::write(&file_path, ron_content) {
+                Ok(()) => {
+                    self.status = format!("✓ Saved weapon: {}", file_path.display());
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to save weapon: {}", e);
+                }
+            }
+        }
+    }
+
+    fn load_weapon(&mut self, filename_stem: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            let file_path = assets_dir.join("weapons").join(format!("{}.weapon.ron", filename_stem));
+
+            let content = match std::fs::read_to_string(&file_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read weapon file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse weapon file using regex (similar to how we parse monster prefabs)
+            // Extract fields from RON content
+            use regex::Regex;
+            let id_re = Regex::new(r#"id:\s*"([^"]+)""#).ok();
+            let name_re = Regex::new(r#"display_name:\s*"([^"]+)""#).ok();
+            let damage_re = Regex::new(r#"damage:\s*([\d.]+)"#).ok();
+            let range_re = Regex::new(r#"attack_range:\s*([\d.]+)"#).ok();
+            let speed_re = Regex::new(r#"attack_speed_ms:\s*(\d+)"#).ok();
+            let melee_re = Regex::new(r#"Melee\(arc_width:\s*([\d.]+)\)"#).ok();
+            let ranged_re = Regex::new(r#"Ranged"#).ok();
+
+            let mut form = WeaponFormData::new();
+            
+            if let Some(re) = id_re {
+                if let Some(caps) = re.captures(&content) {
+                    form.id = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                }
+            }
+            if let Some(re) = name_re {
+                if let Some(caps) = re.captures(&content) {
+                    form.display_name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                }
+            }
+            if let Some(re) = damage_re {
+                if let Some(caps) = re.captures(&content) {
+                    if let Some(m) = caps.get(1) {
+                        form.damage = m.as_str().parse().unwrap_or(5.0);
+                    }
+                }
+            }
+            if let Some(re) = range_re {
+                if let Some(caps) = re.captures(&content) {
+                    if let Some(m) = caps.get(1) {
+                        form.attack_range = m.as_str().parse().unwrap_or(150.0);
+                    }
+                }
+            }
+            if let Some(re) = speed_re {
+                if let Some(caps) = re.captures(&content) {
+                    if let Some(m) = caps.get(1) {
+                        form.attack_speed_ms = m.as_str().parse().unwrap_or(750);
+                    }
+                }
+            }
+            if let Some(re) = melee_re {
+                if let Some(caps) = re.captures(&content) {
+                    let arc = caps.get(1).map(|m| m.as_str().parse().unwrap_or(1.047)).unwrap_or(1.047);
+                    form.weapon_type = EditorWeaponType::Melee { arc_width: arc };
+                }
+            } else if let Some(re) = ranged_re {
+                if re.is_match(&content) && melee_re.map(|r| !r.is_match(&content)).unwrap_or(true) {
+                    form.weapon_type = EditorWeaponType::Ranged;
+                }
+            }
+
+            self.weapon_form = form;
+            self.status = format!("✓ Loaded weapon: {}", filename_stem);
+        }
+    }
+
+    fn save_recipe(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            let recipes_dir = assets_dir.join("recipes");
+            let file_path = recipes_dir.join(self.recipe_data_form.recipe_filename());
+            
+            // Ensure recipes directory exists
+            if let Err(e) = std::fs::create_dir_all(&recipes_dir) {
+                self.status = format!("✗ Failed to create recipes directory: {}", e);
+                return;
+            }
+
+            // Write file
+            let ron_content = self.recipe_data_form.to_ron();
+            match std::fs::write(&file_path, ron_content) {
+                Ok(()) => {
+                    self.status = format!("✓ Saved recipe: {}", file_path.display());
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to save recipe: {}", e);
+                }
+            }
+        }
+    }
+
+    fn load_recipe(&mut self, filename_stem: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            let file_path = assets_dir.join("recipes").join(format!("{}.recipe.ron", filename_stem));
+
+            let content = match std::fs::read_to_string(&file_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read recipe file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse recipe file using regex
+            use regex::Regex;
+            let id_re = Regex::new(r#"id:\s*"([^"]+)""#).ok();
+            let name_re = Regex::new(r#"display_name:\s*"([^"]+)""#).ok();
+            let time_re = Regex::new(r#"craft_time:\s*([\d.]+)"#).ok();
+            let cat_re = Regex::new(r#"category:\s*(\w+)"#).ok();
+            let cost_re = Regex::new(r#""([^"]+)":\s*(\d+)"#).ok();
+
+            let mut form = RecipeFormData::new();
+            form.costs.clear();
+            form.outcomes.clear();
+            
+            if let Some(re) = id_re {
+                if let Some(caps) = re.captures(&content) {
+                    form.id = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                }
+            }
+            if let Some(re) = name_re {
+                if let Some(caps) = re.captures(&content) {
+                    form.display_name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                }
+            }
+            if let Some(re) = time_re {
+                if let Some(caps) = re.captures(&content) {
+                    if let Some(m) = caps.get(1) {
+                        form.craft_time = m.as_str().parse().unwrap_or(10.0);
+                    }
+                }
+            }
+            if let Some(re) = cat_re {
+                if let Some(caps) = re.captures(&content) {
+                    if let Some(m) = caps.get(1) {
+                        form.category = EditorRecipeCategory::from_type_name(m.as_str());
+                    }
+                }
+            }
+            // Parse costs - find the cost section and extract key-value pairs
+            if let Some(re) = cost_re {
+                // Find cost block
+                if let Some(cost_start) = content.find("cost:") {
+                    if let Some(cost_end) = content[cost_start..].find("},") {
+                        let cost_block = &content[cost_start..cost_start + cost_end];
+                        for caps in re.captures_iter(cost_block) {
+                            if let (Some(res_id), Some(amount)) = (caps.get(1), caps.get(2)) {
+                                form.costs.push(ResourceCost {
+                                    resource_id: res_id.as_str().to_string(),
+                                    amount: amount.as_str().parse().unwrap_or(1),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            // Note: outcome parsing is complex, for now we leave outcomes empty on load
+            // The user can re-add them if needed
+
+            self.recipe_data_form = form;
+            self.status = format!("✓ Loaded recipe: {}", filename_stem);
+        }
+    }
     fn save_recipe_unlock(&mut self) {
         if let Some(assets_dir) = &self.assets_dir {
-            match save_recipe_unlock_file(&self.recipe_form, assets_dir) {
+            match save_recipe_unlock_file(&self.recipe_unlock_form, assets_dir) {
                 Ok(result) => {
                     self.status = format!("✓ Saved: {}", result.unlock_path);
                     let assets_dir = assets_dir.clone();
@@ -1375,6 +2037,12 @@ impl EditorState {
 
 fn extract_monster_id_from_ron(content: &str) -> Option<String> {
     let pattern = r#""enemy_components::MonsterId":\s*\("([^"]+)"\)"#;
+    let re = regex::Regex::new(pattern).ok()?;
+    re.captures(content)?.get(1).map(|m| m.as_str().to_string())
+}
+
+fn extract_id_from_ron(content: &str) -> Option<String> {
+    let pattern = r#"id:\s*"([^"]+)""#;
     let re = regex::Regex::new(pattern).ok()?;
     re.captures(content)?.get(1).map(|m| m.as_str().to_string())
 }

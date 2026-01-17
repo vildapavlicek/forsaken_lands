@@ -25,5 +25,7 @@ research_assets = { path = "../../game_assets/research_assets" }
 unlocks_assets = { path = "../../game_assets/unlocks_assets" }
 unlocks_components = { path = "../../components/unlocks_components" }
 divinity_components = { path = "../../components/divinity_components" }
+weapon_assets = { path = "../../game_assets/weapon_assets" }
+recipes_assets = { path = "../../game_assets/recipes_assets" }
 bevy = { version = "0.17", default-features = false, features = [] }
 
