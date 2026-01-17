@@ -47,6 +47,7 @@
             current_xp: 0.0,
             required_xp: 100.0,
         ),
+        "village_components::WeaponInventory": (weapons: ["melee_rock", "throwing_rock"]),
         "bevy_ecs::hierarchy::Children": ([3]),
       },
     ),
@@ -55,49 +56,6 @@
         "hero_components::Hero": (),
         "hero_components::EquippedWeaponId": (Some("melee_rock")),
         "bevy_ecs::hierarchy::ChildOf": (2),
-        "bevy_ecs::hierarchy::Children": ([4]),
-      },
-    ),
-    4: (
-      components: {
-        "hero_components::WeaponId": ("melee_rock"),
-        "hero_components::Weapon": (),
-        "hero_components::MeleeWeapon": (),
-        "bevy_ecs::hierarchy::ChildOf": (3),
-        "shared_components::DisplayName": ("Legendary melee rock"),
-        "hero_components::Damage": (0.5),
-        "hero_components::AttackRange": (150.0),
-        "hero_components::MeleeArc": (width: 1.047),
-        "hero_components::AttackSpeed": (
-          timer:
-             (
-                stopwatch: ( elapsed: ( secs: 0, nanos: 0 ), is_paused: false ),
-                duration: ( secs: 0, nanos: 500_000_000 ),
-                mode: Repeating,
-                finished: false,
-                times_finished_this_tick: 0,
-            ),
-         ),
-      },
-    ),
-    5: (
-      components: {
-        "hero_components::WeaponId": ("throwing_rock"),
-        "hero_components::Weapon": (),
-        "hero_components::RangedWeapon": (),
-        "shared_components::DisplayName": ("Legendary throwing rock"),
-        "hero_components::Damage": (0.5),
-        "hero_components::AttackRange": (250.0),
-        "hero_components::AttackSpeed": (
-          timer:
-             (
-                stopwatch: ( elapsed: ( secs: 0, nanos: 0 ), is_paused: false ),
-                duration: ( secs: 0, nanos: 500_000_000 ),
-                mode: Repeating,
-                finished: false,
-                times_finished_this_tick: 0,
-            ),
-         ),
       },
     ),
   },

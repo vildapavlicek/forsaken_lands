@@ -1883,6 +1883,7 @@ dependencies = [
  "village_components",
  "village_ui",
  "wallet",
+ "weapon_assets",
  "widgets",
 ]
 
@@ -2029,6 +2030,7 @@ dependencies = [
  "unlocks_events",
  "unlocks_resources",
  "village_components",
+ "weapon_assets",
 ]
 
 [[package]]
@@ -3147,6 +3149,7 @@ dependencies = [
  "unlocks_resources",
  "village_components",
  "wallet",
+ "weapon_assets",
 ]
 
 [[package]]
@@ -4395,6 +4398,7 @@ dependencies = [
  "unlocks_resources",
  "village_components",
  "wallet",
+ "weapon_assets",
 ]
 
 [[package]]
@@ -5360,6 +5364,17 @@ dependencies = [
  "dlib",
  "log",
  "pkg-config",
+]
+
+[[package]]
+name = "weapon_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "hero_components",
+ "serde",
+ "shared_components",
 ]
 
 [[package]]

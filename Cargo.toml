@@ -25,6 +25,7 @@ members = [
   "game_assets/recipes_assets",
   "game_assets/unlocks_assets",
   "game_assets/research_assets",
+  "game_assets/weapon_assets",
   "heroes",
   "portals",
   "research",
@@ -76,6 +77,7 @@ portal_ui = { path = "ui/portal_ui" }
 portals = { path = "portals" }
 research = { path = "research" }
 research_assets = { path = "game_assets/research_assets" }
+weapon_assets = { path = "game_assets/weapon_assets" }
 research_ui = { path = "ui/research_ui" }
 resources_ui = { path = "ui/resources_ui" }
 shared_components = { path = "components/shared_components" }

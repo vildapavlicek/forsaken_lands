@@ -10,6 +10,7 @@ crafting_events.workspace = true
 crafting_resources.workspace = true
 divinity_events.workspace = true
 recipes_assets.workspace = true
+weapon_assets.workspace = true
 states.workspace = true
 system_schedule.workspace = true
 unlock_states.workspace = true

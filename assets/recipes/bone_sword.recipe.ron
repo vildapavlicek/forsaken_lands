@@ -7,6 +7,6 @@
         "bones": 15,
     },
     outcomes: [
-        SpawnPrefab("recipes/prefabs/bone_sword.scn.ron"),
+        SpawnWeapon("bone_sword"),
     ],
 )

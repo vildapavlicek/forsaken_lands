@@ -12,6 +12,7 @@ use {
     states::LoadingPhase,
     village_components::{Village, WeaponInventory},
     wallet::ResourceRates,
+    weapon_assets::{spawn_weapon, spawn_weapon_as_child, WeaponDefinition, WeaponMap},
 };
 
 /// Reconstructs weapon entities from the WeaponInventory and EquippedWeaponId.
@@ -19,8 +20,9 @@ use {
 /// 1. Spawns equipped weapons directly as children of Heroes.
 /// 2. Spawns remaining unequipped weapons from inventory as loose entities.
 pub fn reconstruct_weapons_from_inventory(
-    asset_server: Res<AssetServer>,
-    mut scene_spawner: ResMut<SceneSpawner>,
+    mut commands: Commands,
+    weapon_map: Res<WeaponMap>,
+    weapon_assets: Res<Assets<WeaponDefinition>>,
     village_query: Query<&WeaponInventory, With<Village>>,
     // We iterate heroes to find what they should have equipped
     hero_query: Query<(Entity, &EquippedWeaponId), With<Hero>>,
@@ -36,15 +38,17 @@ pub fn reconstruct_weapons_from_inventory(
     // 1. Spawn equipped weapons for Heroes
     for (hero_entity, equipped) in hero_query.iter() {
         if let Some(weapon_id) = &equipped.0 {
-            let prefab_path = format!("recipes/prefabs/{}.scn.ron", weapon_id);
-            let handle: Handle<DynamicScene> = asset_server.load(&prefab_path);
-            
-            // Spawn directly as child of the hero
-            scene_spawner.spawn_dynamic_as_child(handle, hero_entity);
-            
-            *spawned_counts.entry(weapon_id.clone()).or_insert(0) += 1;
-            
-            info!("Spawning equipped weapon '{}' for hero {:?}", weapon_id, hero_entity);
+            if let Some(handle) = weapon_map.handles.get(weapon_id) {
+                if let Some(def) = weapon_assets.get(handle) {
+                    spawn_weapon_as_child(&mut commands, def, hero_entity);
+                    *spawned_counts.entry(weapon_id.clone()).or_insert(0) += 1;
+                    info!("Spawning equipped weapon '{}' for hero {:?}", weapon_id, hero_entity);
+                } else {
+                    warn!("Weapon definition not loaded for '{}'", weapon_id);
+                }
+            } else {
+                warn!("Weapon '{}' not found in WeaponMap", weapon_id);
+            }
         }
     }
 
@@ -66,11 +70,16 @@ pub fn reconstruct_weapons_from_inventory(
 
         if remaining > 0 {
             info!("Spawning {} unequipped copies of '{}'", remaining, weapon_id);
-            let prefab_path = format!("recipes/prefabs/{}.scn.ron", weapon_id);
-            let handle: Handle<DynamicScene> = asset_server.load(&prefab_path);
-
-            for _ in 0..remaining {
-                scene_spawner.spawn_dynamic(handle.clone());
+            if let Some(handle) = weapon_map.handles.get(&weapon_id) {
+                if let Some(def) = weapon_assets.get(handle) {
+                    for _ in 0..remaining {
+                        spawn_weapon(&mut commands, def);
+                    }
+                } else {
+                    warn!("Weapon definition not loaded for '{}'", weapon_id);
+                }
+            } else {
+                warn!("Weapon '{}' not found in WeaponMap", weapon_id);
             }
         }
     }

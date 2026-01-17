@@ -3,6 +3,7 @@ mod resources;
 use {
     crate::resources::{
         EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle, UnlocksFolderHandle,
+        WeaponsFolderHandle,
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,
@@ -20,6 +21,7 @@ use {
     unlocks_assets::UnlockDefinition,
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
+    weapon_assets::{WeaponDefinition, WeaponMap},
 };
 
 pub struct LoadingManagerPlugin;
@@ -39,6 +41,7 @@ impl Plugin for LoadingManagerPlugin {
                     load_unlocks_assets,
                     load_research_assets,
                     load_recipes_assets,
+                    load_weapons_assets,
                 ),
             )
             .add_systems(OnEnter(LoadingPhase::Assets), update_scene_handle)
@@ -145,16 +148,26 @@ fn load_recipes_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(RecipesFolderHandle(handle));
 }
 
+fn load_weapons_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("weapons");
+    cmd.insert_resource(WeaponsFolderHandle(handle));
+}
+
+#[allow(clippy::too_many_arguments)]
+
 fn check_assets_loaded(
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut loading_manager: ResMut<LoadingManager>,
+    mut weapon_map: ResMut<WeaponMap>,
     mut status: ResMut<LoadingStatus>,
     asset_server: Res<AssetServer>,
     enemy_prefabs: Res<EnemyPrefabsFolderHandle>,
     unlocks: Res<UnlocksFolderHandle>,
     research: Res<ResearchFolderHandle>,
     recipes: Res<RecipesFolderHandle>,
+    weapons: Res<WeaponsFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
+    weapon_assets: Res<Assets<WeaponDefinition>>,
     scenes: Res<Assets<DynamicScene>>,
     type_registry: Res<AppTypeRegistry>,
 ) {
@@ -175,6 +188,7 @@ fn check_assets_loaded(
         && asset_server.is_loaded_with_dependencies(unlocks.0.id())
         && asset_server.is_loaded_with_dependencies(research.0.id())
         && asset_server.is_loaded_with_dependencies(recipes.0.id())
+        && asset_server.is_loaded_with_dependencies(weapons.0.id())
     {
         info!("assets loaded");
 
@@ -200,6 +214,22 @@ fn check_assets_loaded(
 
             debug!(%key, %path, "loaded enemy prefab with MonsterId");
             loading_manager.enemies.insert(key, handle);
+        }
+
+        // Populate WeaponMap from loaded weapon assets
+        let Some(weapons_folder) = folder.get(weapons.0.id()) else {
+            panic!("weapons folder not loaded even though asset server said it is")
+        };
+
+        for untyped_handle in weapons_folder.handles.iter().cloned() {
+            let Ok(handle) = untyped_handle.try_typed::<WeaponDefinition>() else {
+                continue;
+            };
+
+            if let Some(def) = weapon_assets.get(&handle) {
+                debug!("Loaded weapon definition: {}", def.id);
+                weapon_map.handles.insert(def.id.clone(), handle);
+            }
         }
 
         next_phase.set(LoadingPhase::SpawnEntities);
@@ -404,13 +434,14 @@ fn check_scene_spawned(
 ) {
     if !query.is_empty() {
         info!("scene spawned and validated");
+        // Always go through reconstruction to spawn weapons from WeaponInventory
+        // This applies to both new games and loaded saves
         if scene_to_load.is_save {
-            info!("entering PostLoadReconstruction phase");
-            next_phase.set(LoadingPhase::PostLoadReconstruction);
+            info!("entering PostLoadReconstruction phase (save)");
         } else {
-            info!("entering Ready state");
-            next_phase.set(LoadingPhase::Ready);
+            info!("entering PostLoadReconstruction phase (new game)");
         }
+        next_phase.set(LoadingPhase::PostLoadReconstruction);
     }
 }
 

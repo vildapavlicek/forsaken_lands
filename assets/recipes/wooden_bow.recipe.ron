@@ -7,6 +7,6 @@
         "wood": 10,
     },
     outcomes: [
-        SpawnPrefab("recipes/prefabs/wooden_bow.scn.ron"),
+        SpawnWeapon("wooden_bow"),
     ],
 )

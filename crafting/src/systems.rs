@@ -6,6 +6,7 @@ use {
     divinity_events::IncreaseDivinity,
     recipes_assets::RecipeDefinition,
     village_components::Village,
+    weapon_assets::{WeaponDefinition, WeaponMap},
 };
 
 /// Observer that handles StartCraftingRequest events.
@@ -80,8 +81,8 @@ pub fn on_recipe_unlock_achieved(
 pub fn update_crafting_progress(
     mut commands: Commands,
     time: Res<Time>,
-    asset_server: Res<AssetServer>,
-    mut scene_spawner: ResMut<SceneSpawner>,
+    weapon_map: Res<WeaponMap>,
+    weapon_assets: Res<Assets<WeaponDefinition>>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
     village_query: Query<Entity, With<Village>>,
     recipe_map: Res<RecipeMap>,
@@ -113,10 +114,17 @@ pub fn update_crafting_progress(
             // Process all outcomes
             for outcome in &crafting.outcomes {
                 match outcome {
-                    crafting_resources::CraftingOutcome::SpawnPrefab(path) => {
-                        let scene_handle: Handle<DynamicScene> = asset_server.load(path);
-                        scene_spawner.spawn_dynamic(scene_handle);
-                        info!("Spawned prefab: {}", path);
+                    crafting_resources::CraftingOutcome::SpawnWeapon(weapon_id) => {
+                        if let Some(handle) = weapon_map.handles.get(weapon_id) {
+                            if let Some(def) = weapon_assets.get(handle) {
+                                weapon_assets::spawn_weapon(&mut commands, def);
+                                info!("Spawned weapon: {}", weapon_id);
+                            } else {
+                                warn!("Weapon definition not loaded for: {}", weapon_id);
+                            }
+                        } else {
+                            warn!("Weapon '{}' not found in WeaponMap", weapon_id);
+                        }
                     }
                     crafting_resources::CraftingOutcome::AddResource { id, amount } => {
                         // TODO: Add to wallet

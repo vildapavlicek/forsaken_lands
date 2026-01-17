@@ -1,0 +1,8 @@
+(
+    id: "bone_sword",
+    display_name: "Bone Sword",
+    weapon_type: Melee(arc_width: 1.047),
+    damage: 5.0,
+    attack_range: 150.0,
+    attack_speed_ms: 750,
+)

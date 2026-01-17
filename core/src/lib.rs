@@ -8,7 +8,7 @@ use {
     resources_ui::ResourcesUiPlugin, save_load::SaveLoadPlugin, shared_components::SharedComponentsPlugin,
     states::GameState, system_schedule::GameSchedule::*, unlocks::UnlocksPlugin,
     unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin, village_ui::VillageUiPlugin,
-    wallet::WalletPlugin, widgets::WidgetsPlugin,
+    wallet::WalletPlugin, weapon_assets::WeaponAssetsPlugin, widgets::WidgetsPlugin,
 };
 
 pub struct CorePlugin;
@@ -41,6 +41,8 @@ impl Plugin for CorePlugin {
                 UnlocksPlugin,
                 UnlocksAssetsPlugin,
                 NotificationUiPlugin,
+            ))
+            .add_plugins((
                 VillagePlugin,
                 VillageUiPlugin,
                 WalletPlugin,
@@ -48,6 +50,7 @@ impl Plugin for CorePlugin {
                 ProgressBarsPlugin,
                 hero_ui::HeroUiPlugin,
                 SaveLoadPlugin,
+                WeaponAssetsPlugin,
             ))
             .add_systems(Startup, setup_camera);
     }
