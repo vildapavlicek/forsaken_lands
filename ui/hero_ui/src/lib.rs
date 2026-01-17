@@ -4,9 +4,7 @@ use {
     hero_components::{AttackRange, AttackSpeed, Damage, MeleeArc, MeleeWeapon, Weapon},
     shared_components::DisplayName,
     states::GameState,
-    widgets::{
-        UiTheme, spawn_action_button, spawn_card_title, spawn_item_card, spawn_scrollable_container,
-    },
+    widgets::{UiTheme, spawn_action_button, spawn_card_title, spawn_item_card},
 };
 
 pub struct HeroUiPlugin;

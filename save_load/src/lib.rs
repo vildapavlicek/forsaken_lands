@@ -13,19 +13,16 @@ use {
     bevy::prelude::*,
     chrono::Local,
     crafting::CraftingInProgress,
-    crafting_resources::RecipeMap,
     divinity_components::{Divinity, DivinityStats, MaxUnlockedDivinity},
     enemy_components::{
         Enemy, EnemyRange, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards,
         TargetDestination,
     },
     hero_components::{EquippedWeaponId, Hero, WeaponId},
-    loading::SceneToLoad,
     portal_components::{Portal, SpawnTableId, SpawnTimer},
-    research::{InProgress, ResearchCompletionCount, ResearchMap},
+    research::{InProgress, ResearchCompletionCount},
     states::{GameState, LoadingPhase},
     std::{fs, io::Write, path::Path},
-    unlocks::{CompiledUnlock, UnlockRoot},
     unlocks_resources::UnlockState,
     village_components::{EnemyEncyclopedia, Village, WeaponInventory},
     wallet::Wallet,
@@ -104,6 +101,7 @@ fn trigger_load_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: C
 }
 
 /// Ticks the autosave timer and triggers save when elapsed.
+#[expect(unused, reason = "autosave disabled for now")]
 fn autosave_tick(time: Res<Time>, mut timer: ResMut<AutosaveTimer>, mut commands: Commands) {
     if timer.0.tick(time.delta()).just_finished() {
         info!("Autosave triggered");

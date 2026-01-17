@@ -7,7 +7,7 @@ mod tests {
         ConditionSensor, LogicSignalEvent, MaxUnlockedDivinityChangedEvent,
         MaxUnlockedDivinitySensor, TopicEntity, TopicMap, TopicSubscribers,
     };
-    use {super::*, bevy::prelude::*, divinity_components::Divinity};
+    use {bevy::prelude::*, divinity_components::Divinity};
 
     #[test]
     fn test_divinity_sensor_updateds() {

@@ -4,7 +4,7 @@ use {
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroUiRoot, spawn_hero_content},
     recipes_assets::{RecipeCategory, RecipeDefinition},
-    research::{Completed, InProgress, ResearchCompletionCount, ResearchNode},
+    research::{InProgress, ResearchCompletionCount, ResearchNode},
     research_assets::ResearchDefinition,
     shared_components::DisplayName,
     states::{EnemyEncyclopediaState, GameState},
@@ -19,12 +19,13 @@ pub struct VillageUiPlugin;
 
 impl Plugin for VillageUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(on_village_clicked).add_systems(
-            Update,
-            (handle_menu_button, handle_back_button, handle_close_button)
-                .run_if(in_state(GameState::Running)),
-        )
-        .add_systems(OnExit(GameState::Running), clean_up_village_ui);
+        app.add_observer(on_village_clicked)
+            .add_systems(
+                Update,
+                (handle_menu_button, handle_back_button, handle_close_button)
+                    .run_if(in_state(GameState::Running)),
+            )
+            .add_systems(OnExit(GameState::Running), clean_up_village_ui);
     }
 }
 
@@ -310,9 +311,6 @@ impl Command for SpawnResearchContentCommand {
             .iter(world)
             .map(|(e, n, _, c)| (e, n.id.clone(), c.0))
             .collect();
-
-        let mut completed_query = world
-            .query_filtered::<(Entity, &ResearchNode, &ResearchCompletionCount), With<Completed>>();
 
         // Now get resources needed for research content
         let assets = world.resource::<Assets<ResearchDefinition>>();
@@ -656,4 +654,3 @@ pub fn clean_up_village_ui(
         }
     }
 }
-

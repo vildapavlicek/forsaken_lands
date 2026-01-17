@@ -80,7 +80,7 @@ fn on_research_started(
     crafting_bars: Query<&CraftingProgressBar>,
     assets: Res<Assets<ResearchDefinition>>,
 ) {
-    let research_entity = trigger.target();
+    let research_entity = trigger.event().entity;
 
     // Get research name
     let Ok(node) = research_query.get(research_entity) else {
@@ -120,7 +120,7 @@ fn on_research_ended(
     mut commands: Commands,
     bar_query: Query<(Entity, &ResearchProgressBar)>,
 ) {
-    let research_entity = trigger.target();
+    let research_entity = trigger.event().entity;
 
     // Find and despawn the matching bar
     for (bar_entity, bar) in bar_query.iter() {
@@ -144,7 +144,7 @@ fn on_crafting_started(
     research_bars: Query<&ResearchProgressBar>,
     crafting_bars: Query<&CraftingProgressBar>,
 ) {
-    let crafting_entity = trigger.target();
+    let crafting_entity = trigger.event().entity;
 
     // Get recipe name
     let Ok(crafting) = crafting_query.get(crafting_entity) else {

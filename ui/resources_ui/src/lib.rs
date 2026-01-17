@@ -15,7 +15,7 @@ impl Plugin for ResourcesUiPlugin {
 }
 
 #[derive(Component)]
-struct ResourceText;
+pub struct ResourceText;
 
 fn setup_resources_ui(mut commands: Commands) {
     commands.spawn((
@@ -53,4 +53,3 @@ pub fn clean_up_resources_ui(mut commands: Commands, query: Query<Entity, With<R
         commands.entity(entity).despawn();
     }
 }
-
