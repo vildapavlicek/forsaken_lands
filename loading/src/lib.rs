@@ -30,17 +30,18 @@ impl Plugin for LoadingManagerPlugin {
             .init_resource::<LoadingStatus>()
             .init_resource::<SceneToLoad>()
             .init_state::<LoadingPhase>()
-            // Phase: Assets - load all asset folders
+    // Phase: Assets - load all asset folders
             .add_systems(
                 Startup,
                 (
-                    start_loading,
+                    load_static_assets,
                     load_enemy_prefabs,
                     load_unlocks_assets,
                     load_research_assets,
                     load_recipes_assets,
                 ),
             )
+            .add_systems(OnEnter(LoadingPhase::Assets), update_scene_handle)
             .add_systems(
                 Update,
                 check_assets_loaded
@@ -59,7 +60,7 @@ impl Plugin for LoadingManagerPlugin {
             // Phase: Ready - transition to Running
             .add_systems(OnEnter(LoadingPhase::Ready), finish_loading)
             // Loading UI
-            .add_systems(OnEnter(GameState::Loading), setup_loading_ui)
+            .add_systems(OnEnter(GameState::Loading), (setup_loading_ui, reset_loading_phase))
             .add_systems(
                 Update,
                 update_loading_ui.run_if(in_state(GameState::Loading)),
@@ -103,13 +104,20 @@ pub struct LoadingStatus {
 
 // --- Phase: Assets ---
 
-fn start_loading(
+fn update_scene_handle(
     mut assets: ResMut<LoadingManager>,
     asset_server: Res<AssetServer>,
     scene_to_load: Res<SceneToLoad>,
 ) {
-    info!("started loading assets, scene: {}", scene_to_load.path);
+    info!("Starting asset load phase. target scene: {}", scene_to_load.path);
     assets.startup_scene = asset_server.load(&scene_to_load.path);
+}
+
+fn load_static_assets(
+    mut assets: ResMut<LoadingManager>,
+    asset_server: Res<AssetServer>,
+) {
+    info!("Loading static assets (spawn tables, etc)");
     let default_spawn_table = asset_server.load("default.spawn_table.ron");
 
     assets
@@ -452,4 +460,9 @@ fn cleanup_loading_ui(mut commands: Commands, query: Query<Entity, With<LoadingU
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
+}
+
+fn reset_loading_phase(mut next_phase: ResMut<NextState<LoadingPhase>>) {
+    info!("Resetting LoadingPhase to Assets");
+    next_phase.set(LoadingPhase::Assets);
 }
