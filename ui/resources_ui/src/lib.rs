@@ -9,7 +9,8 @@ impl Plugin for ResourcesUiPlugin {
                 Update,
                 update_resources_ui
                     .run_if(in_state(GameState::Running).and(resource_changed::<Wallet>)),
-            );
+            )
+            .add_systems(OnExit(GameState::Running), clean_up_resources_ui);
     }
 }
 
@@ -46,3 +47,10 @@ fn update_resources_ui(wallet: Res<Wallet>, mut query: Query<&mut Text, With<Res
         text.0 = resources_str;
     }
 }
+
+pub fn clean_up_resources_ui(mut commands: Commands, query: Query<Entity, With<ResourceText>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+

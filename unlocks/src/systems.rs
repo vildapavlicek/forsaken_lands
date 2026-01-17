@@ -426,3 +426,28 @@ pub fn on_max_divinity_changed(
         }
     }
 }
+
+pub fn clean_up_unlocks(
+    mut commands: Commands,
+    mut topic_map: ResMut<TopicMap>,
+    mut unlock_state: ResMut<UnlockState>,
+    unlock_roots: Query<Entity, With<UnlockRoot>>,
+    topic_entities: Query<Entity, With<TopicEntity>>,
+) {
+    debug!("Cleaning up unlocks system state");
+
+    // Despawn all unlock roots (this cleans up the graph)
+    for entity in unlock_roots.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    // Despawn all topic entities
+    for entity in topic_entities.iter() {
+        commands.entity(entity).despawn();
+    }
+
+    // Clear resources
+    topic_map.topics.clear();
+    unlock_state.completed.clear();
+}
+

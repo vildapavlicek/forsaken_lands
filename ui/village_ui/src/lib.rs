@@ -23,7 +23,8 @@ impl Plugin for VillageUiPlugin {
             Update,
             (handle_menu_button, handle_back_button, handle_close_button)
                 .run_if(in_state(GameState::Running)),
-        );
+        )
+        .add_systems(OnExit(GameState::Running), clean_up_village_ui);
     }
 }
 
@@ -641,3 +642,18 @@ fn handle_close_button(
         }
     }
 }
+
+pub fn clean_up_village_ui(
+    mut commands: Commands,
+    menu_roots: Query<(Entity, Option<&PanelWrapperRef>), With<VillageUiRoot>>,
+) {
+    debug!("Cleaning up village UI");
+    for (entity, wrapper_ref) in menu_roots.iter() {
+        if let Some(wrapper) = wrapper_ref {
+            commands.entity(wrapper.0).despawn();
+        } else {
+            commands.entity(entity).despawn();
+        }
+    }
+}
+

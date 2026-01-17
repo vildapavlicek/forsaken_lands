@@ -203,3 +203,18 @@ pub fn start_research(
         });
     info!("Started researching: {}", def.name);
 }
+
+pub fn clean_up_research(
+    mut commands: Commands,
+    mut research_map: ResMut<ResearchMap>,
+    nodes: Query<Entity, With<ResearchNode>>,
+) {
+    debug!("Cleaning up all research entities");
+    // Despawn all research nodes
+    for entity in nodes.iter() {
+        commands.entity(entity).despawn();
+    }
+    // Clear the map
+    research_map.entities.clear();
+}
+

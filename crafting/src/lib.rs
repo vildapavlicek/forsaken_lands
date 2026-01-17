@@ -34,7 +34,8 @@ impl Plugin for CraftingPlugin {
                 systems::update_crafting_progress
                     .in_set(GameSchedule::FrameStart)
                     .run_if(in_state(GameState::Running)),
-            );
+            )
+            .add_systems(OnExit(states::GameState::Running), systems::clean_up_crafting);
     }
 }
 

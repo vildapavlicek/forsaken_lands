@@ -23,7 +23,9 @@ impl Plugin for VillagePlugin {
         app.add_observer(handle_divinity_increase);
         app.add_observer(equipment::handle_equip_weapon);
         app.add_observer(equipment::handle_unequip_weapon);
+        app.add_observer(equipment::handle_unequip_weapon);
         app.add_observer(inventory::handle_weapon_crafted);
+        app.add_systems(OnExit(states::GameState::Running), clean_up_village);
     }
 }
 
@@ -69,3 +71,14 @@ fn handle_divinity_increase(
         }
     }
 }
+
+pub fn clean_up_village(
+    mut commands: Commands,
+    villages: Query<Entity, With<Village>>,
+) {
+    debug!("Cleaning up village");
+    for entity in villages.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+

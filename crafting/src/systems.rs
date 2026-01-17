@@ -147,3 +147,24 @@ pub fn update_crafting_progress(
         }
     }
 }
+
+pub fn clean_up_crafting(
+    mut commands: Commands,
+    mut recipe_map: ResMut<RecipeMap>,
+    recipes: Query<Entity, With<RecipeNode>>,
+    in_progress: Query<Entity, With<CraftingInProgress>>,
+) {
+    debug!("Cleaning up crafting system");
+    // Despawn recipe entities
+    for entity in recipes.iter() {
+        // Use despawn_recursive to be safe, though they might not have children
+        commands.entity(entity).despawn();
+    }
+    // Despawn in-progress crafting
+    for entity in in_progress.iter() {
+        commands.entity(entity).despawn();
+    }
+    
+    recipe_map.entities.clear();
+}
+

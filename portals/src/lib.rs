@@ -42,7 +42,9 @@ impl Plugin for PortalsPlugin {
         app.add_systems(Update, draw_range_gizmos);
 
         app.add_observer(assign_enemy_destination);
+        app.add_observer(assign_enemy_destination);
         app.add_observer(handle_max_divinity_increase);
+        app.add_systems(OnExit(states::GameState::Running), clean_up_portals);
     }
 }
 
@@ -345,3 +347,18 @@ mod tests {
         assert_eq!(max_unlocked.tier, 2);
     }
 }
+
+pub fn clean_up_portals(
+    mut commands: Commands,
+    portals: Query<Entity, With<Portal>>,
+    enemies: Query<Entity, With<Enemy>>,
+) {
+    debug!("Cleaning up portals and enemies");
+    for entity in portals.iter() {
+        commands.entity(entity).despawn();
+    }
+    for entity in enemies.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+

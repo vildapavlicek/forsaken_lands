@@ -4,6 +4,7 @@ use {
     hero_events::EnemyKilled,
     std::collections::{HashMap, HashSet},
     unlocks_events::UnlockAchieved,
+    states,
 };
 
 /// Central storage for all collected player resources (the game's economy state).
@@ -74,7 +75,8 @@ impl Plugin for WalletPlugin {
             .init_resource::<Wallet>()
             .init_resource::<ResourceRates>()
             .add_observer(process_enemy_killed_rewards)
-            .add_observer(on_resource_unlock_achieved);
+            .add_observer(on_resource_unlock_achieved)
+            .add_systems(OnExit(states::GameState::Running), clean_up_wallet);
     }
 }
 
@@ -116,3 +118,9 @@ fn on_resource_unlock_achieved(trigger: On<UnlockAchieved>, mut wallet: ResMut<W
         info!("Resource '{}' is now unlocked", resource_id);
     }
 }
+
+pub fn clean_up_wallet(mut wallet: ResMut<Wallet>) {
+    debug!("Cleaning up wallet");
+    *wallet = Wallet::default();
+}
+

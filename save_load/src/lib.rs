@@ -80,7 +80,8 @@ impl Plugin for SaveLoadPlugin {
             .add_systems(
                 OnEnter(LoadingPhase::PostLoadReconstruction),
                 reconstruction::finish_reconstruction.after(reconstruction::reconstruct_resource_rates),
-            );
+            )
+            .add_systems(OnExit(GameState::Running), clean_up_save_load);
     }
 }
 
@@ -158,17 +159,6 @@ fn execute_load(
     mut commands: Commands,
     mut scene_to_load: ResMut<loading::SceneToLoad>,
     mut next_state: ResMut<NextState<GameState>>,
-    // Entities to despawn
-    villages: Query<Entity, With<Village>>,
-    portals: Query<Entity, With<Portal>>,
-    heroes: Query<Entity, With<Hero>>,
-    research_nodes: Query<Entity, With<research::ResearchNode>>,
-    recipe_nodes: Query<Entity, With<crafting::RecipeNode>>,
-    unlock_roots: Query<Entity, With<UnlockRoot>>,
-    compiled_unlocks: Query<Entity, With<CompiledUnlock>>,
-    // Resources to clear
-    mut research_map: ResMut<ResearchMap>,
-    mut recipe_map: ResMut<RecipeMap>,
 ) {
     let saves_dir = Path::new("assets/saves");
 
@@ -183,37 +173,9 @@ fn execute_load(
 
     info!("Loading save file: {}", latest_save.display());
 
-    // Despawn all existing game entities (recursive despawn for hierarchies)
-    for entity in villages.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in portals.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in heroes.iter() {
-        // Heroes might already be despawned as children of village
-        if commands.get_entity(entity).is_ok() {
-            commands.entity(entity).despawn();
-        }
-    }
-    for entity in research_nodes.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in recipe_nodes.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in unlock_roots.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in compiled_unlocks.iter() {
-        if commands.get_entity(entity).is_ok() {
-            commands.entity(entity).despawn();
-        }
-    }
+    // Despawn/Cleanup is now handled by OnExit(GameState::Running) systems in each plugin.
+    info!("Manual cleanup delegated to OnExit(GameState::Running) systems");
 
-    // Clear the lookup maps
-    research_map.entities.clear();
-    recipe_map.entities.clear();
 
     // Configure loading state
     let relative_path = latest_save.strip_prefix("assets").unwrap_or(&latest_save);
@@ -303,3 +265,9 @@ fn build_save_scene(world: &World) -> DynamicScene {
         // Build the scene
         .build()
 }
+
+pub fn clean_up_save_load(mut timer: ResMut<AutosaveTimer>) {
+    // Reset timer to default (1 minute)
+    *timer = AutosaveTimer::default();
+}
+

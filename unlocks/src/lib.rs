@@ -182,6 +182,7 @@ impl Plugin for UnlocksPlugin {
             .add_observer(on_resource_changed)
             .add_observer(on_unlock_topic_updated)
             .add_observer(cleanup_finished_unlock)
-            .add_observer(on_max_divinity_changed);
+            .add_observer(on_max_divinity_changed)
+            .add_systems(OnExit(states::GameState::Running), systems::clean_up_unlocks);
     }
 }

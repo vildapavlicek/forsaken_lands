@@ -45,7 +45,9 @@ impl Plugin for HeroesPlugin {
         app.add_observer(hero_melee_attack_system);
         app.add_observer(apply_damage_system);
         app.add_observer(apply_melee_damage_observer);
+        app.add_observer(apply_melee_damage_observer);
         app.add_observer(apply_hit_indicator_observer);
+        app.add_systems(OnExit(GameState::Running), clean_up_heroes);
     }
 }
 
@@ -297,3 +299,18 @@ fn hit_indicator_system(
         }
     }
 }
+
+pub fn clean_up_heroes(
+    mut commands: Commands,
+    heroes: Query<Entity, With<Hero>>,
+    projectiles: Query<Entity, With<Projectile>>,
+) {
+    debug!("Cleaning up heroes and projectiles");
+    for entity in heroes.iter() {
+        commands.entity(entity).despawn();
+    }
+    for entity in projectiles.iter() {
+        commands.entity(entity).despawn();
+    }
+}
+

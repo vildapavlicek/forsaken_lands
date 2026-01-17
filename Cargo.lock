@@ -5175,6 +5175,7 @@ dependencies = [
  "bevy",
  "enemy_components",
  "hero_events",
+ "states",
  "system_schedule",
  "unlocks_events",
 ]
