@@ -61,9 +61,12 @@ fn hero_attack_intent_system(
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {
-             error!("hero_attack_intent_system: No village with Transform found.");
+            error!("hero_attack_intent_system: No village with Transform found.");
         } else {
-             error!("hero_attack_intent_system: Multiple villages with Transform found! Count: {}", villages.iter().count());
+            error!(
+                "hero_attack_intent_system: Multiple villages with Transform found! Count: {}",
+                villages.iter().count()
+            );
         }
         return;
     };
@@ -111,9 +114,12 @@ fn hero_projectile_spawn_system(
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {
-             error!("hero_projectile_spawn_system: No village with Transform found.");
+            error!("hero_projectile_spawn_system: No village with Transform found.");
         } else {
-             error!("hero_projectile_spawn_system: Multiple villages with Transform found! Count: {}", villages.iter().count());
+            error!(
+                "hero_projectile_spawn_system: Multiple villages with Transform found! Count: {}",
+                villages.iter().count()
+            );
         }
         return;
     };
@@ -148,9 +154,12 @@ fn hero_melee_attack_system(
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {
-             error!("hero_melee_attack_system: No village with Transform found.");
+            error!("hero_melee_attack_system: No village with Transform found.");
         } else {
-             error!("hero_melee_attack_system: Multiple villages with Transform found! Count: {}", villages.iter().count());
+            error!(
+                "hero_melee_attack_system: Multiple villages with Transform found! Count: {}",
+                villages.iter().count()
+            );
         }
         return;
     };
@@ -313,4 +322,3 @@ pub fn clean_up_heroes(
         commands.entity(entity).despawn();
     }
 }
-

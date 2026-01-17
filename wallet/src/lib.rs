@@ -2,9 +2,9 @@ use {
     bevy::prelude::*,
     enemy_components::ResourceRewards,
     hero_events::EnemyKilled,
+    states,
     std::collections::{HashMap, HashSet},
     unlocks_events::UnlockAchieved,
-    states,
 };
 
 /// Central storage for all collected player resources (the game's economy state).
@@ -123,4 +123,3 @@ pub fn clean_up_wallet(mut wallet: ResMut<Wallet>) {
     debug!("Cleaning up wallet");
     *wallet = Wallet::default();
 }
-

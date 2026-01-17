@@ -160,7 +160,6 @@ pub fn clean_up_crafting(
     for entity in in_progress.iter() {
         commands.entity(entity).despawn();
     }
-    
+
     recipe_map.entities.clear();
 }
-

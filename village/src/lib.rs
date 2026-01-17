@@ -70,13 +70,9 @@ fn handle_divinity_increase(
     }
 }
 
-pub fn clean_up_village(
-    mut commands: Commands,
-    villages: Query<Entity, With<Village>>,
-) {
+pub fn clean_up_village(mut commands: Commands, villages: Query<Entity, With<Village>>) {
     debug!("Cleaning up village");
     for entity in villages.iter() {
         commands.entity(entity).despawn();
     }
 }
-

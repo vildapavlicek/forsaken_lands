@@ -5,11 +5,11 @@ use {
     heroes::HeroesPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
     portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
     progress_bars::ProgressBarsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
-    resources_ui::ResourcesUiPlugin, save_load::SaveLoadPlugin, shared_components::SharedComponentsPlugin,
-    states::GameState, system_schedule::GameSchedule::*, unlocks::UnlocksPlugin,
-    unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin, village_ui::VillageUiPlugin,
-    wallet::WalletPlugin, weapon_assets::WeaponAssetsPlugin, weapon_factory::WeaponFactoryPlugin,
-    widgets::WidgetsPlugin,
+    resources_ui::ResourcesUiPlugin, save_load::SaveLoadPlugin,
+    shared_components::SharedComponentsPlugin, states::GameState, system_schedule::GameSchedule::*,
+    unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin,
+    village_ui::VillageUiPlugin, wallet::WalletPlugin, weapon_assets::WeaponAssetsPlugin,
+    weapon_factory::WeaponFactoryPlugin, widgets::WidgetsPlugin,
 };
 
 pub struct CorePlugin;

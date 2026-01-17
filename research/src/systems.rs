@@ -217,4 +217,3 @@ pub fn clean_up_research(
     // Clear the map
     research_map.entities.clear();
 }
-

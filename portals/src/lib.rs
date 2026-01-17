@@ -361,4 +361,3 @@ pub fn clean_up_portals(
         commands.entity(entity).despawn();
     }
 }
-

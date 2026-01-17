@@ -5,13 +5,12 @@
 
 mod spawner;
 
+pub use spawner::*;
 use {
     bevy::{platform::collections::HashMap, prelude::*},
     bevy_common_assets::ron::RonAssetPlugin,
     serde::Deserialize,
 };
-
-pub use spawner::*;
 
 pub struct WeaponAssetsPlugin;
 

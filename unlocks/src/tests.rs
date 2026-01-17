@@ -3,11 +3,14 @@ mod tests {
     // Assuming these are available via super usage in lib.rs or I need correct imports
     // Since this is unlocks/src/tests.rs, it is a module of unlocks.
     // So `super` refers to `unlocks`.
-    use crate::{
-        ConditionSensor, LogicSignalEvent, MaxUnlockedDivinityChangedEvent,
-        MaxUnlockedDivinitySensor, TopicEntity, TopicMap, TopicSubscribers,
+    use {
+        crate::{
+            ConditionSensor, LogicSignalEvent, MaxUnlockedDivinityChangedEvent,
+            MaxUnlockedDivinitySensor, TopicEntity, TopicMap, TopicSubscribers,
+        },
+        bevy::prelude::*,
+        divinity_components::Divinity,
     };
-    use {bevy::prelude::*, divinity_components::Divinity};
 
     #[test]
     fn test_divinity_sensor_updateds() {

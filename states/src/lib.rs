@@ -9,8 +9,6 @@ pub enum GameState {
     LoadingSave,
 }
 
-
-
 #[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum EnemyEncyclopediaState {
     #[default]
@@ -22,9 +20,9 @@ pub enum EnemyEncyclopediaState {
 pub enum LoadingPhase {
     #[default]
     Assets,
-    SpawnEntities,  // Spawn research & recipe entities
-    CompileUnlocks, // Build unlock logic graphs
-    SpawnScene,     // Spawn startup scene
+    SpawnEntities,          // Spawn research & recipe entities
+    CompileUnlocks,         // Build unlock logic graphs
+    SpawnScene,             // Spawn startup scene
     PostLoadReconstruction, // Save-specific reconstruction
-    Ready,          // All done
+    Ready,                  // All done
 }

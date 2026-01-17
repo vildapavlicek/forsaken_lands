@@ -32,7 +32,7 @@ impl Plugin for LoadingManagerPlugin {
             .init_resource::<LoadingStatus>()
             .init_resource::<SceneToLoad>()
             .init_state::<LoadingPhase>()
-    // Phase: Assets - load all asset folders
+            // Phase: Assets - load all asset folders
             .add_systems(
                 Startup,
                 (
@@ -63,7 +63,10 @@ impl Plugin for LoadingManagerPlugin {
             // Phase: Ready - transition to Running
             .add_systems(OnEnter(LoadingPhase::Ready), finish_loading)
             // Loading UI
-            .add_systems(OnEnter(GameState::Loading), (setup_loading_ui, reset_loading_phase))
+            .add_systems(
+                OnEnter(GameState::Loading),
+                (setup_loading_ui, reset_loading_phase),
+            )
             .add_systems(
                 Update,
                 update_loading_ui.run_if(in_state(GameState::Loading)),
@@ -112,14 +115,14 @@ fn update_scene_handle(
     asset_server: Res<AssetServer>,
     scene_to_load: Res<SceneToLoad>,
 ) {
-    info!("Starting asset load phase. target scene: {}", scene_to_load.path);
+    info!(
+        "Starting asset load phase. target scene: {}",
+        scene_to_load.path
+    );
     assets.startup_scene = asset_server.load(&scene_to_load.path);
 }
 
-fn load_static_assets(
-    mut assets: ResMut<LoadingManager>,
-    asset_server: Res<AssetServer>,
-) {
+fn load_static_assets(mut assets: ResMut<LoadingManager>, asset_server: Res<AssetServer>) {
     info!("Loading static assets (spawn tables, etc)");
     let default_spawn_table = asset_server.load("default.spawn_table.ron");
 

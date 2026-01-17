@@ -80,6 +80,9 @@ impl Plugin for ResearchPlugin {
             )
             .add_observer(systems::on_unlock_achieved)
             .add_observer(systems::start_research)
-            .add_systems(OnExit(states::GameState::Running), systems::clean_up_research);
+            .add_systems(
+                OnExit(states::GameState::Running),
+                systems::clean_up_research,
+            );
     }
 }

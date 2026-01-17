@@ -25,7 +25,10 @@ pub fn spawn_weapon(commands: &mut Commands, def: &WeaponDefinition) -> Entity {
                 AttackRange(def.attack_range),
                 MeleeArc { width: *arc_width },
                 AttackSpeed {
-                    timer: Timer::from_seconds(def.attack_speed_ms as f32 / 1000.0, TimerMode::Repeating),
+                    timer: Timer::from_seconds(
+                        def.attack_speed_ms as f32 / 1000.0,
+                        TimerMode::Repeating,
+                    ),
                 },
             ))
             .id(),
@@ -38,7 +41,10 @@ pub fn spawn_weapon(commands: &mut Commands, def: &WeaponDefinition) -> Entity {
                 Damage(def.damage),
                 AttackRange(def.attack_range),
                 AttackSpeed {
-                    timer: Timer::from_seconds(def.attack_speed_ms as f32 / 1000.0, TimerMode::Repeating),
+                    timer: Timer::from_seconds(
+                        def.attack_speed_ms as f32 / 1000.0,
+                        TimerMode::Repeating,
+                    ),
                 },
             ))
             .id(),

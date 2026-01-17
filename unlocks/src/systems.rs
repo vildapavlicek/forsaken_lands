@@ -450,4 +450,3 @@ pub fn clean_up_unlocks(
     topic_map.topics.clear();
     unlock_state.completed.clear();
 }
-
