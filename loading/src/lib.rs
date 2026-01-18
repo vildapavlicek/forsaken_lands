@@ -235,7 +235,7 @@ fn check_assets_loaded(
             }
         }
 
-        next_phase.set(LoadingPhase::SpawnEntities);
+        next_phase.set(LoadingPhase::SpawnScene);
     }
 }
 
@@ -413,7 +413,7 @@ fn compile_unlocks(
         );
     }
 
-    next_phase.set(LoadingPhase::SpawnScene);
+    next_phase.set(LoadingPhase::PostLoadReconstruction);
 }
 
 // --- Phase: SpawnScene ---
@@ -436,15 +436,13 @@ fn check_scene_spawned(
     scene_to_load: Res<SceneToLoad>,
 ) {
     if !query.is_empty() {
-        info!("scene spawned and validated");
-        // Always go through reconstruction to spawn weapons from WeaponInventory
-        // This applies to both new games and loaded saves
+        info!("Scene spawned and validated");
         if scene_to_load.is_save {
-            info!("entering PostLoadReconstruction phase (save)");
+            info!("Save loaded - now spawning entities with loaded EnemyEncyclopedia");
         } else {
-            info!("entering PostLoadReconstruction phase (new game)");
+            info!("New game - now spawning entities");
         }
-        next_phase.set(LoadingPhase::PostLoadReconstruction);
+        next_phase.set(LoadingPhase::SpawnEntities);
     }
 }
 

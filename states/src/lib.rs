@@ -20,9 +20,9 @@ pub enum EnemyEncyclopediaState {
 pub enum LoadingPhase {
     #[default]
     Assets,
+    SpawnScene,             // Spawn startup/save scene first (loads resources like EnemyEncyclopedia)
     SpawnEntities,          // Spawn research & recipe entities
-    CompileUnlocks,         // Build unlock logic graphs
-    SpawnScene,             // Spawn startup scene
+    CompileUnlocks,         // Build unlock logic graphs (uses loaded resources)
     PostLoadReconstruction, // Save-specific reconstruction
     Ready,                  // All done
 }
