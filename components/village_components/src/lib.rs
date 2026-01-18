@@ -1,5 +1,6 @@
 use {
     bevy::{picking::prelude::Pickable, prelude::*},
+    shared_components::IncludeInSave,
     std::collections::HashMap,
 };
 
@@ -25,7 +26,7 @@ pub struct WeaponInventory {
 
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
-#[require(EnemyEncyclopedia, WeaponInventory, Pickable)]
+#[require(EnemyEncyclopedia, WeaponInventory, Pickable, IncludeInSave)]
 pub struct Village;
 
 impl EnemyEncyclopedia {

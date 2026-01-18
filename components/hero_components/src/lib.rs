@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use shared_components::IncludeInSave;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-#[require(EquippedWeaponId)]
+#[require(EquippedWeaponId, IncludeInSave)]
 pub struct Hero;
 
 /// Stable identifier for weapons that persists across save/load.
@@ -17,44 +18,40 @@ pub struct WeaponId(pub String);
 #[reflect(Component)]
 pub struct EquippedWeaponId(pub Option<String>);
 
+/// Marker component for weapon entities.
+/// Weapons are filtered out during save and reconstructed from WeaponInventory on load.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Weapon;
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
+// === Definition components (reconstructed from .weapon.ron, no Reflect needed) ===
+
+#[derive(Component, Default)]
 pub struct RangedWeapon;
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
+#[derive(Component, Default)]
 pub struct MeleeWeapon;
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component, Default)]
+#[derive(Component, Default)]
 pub struct MeleeArc {
     pub width: f32, // In radians
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component, Default)]
+#[derive(Component, Default)]
 pub struct Damage(pub f32);
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component, Default)]
+#[derive(Component, Default)]
 pub struct AttackRange(pub f32);
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
+#[derive(Component, Default)]
 pub struct AttackSpeed {
     pub timer: Timer,
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component)]
+#[derive(Component, Default)]
 pub struct Projectile;
 
-#[derive(Component, Reflect)]
-#[reflect(Component, Default)]
+#[derive(Component)]
 pub struct ProjectileTarget(pub Entity);
 
 impl Default for ProjectileTarget {
@@ -63,10 +60,9 @@ impl Default for ProjectileTarget {
     }
 }
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component, Default)]
+#[derive(Component, Default)]
 pub struct ProjectileSpeed(pub f32);
 
-#[derive(Component, Reflect, Default)]
-#[reflect(Component, Default)]
+#[derive(Component, Default)]
 pub struct ProjectileDamage(pub f32);
+

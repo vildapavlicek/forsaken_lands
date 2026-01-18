@@ -11,6 +11,11 @@ impl Plugin for SharedComponentsPlugin {
     }
 }
 
+/// Marker for entities that should be included in save files.
+/// Add `#[require(IncludeInSave)]` to root components like Village, Hero, Portal, etc.
+#[derive(Component, Default)]
+pub struct IncludeInSave;
+
 #[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component, Default)]
 pub struct HitIndicator {

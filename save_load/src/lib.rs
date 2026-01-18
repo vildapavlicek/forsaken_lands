@@ -12,19 +12,9 @@ mod reconstruction;
 use {
     bevy::prelude::*,
     chrono::Local,
-    crafting::CraftingInProgress,
-    divinity_components::{Divinity, DivinityStats, MaxUnlockedDivinity},
-    enemy_components::{
-        Enemy, EnemyRange, Health, Lifetime, MonsterId, MovementSpeed, ResourceRewards,
-        TargetDestination,
-    },
-    hero_components::{EquippedWeaponId, Hero, WeaponId},
-    portal_components::{Portal, SpawnTableId, SpawnTimer},
-    research::{InProgress, ResearchCompletionCount},
     states::{GameState, LoadingPhase},
     std::{fs, io::Write, path::Path},
     unlocks_resources::UnlockState,
-    village_components::{EnemyEncyclopedia, Village, WeaponInventory},
     wallet::Wallet,
 };
 
@@ -210,90 +200,35 @@ fn find_latest_save(saves_dir: &Path) -> Option<std::path::PathBuf> {
         .map(|e| e.path())
 }
 
-/// Builds a DynamicScene containing only saveable components and resources.
+/// Builds a DynamicScene containing saveable components and resources.
+///
+/// Uses IncludeInSave marker to explicitly include only entities we want to save.
+/// Components with #[require(IncludeInSave)] automatically get included.
 #[allow(deprecated)] // iter_entities - no mutable alternative available here
 fn build_save_scene(world: &World) -> DynamicScene {
     DynamicSceneBuilder::from_world(world)
-        // === Entity Components - ALLOW LIST ===
-        // Village components
-        .allow_component::<Village>()
-        .allow_component::<EnemyEncyclopedia>()
-        .allow_component::<WeaponInventory>()
-        // Portal components
-        .allow_component::<Portal>()
-        .allow_component::<Divinity>()
-        .allow_component::<DivinityStats>()
-        .allow_component::<MaxUnlockedDivinity>()
-        // Hero components
-        .allow_component::<Hero>()
-        .allow_component::<EquippedWeaponId>()
-        .allow_component::<WeaponId>()
-        // Research/Crafting state
-        .allow_component::<InProgress>()
-        .allow_component::<ResearchCompletionCount>()
-        .allow_component::<CraftingInProgress>()
-        // Positioning
-        .allow_component::<Transform>()
-        .allow_component::<GlobalTransform>()
-        // Visibility
-        .allow_component::<Visibility>()
-        .allow_component::<InheritedVisibility>()
-        .allow_component::<ViewVisibility>()
-        .allow_component::<Sprite>()
-        // Portal state & timers
-        .allow_component::<SpawnTimer>()
-        .allow_component::<SpawnTableId>()
-        // Enemy state & timers
-        .allow_component::<Enemy>()
-        .allow_component::<Lifetime>()
-        .allow_component::<Health>()
-        .allow_component::<MovementSpeed>()
-        .allow_component::<MonsterId>()
-        .allow_component::<EnemyRange>()
-        .allow_component::<TargetDestination>()
-        .allow_component::<ResourceRewards>()
-        // Hierarchy preservation
-        .allow_component::<ChildOf>()
+        // === DENY-LIST: Bevy internal components that don't serialize cleanly ===
+        .deny_component::<InheritedVisibility>()
+        .deny_component::<ViewVisibility>()
+        .deny_component::<GlobalTransform>()
+        .deny_component::<bevy::camera::visibility::VisibilityClass>()
+        .deny_component::<bevy::render::sync_world::RenderEntity>()
+        .deny_component::<bevy::render::sync_world::SyncToRenderWorld>()
+        .deny_component::<bevy::camera::primitives::Aabb>()
         // === Resources ===
         .allow_resource::<Wallet>()
         .allow_resource::<UnlockState>()
-        // Extract all entities from the world, except those with Weapon component or ProgressBars
+        // === Entity extraction ===
+        // Only include entities marked with IncludeInSave
         .extract_entities(
             world
                 .iter_entities()
-                .filter(|e| {
-                    // Filter out Weapons (handled by reconstruction)
-                    if e.contains::<hero_components::Weapon>() {
-                        return false;
-                    }
-
-                    // Recursive filter for ProgressBars to catch children (sprites, text)
-                    let mut current = e.id();
-                    loop {
-                        if let Ok(entity_ref) = world.get_entity(current) {
-                            if let Some(name) = entity_ref.get::<Name>() {
-                                if name.as_str().contains("ProgressBar") {
-                                    return false;
-                                }
-                            }
-                            // Move up to parent
-                            if let Some(child_of) = entity_ref.get::<ChildOf>() {
-                                current = child_of.parent();
-                            } else {
-                                break; // No more parents
-                            }
-                        } else {
-                            break; // Entity not found (should be rare)
-                        }
-                    }
-
-                    true
-                })
+                .filter(|e| e.contains::<shared_components::IncludeInSave>())
+                // TODO: Revisit weapon filtering - consider hydration system instead
+                .filter(|e| !e.contains::<hero_components::Weapon>())
                 .map(|e| e.id()),
         )
-        // Extract the allowed resources
         .extract_resources()
-        // Build the scene
         .build()
 }
 

@@ -2,6 +2,7 @@ use {
     bevy::{platform::collections::HashMap, prelude::*},
     bevy_common_assets::ron::RonAssetPlugin,
     serde::Deserialize,
+    shared_components::IncludeInSave,
     system_schedule::GameSchedule,
 };
 
@@ -34,6 +35,7 @@ pub struct ResearchCompletionCount(pub u32);
 /// Currently being researched
 #[derive(Component, Reflect)]
 #[reflect(Component)]
+#[require(IncludeInSave)]
 pub struct InProgress {
     pub research_id: String,
     pub timer: Timer,

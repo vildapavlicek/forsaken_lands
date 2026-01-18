@@ -14,3 +14,4 @@ wallet.workspace = true
 system_schedule.workspace = true
 states.workspace = true
 research_assets.workspace = true
+shared_components.workspace = true

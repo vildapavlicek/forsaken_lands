@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use shared_components::IncludeInSave;
 
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component)]
-#[require(Pickable)]
+#[require(Pickable, IncludeInSave)]
 pub struct Portal;
 
 #[derive(Component, Reflect, Debug, Clone)]

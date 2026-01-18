@@ -40,7 +40,7 @@ pub fn clean_up_research(
 ) {
     // Despawn all research nodes
     for entity in nodes.iter() {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
     // Clear the map
     research_map.entities.clear();

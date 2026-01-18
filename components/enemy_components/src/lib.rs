@@ -1,7 +1,9 @@
 use bevy::prelude::*;
+use shared_components::IncludeInSave;
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
+#[require(IncludeInSave)]
 pub struct Enemy;
 
 #[derive(Component, Reflect, Default)]

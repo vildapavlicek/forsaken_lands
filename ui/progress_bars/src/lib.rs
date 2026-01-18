@@ -21,7 +21,8 @@ impl Plugin for ProgressBarsPlugin {
         )
         .add_observer(on_research_started)
         .add_observer(on_research_ended)
-        .add_observer(on_crafting_started);
+        .add_observer(on_crafting_started)
+        .add_systems(OnExit(GameState::Running), clean_up_progress_bars);
     }
 }
 
@@ -355,5 +356,11 @@ impl Command for CleanupEmptyRootCommand {
                 world.commands().entity(root).despawn();
             }
         }
+    }
+}
+pub fn clean_up_progress_bars(mut commands: Commands, query: Query<Entity, With<ProgressBarsRoot>>) {
+    debug!("Cleaning up progress bars");
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }

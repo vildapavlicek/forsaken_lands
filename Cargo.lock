@@ -2025,6 +2025,7 @@ dependencies = [
  "crafting_resources",
  "divinity_events",
  "recipes_assets",
+ "shared_components",
  "states",
  "system_schedule",
  "unlock_states",
@@ -2308,6 +2309,7 @@ name = "enemy_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "shared_components",
 ]
 
 [[package]]
@@ -2815,6 +2817,7 @@ name = "hero_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "shared_components",
 ]
 
 [[package]]
@@ -3917,6 +3920,7 @@ name = "portal_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "shared_components",
 ]
 
 [[package]]
@@ -4007,6 +4011,7 @@ dependencies = [
  "recipes_assets",
  "research",
  "research_assets",
+ "shared_components",
  "states",
  "village_components",
 ]
@@ -4202,6 +4207,7 @@ dependencies = [
  "bevy_common_assets",
  "research_assets",
  "serde",
+ "shared_components",
  "states",
  "system_schedule",
  "unlock_states",
@@ -4393,6 +4399,7 @@ dependencies = [
  "recipes_assets",
  "research",
  "research_assets",
+ "shared_components",
  "states",
  "unlock_states",
  "unlocks",
@@ -5139,6 +5146,7 @@ name = "village_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "shared_components",
 ]
 
 [[package]]

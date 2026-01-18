@@ -1,6 +1,10 @@
 use {
-    bevy::prelude::*, crafting_resources::CraftingOutcome, recipes_assets::RecipeDefinition,
-    states::GameState, system_schedule::GameSchedule,
+    bevy::prelude::*,
+    crafting_resources::CraftingOutcome,
+    recipes_assets::RecipeDefinition,
+    shared_components::IncludeInSave,
+    states::GameState,
+    system_schedule::GameSchedule,
 };
 
 pub mod systems;
@@ -15,6 +19,7 @@ pub use {
 /// Derives Reflect for save file inclusion.
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
+#[require(IncludeInSave)]
 pub struct CraftingInProgress {
     pub recipe_id: String,
     pub outcomes: Vec<CraftingOutcome>,

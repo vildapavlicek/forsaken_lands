@@ -9,5 +9,6 @@ crafting.workspace = true
 research.workspace = true
 research_assets.workspace = true
 recipes_assets.workspace = true
+shared_components.workspace = true
 village_components.workspace = true
 states.workspace = true

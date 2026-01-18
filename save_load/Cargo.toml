@@ -16,6 +16,7 @@ portal_components.workspace = true
 recipes_assets.workspace = true
 research.workspace = true
 research_assets.workspace = true
+shared_components.workspace = true
 states.workspace = true
 unlock_states.workspace = true
 unlocks.workspace = true
@@ -23,3 +24,4 @@ unlocks_resources.workspace = true
 village_components.workspace = true
 wallet.workspace = true
 weapon_factory_events.workspace = true
+

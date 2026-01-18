@@ -16,18 +16,9 @@ pub struct HeroesPlugin;
 
 impl Plugin for HeroesPlugin {
     fn build(&self, app: &mut App) {
+        // Only register types that derive Reflect (state components)
         app.register_type::<Hero>()
-            .register_type::<Weapon>()
-            .register_type::<RangedWeapon>()
-            .register_type::<MeleeWeapon>()
-            .register_type::<MeleeArc>()
-            .register_type::<Damage>()
-            .register_type::<AttackRange>()
-            .register_type::<AttackSpeed>()
-            .register_type::<Projectile>()
-            .register_type::<ProjectileTarget>()
-            .register_type::<ProjectileSpeed>()
-            .register_type::<ProjectileDamage>();
+            .register_type::<Weapon>();
 
         app.add_systems(
             Update,
