@@ -1,7 +1,7 @@
 use {
     bevy::prelude::*,
     equipment_events::{EquipWeaponRequest, UnequipWeaponRequest},
-    hero_components::{AttackRange, AttackSpeed, Damage, MeleeArc, MeleeWeapon, Weapon},
+    hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     shared_components::DisplayName,
     states::GameState,
     widgets::{UiTheme, spawn_action_button, spawn_card_title, spawn_item_card},
@@ -14,10 +14,10 @@ impl Plugin for HeroUiPlugin {
         app.init_state::<HeroUiState>()
             .add_observer(on_hero_ui_added)
             .add_observer(on_hero_ui_removed)
+            .add_observer(on_hero_ui_refresh)
             .add_systems(
                 Update,
                 (
-                    update_hero_ui,
                     handle_change_equipment_button,
                     handle_close_equipment_popup,
                     handle_equip_button,
@@ -25,7 +25,6 @@ impl Plugin for HeroUiPlugin {
                 )
                     .run_if(in_state(HeroUiState::Open).and(in_state(GameState::Running))),
             );
-        // Debug system to check state - runs always
     }
 }
 
@@ -91,6 +90,18 @@ pub struct UnequipWeaponButton {
 #[derive(Component)]
 pub struct UnequippedWeaponsList;
 
+/// Marker for the hero content container that can be refreshed
+#[derive(Component)]
+pub struct HeroContentContainer;
+
+// ============================================================================
+// Events
+// ============================================================================
+
+/// Event to trigger a refresh of the hero UI content
+#[derive(Event)]
+pub struct RefreshHeroUiEvent;
+
 // ============================================================================
 // State Observers
 // ============================================================================
@@ -112,11 +123,58 @@ fn on_hero_ui_removed(
 }
 
 // ============================================================================
-// Update System (placeholder for future dynamic updates)
+// Update Observer
 // ============================================================================
 
-fn update_hero_ui() {
-    // Placeholder for future dynamic updates (XP bars, level changes, etc.)
+fn on_hero_ui_refresh(
+    _trigger: On<RefreshHeroUiEvent>,
+    mut commands: Commands,
+    content_container_query: Query<(Entity, Option<&Children>), With<HeroContentContainer>>,
+    hero_query: Query<Entity, With<Hero>>,
+    children_query: Query<&Children>,
+    weapon_query: Query<
+        (
+            Entity,
+            Option<&DisplayName>,
+            &Damage,
+            &AttackRange,
+            &AttackSpeed,
+            Option<&MeleeArc>,
+        ),
+        With<Weapon>,
+    >,
+    melee_query: Query<(), With<MeleeWeapon>>,
+) {
+    // Get the content container
+    let Ok((container_entity, container_children)) = content_container_query.single() else {
+        return;
+    };
+
+    // Despawn existing content
+    if let Some(children) = container_children {
+        for child in children.iter() {
+            commands.entity(child).despawn();
+        }
+    }
+
+    // Get hero entities and build display data
+    let hero_entities: Vec<Entity> = hero_query.iter().collect();
+    let mut heroes_data: Vec<(Entity, HeroDisplayData)> = Vec::new();
+
+    for hero_entity in &hero_entities {
+        let data = build_hero_display_data(
+            *hero_entity,
+            &children_query,
+            &weapon_query,
+            &melee_query,
+        );
+        heroes_data.push((*hero_entity, data));
+    }
+
+    // Respawn updated hero content
+    commands.entity(container_entity).with_children(|parent| {
+        spawn_hero_content(parent, heroes_data, 0);
+    });
 }
 
 // ============================================================================
@@ -756,10 +814,11 @@ fn handle_equip_button(
                 weapon: btn.weapon_entity,
             });
 
-            // Close popup
+            // Close popup and trigger UI refresh
             for entity in popup_query.iter() {
                 commands.entity(entity).despawn();
             }
+            commands.trigger(RefreshHeroUiEvent);
         }
     }
 }
@@ -779,10 +838,11 @@ fn handle_unequip_button(
                 hero: btn.hero_entity,
             });
 
-            // Close popup
+            // Close popup and trigger UI refresh
             for entity in popup_query.iter() {
                 commands.entity(entity).despawn();
             }
+            commands.trigger(RefreshHeroUiEvent);
         }
     }
 }

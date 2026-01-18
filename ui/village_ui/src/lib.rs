@@ -2,7 +2,7 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     crafting::{Available, RecipeNode},
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
-    hero_ui::{HeroUiRoot, spawn_hero_content},
+    hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
     recipes_assets::{RecipeCategory, RecipeDefinition},
     research::{InProgress, ResearchCompletionCount, ResearchNode},
     research_assets::ResearchDefinition,
@@ -551,8 +551,16 @@ impl Command for SpawnHeroesContentCommand {
             // Add HeroUiRoot marker for state tracking
             parent.spawn(HeroUiRoot);
 
-            // Spawn hero content
-            spawn_hero_content(parent, heroes_data, 0);
+            // Hero content container (refreshable)
+            parent
+                .spawn((Node {
+                    flex_direction: FlexDirection::Column,
+                    width: Val::Percent(100.0),
+                    ..default()
+                }, HeroContentContainer))
+                .with_children(|content| {
+                    spawn_hero_content(content, heroes_data, 0);
+                });
         });
     }
 }
