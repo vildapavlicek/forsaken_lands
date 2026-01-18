@@ -10,9 +10,18 @@ pub struct EncyclopediaEntry {
     pub kill_count: u64,
 }
 
+/// Stores the history of defeated enemies and their statistics.
+///
+/// This component acts as the persistent memory for enemy interactions, primarily used for
+/// unlocking content (e.g., "Kill 10 Goblins"). It is attached to the `Village` singleton entity.
+///
+/// # Usage
+/// - **Unlocks System**: Queries this component to evaluate `StatCheck::Kills` conditions.
+/// - **UI System**: Displays the list of encountered enemies and their kill counts.
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
 pub struct EnemyEncyclopedia {
+    /// Maps enemy IDs (e.g., "goblin_scout") to their historical data.
     pub inner: HashMap<String, EncyclopediaEntry>,
 }
 
