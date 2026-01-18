@@ -1,0 +1,8 @@
+(
+    id: "vision_i",
+    name: "A Vision",
+    description: "The god has spoken to us. We shall present a gift devotion.",
+    cost: { "xykego": 20 },
+    time_required: 90,
+    max_repeats: 1,
+)
