@@ -10,3 +10,4 @@ hero_events.workspace = true
 system_schedule.workspace = true
 unlocks_events.workspace = true
 states.workspace = true
+rand.workspace = true

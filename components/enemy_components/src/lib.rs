@@ -27,12 +27,14 @@ pub struct Health {
 
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
-pub struct ResourceRewards(pub Vec<Reward>);
+pub struct Drops(pub Vec<Drop>);
 
 #[derive(Reflect, Default, Debug, Clone)]
-pub struct Reward {
+pub struct Drop {
     pub id: String,
     pub value: u32,
+    /// Drop chance from 0.0 to 1.0 (1.0 = 100% guaranteed drop)
+    pub chance: f32,
 }
 
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]

@@ -14,7 +14,7 @@ use {
             UnlockCondition, WeaponFormData,
         },
         monster_prefab::{
-            EnemyComponent, Reward, build_scene_ron, default_required_components,
+            Drop, EnemyComponent, build_scene_ron, default_required_components,
             optional_components, parse_components_from_ron,
         },
     },
@@ -1915,18 +1915,25 @@ impl EditorState {
                     }
                 });
             }
-            EnemyComponent::ResourceRewards(rewards) => {
+            EnemyComponent::Drops(drops) => {
                 let mut remove_idx: Option<usize> = None;
 
-                for (i, reward) in rewards.iter_mut().enumerate() {
+                for (i, drop) in drops.iter_mut().enumerate() {
                     ui.horizontal(|ui| {
                         ui.label("ID:");
-                        if ui.text_edit_singleline(&mut reward.id).changed() {
+                        if ui.text_edit_singleline(&mut drop.id).changed() {
                             changed = true;
                         }
                         ui.label("Value:");
                         if ui
-                            .add(egui::DragValue::new(&mut reward.value).speed(1.0))
+                            .add(egui::DragValue::new(&mut drop.value).speed(1.0))
+                            .changed()
+                        {
+                            changed = true;
+                        }
+                        ui.label("Chance:");
+                        if ui
+                            .add(egui::DragValue::new(&mut drop.chance).speed(0.01).range(0.0..=1.0))
                             .changed()
                         {
                             changed = true;
@@ -1938,12 +1945,12 @@ impl EditorState {
                 }
 
                 if let Some(idx) = remove_idx {
-                    rewards.remove(idx);
+                    drops.remove(idx);
                     changed = true;
                 }
 
-                if ui.button("+ Add Reward").clicked() {
-                    rewards.push(Reward::default());
+                if ui.button("+ Add Drop").clicked() {
+                    drops.push(Drop { chance: 1.0, ..Default::default() });
                     changed = true;
                 }
             }

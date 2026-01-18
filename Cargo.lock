@@ -5188,6 +5188,7 @@ dependencies = [
  "bevy",
  "enemy_components",
  "hero_events",
+ "rand",
  "states",
  "system_schedule",
  "unlocks_events",
