@@ -53,6 +53,14 @@ pub struct ResearchMap {
     pub entities: HashMap<String, Entity>,
 }
 
+/// Persisted research state - tracks how many times each research was completed.
+/// This is saved/loaded and used to reconstruct research entity state on load.
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
+pub struct ResearchState {
+    pub completion_counts: HashMap<String, u32>,
+}
+
 // --- Events ---
 
 #[derive(Event)]
@@ -71,6 +79,8 @@ impl Plugin for ResearchPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RonAssetPlugin::<ResearchDefinition>::new(&["research.ron"]))
             .init_resource::<ResearchMap>()
+            .init_resource::<ResearchState>()
+            .register_type::<ResearchState>()
             .register_type::<UnlockEffect>()
             .register_type::<ResearchCompletionCount>()
             .register_type::<InProgress>()

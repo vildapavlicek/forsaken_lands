@@ -279,6 +279,7 @@ fn spawn_all_entities(
     mut recipe_map: ResMut<RecipeMap>,
     mut research_assets: ResMut<Assets<ResearchDefinition>>,
     mut recipe_assets: ResMut<Assets<RecipeDefinition>>,
+    research_state: Res<research::ResearchState>,
     unlock_state: Res<UnlockState>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
@@ -286,12 +287,14 @@ fn spawn_all_entities(
     status.current_phase = "Spawning Entities".into();
     status.detail = "Creating research and recipe nodes...".into();
 
-    // Spawn research entities
+    // Spawn research entities using persisted ResearchState + asset data
+    // UnlockState is NOT used here - it's reconstructed during evaluate_unlocks
     debug!("Spawning research entities...");
     let research_ids: Vec<_> = research_assets.ids().collect();
 
     for id in research_ids {
-        let def_id = {
+        // Get definition info first and clone what we need
+        let (def_id, max_repeats) = {
             let Some(def) = research_assets.get(id) else {
                 continue;
             };
@@ -300,20 +303,37 @@ fn spawn_all_entities(
                 continue;
             }
 
-            def.id.clone()
+            (def.id.clone(), def.max_repeats)
         };
 
-        let already_unlocked = unlock_state.completed.iter().any(|unlock_id| {
-            unlock_id.ends_with(&format!("{}_unlock", def_id))
-                || unlock_id.starts_with(&format!("research_{}", def_id))
-        });
+        // Get persisted completion count (0 if not found)
+        let saved_count = research_state.completion_counts.get(&def_id).copied().unwrap_or(0);
 
         let handle = research_assets.get_strong_handle(id).unwrap();
 
-        let entity = if already_unlocked {
+        // Determine state based on saved count vs asset max_repeats
+        // - Completed: count >= max_repeats
+        // - Available: count > 0 (was researched before, may have more repeats)
+        // - Locked: count == 0 (the unlock system will transition to Available during evaluate_unlocks)
+        let entity = if saved_count >= max_repeats {
             debug!(
-                "Research '{}' unlock already achieved, spawning as Available",
-                def_id
+                "Research '{}' fully completed ({}/{}), spawning as Completed",
+                def_id, saved_count, max_repeats
+            );
+            commands
+                .spawn((
+                    research::ResearchNode {
+                        id: def_id.clone(),
+                        handle,
+                    },
+                    research::Completed,
+                    research::ResearchCompletionCount(saved_count),
+                ))
+                .id()
+        } else if saved_count > 0 {
+            debug!(
+                "Research '{}' partially completed ({}/{}), spawning as Available",
+                def_id, saved_count, max_repeats
             );
             commands
                 .spawn((
@@ -322,10 +342,11 @@ fn spawn_all_entities(
                         handle,
                     },
                     research::Available,
-                    research::ResearchCompletionCount(0),
+                    research::ResearchCompletionCount(saved_count),
                 ))
                 .id()
         } else {
+            // Locked - the unlock system will mark Available during evaluate_unlocks if conditions met
             commands
                 .spawn((
                     research::ResearchNode {
@@ -420,16 +441,32 @@ fn compile_unlocks(
 
 // --- Phase: EvaluateUnlocks ---
 
-/// After all unlock logic graphs are compiled, re-fire signals for sensors that are already satisfied.
-/// This ensures that unlock cascades happen correctly, since all observers now exist.
+/// After all unlock logic graphs are compiled, re-fire signals for sensors that are already satisfied
+/// and trigger ResearchCompleted events for research that was completed before save.
+/// This ensures that unlock cascades and UnlockState are reconstructed correctly.
 fn evaluate_unlocks(
     mut commands: Commands,
     sensors: Query<(Entity, &ConditionSensor)>,
+    research_state: Res<research::ResearchState>,
+    research_query: Query<(Entity, &research::ResearchNode)>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
 ) {
     status.current_phase = "Evaluating Unlocks".into();
     status.detail = "Checking satisfied conditions...".into();
+
+    // Trigger ResearchCompleted events for research that was completed (count > 0)
+    // This will populate UnlockState.completed via the unlock observers
+    for (entity, node) in &research_query {
+        if let Some(&count) = research_state.completion_counts.get(&node.id) {
+            if count > 0 {
+                debug!(research_id = %node.id, count = count, "Firing ResearchCompleted for loaded research");
+                commands.trigger(research::ResearchCompleted {
+                    research_id: node.id.clone(),
+                });
+            }
+        }
+    }
 
     // Re-fire LogicSignalEvent for all sensors that are already satisfied
     // This triggers the unlock cascade now that all observers exist

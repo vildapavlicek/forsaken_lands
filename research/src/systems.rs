@@ -112,6 +112,7 @@ pub fn update_research_progress(
     time: Res<Time>,
     assets: Res<Assets<ResearchDefinition>>,
     mut commands: Commands,
+    mut research_state: ResMut<crate::ResearchState>,
     mut query: Query<(
         Entity,
         &ResearchNode,
@@ -122,9 +123,10 @@ pub fn update_research_progress(
     for (entity, node, mut progress, mut count) in query.iter_mut() {
         progress.timer.tick(time.delta());
         if progress.timer.just_finished() {
-            // Increment completion count
+            // Increment completion count (on entity and in persisted state)
             count.0 += 1;
             let current_count = count.0;
+            research_state.completion_counts.insert(node.id.clone(), current_count);
 
             // Always trigger completion event (for effects/bonuses)
             commands.trigger(ResearchCompleted {
