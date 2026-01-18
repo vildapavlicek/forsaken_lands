@@ -12,12 +12,7 @@
           custom_size: Some((16.0, 32.0)),
         ),
         "portal_components::Portal": (),
-        "divinity_components::Divinity": (tier: 1, level: 1),
-        "divinity_components::DivinityStats": (
-            current_xp: 0.0,
-            required_xp: 100.0,
-        ),
-        "divinity_components::MaxUnlockedDivinity": (
+        "divinity_components::CurrentDivinity": (
             (tier: 1, level: 1),
         ),
         "portal_components::SpawnTableId": ("default"),

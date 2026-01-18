@@ -21,7 +21,7 @@ pub struct CompilerContext<'a> {
     pub wallet: &'a Wallet,
     pub encyclopedia: Option<&'a EnemyEncyclopedia>,
     pub unlock_state: &'a UnlockState,
-    pub max_divinity: Option<&'a MaxUnlockedDivinity>,
+    pub max_divinity: Option<Divinity>,
 }
 
 pub struct AddTopicSubscriber {
@@ -209,7 +209,7 @@ pub fn build_condition_node(
             let topic_key = "stat:max_unlocked_divinity".to_string();
             let topic_entity = topic_map.get_or_create(commands, &topic_key);
 
-            let current_divinity = ctx.max_divinity.map(|d| d.0).unwrap_or_default();
+            let current_divinity = ctx.max_divinity.unwrap_or_default();
             let initially_met = current_divinity >= *required_divinity;
 
             let sensor = commands

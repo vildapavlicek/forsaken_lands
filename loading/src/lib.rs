@@ -7,7 +7,7 @@ use {
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,
-    divinity_components::MaxUnlockedDivinity,
+    divinity_components::Divinity,
     enemy_components::MonsterId,
     portal_assets::SpawnTable,
     recipes_assets::RecipeDefinition,
@@ -384,7 +384,7 @@ fn compile_unlocks(
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     unlock_state: Res<UnlockState>,
-    max_divinity_query: Query<&MaxUnlockedDivinity>,
+    max_divinity_query: Query<&Divinity>,
     compiled: Query<&CompiledUnlock>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
@@ -399,7 +399,7 @@ fn compile_unlocks(
         wallet: &wallet,
         encyclopedia,
         unlock_state: &unlock_state,
-        max_divinity,
+        max_divinity: max_divinity.copied(),
     };
 
     let compiled_ids: std::collections::HashSet<_> =

@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    divinity_components::{Divinity, DivinityStats, MaxUnlockedDivinity},
+    divinity_components::{CurrentDivinity, Divinity},
     divinity_events::IncreaseDivinity,
     enemy_components::{
         Dead, Drop, Drops, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
@@ -43,19 +43,19 @@ impl Plugin for PortalsPlugin {
 
         app.add_observer(assign_enemy_destination);
         app.add_observer(assign_enemy_destination);
-        app.add_observer(handle_max_divinity_increase);
         app.add_systems(OnExit(states::GameState::Running), clean_up_portals);
     }
 }
 
 fn enemy_spawn_system(
     time: Res<Time>,
-    mut query: Query<(&mut SpawnTimer, &SpawnTableId, &Divinity), With<Portal>>,
+    mut query: Query<(&mut SpawnTimer, &SpawnTableId, &CurrentDivinity), With<Portal>>,
     game_assets: Res<GameAssets>,
     spawn_tables: Res<Assets<SpawnTable>>,
     mut scene_spawner: ResMut<SceneSpawner>,
 ) {
     for (mut timer, table_id, divinity) in query.iter_mut() {
+        let divinity = **divinity;
         if timer.0.tick(time.delta()).just_finished() {
             let table_handle = if let Some(handle) = game_assets.spawn_tables.get(&table_id.0) {
                 handle
@@ -71,9 +71,9 @@ fn enemy_spawn_system(
                     .entries
                     .iter()
                     .filter(|e| match &e.condition {
-                        SpawnCondition::Min(req) => divinity >= req,
-                        SpawnCondition::Specific(req) => divinity == req,
-                        SpawnCondition::Range { min, max } => divinity >= min && divinity <= max,
+                        SpawnCondition::Min(req) => divinity >= *req,
+                        SpawnCondition::Specific(req) => divinity == *req,
+                        SpawnCondition::Range { min, max } => divinity >= *min && divinity <= *max,
                     })
                     .collect();
 
@@ -267,84 +267,29 @@ fn draw_range_gizmos(mut gizmos: Gizmos) {
     gizmos.circle_2d(village_center, 25.0, Color::srgb(0.5, 0.0, 0.0));
 }
 
-fn handle_max_divinity_increase(
-    trigger: On<IncreaseDivinity>,
-    mut query: Query<(&mut DivinityStats, &mut MaxUnlockedDivinity), With<Portal>>,
-) {
-    let event = trigger.event();
-    if let Ok((mut stats, mut max_divinity)) = query.get_mut(event.entity) {
-        if stats.add_xp(event.xp_amount, &mut max_divinity) {
-            info!(
-                tier = max_divinity.tier,
-                level = max_divinity.level,
-                "Portal leveled up"
-            );
-        }
-    }
-}
+
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_max_unlocked_divinity_update() {
+    fn test_current_divinity_spawn_filter() {
         let mut app = App::new();
         app.add_plugins(MinimalPlugins);
-        app.register_type::<Divinity>();
-        app.register_type::<DivinityStats>();
-        app.register_type::<MaxUnlockedDivinity>();
-        app.add_observer(handle_max_divinity_increase);
+        app.register_type::<Portal>();
+        app.register_type::<CurrentDivinity>();
 
         let entity = app
             .world_mut()
             .spawn((
                 Portal,
-                Divinity::new(1, 1),
-                DivinityStats {
-                    current_xp: 0.0,
-                    required_xp: 100.0,
-                },
-                MaxUnlockedDivinity(Divinity::new(1, 1)),
+                CurrentDivinity(Divinity::new(1, 10)),
             ))
             .id();
 
-        // Case 1: Increase XP to level up
-        app.world_mut().flush();
-        app.world_mut().trigger(IncreaseDivinity {
-            entity,
-            xp_amount: 150.0, // Enough to level up (req 100)
-        });
-        app.update();
-
-        let max_unlocked = app.world().get::<MaxUnlockedDivinity>(entity).unwrap();
-
-        assert_eq!(max_unlocked.level, 2);
-
-        // Case 2: Verify Tier up
-        let entity_tier = app
-            .world_mut()
-            .spawn((
-                Portal,
-                Divinity::new(1, 99), // Almost tier up
-                DivinityStats {
-                    current_xp: 0.0,
-                    required_xp: 10000.0, // Arbitrary high
-                },
-                MaxUnlockedDivinity(Divinity::new(1, 99)),
-            ))
-            .id();
-
-        // Force level up via event
-        app.world_mut().trigger(IncreaseDivinity {
-            entity: entity_tier,
-            xp_amount: 1000000.0,
-        });
-        app.update();
-
-        let max_unlocked = app.world().get::<MaxUnlockedDivinity>(entity_tier).unwrap();
-
-        assert_eq!(max_unlocked.tier, 2);
+        let divinity = app.world().get::<CurrentDivinity>(entity).unwrap();
+        assert_eq!(divinity.level, 10);
     }
 }
 

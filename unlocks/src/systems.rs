@@ -26,11 +26,11 @@ pub fn compile_pending_unlocks(
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     unlock_state: Res<UnlockState>,
-    max_divinity_query: Query<&MaxUnlockedDivinity, With<portal_components::Portal>>,
+    village_query: Query<&Divinity, With<Village>>,
     compiled: Query<&CompiledUnlock>,
 ) {
-    let encyclopedia = encyclopedia_query.single().ok();
-    let max_divinity = max_divinity_query.iter().next();
+    let encyclopedia = encyclopedia_query.iter().next();
+    let max_divinity = village_query.iter().next().copied();
 
     let ctx = CompilerContext {
         wallet: &wallet,
@@ -385,7 +385,7 @@ pub fn cleanup_finished_unlock(
 
 /// System that checks for MaxUnlockedDivinity changes and emits signal.
 pub fn check_max_divinity_changes(
-    query: Query<(Entity, &MaxUnlockedDivinity), Changed<MaxUnlockedDivinity>>,
+    query: Query<(Entity, &Divinity), (Changed<Divinity>, With<Village>)>,
     mut topic_map: ResMut<TopicMap>,
     mut commands: Commands,
 ) {
@@ -395,7 +395,7 @@ pub fn check_max_divinity_changes(
 
         commands.trigger(MaxUnlockedDivinityChangedEvent {
             entity: topic_entity,
-            new_divinity: max_divinity.0,
+            new_divinity: *max_divinity,
         });
     }
 }

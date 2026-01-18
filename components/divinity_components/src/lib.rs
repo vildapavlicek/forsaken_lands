@@ -10,7 +10,7 @@ impl Plugin for DivinityComponentsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Divinity>();
         app.register_type::<DivinityStats>();
-        app.register_type::<MaxUnlockedDivinity>();
+        app.register_type::<CurrentDivinity>();
     }
 }
 
@@ -90,14 +90,12 @@ pub struct DivinityStats {
     pub required_xp: f32,
 }
 
-/// Tracks the highest unlocked Divinity level for this Portal.
-/// This allows the player to potentially lower the current Divinity level
-/// while knowing what the maximum achievable level they've reached is.
-#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+/// Represents the current active Divinity level of a Portal.
+#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut, Serialize, Deserialize)]
 #[reflect(Component, Default)]
-pub struct MaxUnlockedDivinity(pub Divinity);
+pub struct CurrentDivinity(pub Divinity);
 
-impl Default for MaxUnlockedDivinity {
+impl Default for CurrentDivinity {
     fn default() -> Self {
         Self(Divinity::default())
     }

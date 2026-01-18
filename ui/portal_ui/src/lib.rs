@@ -1,8 +1,9 @@
 use {
     bevy::{picking::events::Click, prelude::*},
-    divinity_components::{Divinity, MaxUnlockedDivinity},
+    divinity_components::{CurrentDivinity, Divinity},
     portal_components::Portal,
     states::GameState,
+    village_components::Village,
     widgets::{PanelWrapperRef, UiTheme, spawn_menu_panel, spawn_panel_header_with_close},
 };
 
@@ -225,13 +226,18 @@ fn handle_close_button(
 }
 
 fn update_portal_ui(
-    portal_query: Query<(&Divinity, &MaxUnlockedDivinity), With<Portal>>,
+    portal_query: Query<&CurrentDivinity, With<Portal>>,
+    village_query: Query<&Divinity, With<Village>>,
     ui_query: Query<&PortalUiRoot>,
     mut current_text_query: Query<&mut Text, (With<CurrentDivinityText>, Without<MaxDivinityText>)>,
     mut max_text_query: Query<&mut Text, (With<MaxDivinityText>, Without<CurrentDivinityText>)>,
 ) {
+    let Some(max_divinity) = village_query.iter().next() else {
+        return;
+    };
+
     for ui_root in ui_query.iter() {
-        let Ok((divinity, max_divinity)) = portal_query.get(ui_root.portal_entity) else {
+        let Ok(divinity) = portal_query.get(ui_root.portal_entity) else {
             continue;
         };
 
@@ -244,7 +250,7 @@ fn update_portal_ui(
         for mut text in max_text_query.iter_mut() {
             text.0 = format!(
                 "Tier {} - Level {}",
-                max_divinity.0.tier, max_divinity.0.level
+                max_divinity.tier, max_divinity.level
             );
         }
     }
@@ -252,7 +258,8 @@ fn update_portal_ui(
 
 #[allow(clippy::type_complexity)]
 fn handle_tier_navigation(
-    mut portal_query: Query<(&mut Divinity, &MaxUnlockedDivinity), With<Portal>>,
+    mut portal_query: Query<&mut CurrentDivinity, With<Portal>>,
+    village_query: Query<&Divinity, With<Village>>,
     decrease_query: Query<
         (&Interaction, &DecreaseTierButton),
         (Changed<Interaction>, With<Button>),
@@ -262,10 +269,13 @@ fn handle_tier_navigation(
         (Changed<Interaction>, With<Button>),
     >,
 ) {
+    let Some(max_divinity) = village_query.iter().next() else {
+        return;
+    };
     // Handle decrease button
     for (interaction, btn) in decrease_query.iter() {
         if *interaction == Interaction::Pressed {
-            if let Ok((mut divinity, _)) = portal_query.get_mut(btn.portal_entity) {
+            if let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
                 // Decrease level, wrapping to previous tier if needed
                 if divinity.level > 1 {
                     divinity.level -= 1;
@@ -281,10 +291,10 @@ fn handle_tier_navigation(
     // Handle increase button
     for (interaction, btn) in increase_query.iter() {
         if *interaction == Interaction::Pressed {
-            if let Ok((mut divinity, max_divinity)) = portal_query.get_mut(btn.portal_entity) {
+            if let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
                 // Only allow increase up to max unlocked divinity
-                let current = *divinity;
-                let max = max_divinity.0;
+                let current = **divinity;
+                let max = *max_divinity;
 
                 if current < max {
                     if divinity.level < divinity_components::MAX_LEVEL {
@@ -295,8 +305,8 @@ fn handle_tier_navigation(
                     }
 
                     // Clamp to max
-                    if *divinity > max {
-                        *divinity = max;
+                    if divinity.0 > max {
+                        divinity.0 = max;
                     }
                 }
             }

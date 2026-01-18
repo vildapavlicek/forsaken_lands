@@ -3933,6 +3933,7 @@ dependencies = [
  "portal_components",
  "shared_components",
  "states",
+ "village_components",
  "wallet",
  "widgets",
 ]
