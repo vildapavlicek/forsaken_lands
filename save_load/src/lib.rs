@@ -14,6 +14,7 @@ use {
     chrono::Local,
     states::{GameState, LoadingPhase},
     std::{fs, io::Write, path::Path},
+    unlocks_resources::UnlockState,
     wallet::Wallet,
 };
 
@@ -216,6 +217,7 @@ fn build_save_scene(world: &World) -> DynamicScene {
         .deny_component::<bevy::camera::primitives::Aabb>()
         // === Resources ===
         .allow_resource::<Wallet>()
+        .allow_resource::<UnlockState>()
         // === Entity extraction ===
         // Only include entities marked with IncludeInSave
         .extract_entities(

@@ -22,7 +22,8 @@ pub enum LoadingPhase {
     Assets,
     SpawnScene,             // Spawn startup/save scene first (loads resources like EnemyEncyclopedia)
     SpawnEntities,          // Spawn research & recipe entities
-    CompileUnlocks,         // Build unlock logic graphs (uses loaded resources)
+    CompileUnlocks,         // Build unlock logic graphs (observers created)
+    EvaluateUnlocks,        // Fire events for satisfied unlocks (all observers now exist)
     PostLoadReconstruction, // Save-specific reconstruction
     Ready,                  // All done
 }

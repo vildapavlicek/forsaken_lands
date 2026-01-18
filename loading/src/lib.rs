@@ -15,7 +15,7 @@ use {
     research_assets::ResearchDefinition,
     states::{GameState, LoadingPhase},
     unlocks::{
-        CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
+        CompiledUnlock, ConditionSensor, LogicSignalEvent, TopicMap, UnlockRoot, UnlockState,
         compiler::{CompilerContext, build_condition_node},
     },
     unlocks_assets::UnlockDefinition,
@@ -54,6 +54,8 @@ impl Plugin for LoadingManagerPlugin {
             .add_systems(OnEnter(LoadingPhase::SpawnEntities), spawn_all_entities)
             // Phase: CompileUnlocks - build unlock logic graphs
             .add_systems(OnEnter(LoadingPhase::CompileUnlocks), compile_unlocks)
+            // Phase: EvaluateUnlocks - re-fire signals for satisfied conditions
+            .add_systems(OnEnter(LoadingPhase::EvaluateUnlocks), evaluate_unlocks)
             // Phase: SpawnScene - spawn scene (startup or save)
             .add_systems(OnEnter(LoadingPhase::SpawnScene), spawn_scene)
             .add_systems(
@@ -412,6 +414,37 @@ fn compile_unlocks(
             &ctx,
         );
     }
+
+    next_phase.set(LoadingPhase::EvaluateUnlocks);
+}
+
+// --- Phase: EvaluateUnlocks ---
+
+/// After all unlock logic graphs are compiled, re-fire signals for sensors that are already satisfied.
+/// This ensures that unlock cascades happen correctly, since all observers now exist.
+fn evaluate_unlocks(
+    mut commands: Commands,
+    sensors: Query<(Entity, &ConditionSensor)>,
+    mut next_phase: ResMut<NextState<LoadingPhase>>,
+    mut status: ResMut<LoadingStatus>,
+) {
+    status.current_phase = "Evaluating Unlocks".into();
+    status.detail = "Checking satisfied conditions...".into();
+
+    // Re-fire LogicSignalEvent for all sensors that are already satisfied
+    // This triggers the unlock cascade now that all observers exist
+    let mut satisfied_count = 0;
+    for (entity, sensor) in &sensors {
+        if sensor.is_met {
+            debug!(sensor = ?entity, "Re-firing signal for satisfied sensor");
+            commands.entity(entity).trigger(|e| LogicSignalEvent {
+                entity: e,
+                is_high: true,
+            });
+            satisfied_count += 1;
+        }
+    }
+    info!("Evaluated {} sensors, {} already satisfied", sensors.iter().count(), satisfied_count);
 
     next_phase.set(LoadingPhase::PostLoadReconstruction);
 }
