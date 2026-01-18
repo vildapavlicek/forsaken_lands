@@ -56,7 +56,7 @@ pub enum EnemyComponent {
     },
 
     // Optional components
-    ResourceRewards(Vec<Reward>),
+    Drops(Vec<Drop>),
     RewardCoefficient(f32),
     NeedsHydration,
 }
@@ -74,7 +74,7 @@ impl EnemyComponent {
             EnemyComponent::Lifetime { .. } => "Lifetime",
             EnemyComponent::Transform { .. } => "Transform",
             EnemyComponent::Sprite { .. } => "Sprite",
-            EnemyComponent::ResourceRewards(_) => "Resource Rewards",
+            EnemyComponent::Drops(_) => "Drops",
             EnemyComponent::RewardCoefficient(_) => "Reward Coefficient",
             EnemyComponent::NeedsHydration => "Needs Hydration",
         }
@@ -97,17 +97,18 @@ impl EnemyComponent {
     }
 }
 
-/// A resource reward entry.
+/// A drop entry with chance.
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct Reward {
+pub struct Drop {
     pub id: String,
     pub value: u32,
+    pub chance: f32,
 }
 
 /// List of optional components that can be added.
 pub fn optional_components() -> Vec<(&'static str, EnemyComponent)> {
     vec![
-        ("Resource Rewards", EnemyComponent::ResourceRewards(vec![])),
+        ("Drops", EnemyComponent::Drops(vec![])),
         ("Reward Coefficient", EnemyComponent::RewardCoefficient(1.0)),
         ("Needs Hydration", EnemyComponent::NeedsHydration),
     ]
@@ -223,24 +224,25 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
             format_f32(*width),
             format_f32(*height)
         )),
-        EnemyComponent::ResourceRewards(rewards) => {
-            if rewards.is_empty() {
-                Some(r#""enemy_components::ResourceRewards": ([])"#.to_string())
+        EnemyComponent::Drops(drops) => {
+            if drops.is_empty() {
+                Some(r#""enemy_components::Drops": ([])"#.to_string())
             } else {
-                let rewards_str = rewards
+                let drops_str = drops
                     .iter()
-                    .map(|r| {
+                    .map(|d| {
                         format!(
-                            r#"(id: "{}", value: {})"#,
-                            escape_ron_string(&r.id),
-                            r.value
+                            r#"(id: "{}", value: {}, chance: {})"#,
+                            escape_ron_string(&d.id),
+                            d.value,
+                            format_f32(d.chance)
                         )
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
                 Some(format!(
-                    r#""enemy_components::ResourceRewards": ([{}])"#,
-                    rewards_str
+                    r#""enemy_components::Drops": ([{}])"#,
+                    drops_str
                 ))
             }
         }
@@ -363,19 +365,20 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         });
     }
 
-    // ResourceRewards
-    if content.contains("\"enemy_components::ResourceRewards\"") {
-        let rewards_re = Regex::new(r#"\(id:\s*"([^"]+)",\s*value:\s*(\d+)\)"#).ok()?;
-        let mut rewards = Vec::new();
-        for caps in rewards_re.captures_iter(content) {
-            if let (Some(id), Some(value)) = (caps.get(1), caps.get(2)) {
-                rewards.push(Reward {
+    // Drops
+    if content.contains("\"enemy_components::Drops\"") {
+        let drops_re = Regex::new(r#"\(id:\s*"([^"]+)",\s*value:\s*(\d+),\s*chance:\s*([\d.]+)\)"#).ok()?;
+        let mut drops = Vec::new();
+        for caps in drops_re.captures_iter(content) {
+            if let (Some(id), Some(value), Some(chance)) = (caps.get(1), caps.get(2), caps.get(3)) {
+                drops.push(Drop {
                     id: id.as_str().to_string(),
                     value: value.as_str().parse().unwrap_or(0),
+                    chance: chance.as_str().parse().unwrap_or(1.0),
                 });
             }
         }
-        components.push(EnemyComponent::ResourceRewards(rewards));
+        components.push(EnemyComponent::Drops(drops));
     }
 
     // RewardCoefficient

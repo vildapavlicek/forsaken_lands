@@ -3399,6 +3399,7 @@ name = "hero_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "shared_components",
 ]
 
 [[package]]

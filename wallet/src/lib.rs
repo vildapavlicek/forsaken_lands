@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    enemy_components::ResourceRewards,
+    enemy_components::Drops,
     hero_events::EnemyKilled,
     states,
     std::collections::{HashMap, HashSet},
@@ -84,23 +84,28 @@ fn process_enemy_killed_rewards(
     trigger: On<EnemyKilled>,
     mut wallet: ResMut<Wallet>,
     rates: Res<ResourceRates>,
-    enemies: Query<&ResourceRewards>,
+    enemies: Query<&Drops>,
 ) {
     let event = trigger.event();
-    if let Ok(rewards) = enemies.get(event.entity) {
-        for reward in rewards.0.iter() {
-            // check resource is unlocked and thus can actually be rewarded
-            if !wallet.unlocked_resources.contains(&reward.id) {
+    if let Ok(drops) = enemies.get(event.entity) {
+        for drop in drops.0.iter() {
+            // RNG check for drop chance
+            if rand::random::<f32>() > drop.chance {
                 continue;
             }
 
-            let rate = rates.get_rate(&reward.id);
-            let modified_value = (reward.value as f32 * rate).round() as u32;
-            let current = wallet.resources.entry(reward.id.clone()).or_insert(0);
+            // Check resource is unlocked and thus can actually be rewarded
+            if !wallet.unlocked_resources.contains(&drop.id) {
+                continue;
+            }
+
+            let rate = rates.get_rate(&drop.id);
+            let modified_value = (drop.value as f32 * rate).round() as u32;
+            let current = wallet.resources.entry(drop.id.clone()).or_insert(0);
             *current += modified_value;
             trace!(
-                "Added {} {} to wallet (base: {}, rate: {})",
-                modified_value, reward.id, reward.value, rate
+                "Added {} {} to wallet (base: {}, rate: {}, chance: {})",
+                modified_value, drop.id, drop.value, rate, drop.chance
             );
         }
     }

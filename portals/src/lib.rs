@@ -3,8 +3,8 @@ use {
     divinity_components::{Divinity, DivinityStats, MaxUnlockedDivinity},
     divinity_events::IncreaseDivinity,
     enemy_components::{
-        Dead, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
-        MovementSpeed, ResourceRewards, Reward, TargetDestination,
+        Dead, Drop, Drops, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
+        MovementSpeed, TargetDestination,
     },
     hero_events::EnemyKilled,
     loading::GameAssets,
@@ -26,8 +26,8 @@ impl Plugin for PortalsPlugin {
         app.register_type::<MovementSpeed>();
         app.register_type::<Lifetime>();
         app.register_type::<Health>();
-        app.register_type::<ResourceRewards>();
-        app.register_type::<Reward>();
+        app.register_type::<Drops>();
+        app.register_type::<Drop>();
         app.register_type::<Dead>();
         app.register_type::<MonsterId>();
         app.register_type::<EnemyRange>();
