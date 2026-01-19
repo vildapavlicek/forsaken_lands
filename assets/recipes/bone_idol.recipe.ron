@@ -5,9 +5,7 @@
     craft_time: 5.0,
     cost: {
         "bones": 50,
-        "xikegos": 5,
+        "xykego": 5,
     },
-    outcomes: [
-        IncreaseDivinity(100),
-    ],
+    outcomes: [],
 )
