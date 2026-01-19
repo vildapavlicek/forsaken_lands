@@ -57,7 +57,9 @@ pub struct CompiledUnlock {
 // ============================================================================
 
 /// Comparison operators for numeric conditions.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize,
+)]
 pub enum ComparisonOp {
     #[default]
     Ge, // >=

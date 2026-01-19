@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use shared_components::IncludeInSave;
+use {bevy::prelude::*, shared_components::IncludeInSave};
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
@@ -78,4 +77,3 @@ pub struct ProjectileSpeed(pub f32);
 
 #[derive(Component, Default)]
 pub struct ProjectileDamage(pub f32);
-

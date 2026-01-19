@@ -126,7 +126,9 @@ pub fn update_research_progress(
             // Increment completion count (on entity and in persisted state)
             count.0 += 1;
             let current_count = count.0;
-            research_state.completion_counts.insert(node.id.clone(), current_count);
+            research_state
+                .completion_counts
+                .insert(node.id.clone(), current_count);
 
             // Always trigger completion event (for effects/bonuses)
             commands.trigger(ResearchCompleted {

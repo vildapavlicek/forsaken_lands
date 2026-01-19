@@ -14,12 +14,9 @@ use {
     research::ResearchMap,
     research_assets::ResearchDefinition,
     states::{GameState, LoadingPhase},
-    unlocks::{
-        CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
-        compiler::build_condition_node,
-    },
+    unlocks::{CompiledUnlock, TopicMap, UnlockRoot, UnlockState, compiler::build_condition_node},
     unlocks_assets::UnlockDefinition,
-    unlocks_events::{ValueChanged, StatusCompleted},
+    unlocks_events::{StatusCompleted, ValueChanged},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
     weapon_assets::{WeaponDefinition, WeaponMap},
@@ -308,7 +305,11 @@ fn spawn_all_entities(
         };
 
         // Get persisted completion count (0 if not found)
-        let saved_count = research_state.completion_counts.get(&def_id).copied().unwrap_or(0);
+        let saved_count = research_state
+            .completion_counts
+            .get(&def_id)
+            .copied()
+            .unwrap_or(0);
 
         let handle = research_assets.get_strong_handle(id).unwrap();
 
@@ -416,12 +417,7 @@ fn compile_unlocks(
             .id();
 
         // Build condition tree - no context needed, hydration happens via events
-        build_condition_node(
-            &mut commands,
-            &mut topic_map,
-            &definition.condition,
-            root,
-        );
+        build_condition_node(&mut commands, &mut topic_map, &definition.condition, root);
     }
 
     next_phase.set(LoadingPhase::EvaluateUnlocks);

@@ -1,12 +1,8 @@
 //! Systems and observers for the unlocks framework.
 
 use {
-    crate::compiler::*,
-    bevy::prelude::*,
-    unlocks_assets::UnlockDefinition,
-    unlocks_components::*,
-    unlocks_events::*,
-    unlocks_resources::*,
+    crate::compiler::*, bevy::prelude::*, unlocks_assets::UnlockDefinition, unlocks_components::*,
+    unlocks_events::*, unlocks_resources::*,
 };
 
 // ============================================================================
@@ -144,9 +140,7 @@ pub fn handle_unlock_completion(
     let topic_key = format!("unlock:{}", event.unlock_id);
     if topic_map.topics.contains_key(&topic_key) {
         // Trigger StatusCompleted so dependent sensors update
-        commands.trigger(StatusCompleted {
-            topic: topic_key,
-        });
+        commands.trigger(StatusCompleted { topic: topic_key });
     }
 }
 

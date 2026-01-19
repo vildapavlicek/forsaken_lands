@@ -1,10 +1,7 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
 use {
-    bevy::prelude::*,
-    unlocks_assets::ConditionNode,
-    unlocks_components::*,
-    unlocks_events::*,
+    bevy::prelude::*, unlocks_assets::ConditionNode, unlocks_components::*, unlocks_events::*,
     unlocks_resources::*,
 };
 
@@ -33,7 +30,7 @@ impl Command for AddTopicSubscriber {
 }
 
 /// Recursively builds the condition node tree.
-/// 
+///
 /// This is a simplified version that doesn't require game-specific context.
 /// Initial state hydration is handled by the game triggering ValueChanged/StatusCompleted events.
 pub fn build_condition_node(

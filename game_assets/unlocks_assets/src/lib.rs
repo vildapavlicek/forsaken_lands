@@ -27,7 +27,7 @@ pub struct UnlockDefinition {
 }
 
 /// A node in the logical condition tree.
-/// 
+///
 /// This is a simplified, game-agnostic version that uses string-based topic IDs.
 /// The game code is responsible for triggering events with matching topic IDs.
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -53,7 +53,5 @@ pub enum ConditionNode {
     },
     /// Checks if something has been completed.
     /// Topic examples: "research:bone_sword", "quest:intro", "unlock:recipe_x"
-    Completed {
-        topic: String,
-    },
+    Completed { topic: String },
 }

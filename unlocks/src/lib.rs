@@ -42,8 +42,10 @@ mod systems;
 mod tests;
 
 use {bevy::prelude::*, systems::*};
-pub use {unlocks_assets::*, unlocks_components::*, unlocks_events::*, unlocks_resources::*};
-pub use systems::clean_up_unlocks;
+pub use {
+    systems::clean_up_unlocks, unlocks_assets::*, unlocks_components::*, unlocks_events::*,
+    unlocks_resources::*,
+};
 
 pub struct UnlocksPlugin;
 

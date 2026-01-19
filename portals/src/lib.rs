@@ -267,8 +267,6 @@ fn draw_range_gizmos(mut gizmos: Gizmos) {
     gizmos.circle_2d(village_center, 25.0, Color::srgb(0.5, 0.0, 0.0));
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -282,10 +280,7 @@ mod tests {
 
         let entity = app
             .world_mut()
-            .spawn((
-                Portal,
-                CurrentDivinity(Divinity::new(1, 10)),
-            ))
+            .spawn((Portal, CurrentDivinity(Divinity::new(1, 10))))
             .id();
 
         let divinity = app.world().get::<CurrentDivinity>(entity).unwrap();

@@ -91,7 +91,9 @@ pub struct DivinityStats {
 }
 
 /// Represents the current active Divinity level of a Portal.
-#[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut, Serialize, Deserialize)]
+#[derive(
+    Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut, Serialize, Deserialize,
+)]
 #[reflect(Component, Default)]
 pub struct CurrentDivinity(pub Divinity);
 

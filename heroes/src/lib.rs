@@ -17,8 +17,7 @@ pub struct HeroesPlugin;
 impl Plugin for HeroesPlugin {
     fn build(&self, app: &mut App) {
         // Only register types that derive Reflect (state components)
-        app.register_type::<Hero>()
-            .register_type::<Weapon>();
+        app.register_type::<Hero>().register_type::<Weapon>();
 
         app.add_systems(
             Update,

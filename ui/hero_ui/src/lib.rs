@@ -162,12 +162,8 @@ fn on_hero_ui_refresh(
     let mut heroes_data: Vec<(Entity, HeroDisplayData)> = Vec::new();
 
     for hero_entity in &hero_entities {
-        let data = build_hero_display_data(
-            *hero_entity,
-            &children_query,
-            &weapon_query,
-            &melee_query,
-        );
+        let data =
+            build_hero_display_data(*hero_entity, &children_query, &weapon_query, &melee_query);
         heroes_data.push((*hero_entity, data));
     }
 

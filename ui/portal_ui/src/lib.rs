@@ -248,10 +248,7 @@ fn update_portal_ui(
 
         // Update max divinity text
         for mut text in max_text_query.iter_mut() {
-            text.0 = format!(
-                "Tier {} - Level {}",
-                max_divinity.tier, max_divinity.level
-            );
+            text.0 = format!("Tier {} - Level {}", max_divinity.tier, max_divinity.level);
         }
     }
 }

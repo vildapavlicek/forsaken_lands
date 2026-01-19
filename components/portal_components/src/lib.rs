@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use shared_components::IncludeInSave;
+use {bevy::prelude::*, shared_components::IncludeInSave};
 
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component)]

@@ -358,7 +358,10 @@ impl Command for CleanupEmptyRootCommand {
         }
     }
 }
-pub fn clean_up_progress_bars(mut commands: Commands, query: Query<Entity, With<ProgressBarsRoot>>) {
+pub fn clean_up_progress_bars(
+    mut commands: Commands,
+    query: Query<Entity, With<ProgressBarsRoot>>,
+) {
     debug!("Cleaning up progress bars");
     for entity in query.iter() {
         commands.entity(entity).despawn();

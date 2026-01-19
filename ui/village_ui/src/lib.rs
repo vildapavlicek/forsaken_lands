@@ -553,11 +553,14 @@ impl Command for SpawnHeroesContentCommand {
 
             // Hero content container (refreshable)
             parent
-                .spawn((Node {
-                    flex_direction: FlexDirection::Column,
-                    width: Val::Percent(100.0),
-                    ..default()
-                }, HeroContentContainer))
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        width: Val::Percent(100.0),
+                        ..default()
+                    },
+                    HeroContentContainer,
+                ))
                 .with_children(|content| {
                     spawn_hero_content(content, heroes_data, 0);
                 });

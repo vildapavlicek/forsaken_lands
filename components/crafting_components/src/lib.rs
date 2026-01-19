@@ -20,4 +20,3 @@ pub struct RecipeNode {
     /// Handle to the recipe asset definition
     pub handle: Handle<RecipeDefinition>,
 }
-

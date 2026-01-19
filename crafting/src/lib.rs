@@ -1,10 +1,6 @@
 use {
-    bevy::prelude::*,
-    crafting_resources::CraftingOutcome,
-    recipes_assets::RecipeDefinition,
-    shared_components::IncludeInSave,
-    states::GameState,
-    system_schedule::GameSchedule,
+    bevy::prelude::*, crafting_resources::CraftingOutcome, recipes_assets::RecipeDefinition,
+    shared_components::IncludeInSave, states::GameState, system_schedule::GameSchedule,
 };
 
 pub mod systems;
