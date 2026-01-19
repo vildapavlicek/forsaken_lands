@@ -20,7 +20,7 @@ use {
     },
     divinity_components::Divinity,
     eframe::egui,
-    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable},
+    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
     research_assets::ResearchDefinition,
     std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
@@ -2134,33 +2134,112 @@ impl EditorState {
 
                 ui.add_space(4.0);
 
-                // Monster ID
+                // Spawn Type
+                ui.label("Spawn Type:");
+                let spawn_type = &mut entry.spawn_type;
+
+                // Spawn Type Selector
                 ui.horizontal(|ui| {
-                    ui.label("Monster ID:");
-                    if !self.existing_monster_ids.is_empty() {
-                        egui::ComboBox::from_id_salt(format!("spawn_table_monster_{}", i))
-                            .selected_text(&entry.monster_id)
-                            .show_ui(ui, |ui| {
-                                for id in &self.existing_monster_ids {
-                                    if ui.selectable_label(&entry.monster_id == id, id).clicked() {
-                                        entry.monster_id = id.clone();
-                                        changed = true;
-                                    }
+                    let type_name = match spawn_type {
+                        SpawnType::Single(_) => "Single",
+                        SpawnType::Group(_) => "Group",
+                    };
+
+                    egui::ComboBox::from_id_salt(format!("spawn_type_{}", i))
+                        .selected_text(type_name)
+                        .show_ui(ui, |ui| {
+                            if ui
+                                .selectable_label(matches!(spawn_type, SpawnType::Single(_)), "Single")
+                                .clicked()
+                            {
+                                *spawn_type = SpawnType::Single("goblin_scout".to_string());
+                                changed = true;
+                            }
+                            if ui
+                                .selectable_label(matches!(spawn_type, SpawnType::Group(_)), "Group")
+                                .clicked()
+                            {
+                                *spawn_type = SpawnType::Group(vec!["goblin_scout".to_string()]);
+                                changed = true;
+                            }
+                        });
+                });
+
+                // Spawn Type Data
+                match spawn_type {
+                    SpawnType::Single(monster_id) => {
+                        ui.horizontal(|ui| {
+                            ui.label("Monster ID:");
+                            if !self.existing_monster_ids.is_empty() {
+                                egui::ComboBox::from_id_salt(format!("spawn_table_monster_{}", i))
+                                    .selected_text(monster_id.as_str())
+                                    .show_ui(ui, |ui| {
+                                        for id in &self.existing_monster_ids {
+                                            if ui.selectable_label(monster_id == id, id).clicked() {
+                                                *monster_id = id.clone();
+                                                changed = true;
+                                            }
+                                        }
+                                    });
+                                ui.label("or");
+                            }
+                            if ui.text_edit_singleline(monster_id).changed() {
+                                changed = true;
+                            }
+                        });
+                        if !monster_id.is_empty()
+                            && !self.existing_monster_ids.contains(monster_id)
+                        {
+                            ui.colored_label(
+                                egui::Color32::YELLOW,
+                                format!("⚠ Monster \"{}\" not found", monster_id),
+                            );
+                        }
+                    }
+                    SpawnType::Group(monster_ids) => {
+                        let mut remove_idx: Option<usize> = None;
+                        for (j, monster_id) in monster_ids.iter_mut().enumerate() {
+                            ui.horizontal(|ui| {
+                                ui.label(format!("  #{}", j + 1));
+                                if !self.existing_monster_ids.is_empty() {
+                                    egui::ComboBox::from_id_salt(format!(
+                                        "spawn_group_{}_{}", i, j
+                                    ))
+                                    .selected_text(monster_id.as_str())
+                                    .show_ui(ui, |ui| {
+                                        for id in &self.existing_monster_ids {
+                                            if ui.selectable_label(monster_id == id, id).clicked() {
+                                                *monster_id = id.clone();
+                                                changed = true;
+                                            }
+                                        }
+                                    });
+                                }
+                                if ui.text_edit_singleline(monster_id).changed() {
+                                    changed = true;
+                                }
+                                if ui.button("🗑").clicked() {
+                                    remove_idx = Some(j);
                                 }
                             });
-                        ui.label("or");
+                            if !monster_id.is_empty()
+                                && !self.existing_monster_ids.contains(monster_id)
+                            {
+                                ui.colored_label(
+                                    egui::Color32::YELLOW,
+                                    format!("⚠ Monster \"{}\" not found", monster_id),
+                                );
+                            }
+                        }
+                        if let Some(idx) = remove_idx {
+                            monster_ids.remove(idx);
+                            changed = true;
+                        }
+                        if ui.button("+ Add to Group").clicked() {
+                            monster_ids.push("goblin_scout".to_string());
+                            changed = true;
+                        }
                     }
-                    if ui.text_edit_singleline(&mut entry.monster_id).changed() {
-                        changed = true;
-                    }
-                });
-                if !entry.monster_id.is_empty()
-                    && !self.existing_monster_ids.contains(&entry.monster_id)
-                {
-                    ui.colored_label(
-                        egui::Color32::YELLOW,
-                        format!("⚠ Monster \"{}\" not found", entry.monster_id),
-                    );
                 }
 
                 ui.add_space(4.0);

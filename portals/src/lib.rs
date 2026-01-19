@@ -8,7 +8,7 @@ use {
     },
     hero_events::EnemyKilled,
     loading::GameAssets,
-    portal_assets::{SpawnCondition, SpawnTable},
+    portal_assets::{SpawnCondition, SpawnTable, SpawnType},
     portal_components::{Portal, SpawnTableId, SpawnTimer},
     rand::{distr::weighted::WeightedIndex, prelude::*},
     system_schedule::GameSchedule,
@@ -91,16 +91,29 @@ fn enemy_spawn_system(
                 let mut rng = rand::rng();
                 let selected_entry = valid_entries[dist.sample(&mut rng)];
 
-                debug!("Spawning monster: {}", selected_entry.monster_id);
-
-                let Some(prefab_handle) =
-                    game_assets.enemies.get(&selected_entry.monster_id).cloned()
-                else {
-                    error!(%selected_entry.monster_id, "failed to spawn monster, not found in enemies library");
-                    return;
-                };
-
-                scene_spawner.spawn_dynamic(prefab_handle);
+                // Spawn based on spawn type
+                match &selected_entry.spawn_type {
+                    SpawnType::Single(monster_id) => {
+                        debug!("Spawning single monster: {}", monster_id);
+                        if let Some(prefab_handle) = game_assets.enemies.get(monster_id).cloned() {
+                            scene_spawner.spawn_dynamic(prefab_handle);
+                        } else {
+                            error!(%monster_id, "failed to spawn monster, not found in enemies library");
+                        }
+                    }
+                    SpawnType::Group(monster_ids) => {
+                        debug!("Spawning monster group: {:?}", monster_ids);
+                        for monster_id in monster_ids {
+                            if let Some(prefab_handle) =
+                                game_assets.enemies.get(monster_id).cloned()
+                            {
+                                scene_spawner.spawn_dynamic(prefab_handle);
+                            } else {
+                                error!(%monster_id, "failed to spawn monster in group, not found in enemies library");
+                            }
+                        }
+                    }
+                }
             }
         }
     }
