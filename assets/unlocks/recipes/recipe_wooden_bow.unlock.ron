@@ -2,5 +2,5 @@
     id: "recipe_wooden_bow_unlock",
     display_name: Some("Wooden Bow Recipe"),
     reward_id: "recipe_wooden_bow",
-    condition: Unlock("basic_archery"),
+    condition: Completed(topic: "research:basic_archery"),
 )

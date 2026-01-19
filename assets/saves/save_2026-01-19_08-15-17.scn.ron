@@ -1,0 +1,229 @@
+(
+  resources: {
+    "research::ResearchState": (
+      completion_counts: {},
+    ),
+    "wallet::Wallet": (
+      resources: {},
+      unlocked_resources: [],
+    ),
+  },
+  entities: {
+    4294967238: (
+      components: {
+        "bevy_ecs::hierarchy::ChildOf": (4294967239),
+        "bevy_ecs::hierarchy::Children": ([
+          4294967170,
+        ]),
+        "hero_components::EquippedWeaponId": (Some("melee_rock")),
+        "hero_components::Hero": (),
+      },
+    ),
+    4294967239: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_ecs::hierarchy::Children": ([
+          4294967238,
+          55834574710,
+        ]),
+        "bevy_picking::Pickable": (
+          should_block_lower: true,
+          is_hoverable: true,
+        ),
+        "bevy_picking::hover::PickingInteraction": r#None,
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (
+          image: Uuid("97128bb1-2588-480b-bdc6-87b4adbec477"),
+          texture_atlas: None,
+          color: Srgba((
+            red: 0.824,
+            green: 0.412,
+            blue: 0.118,
+            alpha: 1.0,
+          )),
+          flip_x: false,
+          flip_y: false,
+          custom_size: Some((32.0, 32.0)),
+          rect: None,
+          image_mode: Auto,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (0.0, -300.0, 0.0),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (1.0, 1.0, 1.0),
+        ),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "divinity_components::Divinity": (
+          tier: 1,
+          level: 1,
+        ),
+        "divinity_components::DivinityStats": (
+          current_xp: 0.0,
+          required_xp: 100.0,
+        ),
+        "village_components::EnemyEncyclopedia": (
+          inner: {
+            "goblin_scout": (
+              display_name: "Goblin Scout",
+              kill_count: 7,
+            ),
+          },
+        ),
+        "village_components::Village": (),
+        "village_components::WeaponInventory": (
+          weapons: [
+            "melee_rock",
+            "throwing_rock",
+          ],
+        ),
+      },
+    ),
+    4294967240: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_picking::Pickable": (
+          should_block_lower: true,
+          is_hoverable: true,
+        ),
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (
+          image: Uuid("97128bb1-2588-480b-bdc6-87b4adbec477"),
+          texture_atlas: None,
+          color: Srgba((
+            red: 0.5,
+            green: 0.0,
+            blue: 0.5,
+            alpha: 1.0,
+          )),
+          flip_x: false,
+          flip_y: false,
+          custom_size: Some((16.0, 32.0)),
+          rect: None,
+          image_mode: Auto,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (0.0, 300.0, 0.0),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (1.0, 1.0, 1.0),
+        ),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "divinity_components::CurrentDivinity": ((
+          tier: 1,
+          level: 1,
+        )),
+        "portal_components::Portal": (),
+        "portal_components::SpawnTableId": ("default"),
+        "portal_components::SpawnTimer": ((
+          stopwatch: (
+            elapsed: (
+              secs: 2,
+              nanos: 596079500,
+            ),
+            is_paused: false,
+          ),
+          duration: (
+            secs: 3,
+            nanos: 0,
+          ),
+          mode: Repeating,
+          finished: false,
+          times_finished_this_tick: 0,
+        )),
+      },
+    ),
+    12884901782: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (
+          image: Uuid("97128bb1-2588-480b-bdc6-87b4adbec477"),
+          texture_atlas: None,
+          color: Srgba((
+            red: 0.0,
+            green: 0.49876878,
+            blue: 0.03559386,
+            alpha: 1.0,
+          )),
+          flip_x: false,
+          flip_y: false,
+          custom_size: Some((16.0, 16.0)),
+          rect: None,
+          image_mode: Auto,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (-2.7986984, -184.122, 0.0),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (1.0, 1.0, 1.0),
+        ),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "enemy_components::Drops": ([
+          (
+            id: "bones",
+            value: 1,
+            chance: 1.0,
+          ),
+          (
+            id: "blood",
+            value: 5,
+            chance: 1.0,
+          ),
+          (
+            id: "xykego",
+            value: 1,
+            chance: 1.0,
+          ),
+        ]),
+        "enemy_components::Enemy": (),
+        "enemy_components::EnemyRange": CloseRange,
+        "enemy_components::Health": (
+          current: 1.0,
+          max: 1.0,
+        ),
+        "enemy_components::Lifetime": ((
+          stopwatch: (
+            elapsed: (
+              secs: 2,
+              nanos: 562821600,
+            ),
+            is_paused: false,
+          ),
+          duration: (
+            secs: 5,
+            nanos: 0,
+          ),
+          mode: Once,
+          finished: false,
+          times_finished_this_tick: 0,
+        )),
+        "enemy_components::MonsterId": ("goblin_scout"),
+        "enemy_components::MovementSpeed": (185.0),
+        "enemy_components::TargetDestination": ((-3.1998024, -214.24359)),
+        "shared_components::DisplayName": ("Goblin Scout"),
+      },
+    ),
+    47244640196: (
+      components: {
+        "research::InProgress": (
+          research_id: "invaders",
+          timer: (
+            stopwatch: (
+              elapsed: (
+                secs: 4,
+                nanos: 767651600,
+              ),
+              is_paused: false,
+            ),
+            duration: (
+              secs: 10,
+              nanos: 0,
+            ),
+            mode: Once,
+            finished: false,
+            times_finished_this_tick: 0,
+          ),
+        ),
+        "research::ResearchCompletionCount": (0),
+      },
+    ),
+  },
+)

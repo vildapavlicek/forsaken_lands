@@ -2,5 +2,5 @@
     id: "research_vision_i_unlock",
     display_name: Some("A Vision Research"),
     reward_id: "research_vision_i",
-    condition: Unlock("theology_i"),
+    condition: Completed(topic: "research:theology_i"),
 )

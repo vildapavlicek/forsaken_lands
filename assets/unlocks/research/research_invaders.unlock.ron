@@ -3,6 +3,6 @@
     display_name: Some("Invaders Research"),
     reward_id: "research_invaders",
     condition: And([
-        Stat(Kills(monster_id: "goblin_scout", value: 5, op: Ge)),
+        Value(topic: "kills:goblin_scout", target: 5.0, op: Ge),
     ]),
 )

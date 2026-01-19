@@ -3,7 +3,7 @@
     display_name: Some("Hardened Bones Research"),
     reward_id: "research_hardened_bones",
     condition: And([
-        Unlock("bone_crafting"),
-        Unlock("bone_sword"),
+        Completed(topic: "research:bone_crafting"),
+        Completed(topic: "research:bone_sword"),
     ]),
 )

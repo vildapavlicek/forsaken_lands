@@ -3,7 +3,7 @@
     display_name: Some("Corpse Scavenging Research"),
     reward_id: "research_corpse_scavenging",
     condition: And([
-        Unlock("invaders"),
-        Stat(Kills(monster_id: "goblin_scout", value: 10, op: Ge)),
+        Completed(topic: "research:invaders"),
+        Value(topic: "kills:goblin_scout", target: 10.0, op: Ge),
     ]),
 )
