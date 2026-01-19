@@ -8,10 +8,10 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 3,
+                    level: 1,
                 ),
             ),
-            monster_id: "goblin_scout",
+            spawn_type: Single("siled"),
             weight: 100,
         ),
         (
@@ -22,10 +22,10 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 4,
+                    level: 3,
                 ),
             ),
-            monster_id: "elite_goblin_scout",
+            spawn_type: Group(["siled", "siled", "siled_alpha"]),
             weight: 100,
         ),
         (
@@ -39,8 +39,50 @@
                     level: 5,
                 ),
             ),
-            monster_id: "goblin_scout_leader",
-            weight: 75,
+            spawn_type: Single("goblin_scout"),
+            weight: 40,
+        ),
+        (
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 3,
+                ),
+                max: (
+                    tier: 1,
+                    level: 5,
+                ),
+            ),
+            spawn_type: Group(["siled", "siled_alpha"]),
+            weight: 60,
+        ),
+        (
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 4,
+                ),
+                max: (
+                    tier: 1,
+                    level: 6,
+                ),
+            ),
+            spawn_type: Single("elite_goblin_scout"),
+            weight: 50,
+        ),
+        (
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 5,
+                ),
+                max: (
+                    tier: 1,
+                    level: 8,
+                ),
+            ),
+            spawn_type: Single("goblin_scout_leader"),
+            weight: 40,
         ),
     ],
 )
