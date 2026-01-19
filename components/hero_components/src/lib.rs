@@ -32,9 +32,22 @@ pub struct RangedWeapon;
 #[derive(Component, Default)]
 pub struct MeleeWeapon;
 
+/// Defines the angular width of the attack area for melee weapons.
+///
+/// This component limits the hit detection of `MeleeWeapon` attacks to a specific cone
+/// centered on the attack direction (Target - Attacker).
+///
+/// # Usage
+/// - **Hit Detection**: The `hero_melee_attack_system` uses this to filter enemies.
+///   An enemy is hit if `angle_to_enemy.abs() <= width / 2.0`.
+///
+/// # Units
+/// - `width`: The total arc angle in **radians**.
+///   (e.g., `PI` = 180 degrees semicircle, `PI/2` = 90 degrees cone).
 #[derive(Component, Default)]
 pub struct MeleeArc {
-    pub width: f32, // In radians
+    /// Total angular width in radians.
+    pub width: f32,
 }
 
 #[derive(Component, Default)]
