@@ -5,6 +5,4 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-bevy_common_assets.workspace = true # Assuming assets structs might be needed or traits
 serde = { version = "1", features = ["derive"] }
-divinity_components.workspace = true

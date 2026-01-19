@@ -6,15 +6,7 @@ edition = "2024"
 [dependencies]
 bevy.workspace = true
 serde = { version = "1", features = ["derive"] }
-enemy_components.workspace = true
-hero_events.workspace = true
-research.workspace = true
-village_components.workspace = true
-wallet.workspace = true
 unlocks_assets.workspace = true
 unlocks_components.workspace = true
 unlocks_events.workspace = true
 unlocks_resources.workspace = true
-states.workspace = true
-divinity_components.workspace = true
-portal_components.workspace = true

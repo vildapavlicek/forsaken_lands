@@ -46,29 +46,18 @@ pub struct TopicSubscribers {
     pub sensors: Vec<Entity>,
 }
 
-#[derive(Component)]
-pub struct StatSensor(pub StatCheck);
-
-#[derive(Component)]
-pub struct ResourceSensor(pub ResourceCheck);
-
-#[derive(Component)]
-pub struct UnlockSensor(pub String);
-
-#[derive(Component)]
-pub struct MaxUnlockedDivinitySensor(pub divinity_components::Divinity);
-
 /// Tracks which unlock definitions have been compiled.
 #[derive(Component)]
 pub struct CompiledUnlock {
     pub definition_id: String,
 }
 
-// --- Shared Types moved from assets.rs to avoid circular deps ---
+// ============================================================================
+// Generic Sensor Types
+// ============================================================================
 
-#[derive(
-    Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize,
-)]
+/// Comparison operators for numeric conditions.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize)]
 pub enum ComparisonOp {
     #[default]
     Ge, // >=
@@ -78,90 +67,18 @@ pub enum ComparisonOp {
     Lt, // <
 }
 
-/// Defines a specific statistical condition that must be met to trigger an unlock signal.
-///
-/// This enum represents the "leaf nodes" of the unlock logic tree. It is deserialized from
-/// RON assets (e.g., in `UnlockDefinition`) and wrapped by `StatSensor` components at runtime.
-///
-/// # Usage
-/// - **Serialization**: Defined in `.unlock.ron` files (e.g., `Stat(StatCheck(stat_id: "goblin_kills", ...))`).
-/// - **Runtime**: Used by `StatSensor` to verify if the current game state (kill counts, resources) meets the criteria.
-#[derive(Debug, Clone, PartialEq, Reflect, serde::Deserialize, serde::Serialize)]
-pub enum StatCheck {
-    /// Checks if the player has killed a specific number of monsters.
-    ///
-    /// The condition matches against the `EnemyEncyclopedia` kill counts.
-    Kills {
-        monster_id: String,
-        #[serde(default)]
-        op: ComparisonOp,
-        /// The required number of kills to trigger the condition.
-        value: f32,
-    },
-    /// Checks if the player possesses a specific amount of a resource.
-    ///
-    /// The condition matches against the `Wallet` resource amounts.
-    Resource {
-        resource_id: String,
-        #[serde(default)]
-        op: ComparisonOp,
-        /// The required quantity of the resource.
-        value: f32,
-    },
+/// A sensor that tracks a numeric value against a target.
+/// Subscribes to a topic like "kills:goblin", "resource:bones", etc.
+#[derive(Component)]
+pub struct ValueSensor {
+    pub topic: String,
+    pub op: ComparisonOp,
+    pub target: f32,
 }
 
-impl StatCheck {
-    /// Generates the topic key for this stat check.
-    pub fn topic_key(&self) -> String {
-        match self {
-            StatCheck::Kills { monster_id, .. } => format!("stat:{}_kills", monster_id),
-            StatCheck::Resource { resource_id, .. } => format!("stat:resource_{}", resource_id),
-        }
-    }
-
-    /// Returns the comparison operator and target value.
-    pub fn comparison(&self) -> (ComparisonOp, f32) {
-        match self {
-            StatCheck::Kills { op, value, .. } => (*op, *value),
-            StatCheck::Resource { op, value, .. } => (*op, *value),
-        }
-    }
+/// A sensor that waits for a completion status.
+/// Subscribes to a topic like "research:bone_sword", "unlock:recipe_x", etc.
+#[derive(Component)]
+pub struct CompletionSensor {
+    pub topic: String,
 }
-
-#[derive(Debug, Clone, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize)]
-pub struct ResourceCheck {
-    pub resource_id: String,
-    pub amount: u32,
-}
-
-// NOTE: These depend on crate::assets types which we agreed to keep in unlocks/assets.rs
-// However, circular dependency: unlocks_components would need to depend on unlocks (for assets),
-// and unlocks depends on unlocks_components.
-// ERROR: We have a circular dependency issue if StatCheck/ResourceCheck are strictly in `unlocks`.
-// I MUST fix this. `StatCheck` and `ResourceCheck` define the data.
-// Since the user said "Keep assets in unlocks/src/assets.rs for now", this implies a potential issue if I try to use them here.
-// But `ConditionSensor` wrapping `crate::assets::StatCheck` was not in the file I read?
-// Wait, looking at `components.rs`:
-// pub struct StatSensor(pub crate::assets::StatCheck);
-// pub struct ResourceSensor(pub crate::assets::ResourceCheck);
-// Yes they are there.
-// If I move `StatSensor` here, I need `StatCheck`.
-// If `StatCheck` stays in `unlocks`, then `unlocks_components` needs `unlocks`.
-// But `unlocks` needs `unlocks_components`. Cycle!
-//
-// Strategy: I will temporarily COPY `StatCheck` and `ResourceCheck` (and related enums) to `unlocks_components` or a `unlocks_shared` module within it?
-// Or I should put `StatSensor` and `ResourceSensor` NOT in `unlocks_components` but keep them in `unlocks`?
-// But the directive is "Move components to unlocks_components".
-//
-// Let's look at `assets.rs` really quick to see what `StatCheck` is.
-// I'll peek at `unlocks/src/assets.rs` via `view_file` to decide.
-// For now I will comment out the modules depending on assets or write them assuming I can move `StatCheck` too (which technically is an asset struct but also a data struct).
-// Actually, it's better to move `StatCheck` / `ResourceCheck` to `unlocks_components` or `unlocks_assets` (if I could make one).
-// Since the user said "Keep it as is for now" regarding assets... maybe they meant the `UnlockDefinition` asset loading part?
-// `StatCheck` and `ResourceCheck` are just structs. They are used in components.
-// I will attempt to define them in `unlocks_components` or `unlocks_components::types` if I can't move the file.
-// Wait, I can define `StatSensor` in `unlocks` crate if I must, but that defeats the purpose of splitting.
-//
-// Better plan: Move `StatCheck`, `ResourceCheck`, etc. to `unlocks_components` as pure data structs. They can be re-exported by `unlocks::assets`.
-// I'll write the file but comment out the problematic lines for a moment until I see `assets.rs`.
-// actually, I'll view `assets.rs` first.

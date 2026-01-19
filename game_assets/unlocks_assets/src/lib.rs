@@ -2,7 +2,7 @@ use {
     bevy::prelude::*,
     bevy_common_assets::ron::RonAssetPlugin,
     serde::{Deserialize, Serialize},
-    unlocks_components::{ResourceCheck, StatCheck},
+    unlocks_components::ComparisonOp,
 };
 
 pub struct UnlocksAssetsPlugin;
@@ -27,6 +27,9 @@ pub struct UnlockDefinition {
 }
 
 /// A node in the logical condition tree.
+/// 
+/// This is a simplified, game-agnostic version that uses string-based topic IDs.
+/// The game code is responsible for triggering events with matching topic IDs.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ConditionNode {
     // --- Logic Gates ---
@@ -40,12 +43,17 @@ pub enum ConditionNode {
     True,
 
     // --- Leaf Sensors ---
-    /// Checks if a numeric statistic meets a threshold.
-    Stat(StatCheck),
-    /// Checks if the player possesses a specific resource.
-    Resource(ResourceCheck),
-    /// Checks if a specific research/recipe is already unlocked.
-    Unlock(String),
-    /// Checks if the portal's max unlocked divinity is at least this high.
-    PortalsMaxUnlockedDivinity(divinity_components::Divinity),
+    /// Checks if a numeric value meets a threshold.
+    /// Topic examples: "kills:goblin", "resource:bones", "xp:total", "divinity:max"
+    Value {
+        topic: String,
+        #[serde(default)]
+        op: ComparisonOp,
+        target: f32,
+    },
+    /// Checks if something has been completed.
+    /// Topic examples: "research:bone_sword", "quest:intro", "unlock:recipe_x"
+    Completed {
+        topic: String,
+    },
 }

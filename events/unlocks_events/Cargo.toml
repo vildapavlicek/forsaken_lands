@@ -5,4 +5,3 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-divinity_components.workspace = true
