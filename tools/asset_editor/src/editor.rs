@@ -25,6 +25,7 @@ use {
     std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
 };
+use crate::research_graph::ResearchGraphState;
 
 /// Available editor tabs.
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -36,6 +37,7 @@ pub enum EditorTab {
     Recipe,
     MonsterPrefab,
     SpawnTable,
+    Graph,
 }
 
 /// Current state of the editor.
@@ -100,6 +102,9 @@ pub struct EditorState {
     existing_spawn_tables: Vec<String>,
     /// Live RON preview for spawn table
     spawn_table_preview: String,
+
+    // Research Graph
+    graph_state: ResearchGraphState,
 }
 
 impl EditorState {
@@ -136,6 +141,8 @@ impl EditorState {
             spawn_table_filename: "new_spawn_table".to_string(),
             existing_spawn_tables: Vec::new(),
             spawn_table_preview: String::new(),
+            
+            graph_state: ResearchGraphState::new(),
         }
     }
 
@@ -247,6 +254,9 @@ impl EditorState {
                                     .desired_width(f32::INFINITY),
                             );
                         }
+                        EditorTab::Graph => {
+                             ui.label("No RON preview for Research Graph");
+                        }
                     });
                 });
         }
@@ -273,6 +283,11 @@ impl EditorState {
                     EditorTab::SpawnTable,
                     "💀 Spawn Tables",
                 );
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::Graph,
+                    "📊 Graph",
+                );
             });
             ui.separator();
 
@@ -283,6 +298,7 @@ impl EditorState {
                 EditorTab::Recipe => self.show_recipe_form(ui),
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
                 EditorTab::SpawnTable => self.show_spawn_table_form(ui),
+                EditorTab::Graph => self.graph_state.show(ui, self.assets_dir.as_deref()),
             });
         });
     }
@@ -1177,6 +1193,10 @@ impl EditorState {
                 self.spawn_table_filename = "new_spawn_table".to_string();
                 self.update_spawn_table_preview();
                 self.status = "New spawn table form created".to_string();
+            }
+            EditorTab::Graph => {
+                // No form to create for graph
+                self.status = "Graph view active".to_string();
             }
         }
     }
