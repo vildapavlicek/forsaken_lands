@@ -1,0 +1,6 @@
+(
+    id: "resource_sinew_unlock",
+    display_name: Some("Sinew resource"),
+    reward_id: "resource_sinew",
+    condition: Completed(topic: "research:corpse_scavenging"),
+)
