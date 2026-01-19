@@ -2,7 +2,7 @@
     id: "bone_sword",
     name: "Bone Sword",
     description: "Using their bones to get more bones.",
-    cost: { "bones": 20 },
+    cost: { "bones": 80 },
     time_required: 60,
     max_repeats: 1,
 )

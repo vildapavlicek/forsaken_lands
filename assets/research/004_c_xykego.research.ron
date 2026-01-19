@@ -2,7 +2,7 @@
     id: "xykego",
     name: "Xykego",
     description: "They all have this but we do not know what it is..",
-    cost: { "xykego": 20 },
+    cost: { "xykego": 50 },
     time_required: 90,
     max_repeats: 1,
 )

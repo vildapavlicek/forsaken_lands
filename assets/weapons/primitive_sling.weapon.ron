@@ -3,6 +3,6 @@
     display_name: "Primitive Sling",
     weapon_type: Ranged,
     damage: 1.5,
-    attack_range: 250.0,
+    attack_range: 350.0,
     attack_speed_ms: 900,
 )
