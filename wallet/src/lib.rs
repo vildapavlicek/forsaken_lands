@@ -104,13 +104,13 @@ fn process_enemy_killed_rewards(
             let modified_value = (drop.value as f32 * rate).round() as u32;
             let current = wallet.resources.entry(drop.id.clone()).or_insert(0);
             *current += modified_value;
-            
+
             // Notify unlock system about resource value change
             commands.trigger(ValueChanged {
                 topic: format!("resource:{}", drop.id),
                 value: *current as f32,
             });
-            
+
             trace!(
                 "Added {} {} to wallet (base: {}, rate: {}, chance: {})",
                 modified_value, drop.id, drop.value, rate, drop.chance

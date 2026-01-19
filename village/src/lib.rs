@@ -1,5 +1,5 @@
 use {
-    bevy::prelude::*,
+    bevy::{platform::collections::HashSet, prelude::*},
     divinity_components::{Divinity, DivinityStats},
     divinity_events::IncreaseDivinity,
     enemy_components::MonsterId,
@@ -11,13 +11,28 @@ use {
 
 pub mod equipment;
 
+/// Tracks which divinity unlock IDs have already granted their level-up reward.
+///
+/// This is persisted in save files to prevent duplicate divinity increases when
+/// loading a game. Unlike `UnlockState` which is intentionally not persisted
+/// (to allow re-computation of idempotent rewards), divinity level-ups are
+/// permanent progression that should only be granted once per unlock.
+#[derive(Resource, Reflect, Default, Debug)]
+#[reflect(Resource)]
+pub struct DivinityUnlockState {
+    /// Set of unlock IDs that have already granted divinity level-ups.
+    pub claimed: HashSet<String>,
+}
+
 pub struct VillagePlugin;
 
 impl Plugin for VillagePlugin {
     fn build(&self, app: &mut App) {
-        app.register_type::<Village>();
-        app.register_type::<EnemyEncyclopedia>();
-        app.register_type::<EncyclopediaEntry>();
+        app.init_resource::<DivinityUnlockState>()
+            .register_type::<DivinityUnlockState>()
+            .register_type::<Village>()
+            .register_type::<EnemyEncyclopedia>()
+            .register_type::<EncyclopediaEntry>();
 
         app.add_observer(update_encyclopedia);
         app.add_observer(handle_divinity_increase);
@@ -83,13 +98,30 @@ fn handle_divinity_increase(
 fn divinity_increase_unlock(
     event: On<UnlockAchieved>,
     mut divinity: Query<&mut Divinity, With<Village>>,
+    mut claimed_state: ResMut<DivinityUnlockState>,
 ) {
     let event = event.event();
 
     if event.reward_id == "divinity_level_up" {
+        // Check if this unlock has already granted its divinity level-up
+        if claimed_state.claimed.contains(&event.unlock_id) {
+            debug!(
+                unlock_id = %event.unlock_id,
+                "Divinity level-up already claimed, skipping"
+            );
+            return;
+        }
+
         match divinity.single_mut() {
             Ok(mut divinity) => {
                 divinity.level_up();
+                claimed_state.claimed.insert(event.unlock_id.clone());
+                info!(
+                    unlock_id = %event.unlock_id,
+                    tier = divinity.tier,
+                    level = divinity.level,
+                    "Divinity level-up granted"
+                );
             }
             Err(err) => error!(%err, "failed to query village's divinity"),
         }

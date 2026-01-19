@@ -4406,6 +4406,7 @@ dependencies = [
  "unlock_states",
  "unlocks",
  "unlocks_resources",
+ "village",
  "village_components",
  "wallet",
  "weapon_factory_events",
