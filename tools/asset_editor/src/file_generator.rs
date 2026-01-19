@@ -201,7 +201,7 @@ mod tests {
         let ron = generate_unlock_ron(&data);
         assert!(ron.contains("id: \"research_test_research_unlock\""));
         assert!(ron.contains("reward_id: \"research_test_research\""));
-        assert!(ron.contains("condition: Unlock(\"bone_crafting\")"));
+        assert!(ron.contains("condition: Completed(topic: \"research:bone_crafting\")"));
     }
 
     #[test]

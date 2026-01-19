@@ -2,7 +2,7 @@ use {
     research_assets::ResearchDefinition,
     serde::{Deserialize, Serialize},
     unlocks_assets::{ConditionNode, UnlockDefinition},
-    unlocks_components::{ResourceCheck, StatCheck},
+    unlocks_components,
 };
 
 /// A single resource cost entry.
@@ -138,17 +138,19 @@ impl LeafCondition {
 
     pub fn to_ron(&self) -> String {
         match self {
-            LeafCondition::Unlock { id } => format!("Unlock(\"{}\")", id),
+            LeafCondition::Unlock { id } => {
+                format!("Completed(topic: \"research:{}\")", id)
+            }
             LeafCondition::Kills {
                 monster_id,
                 value,
                 op,
             } => {
                 format!(
-                    "Stat(Kills(monster_id: \"{}\", value: {}, op: {}))",
+                    "Value(topic: \"kills:{}\", op: {}, target: {})",
                     monster_id,
-                    value,
-                    op.to_ron()
+                    op.to_ron(),
+                    value
                 )
             }
             LeafCondition::Resource {
@@ -156,7 +158,7 @@ impl LeafCondition {
                 amount,
             } => {
                 format!(
-                    "Resource(ResourceCheck(resource_id: \"{}\", amount: {}))",
+                    "Value(topic: \"resource:{}\", target: {})",
                     resource_id, amount
                 )
             }
@@ -299,13 +301,10 @@ impl From<&ConditionNode> for UnlockCondition {
                 let leaves: Vec<LeafCondition> = nodes.iter().map(|n| n.into()).collect();
                 UnlockCondition::Or(leaves)
             }
-            // Leaf types in ConditionNode are direct variants
-            ConditionNode::Stat(stat) => UnlockCondition::Single(LeafCondition::from(stat)),
-            ConditionNode::Resource(res) => UnlockCondition::Single(LeafCondition::from(res)),
-            ConditionNode::Unlock(id) => {
-                UnlockCondition::Single(LeafCondition::Unlock { id: id.clone() })
+            ConditionNode::Completed { .. } | ConditionNode::Value { .. } => {
+                UnlockCondition::Single(LeafCondition::from(node))
             }
-            ConditionNode::PortalsMaxUnlockedDivinity(_) => UnlockCondition::True, // Not supported in editor yet
+
         }
     }
 }
@@ -314,46 +313,53 @@ impl From<&ConditionNode> for UnlockCondition {
 impl From<&ConditionNode> for LeafCondition {
     fn from(node: &ConditionNode) -> Self {
         match node {
-            ConditionNode::Stat(stat) => LeafCondition::from(stat),
-            ConditionNode::Resource(res) => LeafCondition::from(res),
-            ConditionNode::Unlock(id) => LeafCondition::Unlock { id: id.clone() },
-            _ => LeafCondition::default(), // Fallback for logical nodes if forced into leaf
+
+            // New Generic Variants
+            ConditionNode::Completed { topic } => {
+                // Heuristic to detect type based on topic prefix
+                if let Some(id) = topic.strip_prefix("research:") {
+                    LeafCondition::Unlock { id: id.to_string() }
+                } else if let Some(id) = topic.strip_prefix("unlock:") {
+                     // Handle older or alternative unlock topics if necessary, or just treat as Unlock
+                     LeafCondition::Unlock { id: id.to_string() }
+                } else {
+                    // Fallback or generic completion
+                    LeafCondition::Unlock { id: topic.clone() }
+                }
+            }
+            ConditionNode::Value { topic, op, target } => {
+                if let Some(monster_id) = topic.strip_prefix("kills:") {
+                    LeafCondition::Kills {
+                        monster_id: monster_id.to_string(),
+                        value: *target,
+                        op: CompareOp::from(*op),
+                    }
+                } else if let Some(resource_id) = topic.strip_prefix("resource:") {
+                    LeafCondition::Resource {
+                        resource_id: resource_id.to_string(),
+                        amount: *target as u32,
+                    }
+                } else {
+                     LeafCondition::default()
+                }
+            }
+            
+            // Legacy/Direct variants support (keep if still needed for compilation or migration, 
+            // but the goal is to move away from them. The error message "ConditionNode::Stat" 
+            // suggests the enum definitions have changed in the external crate, so we must rely 
+            // on what's actually there. The user said "changed the data structure", so 
+            // Stat/Resource/Unlock variants verify likely GONE from ConditionNode enum).
+            //
+            // Checking the file content of `unlocks_assets/src/lib.rs` (Step 35), `ConditionNode`
+            // ONLY has `And`, `Or`, `Not`, `True`, `Value`, `Completed`. 
+            // So we MUST REMOVE `Stat`, `Resource`, `Unlock` match arms.
+            _ => LeafCondition::default(),
+
         }
     }
 }
 
-impl From<&StatCheck> for LeafCondition {
-    fn from(stat: &StatCheck) -> Self {
-        match stat {
-            StatCheck::Kills {
-                monster_id,
-                op,
-                value,
-            } => LeafCondition::Kills {
-                monster_id: monster_id.clone(),
-                value: *value,
-                op: CompareOp::from(*op),
-            },
-            StatCheck::Resource {
-                resource_id,
-                op: _,
-                value,
-            } => LeafCondition::Resource {
-                resource_id: resource_id.clone(),
-                amount: *value as u32,
-            },
-        }
-    }
-}
 
-impl From<&ResourceCheck> for LeafCondition {
-    fn from(res: &ResourceCheck) -> Self {
-        LeafCondition::Resource {
-            resource_id: res.resource_id.clone(),
-            amount: res.amount,
-        }
-    }
-}
 
 // ==================== Form Data Structures ====================
 
@@ -905,5 +911,36 @@ impl RecipeFormData {
             costs_str,
             outcomes_str
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_leaf_to_ron_unlock() {
+        let condition = LeafCondition::Unlock { id: "bone_sword".to_string() };
+        assert_eq!(condition.to_ron(), "Completed(topic: \"research:bone_sword\")");
+    }
+
+    #[test]
+    fn test_leaf_to_ron_kills() {
+        let condition = LeafCondition::Kills {
+            monster_id: "goblin".to_string(),
+            value: 10.0,
+            op: CompareOp::Ge,
+        };
+        // Expecting Ge to map to "Ge" in local CompareOp, and to_ron() calls local to_ron which returns "Ge"
+        assert_eq!(condition.to_ron(), "Value(topic: \"kills:goblin\", op: Ge, target: 10)");
+    }
+
+    #[test]
+    fn test_leaf_to_ron_resource() {
+        let condition = LeafCondition::Resource {
+            resource_id: "bones".to_string(),
+            amount: 50,
+        };
+        assert_eq!(condition.to_ron(), "Value(topic: \"resource:bones\", target: 50)");
     }
 }

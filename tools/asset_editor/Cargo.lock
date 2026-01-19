@@ -5884,7 +5884,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
- "divinity_components",
  "serde",
  "unlocks_components",
 ]
@@ -5894,8 +5893,6 @@ name = "unlocks_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bevy_common_assets",
- "divinity_components",
  "serde",
 ]
 
