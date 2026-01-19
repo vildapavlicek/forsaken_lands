@@ -4,6 +4,6 @@
     reward_id: "research_bone_idol",
     condition: And([
         Completed(topic: "research:bone_crafting"),
-        Completed(topic: "research:theology_i"),
+        Completed(topic: "research:vision_i"),
     ]),
 )

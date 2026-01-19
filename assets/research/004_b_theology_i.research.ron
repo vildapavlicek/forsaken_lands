@@ -1,8 +1,0 @@
-(
-    id: "theology_i",
-    name: "Theology I",
-    description: "Is there a god? Can we please him? And should we?",
-    cost: { "xykego": 50 },
-    time_required: 60,
-    max_repeats: 1,
-)

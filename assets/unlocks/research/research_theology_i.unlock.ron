@@ -1,6 +1,0 @@
-(
-    id: "research_theology_i_unlock",
-    display_name: Some("Theology I Research"),
-    reward_id: "research_theology_i",
-    condition: Completed(topic: "research:portal_creator"),
-)
