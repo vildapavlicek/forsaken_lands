@@ -1,8 +1,0 @@
-(
-    id: "wooden_bow",
-    display_name: "Wooden Bow",
-    weapon_type: Ranged,
-    damage: 3.0,
-    attack_range: 350.0,
-    attack_speed_ms: 1000,
-)

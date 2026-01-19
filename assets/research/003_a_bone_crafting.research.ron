@@ -1,8 +1,0 @@
-(
-    id: "bone_crafting",
-    name: "Bone crafting",
-    description: "We have bones. Let's use them.",
-    cost: { "bones": 40 },
-    time_required: 60,
-    max_repeats: 1,
-)

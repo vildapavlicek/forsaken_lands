@@ -1,5 +1,6 @@
 (
     entries: [
+        // Tier 1-1: Siled only (single)
         (
             condition: Range(
                 min: (
@@ -14,6 +15,7 @@
             spawn_type: Single("siled"),
             weight: 100,
         ),
+        // Tier 1-2: Siled + Siled Alpha (group)
         (
             condition: Range(
                 min: (
@@ -22,12 +24,13 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 3,
+                    level: 2,
                 ),
             ),
             spawn_type: Group(["siled", "siled", "siled_alpha"]),
             weight: 100,
         ),
+        // Tier 1-3: 60% Siled group, 40% Goblin Scout (single)
         (
             condition: Range(
                 min: (
@@ -36,11 +39,11 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 5,
+                    level: 3,
                 ),
             ),
-            spawn_type: Single("goblin_scout"),
-            weight: 40,
+            spawn_type: Group(["siled", "siled_alpha"]),
+            weight: 60,
         ),
         (
             condition: Range(
@@ -50,10 +53,25 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 5,
+                    level: 3,
                 ),
             ),
-            spawn_type: Group(["siled", "siled_alpha"]),
+            spawn_type: Single("goblin_scout"),
+            weight: 40,
+        ),
+        // Tier 1-4: 60% Goblin Scout, 40% Goblin
+        (
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 4,
+                ),
+                max: (
+                    tier: 1,
+                    level: 4,
+                ),
+            ),
+            spawn_type: Single("goblin_scout"),
             weight: 60,
         ),
         (
@@ -64,10 +82,25 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 6,
+                    level: 4,
                 ),
             ),
-            spawn_type: Single("elite_goblin_scout"),
+            spawn_type: Single("goblin"),
+            weight: 40,
+        ),
+        // Tier 1-5: Placeholder (same as 1-4 until defined)
+        (
+            condition: Range(
+                min: (
+                    tier: 1,
+                    level: 5,
+                ),
+                max: (
+                    tier: 1,
+                    level: 5,
+                ),
+            ),
+            spawn_type: Single("goblin_scout"),
             weight: 50,
         ),
         (
@@ -78,11 +111,11 @@
                 ),
                 max: (
                     tier: 1,
-                    level: 8,
+                    level: 5,
                 ),
             ),
-            spawn_type: Single("goblin_scout_leader"),
-            weight: 40,
+            spawn_type: Single("goblin"),
+            weight: 50,
         ),
     ],
 )

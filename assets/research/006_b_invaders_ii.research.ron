@@ -1,0 +1,8 @@
+(
+    id: "invaders_ii",
+    name: "Invaders II",
+    description: "They are green and ugly with pointy features",
+    cost: {  },
+    time_required: 150,
+    max_repeats: 1,
+)

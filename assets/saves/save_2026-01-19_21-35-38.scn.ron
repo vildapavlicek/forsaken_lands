@@ -1,0 +1,318 @@
+(
+  resources: {
+    "research::ResearchState": (
+      completion_counts: {
+        "invaders": 1,
+        "bone_sword": 1,
+        "simple_crafting": 1,
+        "sling": 1,
+        "xykego": 1,
+        "corpse_scavenging": 1,
+      },
+    ),
+    "wallet::Wallet": (
+      resources: {
+        "xykego": 75,
+        "sinew": 16,
+        "bones": 55,
+      },
+      unlocked_resources: [
+        "xykego",
+        "bones",
+        "sinew",
+      ],
+    ),
+  },
+  entities: {
+    8589934464: (
+      components: {
+        "bevy_ecs::hierarchy::ChildOf": (8589934535),
+        "bevy_ecs::hierarchy::Children": ([
+          30064771004,
+          8589934471,
+        ]),
+        "hero_components::EquippedWeaponId": (Some("throwing_rock")),
+        "hero_components::Hero": (),
+      },
+    ),
+    8589934520: (
+      components: {
+        "research::ResearchCompletionCount": (0),
+      },
+    ),
+    8589934527: (
+      components: {
+        "research::ResearchCompletionCount": (1),
+      },
+    ),
+    8589934528: (
+      components: {
+        "research::ResearchCompletionCount": (1),
+      },
+    ),
+    8589934529: (
+      components: {
+        "research::ResearchCompletionCount": (1),
+      },
+    ),
+    8589934530: (
+      components: {
+        "research::InProgress": (
+          research_id: "portal_discovery",
+          timer: (
+            stopwatch: (
+              elapsed: (
+                secs: 51,
+                nanos: 565862600,
+              ),
+              is_paused: false,
+            ),
+            duration: (
+              secs: 120,
+              nanos: 0,
+            ),
+            mode: Once,
+            finished: false,
+            times_finished_this_tick: 0,
+          ),
+        ),
+        "research::ResearchCompletionCount": (0),
+      },
+    ),
+    8589934535: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_ecs::hierarchy::Children": ([
+          8589934464,
+          51539607484,
+          8589934479,
+        ]),
+        "bevy_picking::Pickable": (
+          should_block_lower: true,
+          is_hoverable: true,
+        ),
+        "bevy_picking::hover::PickingInteraction": r#None,
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (
+          image: Uuid("97128bb1-2588-480b-bdc6-87b4adbec477"),
+          texture_atlas: None,
+          color: Srgba((
+            red: 0.824,
+            green: 0.412,
+            blue: 0.118,
+            alpha: 1.0,
+          )),
+          flip_x: false,
+          flip_y: false,
+          custom_size: Some((32.0, 32.0)),
+          rect: None,
+          image_mode: Auto,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (0.0, -300.0, 0.0),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (1.0, 1.0, 1.0),
+        ),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "divinity_components::Divinity": (
+          tier: 1,
+          level: 1,
+        ),
+        "divinity_components::DivinityStats": (
+          current_xp: 0.0,
+          required_xp: 100.0,
+        ),
+        "village_components::EnemyEncyclopedia": (
+          inner: {
+            "siled": (
+              display_name: "Siled",
+              kill_count: 109,
+            ),
+          },
+        ),
+        "village_components::Village": (),
+        "village_components::WeaponInventory": (
+          weapons: [
+            "melee_rock",
+            "throwing_rock",
+          ],
+        ),
+      },
+    ),
+    77309411270: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_picking::Pickable": (
+          should_block_lower: true,
+          is_hoverable: true,
+        ),
+        "bevy_picking::hover::PickingInteraction": r#None,
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (
+          image: Uuid("97128bb1-2588-480b-bdc6-87b4adbec477"),
+          texture_atlas: None,
+          color: Srgba((
+            red: 0.5,
+            green: 0.0,
+            blue: 0.5,
+            alpha: 1.0,
+          )),
+          flip_x: false,
+          flip_y: false,
+          custom_size: Some((16.0, 32.0)),
+          rect: None,
+          image_mode: Auto,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (0.0, 300.0, 0.0),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (1.0, 1.0, 1.0),
+        ),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "divinity_components::CurrentDivinity": ((
+          tier: 1,
+          level: 1,
+        )),
+        "portal_components::Portal": (),
+        "portal_components::SpawnTableId": ("default"),
+        "portal_components::SpawnTimer": ((
+          stopwatch: (
+            elapsed: (
+              secs: 0,
+              nanos: 486576400,
+            ),
+            is_paused: false,
+          ),
+          duration: (
+            secs: 3,
+            nanos: 0,
+          ),
+          mode: Repeating,
+          finished: false,
+          times_finished_this_tick: 0,
+        )),
+      },
+    ),
+    94489280348: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "enemy_components::Dead": (),
+        "enemy_components::Drops": ([
+          (
+            id: "bones",
+            value: 1,
+            chance: 1.0,
+          ),
+          (
+            id: "xykego",
+            value: 1,
+            chance: 1.0,
+          ),
+          (
+            id: "sinew",
+            value: 1,
+            chance: 0.25,
+          ),
+        ]),
+        "enemy_components::Enemy": (),
+        "enemy_components::EnemyRange": CloseRange,
+        "enemy_components::Health": (
+          current: 0.0,
+          max: 0.5,
+        ),
+        "enemy_components::Lifetime": ((
+          stopwatch: (
+            elapsed: (
+              secs: 3,
+              nanos: 462524700,
+            ),
+            is_paused: false,
+          ),
+          duration: (
+            secs: 5,
+            nanos: 0,
+          ),
+          mode: Once,
+          finished: false,
+          times_finished_this_tick: 0,
+        )),
+        "enemy_components::MonsterId": ("siled"),
+        "enemy_components::MovementSpeed": (160.0),
+        "enemy_components::TargetDestination": ((76.59709, -266.5713)),
+        "shared_components::DisplayName": ("Siled"),
+      },
+    ),
+    98784247643: (
+      components: {
+        "bevy_camera::visibility::Visibility": Inherited,
+        "bevy_sprite::sprite::Anchor": ((0.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (
+          image: Uuid("97128bb1-2588-480b-bdc6-87b4adbec477"),
+          texture_atlas: None,
+          color: Srgba((
+            red: 0.1,
+            green: 0.1,
+            blue: 0.1,
+            alpha: 1.0,
+          )),
+          flip_x: false,
+          flip_y: false,
+          custom_size: Some((14.0, 14.0)),
+          rect: None,
+          image_mode: Auto,
+        ),
+        "bevy_transform::components::transform::Transform": (
+          translation: (-37.33162, 215.33682, 0.0),
+          rotation: (0.0, 0.0, 0.0, 1.0),
+          scale: (1.0, 1.0, 1.0),
+        ),
+        "bevy_transform::components::transform::TransformTreeChanged": (),
+        "enemy_components::Drops": ([
+          (
+            id: "bones",
+            value: 1,
+            chance: 1.0,
+          ),
+          (
+            id: "xykego",
+            value: 1,
+            chance: 1.0,
+          ),
+          (
+            id: "sinew",
+            value: 1,
+            chance: 0.25,
+          ),
+        ]),
+        "enemy_components::Enemy": (),
+        "enemy_components::EnemyRange": CloseRange,
+        "enemy_components::Health": (
+          current: 0.5,
+          max: 0.5,
+        ),
+        "enemy_components::Lifetime": ((
+          stopwatch: (
+            elapsed: (
+              secs: 0,
+              nanos: 466645200,
+            ),
+            is_paused: false,
+          ),
+          duration: (
+            secs: 5,
+            nanos: 0,
+          ),
+          mode: Once,
+          finished: false,
+          times_finished_this_tick: 0,
+        )),
+        "enemy_components::MonsterId": ("siled"),
+        "enemy_components::MovementSpeed": (160.0),
+        "enemy_components::TargetDestination": ((-56.735767, -215.69577)),
+        "shared_components::DisplayName": ("Siled"),
+      },
+    ),
+  },
+)

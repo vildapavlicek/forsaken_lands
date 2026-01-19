@@ -1,6 +1,6 @@
 (
     id: "resource_bones_unlock",
-    display_name: Some("Bones resource"),
+    display_name: Some("Bones Resource"),
     reward_id: "resource_bones",
     condition: Completed(topic: "research:corpse_scavenging"),
 )

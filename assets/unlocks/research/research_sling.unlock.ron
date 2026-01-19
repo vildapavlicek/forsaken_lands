@@ -1,0 +1,6 @@
+(
+    id: "research_sling_unlock",
+    display_name: Some("Sling Research"),
+    reward_id: "research_sling",
+    condition: Completed(topic: "research:simple_crafting"),
+)

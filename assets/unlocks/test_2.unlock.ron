@@ -1,6 +1,0 @@
-(
-    id: "test_research_unlock",
-    display_name: Some("Research & Bones Test"),
-    reward_id: "test_reward_2",
-    condition: Value(topic: "resource:bones", target: 10.0, op: Ge),
-)

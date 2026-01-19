@@ -1,6 +1,9 @@
 (
     id: "research_portal_discovery_unlock",
-    display_name: Some("Where did they come from? Research"),
+    display_name: Some("Portal Discovery Research"),
     reward_id: "research_portal_discovery",
-    condition: Completed(topic: "research:invaders"),
+    condition: And([
+        Completed(topic: "research:invaders"),
+        Completed(topic: "research:xykego"),
+    ]),
 )

@@ -1,8 +1,0 @@
-(
-    id: "portal_creator",
-    name: "Who made it?",
-    description: "They all came from crack in space... But who made it?",
-    cost: {  },
-    time_required: 40,
-    max_repeats: 1,
-)

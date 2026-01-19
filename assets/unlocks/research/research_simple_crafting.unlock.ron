@@ -1,0 +1,6 @@
+(
+    id: "research_simple_crafting_unlock",
+    display_name: Some("Simple Crafting Research"),
+    reward_id: "research_simple_crafting",
+    condition: Completed(topic: "research:corpse_scavenging"),
+)

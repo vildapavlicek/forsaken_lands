@@ -1,6 +1,6 @@
 (
     id: "resource_xykego_unlock",
-    display_name: Some("Xykego resource"),
+    display_name: Some("Xykego Resource"),
     reward_id: "resource_xykego",
     condition: Completed(topic: "research:corpse_scavenging"),
 )

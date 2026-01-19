@@ -4,7 +4,7 @@ use {
     hero_events::EnemyKilled,
     states,
     std::collections::{HashMap, HashSet},
-    unlocks_events::UnlockAchieved,
+    unlocks_events::{UnlockAchieved, ValueChanged},
 };
 
 /// Central storage for all collected player resources (the game's economy state).
@@ -85,6 +85,7 @@ fn process_enemy_killed_rewards(
     mut wallet: ResMut<Wallet>,
     rates: Res<ResourceRates>,
     enemies: Query<&Drops>,
+    mut commands: Commands,
 ) {
     let event = trigger.event();
     if let Ok(drops) = enemies.get(event.entity) {
@@ -103,6 +104,13 @@ fn process_enemy_killed_rewards(
             let modified_value = (drop.value as f32 * rate).round() as u32;
             let current = wallet.resources.entry(drop.id.clone()).or_insert(0);
             *current += modified_value;
+            
+            // Notify unlock system about resource value change
+            commands.trigger(ValueChanged {
+                topic: format!("resource:{}", drop.id),
+                value: *current as f32,
+            });
+            
             trace!(
                 "Added {} {} to wallet (base: {}, rate: {}, chance: {})",
                 modified_value, drop.id, drop.value, rate, drop.chance

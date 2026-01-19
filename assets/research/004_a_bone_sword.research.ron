@@ -1,8 +1,8 @@
 (
     id: "bone_sword",
     name: "Bone Sword",
-    description: "It can cut and hurt. We could kill invaders more effectively.",
-    cost: { "bones": 50 },
-    time_required: 90,
+    description: "Using their bones to get more bones.",
+    cost: { "bones": 20 },
+    time_required: 60,
     max_repeats: 1,
 )

@@ -43,6 +43,7 @@ pub struct WeaponDefinition {
 #[derive(Reflect, Debug, Clone, Deserialize)]
 pub enum WeaponType {
     Melee { arc_width: f32 },
+    // TODO: Add projectile_speed: f32 field for ranged weapons
     Ranged,
 }
 

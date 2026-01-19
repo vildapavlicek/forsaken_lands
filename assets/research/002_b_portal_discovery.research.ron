@@ -1,8 +1,0 @@
-(
-    id: "portal_discovery",
-    name: "Where did they come from?",
-    description: "Where these invaders come from?",
-    cost: {  },
-    time_required: 20,
-    max_repeats: 1,
-)

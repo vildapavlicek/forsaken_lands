@@ -1,0 +1,10 @@
+(
+    id: "primitive_sling",
+    display_name: "Primitive Sling",
+    category: Weapons,
+    craft_time: 12.0,
+    cost: {
+        "sinew": 5,
+    },
+    outcomes: [],
+)

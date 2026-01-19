@@ -1,0 +1,8 @@
+(
+    id: "portal_discovery",
+    name: "Portal Discovery",
+    description: "Where do they come from?",
+    cost: {  },
+    time_required: 120,
+    max_repeats: 1,
+)

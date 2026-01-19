@@ -1,9 +1,6 @@
 (
     id: "research_vision_i_unlock",
-    display_name: Some("A Vision Research"),
+    display_name: Some("Vision I Research"),
     reward_id: "research_vision_i",
-    condition: And([
-        Completed(topic: "research:portal_creator"),
-        Completed(topic: "research:xykego"),
-    ]),
+    condition: Completed(topic: "research:theology_i"),
 )

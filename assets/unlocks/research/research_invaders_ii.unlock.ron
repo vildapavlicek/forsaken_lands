@@ -1,0 +1,6 @@
+(
+    id: "research_invaders_ii_unlock",
+    display_name: Some("Invaders II Research"),
+    reward_id: "research_invaders_ii",
+    condition: Value(topic: "kills:goblin_scout", target: 1.0, op: Ge),
+)
