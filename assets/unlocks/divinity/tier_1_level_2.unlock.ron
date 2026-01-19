@@ -1,0 +1,6 @@
+(
+    id: "divinity:tier_1_level_2",
+    display_name: Some("Divinity increase"),
+    reward_id: "divinity_level_up",
+    condition: Completed(topic: "craft:bone_idol"),
+)
