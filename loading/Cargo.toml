@@ -15,6 +15,7 @@ research.workspace = true
 states.workspace = true
 unlocks.workspace = true
 unlocks_assets.workspace = true
+unlocks_events.workspace = true
 unlocks_resources.workspace = true
 village_components.workspace = true
 wallet.workspace = true

@@ -3150,6 +3150,7 @@ dependencies = [
  "states",
  "unlocks",
  "unlocks_assets",
+ "unlocks_events",
  "unlocks_resources",
  "village_components",
  "wallet",
@@ -5127,6 +5128,7 @@ dependencies = [
  "loading",
  "shared_components",
  "states",
+ "unlocks_events",
  "village_components",
 ]
 

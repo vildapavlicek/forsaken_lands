@@ -31,6 +31,7 @@ fn update_encyclopedia(
     trigger: On<EnemyKilled>,
     mut village_query: Query<&mut EnemyEncyclopedia, With<Village>>,
     monster_query: Query<(&MonsterId, Option<&DisplayName>)>,
+    mut commands: Commands,
 ) {
     let Ok((monster_id, display_name)) = monster_query.get(trigger.event().entity) else {
         return;
@@ -42,11 +43,18 @@ fn update_encyclopedia(
 
     for mut encyclopedia in &mut village_query {
         encyclopedia.increment_kill_count(monster_id.0.clone(), display_name.clone());
+        let kill_count = encyclopedia.inner.get(&monster_id.0).unwrap().kill_count;
         trace!(
             monster_id = %monster_id.0,
-            kill_count = %encyclopedia.inner.get(&monster_id.0).unwrap().kill_count,
+            kill_count = %kill_count,
             "updated encyclopedia",
         );
+
+        // Notify unlock system about kill count change
+        commands.trigger(unlocks_events::ValueChanged {
+            topic: format!("kills:{}", monster_id.0),
+            value: kill_count as f32,
+        });
     }
 }
 

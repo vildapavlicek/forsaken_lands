@@ -15,10 +15,11 @@ use {
     research_assets::ResearchDefinition,
     states::{GameState, LoadingPhase},
     unlocks::{
-        CompiledUnlock, ConditionSensor, LogicSignalEvent, TopicMap, UnlockRoot, UnlockState,
-        compiler::{CompilerContext, build_condition_node},
+        CompiledUnlock, TopicMap, UnlockRoot, UnlockState,
+        compiler::build_condition_node,
     },
     unlocks_assets::UnlockDefinition,
+    unlocks_events::{ValueChanged, StatusCompleted},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
     weapon_assets::{WeaponDefinition, WeaponMap},
@@ -381,26 +382,13 @@ fn compile_unlocks(
     mut commands: Commands,
     unlock_assets: Res<Assets<UnlockDefinition>>,
     mut topic_map: ResMut<TopicMap>,
-    wallet: Res<Wallet>,
-    encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     unlock_state: Res<UnlockState>,
-    max_divinity_query: Query<&Divinity>,
     compiled: Query<&CompiledUnlock>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
 ) {
     status.current_phase = "Compiling Unlocks".into();
     status.detail = "Building logic graphs...".into();
-
-    let encyclopedia = encyclopedia_query.single().ok();
-    let max_divinity = max_divinity_query.iter().next();
-
-    let ctx = CompilerContext {
-        wallet: &wallet,
-        encyclopedia,
-        unlock_state: &unlock_state,
-        max_divinity: max_divinity.copied(),
-    };
 
     let compiled_ids: std::collections::HashSet<_> =
         compiled.iter().map(|c| c.definition_id.as_str()).collect();
@@ -427,12 +415,12 @@ fn compile_unlocks(
             ))
             .id();
 
+        // Build condition tree - no context needed, hydration happens via events
         build_condition_node(
             &mut commands,
             &mut topic_map,
             &definition.condition,
             root,
-            &ctx,
         );
     }
 
@@ -441,48 +429,61 @@ fn compile_unlocks(
 
 // --- Phase: EvaluateUnlocks ---
 
-/// After all unlock logic graphs are compiled, re-fire signals for sensors that are already satisfied
-/// and trigger ResearchCompleted events for research that was completed before save.
-/// This ensures that unlock cascades and UnlockState are reconstructed correctly.
+/// After all unlock logic graphs are compiled, trigger hydration events to update sensors.
+/// This replaces the old approach of re-firing LogicSignalEvents.
 fn evaluate_unlocks(
     mut commands: Commands,
-    sensors: Query<(Entity, &ConditionSensor)>,
+    wallet: Res<Wallet>,
+    encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
+    divinity_query: Query<&Divinity, With<Village>>,
     research_state: Res<research::ResearchState>,
-    research_query: Query<(Entity, &research::ResearchNode)>,
+    research_query: Query<&research::ResearchNode>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
 ) {
     status.current_phase = "Evaluating Unlocks".into();
-    status.detail = "Checking satisfied conditions...".into();
+    status.detail = "Hydrating state...".into();
 
-    // Trigger ResearchCompleted events for research that was completed (count > 0)
-    // This will populate UnlockState.completed via the unlock observers
-    for (entity, node) in &research_query {
+    // Trigger ValueChanged for all wallet resources
+    for (resource_id, &amount) in wallet.resources.iter() {
+        commands.trigger(ValueChanged {
+            topic: format!("resource:{}", resource_id),
+            value: amount as f32,
+        });
+    }
+
+    // Trigger ValueChanged for all kill counts from encyclopedia
+    if let Ok(encyclopedia) = encyclopedia_query.single() {
+        for (monster_id, entry) in encyclopedia.inner.iter() {
+            commands.trigger(ValueChanged {
+                topic: format!("kills:{}", monster_id),
+                value: entry.kill_count as f32,
+            });
+        }
+    }
+
+    // Trigger ValueChanged for village divinity
+    if let Ok(divinity) = divinity_query.single() {
+        // Encode divinity as tier*100 + level for comparison
+        commands.trigger(ValueChanged {
+            topic: "divinity:max".to_string(),
+            value: (divinity.tier * 100 + divinity.level) as f32,
+        });
+    }
+
+    // Trigger StatusCompleted for research that was completed (count > 0)
+    for node in &research_query {
         if let Some(&count) = research_state.completion_counts.get(&node.id) {
             if count > 0 {
-                debug!(research_id = %node.id, count = count, "Firing ResearchCompleted for loaded research");
-                commands.trigger(research::ResearchCompleted {
-                    research_id: node.id.clone(),
+                debug!(research_id = %node.id, count = count, "Firing StatusCompleted for loaded research");
+                commands.trigger(StatusCompleted {
+                    topic: format!("research:{}", node.id),
                 });
             }
         }
     }
 
-    // Re-fire LogicSignalEvent for all sensors that are already satisfied
-    // This triggers the unlock cascade now that all observers exist
-    let mut satisfied_count = 0;
-    for (entity, sensor) in &sensors {
-        if sensor.is_met {
-            debug!(sensor = ?entity, "Re-firing signal for satisfied sensor");
-            commands.entity(entity).trigger(|e| LogicSignalEvent {
-                entity: e,
-                is_high: true,
-            });
-            satisfied_count += 1;
-        }
-    }
-    info!("Evaluated {} sensors, {} already satisfied", sensors.iter().count(), satisfied_count);
-
+    info!("Hydrated unlock state from saved data");
     next_phase.set(LoadingPhase::PostLoadReconstruction);
 }
 

@@ -133,6 +133,11 @@ pub fn update_research_progress(
                 research_id: node.id.clone(),
             });
 
+            // Notify unlock system about research completion
+            commands.trigger(unlocks_events::StatusCompleted {
+                topic: format!("research:{}", node.id),
+            });
+
             // Check max_repeats from definition
             let max_repeats = assets
                 .get(&node.handle)
