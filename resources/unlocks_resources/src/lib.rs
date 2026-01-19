@@ -29,7 +29,16 @@ impl TopicMap {
     }
 }
 
-/// Persistent state tracking what has been unlocked.
+/// Runtime state tracking what has been unlocked during this session.
+///
+/// **IMPORTANT**: This resource is intentionally NOT persisted in save files.
+/// By not persisting it, we allow the unlock system to re-evaluate all conditions
+/// on load, which means if unlock assets are modified (e.g., rewards changed),
+/// the new rewards will be applied. This is desirable for most rewards like
+/// research unlocks and recipes since they are idempotent.
+///
+/// For rewards that should only be granted once (like divinity level-ups),
+/// separate tracking mechanisms should be used (e.g., `DivinityUnlockState`).
 #[derive(Resource, Reflect, Default, Debug)]
 #[reflect(Resource)]
 pub struct UnlockState {
