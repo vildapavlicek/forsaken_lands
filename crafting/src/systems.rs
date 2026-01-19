@@ -5,6 +5,8 @@ use {
     crafting_resources::RecipeMap,
     divinity_events::IncreaseDivinity,
     recipes_assets::RecipeDefinition,
+    unlocks_events::StatusCompleted,
+    unlocks_resources::UnlockState,
     village_components::Village,
     weapon_factory_events,
 };
@@ -140,6 +142,9 @@ pub fn update_crafting_progress(
 
             // Despawn the crafting entity
             commands.entity(entity).despawn();
+            commands.trigger(StatusCompleted {
+                topic: format!("craft:{}", crafting.recipe_id),
+            });
         }
     }
 }

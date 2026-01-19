@@ -5,6 +5,7 @@ use {
     enemy_components::MonsterId,
     hero_events::EnemyKilled,
     shared_components::DisplayName,
+    unlocks_events::UnlockAchieved,
     village_components::{EncyclopediaEntry, EnemyEncyclopedia, Village},
 };
 
@@ -20,6 +21,7 @@ impl Plugin for VillagePlugin {
 
         app.add_observer(update_encyclopedia);
         app.add_observer(handle_divinity_increase);
+        app.add_observer(divinity_increase_unlock);
         app.add_observer(equipment::handle_equip_weapon);
         app.add_observer(equipment::handle_unequip_weapon);
         app.add_observer(equipment::handle_unequip_weapon);
@@ -74,6 +76,22 @@ fn handle_divinity_increase(
                 level = divinity.level,
                 "Village leveled up"
             );
+        }
+    }
+}
+
+fn divinity_increase_unlock(
+    event: On<UnlockAchieved>,
+    mut divinity: Query<&mut Divinity, With<Village>>,
+) {
+    let event = event.event();
+
+    if event.reward_id == "divinity_level_up" {
+        match divinity.single_mut() {
+            Ok(mut divinity) => {
+                divinity.level_up();
+            }
+            Err(err) => error!(%err, "failed to query village's divinity"),
         }
     }
 }
