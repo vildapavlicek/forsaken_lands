@@ -1,0 +1,19 @@
+(
+  resources: {},
+  entities: {
+    1: (
+      components: {
+        "enemy_components::Enemy": (),
+        "enemy_components::MonsterId": ("siled"),
+        "enemy_components::EnemyRange": CloseRange,
+        "shared_components::DisplayName": ("Siled"),
+        "enemy_components::Health": (current: 0.5, max: 0.5),
+        "enemy_components::MovementSpeed": (160.0),
+        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 5, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
+        "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.1, green: 0.1, blue: 0.1, alpha: 1.0)), custom_size: Some((14.0, 14.0))),
+        "enemy_components::Drops": ([(id: "bones", value: 1, chance: 1.0), (id: "xykego", value: 1, chance: 1.0), (id: "sinew", value: 1, chance: 0.25)]),
+      },
+    ),
+  },
+)
