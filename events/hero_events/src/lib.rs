@@ -67,9 +67,19 @@ impl Default for ProjectileHit {
     }
 }
 
+/// Represents the confirmed death of an enemy entity.
+///
+/// This **Observer** event (triggered via `commands.trigger`) serves as the primary signal
+/// for progression systems to process rewards, statistics, and quest updates.
+///
+/// # Observers
+/// - `update_encyclopedia` (Village): Increments kill counts in `EnemyEncyclopedia` and triggers kill-based unlocks.
+/// - `process_enemy_killed_rewards` (Wallet): Rolls for loot based on `Drops` and adds resources to `Wallet`.
 #[derive(Event, Reflect)]
 #[reflect(Default)]
 pub struct EnemyKilled {
+    /// The enemy entity that was killed.
+    /// Note: This entity is guaranteed to be alive with its components (e.g., `Drops`, `MonsterId`) during the event trigger.
     pub entity: Entity,
 }
 
