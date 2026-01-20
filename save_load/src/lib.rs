@@ -99,7 +99,17 @@ fn autosave_tick(time: Res<Time>, mut timer: ResMut<AutosaveTimer>, mut commands
 }
 
 /// Observer that handles the SaveGame event and performs the actual save.
-fn execute_save(_trigger: On<SaveGame>, world: &World) {
+fn execute_save(
+    _trigger: On<SaveGame>,
+    world: &World,
+    saveable_query: Query<
+        Entity,
+        (
+            With<shared_components::IncludeInSave>,
+            Without<hero_components::Weapon>,
+        ),
+    >,
+) {
     // Generate filename with timestamp
     let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
     let filename = format!("save_{}.scn.ron", timestamp);
@@ -112,8 +122,11 @@ fn execute_save(_trigger: On<SaveGame>, world: &World) {
         return;
     }
 
+    // Collect saveable entities from query
+    let saveable_entities: Vec<Entity> = saveable_query.iter().collect();
+
     // Build the save scene with filtered components
-    let scene = build_save_scene(world);
+    let scene = build_save_scene(world, saveable_entities);
 
     // Serialize the scene
     let type_registry = world.resource::<AppTypeRegistry>();
@@ -203,8 +216,7 @@ fn find_latest_save(saves_dir: &Path) -> Option<std::path::PathBuf> {
 ///
 /// Uses IncludeInSave marker to explicitly include only entities we want to save.
 /// Components with #[require(IncludeInSave)] automatically get included.
-#[allow(deprecated)] // iter_entities - no mutable alternative available here
-fn build_save_scene(world: &World) -> DynamicScene {
+fn build_save_scene(world: &World, saveable_entities: Vec<Entity>) -> DynamicScene {
     DynamicSceneBuilder::from_world(world)
         // === DENY-LIST: Bevy internal components that don't serialize cleanly ===
         .deny_component::<InheritedVisibility>()
@@ -220,14 +232,7 @@ fn build_save_scene(world: &World) -> DynamicScene {
         .allow_resource::<village::DivinityUnlockState>()
         // === Entity extraction ===
         // Only include entities marked with IncludeInSave
-        .extract_entities(
-            world
-                .iter_entities()
-                .filter(|e| e.contains::<shared_components::IncludeInSave>())
-                // TODO: Revisit weapon filtering - consider hydration system instead
-                .filter(|e| !e.contains::<hero_components::Weapon>())
-                .map(|e| e.id()),
-        )
+        .extract_entities(saveable_entities.into_iter())
         .extract_resources()
         .build()
 }

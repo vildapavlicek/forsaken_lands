@@ -223,6 +223,7 @@ fn spawn_notification(
                 height: Val::Px(NOTIFICATION_HEIGHT),
                 padding: UiRect::all(Val::Px(12.0)),
                 border: UiRect::all(Val::Px(2.0)),
+                border_radius: BorderRadius::all(Val::Px(8.0)),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..default()
@@ -234,7 +235,6 @@ fn spawn_notification(
             },
             BackgroundColor(notification.notification_type.background_color()),
             BorderColor::all(notification.notification_type.border_color()),
-            BorderRadius::all(Val::Px(8.0)),
             Notification {
                 timer: Timer::from_seconds(NOTIFICATION_DURATION, TimerMode::Once),
             },

@@ -53,8 +53,8 @@ members = [
 ]
 
 [workspace.dependencies]
-bevy = "0.17"
-bevy_common_assets = { version = "0.14", features = ["ron"] }
+bevy = { version = "0.18", default-features = false, features = ["2d", "dev"] }
+bevy_common_assets = { version = "0.15", features = ["ron"] }
 core = { path = "core" }
 crafting = { path = "crafting" }
 crafting_components = { path = "components/crafting_components" }
