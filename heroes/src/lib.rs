@@ -90,6 +90,8 @@ fn hero_attack_intent_system(
                     attacker: weapon_entity,
                     target: enemy_entity,
                 });
+                // Reset timer only after a successful attack
+                attack_speed.timer.reset();
             }
         }
     }

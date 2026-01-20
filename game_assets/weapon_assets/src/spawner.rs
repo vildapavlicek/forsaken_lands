@@ -27,7 +27,7 @@ pub fn spawn_weapon(commands: &mut Commands, def: &WeaponDefinition) -> Entity {
                 AttackSpeed {
                     timer: Timer::from_seconds(
                         def.attack_speed_ms as f32 / 1000.0,
-                        TimerMode::Repeating,
+                        TimerMode::Once,
                     ),
                 },
             ))
@@ -43,7 +43,7 @@ pub fn spawn_weapon(commands: &mut Commands, def: &WeaponDefinition) -> Entity {
                 AttackSpeed {
                     timer: Timer::from_seconds(
                         def.attack_speed_ms as f32 / 1000.0,
-                        TimerMode::Repeating,
+                        TimerMode::Once,
                     ),
                 },
             ))
