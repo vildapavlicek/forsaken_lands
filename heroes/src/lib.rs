@@ -61,29 +61,34 @@ fn hero_attack_intent_system(
     };
 
     for (weapon_entity, range, mut attack_speed, child_of) in weapons.iter_mut() {
+        attack_speed.timer.tick(time.delta());
+
         // Only attack if current weapon is held by a hero
         if heroes.get(child_of.parent()).is_err() {
             continue;
         }
 
-        if attack_speed.timer.tick(time.delta()).just_finished() {
-            let mut closest_enemy: Option<(Entity, f32)> = None;
+        if !attack_speed.timer.is_finished() {
+            continue;
+        }
 
-            for (enemy_entity, enemy_transform) in enemies.iter() {
-                let distance = village_transform
-                    .translation
-                    .distance(enemy_transform.translation);
+        let mut closest_enemy: Option<(Entity, f32)> = None;
 
-                if distance <= range.0 {
-                    if let Some((_, closest_distance)) = closest_enemy {
-                        if distance < closest_distance {
-                            closest_enemy = Some((enemy_entity, distance));
-                        }
-                    } else {
+        for (enemy_entity, enemy_transform) in enemies.iter() {
+            let distance = village_transform
+                .translation
+                .distance(enemy_transform.translation);
+
+            if distance <= range.0 {
+                if let Some((_, closest_distance)) = closest_enemy {
+                    if distance < closest_distance {
                         closest_enemy = Some((enemy_entity, distance));
                     }
+                } else {
+                    closest_enemy = Some((enemy_entity, distance));
                 }
             }
+        }
 
             if let Some((enemy_entity, _)) = closest_enemy {
                 commands.trigger(AttackIntent {
