@@ -90,14 +90,13 @@ fn hero_attack_intent_system(
             }
         }
 
-            if let Some((enemy_entity, _)) = closest_enemy {
-                commands.trigger(AttackIntent {
-                    attacker: weapon_entity,
-                    target: enemy_entity,
-                });
-                // Reset timer only after a successful attack
-                attack_speed.timer.reset();
-            }
+        if let Some((enemy_entity, _)) = closest_enemy {
+            commands.trigger(AttackIntent {
+                attacker: weapon_entity,
+                target: enemy_entity,
+            });
+            // Reset timer only after a successful attack
+            attack_speed.timer.reset();
         }
     }
 }

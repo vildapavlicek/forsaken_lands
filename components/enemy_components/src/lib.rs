@@ -17,10 +17,21 @@ pub struct MovementSpeed(pub f32);
 #[reflect(Component)]
 pub struct Lifetime(pub Timer);
 
+/// Represents the vitality and durability of an entity (e.g., Enemy, Boss).
+///
+/// This component is the primary state checked by combat and lifecycle systems to determine
+/// if an entity should remain in the world or be destroyed.
+///
+/// # Usage
+/// - **Combat Systems**: `apply_damage_system` and `apply_melee_damage_observer` reduce `current` health.
+/// - **Lifecycle System**: `manage_enemy_lifecycle` checks if `current <= 0.0` to trigger death logic.
+/// - **UI**: Used to display health bars (ratio of current / max).
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Health {
+    /// The current health points of the entity. Death occurs when this reaches <= 0.0.
     pub current: f32,
+    /// The maximum possible health points. Used for clamping healing and calculating health percentages.
     pub max: f32,
 }
 
