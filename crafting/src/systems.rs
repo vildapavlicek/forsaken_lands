@@ -3,7 +3,6 @@ use {
     bevy::prelude::*,
     crafting_events::StartCraftingRequest,
     crafting_resources::RecipeMap,
-    divinity_events::IncreaseDivinity,
     recipes_assets::RecipeDefinition,
     unlocks_events::StatusCompleted,
     village_components::Village,
@@ -83,9 +82,8 @@ pub fn update_crafting_progress(
     mut commands: Commands,
     time: Res<Time>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
-    village_query: Query<Entity, With<Village>>,
     recipe_map: Res<RecipeMap>,
-    mut recipe_nodes: Query<&RecipeNode>,
+    recipe_nodes: Query<&RecipeNode>,
     recipe_assets: Res<Assets<RecipeDefinition>>,
 ) {
     for (entity, mut crafting) in query.iter_mut() {
@@ -100,9 +98,7 @@ pub fn update_crafting_progress(
                 .get(&crafting.recipe_id)
                 .and_then(|&e| recipe_nodes.get(e).ok())
                 .and_then(|node| recipe_assets.get(&node.handle))
-                .map_or(false, |def| {
-                    matches!(def.category, recipes_assets::RecipeCategory::Weapons)
-                })
+                .is_some_and(|def| matches!(def.category, recipes_assets::RecipeCategory::Weapons))
             {
                 commands.trigger(weapon_factory_events::SpawnWeaponRequest {
                     weapon_id: crafting.recipe_id.clone(),
@@ -121,20 +117,6 @@ pub fn update_crafting_progress(
                     }
                     crafting_resources::CraftingOutcome::UnlockFeature(feature) => {
                         info!("Would unlock feature: {}", feature);
-                    }
-                    crafting_resources::CraftingOutcome::GrantXp(xp) => {
-                        info!("Would grant {} XP", xp);
-                    }
-                    crafting_resources::CraftingOutcome::IncreaseDivinity(amount) => {
-                        if let Ok(village_entity) = village_query.single() {
-                            commands.trigger(IncreaseDivinity {
-                                entity: village_entity,
-                                xp_amount: *amount as f32,
-                            });
-                            info!("Triggered IncreaseDivinity with {} XP for Village", amount);
-                        } else {
-                            warn!("Could not find Village entity to increase divinity");
-                        }
                     }
                 }
             }
@@ -160,33 +142,31 @@ pub fn on_crafting_completed(
 ) {
     let event = trigger.event();
     const PREFIX: &str = "craft:";
-    
+
     if event.topic.starts_with(PREFIX) {
         let recipe_id = &event.topic[PREFIX.len()..];
-        
+
         // Check if this is a construction recipe
-        if let Some(def) = recipe_map
+        if recipe_map
             .entities
             .get(recipe_id)
             .and_then(|&e| recipe_nodes.get(e).ok())
-            .and_then(|node| recipe_assets.get(&node.handle)) 
+            .and_then(|node| recipe_assets.get(&node.handle))
+            .is_some_and(|def| matches!(def.category, recipes_assets::RecipeCategory::Construction))
         {
-            if matches!(def.category, recipes_assets::RecipeCategory::Construction) {
-                info!("Construction complete: {}", recipe_id);
-                constructed_buildings.ids.insert(recipe_id.to_string());
-                
-                // Despawn the recipe entity to hide it from UI
-                if let Some(&recipe_entity) = recipe_map.entities.get(recipe_id) {
-                     commands.entity(recipe_entity).despawn();
-                     // We can't remove from recipe_map here as we don't have mutable access
-                     // But since we check recipe_nodes.get(e) in UI and systems, 
-                     // despawning the entity effectively removes it.
-                }
+            info!("Construction complete: {}", recipe_id);
+            constructed_buildings.ids.insert(recipe_id.to_string());
+
+            // Despawn the recipe entity to hide it from UI
+            if let Some(&recipe_entity) = recipe_map.entities.get(recipe_id) {
+                commands.entity(recipe_entity).despawn();
+                // We can't remove from recipe_map here as we don't have mutable access
+                // But since we check recipe_nodes.get(e) in UI and systems,
+                // despawning the entity effectively removes it.
             }
         }
     }
 }
-
 
 pub fn clean_up_crafting(
     mut commands: Commands,

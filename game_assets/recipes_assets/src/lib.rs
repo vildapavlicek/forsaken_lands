@@ -51,8 +51,4 @@ pub enum CraftingOutcome {
     AddResource { id: String, amount: u32 },
     /// Unlocks a specific tech or feature
     UnlockFeature(String),
-    /// Grants Experience points
-    GrantXp(u32),
-    /// Increases Village Divinity XP by the given amount
-    IncreaseDivinity(u32),
 }
