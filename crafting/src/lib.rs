@@ -30,6 +30,7 @@ impl Plugin for CraftingPlugin {
             .register_type::<CraftingInProgress>()
             .add_observer(systems::start_crafting)
             .add_observer(systems::on_recipe_unlock_achieved)
+            .add_observer(systems::on_crafting_completed)
             .add_systems(
                 Update,
                 systems::update_crafting_progress
@@ -50,6 +51,7 @@ pub fn spawn_recipe_entities(
     recipe_map: &mut crafting_resources::RecipeMap,
     assets: &mut Assets<RecipeDefinition>,
     unlock_state: &unlocks_resources::UnlockState,
+    constructed: &crafting_resources::ConstructedBuildings,
 ) {
     debug!("Spawning recipe entities...");
 
@@ -60,6 +62,12 @@ pub fn spawn_recipe_entities(
             let Some(def) = assets.get(id) else {
                 continue;
             };
+
+            // Check if already constructed (one-time only)
+            if constructed.ids.contains(&def.id) {
+                debug!("Skipping recipe '{}' (already constructed)", def.id);
+                continue;
+            }
 
             // Check if already spawned
             if recipe_map.entities.contains_key(&def.id) {

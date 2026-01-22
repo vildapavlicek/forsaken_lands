@@ -279,6 +279,7 @@ fn spawn_all_entities(
     mut recipe_assets: ResMut<Assets<RecipeDefinition>>,
     research_state: Res<research::ResearchState>,
     unlock_state: Res<UnlockState>,
+    constructed_buildings: Res<crafting_resources::ConstructedBuildings>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
 ) {
@@ -372,6 +373,7 @@ fn spawn_all_entities(
         &mut recipe_map,
         &mut recipe_assets,
         &unlock_state,
+        &constructed_buildings,
     );
 
     next_phase.set(LoadingPhase::CompileUnlocks);

@@ -36,6 +36,14 @@ pub struct RecipeMap {
     pub entities: HashMap<String, Entity>,
 }
 
+/// Tracks recipes that have been constructed 1-time.
+/// Primarily used for 'Construction' category items (buildings).
+#[derive(Resource, Default, Debug, Reflect)]
+#[reflect(Resource)]
+pub struct ConstructedBuildings {
+    pub ids: bevy::platform::collections::HashSet<String>,
+}
+
 // --- Plugin ---
 
 pub struct CraftingResourcesPlugin;
@@ -48,6 +56,8 @@ impl Plugin for CraftingResourcesPlugin {
             .init_resource::<RecipesLibrary>();
 
         // New entity-based resources
-        app.init_resource::<RecipeMap>();
+        app.init_resource::<RecipeMap>()
+           .register_type::<ConstructedBuildings>()
+           .init_resource::<ConstructedBuildings>();
     }
 }

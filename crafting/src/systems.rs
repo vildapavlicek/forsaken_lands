@@ -6,7 +6,6 @@ use {
     divinity_events::IncreaseDivinity,
     recipes_assets::RecipeDefinition,
     unlocks_events::StatusCompleted,
-    unlocks_resources::UnlockState,
     village_components::Village,
     weapon_factory_events,
 };
@@ -86,7 +85,7 @@ pub fn update_crafting_progress(
     mut query: Query<(Entity, &mut CraftingInProgress)>,
     village_query: Query<Entity, With<Village>>,
     recipe_map: Res<RecipeMap>,
-    recipe_nodes: Query<&RecipeNode>,
+    mut recipe_nodes: Query<&RecipeNode>,
     recipe_assets: Res<Assets<RecipeDefinition>>,
 ) {
     for (entity, mut crafting) in query.iter_mut() {
@@ -148,6 +147,46 @@ pub fn update_crafting_progress(
         }
     }
 }
+
+/// Observer for StatusCompleted events.
+/// Handles construction completion (marking building as constructed, removing recipe from UI).
+pub fn on_crafting_completed(
+    trigger: On<StatusCompleted>,
+    mut commands: Commands,
+    recipe_map: Res<RecipeMap>,
+    recipe_nodes: Query<&RecipeNode>,
+    recipe_assets: Res<Assets<RecipeDefinition>>,
+    mut constructed_buildings: ResMut<crafting_resources::ConstructedBuildings>,
+) {
+    let event = trigger.event();
+    const PREFIX: &str = "craft:";
+    
+    if event.topic.starts_with(PREFIX) {
+        let recipe_id = &event.topic[PREFIX.len()..];
+        
+        // Check if this is a construction recipe
+        if let Some(def) = recipe_map
+            .entities
+            .get(recipe_id)
+            .and_then(|&e| recipe_nodes.get(e).ok())
+            .and_then(|node| recipe_assets.get(&node.handle)) 
+        {
+            if matches!(def.category, recipes_assets::RecipeCategory::Construction) {
+                info!("Construction complete: {}", recipe_id);
+                constructed_buildings.ids.insert(recipe_id.to_string());
+                
+                // Despawn the recipe entity to hide it from UI
+                if let Some(&recipe_entity) = recipe_map.entities.get(recipe_id) {
+                     commands.entity(recipe_entity).despawn();
+                     // We can't remove from recipe_map here as we don't have mutable access
+                     // But since we check recipe_nodes.get(e) in UI and systems, 
+                     // despawning the entity effectively removes it.
+                }
+            }
+        }
+    }
+}
+
 
 pub fn clean_up_crafting(
     mut commands: Commands,

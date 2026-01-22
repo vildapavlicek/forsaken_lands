@@ -41,6 +41,7 @@ pub enum RecipeCategory {
     #[default]
     Weapons,
     Idols,
+    Construction,
 }
 
 /// Actions that occur upon crafting completion.

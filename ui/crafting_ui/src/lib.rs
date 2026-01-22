@@ -182,6 +182,14 @@ pub fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingD
                         category: RecipeCategory::Idols,
                     },
                 );
+                spawn_tab_button(
+                    tabs,
+                    "Construction",
+                    data.active_tab == RecipeCategory::Construction,
+                    RecipeTabButton {
+                        category: RecipeCategory::Construction,
+                    },
+                );
             });
 
             // Scrollable container for recipe items
