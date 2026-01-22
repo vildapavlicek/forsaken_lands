@@ -8,3 +8,4 @@ bevy.workspace = true
 village_components.workspace = true
 weapon_assets.workspace = true
 weapon_factory_events.workspace = true
+unlocks_events.workspace = true

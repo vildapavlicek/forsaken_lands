@@ -5,8 +5,7 @@ use {
     crafting_resources::RecipeMap,
     recipes_assets::RecipeDefinition,
     unlocks_events::StatusCompleted,
-    village_components::Village,
-    weapon_factory_events,
+
 };
 
 /// Observer that handles StartCraftingRequest events.
@@ -92,21 +91,7 @@ pub fn update_crafting_progress(
         if crafting.timer.is_finished() {
             info!("Crafting complete for: {}", crafting.recipe_id);
 
-            // Check if this is a weapon and spawn it via factory
-            if recipe_map
-                .entities
-                .get(&crafting.recipe_id)
-                .and_then(|&e| recipe_nodes.get(e).ok())
-                .and_then(|node| recipe_assets.get(&node.handle))
-                .is_some_and(|def| matches!(def.category, recipes_assets::RecipeCategory::Weapons))
-            {
-                commands.trigger(weapon_factory_events::SpawnWeaponRequest {
-                    weapon_id: crafting.recipe_id.clone(),
-                    parent: None,
-                    add_to_inventory: true,
-                });
-                info!("Triggered SpawnWeaponRequest for '{}'", crafting.recipe_id);
-            }
+
 
             // Process all outcomes
             for outcome in &crafting.outcomes {
