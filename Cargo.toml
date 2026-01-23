@@ -29,7 +29,7 @@ members = [
   "game_assets/recipes_assets",
   "game_assets/research_assets",
   "game_assets/unlocks_assets",
-  "game_assets/weapon_assets",
+  "game_assets/weapon_assets", "growth",
   "heroes",
   "loading",
   "portals",
