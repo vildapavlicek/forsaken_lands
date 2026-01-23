@@ -70,10 +70,8 @@ fn on_crafting_completed(
     mut inventory_query: Query<&mut WeaponInventory, With<Village>>,
 ) {
     let event = trigger.event();
-    const PREFIX: &str = "craft:";
 
-    if event.topic.starts_with(PREFIX) {
-        let recipe_id = &event.topic[PREFIX.len()..];
+    if let Some(recipe_id) = event.topic.strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX) {
 
         // Ensure this recipe ID corresponds to a registered weapon
         let Some(handle) = weapon_map.handles.get(recipe_id) else {

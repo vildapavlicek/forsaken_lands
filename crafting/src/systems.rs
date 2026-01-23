@@ -57,10 +57,8 @@ pub fn on_recipe_unlock_achieved(
     locked_query: Query<(), With<Locked>>,
 ) {
     let event = trigger.event();
-    const PREFIX: &str = "recipe_";
 
-    if event.reward_id.starts_with(PREFIX) {
-        let recipe_id = &event.reward_id[PREFIX.len()..];
+    if let Some(recipe_id) = event.reward_id.strip_prefix(unlocks_events::RECIPE_REWARD_PREFIX) {
         if let Some(&entity) = recipe_map.entities.get(recipe_id) {
             // Only transition if currently Locked
             if locked_query.get(entity).is_ok() {
@@ -109,7 +107,7 @@ pub fn update_crafting_progress(
             // Despawn the crafting entity
             commands.entity(entity).despawn();
             commands.trigger(StatusCompleted {
-                topic: format!("craft:{}", crafting.recipe_id),
+                topic: format!("{}{}", unlocks_events::CRAFTING_TOPIC_PREFIX, crafting.recipe_id),
             });
         }
     }
@@ -126,19 +124,16 @@ pub fn on_crafting_completed(
     mut constructed_buildings: ResMut<crafting_resources::ConstructedBuildings>,
 ) {
     let event = trigger.event();
-    const PREFIX: &str = "craft:";
 
-    if event.topic.starts_with(PREFIX) {
-        let recipe_id = &event.topic[PREFIX.len()..];
-
+    if let Some(recipe_id) = event.topic.strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX) {
         // Check if this is a construction recipe
-        if recipe_map
-            .entities
-            .get(recipe_id)
+        let is_construction = recipe_map.entities.get(recipe_id)
             .and_then(|&e| recipe_nodes.get(e).ok())
             .and_then(|node| recipe_assets.get(&node.handle))
-            .is_some_and(|def| matches!(def.category, recipes_assets::RecipeCategory::Construction))
-        {
+            .map(|def| matches!(def.category, recipes_assets::RecipeCategory::Construction))
+            .unwrap_or(false);
+
+        if is_construction {
             info!("Construction complete: {}", recipe_id);
             constructed_buildings.ids.insert(recipe_id.to_string());
 

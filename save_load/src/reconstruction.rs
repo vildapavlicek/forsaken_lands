@@ -56,11 +56,13 @@ pub fn reconstruct_weapons_from_inventory(
     // remove equipped items from inventory and re-add them when unequipped.
 
     // Count total inventory
-    let mut inventory_counts: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::new();
-    for weapon_id in &inventory.weapons {
-        *inventory_counts.entry(weapon_id.clone()).or_insert(0) += 1;
-    }
+    let inventory_counts: std::collections::HashMap<String, usize> = inventory.weapons.iter().fold(
+        std::collections::HashMap::new(),
+        |mut acc, weapon_id| {
+            *acc.entry(weapon_id.clone()).or_insert(0) += 1;
+            acc
+        },
+    );
 
     // Spawn difference
     for (weapon_id, total_count) in inventory_counts {

@@ -41,3 +41,15 @@ pub struct StatusCompleted {
     /// The topic ID, e.g. "research:bone_sword", "quest:intro"
     pub topic: String,
 }
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+/// Prefix for crafting completion topics (used in StatusCompleted).
+/// Usage: `craft:{recipe_id}`
+pub const CRAFTING_TOPIC_PREFIX: &str = "craft:";
+
+/// Prefix for recipe rewards (used in UnlockAchieved).
+/// Usage: `recipe_{recipe_id}`
+pub const RECIPE_REWARD_PREFIX: &str = "recipe_";
