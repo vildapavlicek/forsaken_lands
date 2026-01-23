@@ -1607,6 +1607,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "blessings"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "growth",
+ "serde",
+ "shared_components",
+ "wallet",
+]
+
+[[package]]
 name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1648,6 +1660,7 @@ name = "buildings"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "blessings",
  "buildings_assets",
  "buildings_components",
  "crafting_resources",
@@ -1894,6 +1907,7 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "blessings",
  "buildings",
  "buildings_assets",
  "buildings_components",
@@ -4068,6 +4082,8 @@ name = "portals"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "blessings",
+ "buildings_components",
  "divinity_components",
  "divinity_events",
  "enemy_components",

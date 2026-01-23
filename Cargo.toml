@@ -5,6 +5,7 @@ edition = "2024"
 
 [workspace]
 members = [
+  "blessings",
   "buildings",
   "components/buildings_components",
   "components/crafting_components",

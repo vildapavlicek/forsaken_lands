@@ -28,6 +28,7 @@ impl Plugin for CorePlugin {
                 BuildingsPlugin,
                 BuildingsComponentsPlugin,
                 BuildingsAssetsPlugin,
+                blessings::BlessingsPlugin,
                 CraftingPlugin,
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,

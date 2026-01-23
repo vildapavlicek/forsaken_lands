@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+blessings = { path = "../blessings" }
+buildings_components = { path = "../components/buildings_components" }
 rand.workspace = true
 divinity_components.workspace = true
 divinity_events.workspace = true

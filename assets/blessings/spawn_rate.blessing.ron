@@ -1,0 +1,10 @@
+(
+    id: "reduce_spawn_time",
+    name: "Hastened Doom",
+    description: "Portals spawn enemies faster.",
+    effect: DecreaseSpawnTimer,
+    cost: Linear((
+        base: 10.0,
+        increment: 5.0,
+    )),
+)

@@ -4,6 +4,7 @@ use {
     shared_components::IncludeInSave,
     unlocks_events::{StatusCompleted, ValueChanged, CRAFTING_TOPIC_PREFIX},
     wallet::Wallet,
+    blessings::Blessings,
 };
 
 pub struct TheMawPlugin;
@@ -27,6 +28,7 @@ fn on_construction_completed(
         commands.spawn((
             TheMaw,
             EntropyGenerator::default(),
+            Blessings::default(),
             IncludeInSave,
             Name::new("The Maw"),
         ));

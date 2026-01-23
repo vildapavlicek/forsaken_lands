@@ -1,0 +1,12 @@
+[package]
+name = "blessings"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy = { workspace = true }
+bevy_common_assets = { workspace = true }
+growth = { path = "../growth" }
+serde = { version = "1.0", features = ["derive"] }
+shared_components = { path = "../components/shared_components" }
+wallet = { path = "../wallet" }

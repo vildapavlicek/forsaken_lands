@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+blessings = { path = "../blessings" }
 buildings_assets.workspace = true
 buildings_components.workspace = true
 crafting_resources.workspace = true

@@ -1,7 +1,6 @@
 use {
     bevy::prelude::*,
-    divinity_components::{CurrentDivinity, Divinity},
-    divinity_events::IncreaseDivinity,
+    divinity_components::CurrentDivinity,
     enemy_components::{
         Dead, Drop, Drops, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
         MovementSpeed, TargetDestination,
@@ -12,6 +11,8 @@ use {
     portal_components::{Portal, SpawnTableId, SpawnTimer},
     rand::{distr::weighted::WeightedIndex, prelude::*},
     system_schedule::GameSchedule,
+    blessings::{Blessings, BlessingEffect, BlessingState, BlessingDefinition},
+    buildings_components::TheMaw,
 };
 
 pub struct PortalsPlugin;
@@ -43,6 +44,7 @@ impl Plugin for PortalsPlugin {
 
         app.add_observer(assign_enemy_destination);
         app.add_observer(assign_enemy_destination);
+        app.add_observer(apply_blessing_to_lifetime);
         app.add_systems(OnExit(states::GameState::Running), clean_up_portals);
     }
 }
@@ -50,13 +52,34 @@ impl Plugin for PortalsPlugin {
 fn enemy_spawn_system(
     time: Res<Time>,
     mut query: Query<(&mut SpawnTimer, &SpawnTableId, &CurrentDivinity), With<Portal>>,
+    maw_query: Query<&Blessings, With<TheMaw>>,
     game_assets: Res<GameAssets>,
     spawn_tables: Res<Assets<SpawnTable>>,
     mut scene_spawner: ResMut<SceneSpawner>,
+    blessing_state: Res<BlessingState>,
+    blessing_definitions: Res<Assets<BlessingDefinition>>,
 ) {
+    // Calculate spawn rate modifier
+    let mut speed_modifier = 1.0;
+     if let Ok(blessings) = maw_query.single() {
+       for (id, level) in &blessings.unlocked {
+            if let Some(handle) = blessing_state.blessings.get(id) {
+                if let Some(def) = blessing_definitions.get(handle) {
+                     if def.effect == BlessingEffect::DecreaseSpawnTimer {
+                         // Example: 10% faster per level (compounding? or linear?)
+                         // Let's assume linear for now or use the base_stats logic if defined,
+                         // but for prototype, hardcode effect logic:
+                         // modifier = 1.0 + (0.1 * level)
+                         speed_modifier += 0.1 * (*level as f32);
+                     }
+                }
+            }
+       }
+    }
+
     for (mut timer, table_id, divinity) in query.iter_mut() {
         let divinity = **divinity;
-        if timer.0.tick(time.delta()).just_finished() {
+        if timer.0.tick(time.delta().mul_f32(speed_modifier)).just_finished() {
             let table_handle = if let Some(handle) = game_assets.spawn_tables.get(&table_id.0) {
                 handle
             } else {
@@ -312,5 +335,37 @@ pub fn clean_up_portals(
     }
     for entity in enemies.iter() {
         commands.entity(entity).despawn();
+    }
+}
+
+/// Applies 'IncreaseMonsterLifetime' blessing effects when Lifetime is added to an enemy.
+fn apply_blessing_to_lifetime(
+    trigger: On<Add, Lifetime>,
+    mut query: Query<&mut Lifetime>,
+    maw_query: Query<&Blessings, With<TheMaw>>,
+    blessing_state: Res<BlessingState>,
+    blessing_definitions: Res<Assets<BlessingDefinition>>,
+) {
+    if let Ok(mut lifetime) = query.get_mut(trigger.entity) {
+          if let Ok(blessings) = maw_query.single() {
+            let mut extra_seconds = 0.0;
+            for (id, level) in &blessings.unlocked {
+                 if let Some(handle) = blessing_state.blessings.get(id) {
+                     if let Some(def) = blessing_definitions.get(handle) {
+                          if def.effect == BlessingEffect::IncreaseMonsterLifetime {
+                              // Example: +1s per level
+                              extra_seconds += 1.0 * (*level as f32);
+                          }
+                     }
+                 }
+            }
+
+            if extra_seconds > 0.0 {
+                let current_duration = lifetime.0.duration();
+                let new_duration = current_duration + std::time::Duration::from_secs_f32(extra_seconds);
+                lifetime.0.set_duration(new_duration);
+                debug!("Applied blessing: +{}s to lifetime. New duration: {:?}", extra_seconds, new_duration);
+            }
+         }
     }
 }

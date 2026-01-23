@@ -1,0 +1,10 @@
+(
+    id: "increase_lifetime",
+    name: "Enduring Evil",
+    description: "Monsters live longer.",
+    effect: IncreaseMonsterLifetime,
+    cost: Linear((
+        base: 10.0,
+        increment: 5.0,
+    )),
+)
