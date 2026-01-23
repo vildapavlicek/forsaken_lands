@@ -1644,6 +1644,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "buildings"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "buildings_assets",
+ "buildings_components",
+ "crafting_resources",
+ "shared_components",
+ "unlocks_events",
+ "wallet",
+]
+
+[[package]]
+name = "buildings_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "buildings_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1867,6 +1894,9 @@ name = "core"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "buildings",
+ "buildings_assets",
+ "buildings_components",
  "crafting",
  "crafting_events",
  "crafting_resources",

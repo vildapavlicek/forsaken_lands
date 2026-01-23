@@ -10,6 +10,8 @@ use {
     unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin,
     village_ui::VillageUiPlugin, wallet::WalletPlugin, weapon_assets::WeaponAssetsPlugin,
     weapon_factory::WeaponFactoryPlugin, widgets::WidgetsPlugin,
+    buildings::BuildingsPlugin, buildings_components::BuildingsComponentsPlugin,
+    buildings_assets::BuildingsAssetsPlugin,
 };
 
 pub struct CorePlugin;
@@ -23,6 +25,9 @@ impl Plugin for CorePlugin {
             )
             .add_plugins((
                 LoadingManagerPlugin,
+                BuildingsPlugin,
+                BuildingsComponentsPlugin,
+                BuildingsAssetsPlugin,
                 CraftingPlugin,
                 CraftingResourcesPlugin,
                 CraftingUiPlugin,

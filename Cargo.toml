@@ -5,6 +5,8 @@ edition = "2024"
 
 [workspace]
 members = [
+  "buildings",
+  "components/buildings_components",
   "components/crafting_components",
   "components/divinity_components",
   "components/enemy_components",
@@ -22,6 +24,7 @@ members = [
   "events/hero_events",
   "events/unlocks_events",
   "events/weapon_factory_events",
+  "game_assets/buildings_assets",
   "game_assets/portal_assets",
   "game_assets/recipes_assets",
   "game_assets/research_assets",
@@ -55,6 +58,9 @@ members = [
 [workspace.dependencies]
 bevy = { version = "0.18", default-features = false, features = ["2d", "dev"] }
 bevy_common_assets = { version = "0.15", features = ["ron"] }
+buildings = { path = "buildings" }
+buildings_assets = { path = "game_assets/buildings_assets" }
+buildings_components = { path = "components/buildings_components" }
 core = { path = "core" }
 crafting = { path = "crafting" }
 crafting_components = { path = "components/crafting_components" }

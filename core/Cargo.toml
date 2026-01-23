@@ -5,6 +5,9 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+buildings.workspace = true
+buildings_assets.workspace = true
+buildings_components.workspace = true
 crafting.workspace = true
 crafting_events.workspace = true
 crafting_resources.workspace = true

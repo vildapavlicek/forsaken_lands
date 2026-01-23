@@ -1,7 +1,7 @@
 (
     id: "bone_idol",
     display_name: "Bone Idol",
-    category: Idols,
+    category: Construction,
     craft_time: 5.0,
     cost: {
         "bones": 50,
