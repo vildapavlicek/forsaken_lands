@@ -20,4 +20,7 @@ village_components.workspace = true
 wallet.workspace = true
 widgets.workspace = true
 research_assets.workspace = true
+blessings.workspace = true
+blessings_ui.workspace = true
+growth.workspace = true
 

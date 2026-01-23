@@ -1619,6 +1619,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "blessings_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "blessings",
+ "growth",
+ "wallet",
+ "widgets",
+]
+
+[[package]]
 name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5230,9 +5241,12 @@ name = "village_ui"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "blessings",
+ "blessings_ui",
  "crafting",
  "crafting_ui",
  "enemy_encyclopedia",
+ "growth",
  "hero_components",
  "hero_ui",
  "recipes_assets",

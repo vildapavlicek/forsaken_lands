@@ -40,6 +40,7 @@ members = [
   "save_load",
   "states",
   "system_schedule",
+  "ui/blessings_ui",
   "ui/crafting_ui",
   "ui/enemy_encyclopedia",
   "ui/hero_ui",
@@ -59,6 +60,8 @@ members = [
 [workspace.dependencies]
 bevy = { version = "0.18", default-features = false, features = ["2d", "dev"] }
 bevy_common_assets = { version = "0.15", features = ["ron"] }
+blessings = { path = "blessings" }
+blessings_ui = { path = "ui/blessings_ui" }
 buildings = { path = "buildings" }
 buildings_assets = { path = "game_assets/buildings_assets" }
 buildings_components = { path = "components/buildings_components" }
@@ -73,6 +76,7 @@ divinity_events = { path = "events/divinity_events" }
 enemy_components = { path = "components/enemy_components" }
 enemy_encyclopedia = { path = "ui/enemy_encyclopedia" }
 equipment_events = { path = "events/equipment_events" }
+growth = { path = "growth" }
 hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }
 hero_ui = { path = "ui/hero_ui" }

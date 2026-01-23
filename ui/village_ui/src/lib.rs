@@ -1,5 +1,7 @@
 use {
     bevy::{picking::prelude::*, prelude::*},
+    blessings::{BlessingDefinition, Blessings},
+    growth::GrowthStrategy,
     crafting::{Available, RecipeNode},
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
@@ -42,6 +44,7 @@ pub enum VillageContent {
     Research,
     Encyclopedia,
     Heroes,
+    Blessings,
 }
 
 /// Root of the village UI
@@ -182,6 +185,13 @@ impl Command for SpawnMenuContentCommand {
                 "🦸 Heroes",
                 VillageMenuButton {
                     target: VillageContent::Heroes,
+                },
+            );
+            spawn_menu_button(
+                parent,
+                "✨ Blessings",
+                VillageMenuButton {
+                    target: VillageContent::Blessings,
                 },
             );
         });
@@ -453,6 +463,73 @@ impl Command for SpawnEncyclopediaContentCommand {
 }
 
 // ============================================================================
+// Blessings Content Command
+// ============================================================================
+
+struct SpawnBlessingsContentCommand;
+
+impl Command for SpawnBlessingsContentCommand {
+    fn apply(self, world: &mut World) {
+        let mut query =
+            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
+
+        let Some((container, children)) = query.iter(world).next() else {
+            return;
+        };
+
+        // Despawn existing children
+        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
+        for child in to_despawn {
+            world.commands().entity(child).despawn();
+        }
+
+        // Fetch required resources using resource_scope to avoid borrow conflicts
+        let mut data = Vec::new();
+
+        world.resource_scope(|world, assets: Mut<Assets<BlessingDefinition>>| {
+            let wallet = world.resource::<Wallet>();
+            let current_entropy = wallet.resources.get("entropy").copied().unwrap_or(0);
+            
+             // Fetch blessings component
+            let mut blessings_query = world.query::<&Blessings>();
+            
+             // If blessings component exists
+             if let Some(blessings) = blessings_query.iter(world).next() {
+                  for (id, def) in assets.iter() {
+                    let id_str = def.id.clone();
+                    let current_level = blessings.unlocked.get(&id_str).copied().unwrap_or(0);
+                    let cost = def.cost.calculate(current_level) as u32; 
+                    let can_afford = current_entropy >= cost;
+    
+                    // Skip if keeping internal ids clean, but we used id in loop
+                    let _ = id; 
+    
+                    data.push(blessings_ui::BlessingDisplayData {
+                        id: id_str,
+                        name: def.name.clone(),
+                        description: def.description.clone(),
+                        current_level,
+                        cost,
+                        can_afford,
+                    });
+                }
+             }
+        });
+         
+         data.sort_by(|a, b| a.name.cmp(&b.name));
+
+        // Spawn back button and blessings content
+        world.commands().entity(container).with_children(|parent| {
+            // Back button
+            spawn_menu_button(parent, "← Back", VillageBackButton);
+
+            // Spawn blessings content
+            blessings_ui::spawn_blessings_content(parent, data);
+        });
+    }
+}
+
+// ============================================================================
 // Heroes Content Command
 // ============================================================================
 
@@ -607,6 +684,10 @@ fn handle_menu_button(
                     VillageContent::Heroes => {
                         next_state.set(EnemyEncyclopediaState::Closed);
                         commands.queue(SpawnHeroesContentCommand);
+                    }
+                    VillageContent::Blessings => {
+                        next_state.set(EnemyEncyclopediaState::Closed);
+                        commands.queue(SpawnBlessingsContentCommand);
                     }
                 }
             }

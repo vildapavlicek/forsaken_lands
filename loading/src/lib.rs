@@ -3,7 +3,7 @@ mod resources;
 use {
     crate::resources::{
         EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle, UnlocksFolderHandle,
-        WeaponsFolderHandle,
+        WeaponsFolderHandle, BlessingsFolderHandle,
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,
@@ -40,6 +40,7 @@ impl Plugin for LoadingManagerPlugin {
                     load_research_assets,
                     load_recipes_assets,
                     load_weapons_assets,
+                    load_blessings_assets,
                 ),
             )
             .add_systems(OnEnter(LoadingPhase::Assets), update_scene_handle)
@@ -156,6 +157,11 @@ fn load_weapons_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(WeaponsFolderHandle(handle));
 }
 
+fn load_blessings_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("blessings");
+    cmd.insert_resource(BlessingsFolderHandle(handle));
+}
+
 #[allow(clippy::too_many_arguments)]
 
 fn check_assets_loaded(
@@ -169,6 +175,7 @@ fn check_assets_loaded(
     research: Res<ResearchFolderHandle>,
     recipes: Res<RecipesFolderHandle>,
     weapons: Res<WeaponsFolderHandle>,
+    blessings: Res<BlessingsFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
     weapon_assets: Res<Assets<WeaponDefinition>>,
     scenes: Res<Assets<DynamicScene>>,
@@ -192,6 +199,7 @@ fn check_assets_loaded(
         && asset_server.is_loaded_with_dependencies(research.0.id())
         && asset_server.is_loaded_with_dependencies(recipes.0.id())
         && asset_server.is_loaded_with_dependencies(weapons.0.id())
+        && asset_server.is_loaded_with_dependencies(blessings.0.id())
     {
         info!("assets loaded");
 

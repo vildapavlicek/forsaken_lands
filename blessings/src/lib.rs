@@ -35,13 +35,12 @@ fn purchase_blessing(
     mut commands: Commands,
     mut blessings_query: Query<(Entity, &mut Blessings)>,
     mut wallet: ResMut<Wallet>,
-    blessing_state: Res<BlessingState>,
+    _blessing_state: Res<BlessingState>,
     blessing_definitions: Res<Assets<BlessingDefinition>>,
 ) {
     let event = trigger.event();
     if let Ok((entity, mut blessings)) = blessings_query.single_mut() {
-        if let Some(handle) = blessing_state.blessings.get(&event.blessing_id) {
-            if let Some(def) = blessing_definitions.get(handle) {
+    if let Some((_, def)) = blessing_definitions.iter().find(|(_, d)| d.id == event.blessing_id) {
                 let current_level = *blessings.unlocked.get(&event.blessing_id).unwrap_or(&0);
                 let cost = def.cost.calculate(current_level);
 
@@ -69,7 +68,6 @@ fn purchase_blessing(
                 } else {
                     warn!("Not enough Entropy. Cost: {}, Current: {}", cost, current_entropy);
                 }
-            }
         }
     }
 }
