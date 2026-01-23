@@ -55,8 +55,17 @@ pub struct Damage(pub f32);
 #[derive(Component, Default)]
 pub struct AttackRange(pub f32);
 
+/// Governs the frequency of attacks for a weapon.
+///
+/// This component acts as a cooldown gate for the combat system.
+///
+/// # Usage
+/// - **Combat Loop**: The `hero_attack_intent_system` ticks this timer and only generates
+///   an `AttackIntent` event if the timer is finished.
+/// - **Reset**: The timer is manually reset by the system *after* a successful intent is generated.
 #[derive(Component, Default)]
 pub struct AttackSpeed {
+    /// The cooldown state. Its `duration` defines the minimum interval (seconds) between attacks.
     pub timer: Timer,
 }
 
