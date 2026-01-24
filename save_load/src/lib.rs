@@ -25,7 +25,9 @@ pub struct SaveGame {
 
 /// Event to trigger loading the latest save file.
 #[derive(Event)]
-pub struct LoadGame;
+pub struct LoadGame {
+    is_autosave: bool,
+}
 
 /// Timer resource for automatic saves.
 #[derive(Resource)]
@@ -87,7 +89,12 @@ fn trigger_save_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: C
 fn trigger_load_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
     if keyboard.just_pressed(KeyCode::F9) {
         info!("Load triggered (F9)");
-        commands.trigger(LoadGame);
+        commands.trigger(LoadGame { is_autosave: false });
+    }
+
+    if keyboard.just_pressed(KeyCode::F8) {
+        info!("Load triggered (F9)");
+        commands.trigger(LoadGame { is_autosave: true });
     }
 }
 
@@ -170,19 +177,25 @@ fn execute_save(
 
 /// Observer that handles the LoadGame event.
 fn execute_load(
-    _trigger: On<LoadGame>,
+    trigger: On<LoadGame>,
     _commands: Commands,
     mut scene_to_load: ResMut<loading::SceneToLoad>,
     mut next_state: ResMut<NextState<GameState>>,
 ) {
+    let LoadGame { is_autosave } = trigger.event();
     let saves_dir = Path::new("assets/saves");
 
     // Find the latest save file
-    let latest_save = match find_latest_save(saves_dir) {
-        Some(path) => path,
-        None => {
-            warn!("No save files found in saves directory");
-            return;
+
+    let latest_save = if *is_autosave {
+        Path::new("assets/saves/autosave.scn.ron").into()
+    } else {
+        match find_latest_save(saves_dir) {
+            Some(path) => path,
+            None => {
+                warn!("No save files found in saves directory");
+                return;
+            }
         }
     };
 
