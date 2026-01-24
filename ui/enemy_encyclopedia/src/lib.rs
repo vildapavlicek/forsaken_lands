@@ -50,8 +50,20 @@ pub fn spawn_enemy_encyclopedia_content(
                     row.spawn(Text::new(entry.display_name.clone()))
                         .insert(TextColor(Color::WHITE));
 
-                    row.spawn(Text::new(format!("Kills: {}", entry.kill_count)))
-                        .insert(TextColor(Color::srgb(0.7, 0.7, 0.7)));
+                    row.spawn(Node {
+                        flex_direction: FlexDirection::Row,
+                        column_gap: Val::Px(15.0),
+                        ..default()
+                    })
+                    .with_children(|stats| {
+                        stats
+                            .spawn(Text::new(format!("Kills: {}", entry.kill_count)))
+                            .insert(TextColor(Color::srgb(0.7, 0.7, 0.7)));
+
+                        stats
+                            .spawn(Text::new(format!("Escapes: {}", entry.escape_count)))
+                            .insert(TextColor(Color::srgb(0.7, 0.7, 0.7)));
+                    });
                 });
             }
 
@@ -107,8 +119,20 @@ fn update_encyclopedia_ui(
                 row.spawn(Text::new(entry.display_name.clone()))
                     .insert(TextColor(Color::WHITE));
 
-                row.spawn(Text::new(format!("Kills: {}", entry.kill_count)))
-                    .insert(TextColor(Color::srgb(0.7, 0.7, 0.7)));
+                row.spawn(Node {
+                    flex_direction: FlexDirection::Row,
+                    column_gap: Val::Px(15.0),
+                    ..default()
+                })
+                .with_children(|stats| {
+                    stats
+                        .spawn(Text::new(format!("Kills: {}", entry.kill_count)))
+                        .insert(TextColor(Color::srgb(0.7, 0.7, 0.7)));
+
+                    stats
+                        .spawn(Text::new(format!("Escapes: {}", entry.escape_count)))
+                        .insert(TextColor(Color::srgb(0.7, 0.7, 0.7)));
+                });
             });
         }
 

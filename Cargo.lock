@@ -5227,6 +5227,7 @@ dependencies = [
  "divinity_components",
  "divinity_events",
  "enemy_components",
+ "enemy_events",
  "equipment_events",
  "hero_components",
  "hero_events",

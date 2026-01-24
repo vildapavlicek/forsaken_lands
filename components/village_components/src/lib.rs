@@ -8,6 +8,7 @@ use {
 pub struct EncyclopediaEntry {
     pub display_name: String,
     pub kill_count: u64,
+    pub escape_count: u64,
 }
 
 /// Stores the history of defeated enemies and their statistics.
@@ -39,13 +40,25 @@ pub struct WeaponInventory {
 pub struct Village;
 
 impl EnemyEncyclopedia {
-    pub fn increment_kill_count(&mut self, enemy_id: String, display_name: String) {
+    pub fn increment_kill_count(&mut self, enemy_id: &str, display_name: &str) {
         self.inner
-            .entry(enemy_id)
+            .entry(enemy_id.to_string())
             .and_modify(|e| e.kill_count += 1)
             .or_insert(EncyclopediaEntry {
-                display_name,
+                display_name: display_name.to_string(),
                 kill_count: 1,
+                escape_count: 0,
+            });
+    }
+
+    pub fn increment_escape_count(&mut self, enemy_id: &str, display_name: &str) {
+        self.inner
+            .entry(enemy_id.to_string())
+            .and_modify(|e| e.escape_count += 1)
+            .or_insert(EncyclopediaEntry {
+                display_name: display_name.to_string(),
+                kill_count: 0,
+                escape_count: 1,
             });
     }
 }

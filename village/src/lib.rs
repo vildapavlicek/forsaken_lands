@@ -3,6 +3,7 @@ use {
     divinity_components::{Divinity, DivinityStats},
     divinity_events::IncreaseDivinity,
     enemy_components::MonsterId,
+    enemy_events::EnemyEscaped,
     hero_events::EnemyKilled,
     shared_components::DisplayName,
     unlocks_events::UnlockAchieved,
@@ -35,6 +36,7 @@ impl Plugin for VillagePlugin {
             .register_type::<EncyclopediaEntry>();
 
         app.add_observer(update_encyclopedia);
+        app.add_observer(update_encyclopedia_on_escape);
         app.add_observer(handle_divinity_increase);
         app.add_observer(divinity_increase_unlock);
         app.add_observer(equipment::handle_equip_weapon);
@@ -51,6 +53,7 @@ fn update_encyclopedia(
     mut commands: Commands,
 ) {
     let Ok((monster_id, display_name)) = monster_query.get(trigger.event().entity) else {
+        warn!(entity = ?trigger.event().entity, "failed to update encyclopedia: enemy data not found");
         return;
     };
 
@@ -59,7 +62,7 @@ fn update_encyclopedia(
         .unwrap_or_else(|| monster_id.0.clone());
 
     for mut encyclopedia in &mut village_query {
-        encyclopedia.increment_kill_count(monster_id.0.clone(), display_name.clone());
+        encyclopedia.increment_kill_count(&monster_id.0, &display_name);
         let kill_count = encyclopedia.inner.get(&monster_id.0).unwrap().kill_count;
         trace!(
             monster_id = %monster_id.0,
@@ -71,6 +74,40 @@ fn update_encyclopedia(
         commands.trigger(unlocks_events::ValueChanged {
             topic: format!("kills:{}", monster_id.0),
             value: kill_count as f32,
+        });
+    }
+}
+
+fn update_encyclopedia_on_escape(
+    trigger: On<EnemyEscaped>,
+    mut village_query: Query<&mut EnemyEncyclopedia, With<Village>>,
+    monster_query: Query<(&MonsterId, Option<&DisplayName>)>,
+    mut commands: Commands,
+) {
+    let Ok((monster_id, display_name)) = monster_query.get(trigger.event().entity) else {
+        warn!(entity = ?trigger.event().entity, "failed to update encyclopedia (escape): enemy data not found");
+        return;
+    };
+
+    let display_name = display_name
+        .map(|d| d.0.clone())
+        .unwrap_or_else(|| monster_id.0.clone());
+
+    for mut encyclopedia in &mut village_query {
+        encyclopedia.increment_escape_count(&monster_id.0, &display_name);
+        let entry = encyclopedia.inner.get(&monster_id.0).unwrap();
+        let escape_count = entry.escape_count;
+
+        trace!(
+            monster_id = %monster_id.0,
+            escape_count = %escape_count,
+            "updated encyclopedia (escape)",
+        );
+
+        // Notify unlock system about escape count change
+        commands.trigger(unlocks_events::ValueChanged {
+            topic: format!("escapes:{}", monster_id.0),
+            value: escape_count as f32,
         });
     }
 }
