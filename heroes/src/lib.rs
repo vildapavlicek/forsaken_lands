@@ -312,12 +312,16 @@ pub fn clean_up_heroes(
     mut commands: Commands,
     heroes: Query<Entity, With<Hero>>,
     projectiles: Query<Entity, With<Projectile>>,
+    loose_weapons: Query<Entity, (With<Weapon>, Without<ChildOf>)>,
 ) {
-    debug!("Cleaning up heroes and projectiles");
+    debug!("Cleaning up heroes, projectiles, and loose weapons");
     for entity in heroes.iter() {
         commands.entity(entity).despawn();
     }
     for entity in projectiles.iter() {
+        commands.entity(entity).despawn();
+    }
+    for entity in loose_weapons.iter() {
         commands.entity(entity).despawn();
     }
 }
