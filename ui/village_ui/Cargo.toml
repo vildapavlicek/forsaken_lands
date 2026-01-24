@@ -17,6 +17,7 @@ shared_components.workspace = true
 states.workspace = true
 unlock_states.workspace = true
 village_components.workspace = true
+buildings_components.workspace = true
 wallet.workspace = true
 widgets.workspace = true
 research_assets.workspace = true

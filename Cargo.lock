@@ -5243,6 +5243,7 @@ dependencies = [
  "bevy",
  "blessings",
  "blessings_ui",
+ "buildings_components",
  "crafting",
  "crafting_ui",
  "enemy_encyclopedia",

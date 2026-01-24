@@ -608,36 +608,52 @@ pub fn spawn_icon_button<M: Component>(
 // ============================================================================
 
 /// Spawns a large menu button for navigation (e.g., in village menu)
-pub fn spawn_menu_button<M: Component>(parent: &mut ChildSpawnerCommands, text: &str, marker: M) {
-    parent
-        .spawn((
+pub fn spawn_menu_button<M: Component>(
+    parent: &mut ChildSpawnerCommands,
+    text: &str,
+    marker: M,
+    enabled: bool,
+) {
+    let mut cmd = parent.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Px(50.0),
+            margin: UiRect::bottom(Val::Px(10.0)),
+            border: UiRect::all(Val::Px(2.0)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        BackgroundColor(UiTheme::BUTTON_NORMAL),
+        marker,
+    ));
+
+    if enabled {
+        cmd.insert((
             Button,
-            Node {
-                width: Val::Percent(100.0),
-                height: Val::Px(50.0),
-                margin: UiRect::bottom(Val::Px(10.0)),
-                border: UiRect::all(Val::Px(2.0)),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
             BorderColor::all(UiTheme::TAB_BORDER),
-            BackgroundColor(UiTheme::BUTTON_NORMAL),
             AnimatedButton {
                 normal_color: UiTheme::BUTTON_NORMAL,
                 hover_color: UiTheme::BUTTON_HOVER,
                 pressed_color: UiTheme::BUTTON_PRESSED,
             },
-            marker,
-        ))
-        .with_children(|btn| {
-            btn.spawn((
-                Text::new(text),
-                TextFont {
-                    font_size: 20.0,
-                    ..default()
-                },
-                TextColor(UiTheme::TEXT_PRIMARY),
-            ));
-        });
+        ));
+    } else {
+        cmd.insert(BorderColor::all(UiTheme::BORDER_DISABLED));
+    }
+
+    cmd.with_children(|btn| {
+        btn.spawn((
+            Text::new(text),
+            TextFont {
+                font_size: 20.0,
+                ..default()
+            },
+            TextColor(if enabled {
+                UiTheme::TEXT_PRIMARY
+            } else {
+                UiTheme::TEXT_SECONDARY
+            }),
+        ));
+    });
 }

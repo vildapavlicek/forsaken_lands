@@ -1,6 +1,7 @@
 use {
     bevy::{picking::prelude::*, prelude::*},
     blessings::{BlessingDefinition, Blessings},
+    buildings_components::TheMaw,
     growth::GrowthStrategy,
     crafting::{Available, RecipeNode},
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
@@ -157,6 +158,9 @@ impl Command for SpawnMenuContentCommand {
             world.commands().entity(child).despawn();
         }
 
+        // Check if The Maw exists to enable Blessings
+        let maw_exists = !world.query::<&TheMaw>().iter(world).next().is_none();
+
         // Spawn menu buttons
         world.commands().entity(container).with_children(|parent| {
             spawn_menu_button(
@@ -165,6 +169,7 @@ impl Command for SpawnMenuContentCommand {
                 VillageMenuButton {
                     target: VillageContent::Crafting,
                 },
+                true,
             );
             spawn_menu_button(
                 parent,
@@ -172,6 +177,7 @@ impl Command for SpawnMenuContentCommand {
                 VillageMenuButton {
                     target: VillageContent::Research,
                 },
+                true,
             );
             spawn_menu_button(
                 parent,
@@ -179,6 +185,7 @@ impl Command for SpawnMenuContentCommand {
                 VillageMenuButton {
                     target: VillageContent::Encyclopedia,
                 },
+                true,
             );
             spawn_menu_button(
                 parent,
@@ -186,13 +193,15 @@ impl Command for SpawnMenuContentCommand {
                 VillageMenuButton {
                     target: VillageContent::Heroes,
                 },
+                true,
             );
             spawn_menu_button(
                 parent,
-                "✨ Blessings",
+                maw_exists.then_some("✨ Blessings").unwrap_or("✨ Blessings (Locked)"),
                 VillageMenuButton {
                     target: VillageContent::Blessings,
                 },
+                maw_exists,
             );
         });
     }
@@ -275,7 +284,7 @@ impl Command for SpawnCraftingContentCommand {
         // Spawn back button and crafting content
         world.commands().entity(container).with_children(|parent| {
             // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton);
+            spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
             // Spawn crafting content
             crafting_ui::spawn_crafting_content(parent, crafting_data);
@@ -414,7 +423,7 @@ impl Command for SpawnResearchContentCommand {
         // Spawn back button and research content
         world.commands().entity(container).with_children(|parent| {
             // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton);
+            spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
             // Spawn research content
             research_ui::spawn_research_content(parent, research_data);
@@ -454,7 +463,7 @@ impl Command for SpawnEncyclopediaContentCommand {
         // Spawn back button and encyclopedia content
         world.commands().entity(container).with_children(|parent| {
             // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton);
+            spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
             // Spawn encyclopedia content
             enemy_encyclopedia::spawn_enemy_encyclopedia_content(parent, &encyclopedia);
@@ -521,7 +530,7 @@ impl Command for SpawnBlessingsContentCommand {
         // Spawn back button and blessings content
         world.commands().entity(container).with_children(|parent| {
             // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton);
+            spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
             // Spawn blessings content
             blessings_ui::spawn_blessings_content(parent, data);
@@ -623,7 +632,7 @@ impl Command for SpawnHeroesContentCommand {
         // Spawn back button and heroes content
         world.commands().entity(container).with_children(|parent| {
             // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton);
+            spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
             // Add HeroUiRoot marker for state tracking
             parent.spawn(HeroUiRoot);
