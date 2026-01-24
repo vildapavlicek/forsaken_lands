@@ -1,7 +1,7 @@
 (
     id: "vision_i",
     name: "Vision I",
-    description: "God has sent us a message. We shall worship.",
+    description: "God gave us a vision.",
     cost: {  },
     time_required: 180,
     max_repeats: 1,

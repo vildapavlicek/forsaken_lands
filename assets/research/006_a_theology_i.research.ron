@@ -1,7 +1,7 @@
 (
     id: "theology_i",
     name: "Theology I",
-    description: "Who made the portal? Are there still gods?",
+    description: "Who made the portal?",
     cost: { "xykego": 20 },
     time_required: 150,
     max_repeats: 1,
