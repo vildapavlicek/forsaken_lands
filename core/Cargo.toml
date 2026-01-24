@@ -14,6 +14,7 @@ crafting_events.workspace = true
 crafting_resources.workspace = true
 crafting_ui.workspace = true
 enemy_encyclopedia.workspace = true
+enemy_events.workspace = true
 divinity_components.workspace = true
 loading.workspace = true
 hero_components.workspace = true

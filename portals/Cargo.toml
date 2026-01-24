@@ -17,3 +17,4 @@ system_schedule.workspace = true
 enemy_components.workspace = true
 hero_events.workspace = true
 portal_assets.workspace = true
+enemy_events.workspace = true

@@ -1,18 +1,19 @@
 use {
     bevy::prelude::*,
+    blessings::{BlessingDefinition, BlessingEffect, BlessingState, Blessings},
+    buildings_components::TheMaw,
     divinity_components::CurrentDivinity,
     enemy_components::{
         Dead, Drop, Drops, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
         MovementSpeed, TargetDestination,
     },
+    enemy_events::EnemyEscaped,
     hero_events::EnemyKilled,
     loading::GameAssets,
     portal_assets::{SpawnCondition, SpawnTable, SpawnType},
     portal_components::{Portal, SpawnTableId, SpawnTimer},
     rand::{distr::weighted::WeightedIndex, prelude::*},
     system_schedule::GameSchedule,
-    blessings::{Blessings, BlessingEffect, BlessingState, BlessingDefinition},
-    buildings_components::TheMaw,
 };
 
 pub struct PortalsPlugin;
@@ -41,10 +42,12 @@ impl Plugin for PortalsPlugin {
             manage_enemy_lifecycle.in_set(GameSchedule::FrameEnd),
         );
         app.add_systems(Update, draw_range_gizmos);
+        app.add_systems(Update, update_floating_text);
 
         app.add_observer(assign_enemy_destination);
         app.add_observer(assign_enemy_destination);
         app.add_observer(apply_blessing_to_lifetime);
+        app.add_observer(on_enemy_escaped);
         app.add_systems(OnExit(states::GameState::Running), clean_up_portals);
     }
 }
@@ -61,25 +64,29 @@ fn enemy_spawn_system(
 ) {
     // Calculate spawn rate modifier
     let mut speed_modifier = 1.0;
-     if let Ok(blessings) = maw_query.single() {
-       for (id, level) in &blessings.unlocked {
+    if let Ok(blessings) = maw_query.single() {
+        for (id, level) in &blessings.unlocked {
             if let Some(handle) = blessing_state.blessings.get(id) {
                 if let Some(def) = blessing_definitions.get(handle) {
-                     if def.effect == BlessingEffect::DecreaseSpawnTimer {
-                         // Example: 10% faster per level (compounding? or linear?)
-                         // Let's assume linear for now or use the base_stats logic if defined,
-                         // but for prototype, hardcode effect logic:
-                         // modifier = 1.0 + (0.1 * level)
-                         speed_modifier += 0.1 * (*level as f32);
-                     }
+                    if def.effect == BlessingEffect::DecreaseSpawnTimer {
+                        // Example: 10% faster per level (compounding? or linear?)
+                        // Let's assume linear for now or use the base_stats logic if defined,
+                        // but for prototype, hardcode effect logic:
+                        // modifier = 1.0 + (0.1 * level)
+                        speed_modifier += 0.1 * (*level as f32);
+                    }
                 }
             }
-       }
+        }
     }
 
     for (mut timer, table_id, divinity) in query.iter_mut() {
         let divinity = **divinity;
-        if timer.0.tick(time.delta().mul_f32(speed_modifier)).just_finished() {
+        if timer
+            .0
+            .tick(time.delta().mul_f32(speed_modifier))
+            .just_finished()
+        {
             let table_handle = if let Some(handle) = game_assets.spawn_tables.get(&table_id.0) {
                 handle
             } else {
@@ -162,6 +169,7 @@ fn manage_enemy_lifecycle(
         if let Some(mut lifetime) = lifetime_opt {
             lifetime.0.tick(time.delta());
             if lifetime.0.is_finished() {
+                commands.trigger(EnemyEscaped { entity });
                 should_despawn = true;
             }
         }
@@ -175,7 +183,7 @@ fn manage_enemy_lifecycle(
                     .insert(Dead)
                     .remove::<(Sprite, Transform)>();
                 // Prevent despawn this frame to avoid conflict
-                should_despawn = false;
+                should_despawn = true;
             }
         }
 
@@ -347,25 +355,88 @@ fn apply_blessing_to_lifetime(
     blessing_definitions: Res<Assets<BlessingDefinition>>,
 ) {
     if let Ok(mut lifetime) = query.get_mut(trigger.entity) {
-          if let Ok(blessings) = maw_query.single() {
+        if let Ok(blessings) = maw_query.single() {
             let mut extra_seconds = 0.0;
             for (id, level) in &blessings.unlocked {
-                 if let Some(handle) = blessing_state.blessings.get(id) {
-                     if let Some(def) = blessing_definitions.get(handle) {
-                          if def.effect == BlessingEffect::IncreaseMonsterLifetime {
-                              // Example: +1s per level
-                              extra_seconds += 1.0 * (*level as f32);
-                          }
-                     }
-                 }
+                if let Some(handle) = blessing_state.blessings.get(id) {
+                    if let Some(def) = blessing_definitions.get(handle) {
+                        if def.effect == BlessingEffect::IncreaseMonsterLifetime {
+                            // Example: +1s per level
+                            extra_seconds += 1.0 * (*level as f32);
+                        }
+                    }
+                }
             }
 
             if extra_seconds > 0.0 {
                 let current_duration = lifetime.0.duration();
-                let new_duration = current_duration + std::time::Duration::from_secs_f32(extra_seconds);
+                let new_duration =
+                    current_duration + std::time::Duration::from_secs_f32(extra_seconds);
                 lifetime.0.set_duration(new_duration);
-                debug!("Applied blessing: +{}s to lifetime. New duration: {:?}", extra_seconds, new_duration);
+                debug!(
+                    "Applied blessing: +{}s to lifetime. New duration: {:?}",
+                    extra_seconds, new_duration
+                );
             }
-         }
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct FloatingText {
+    pub velocity: Vec2,
+    pub lifetime: Timer,
+}
+
+fn on_enemy_escaped(trigger: On<EnemyEscaped>, mut commands: Commands, query: Query<&Transform>) {
+    let event = trigger.event();
+    let entity = event.entity;
+
+    // Attempt to get the position of the escaping enemy
+    // Note: Since we trigger before despawning, the entity should still exist with its components.
+    let position = if let Ok(transform) = query.get(entity) {
+        transform.translation
+    } else {
+        warn!(
+            "EnemyEscaped event triggered but Transform not found for entity {:?}",
+            entity
+        );
+        Vec3::ZERO
+    };
+
+    commands.spawn((
+        Text2d::new("Escaped!"),
+        TextFont {
+            font_size: 20.0,
+            ..default()
+        },
+        TextColor(Color::srgb(1.0, 0.0, 0.0)),
+        Transform::from_translation(position + Vec3::new(0.0, 20.0, 10.0)), // Offset slightly up and ensure z-index
+        FloatingText {
+            velocity: Vec2::new(0.0, 50.0), // Float up
+            lifetime: Timer::from_seconds(1.5, TimerMode::Once),
+        },
+    ));
+}
+
+fn update_floating_text(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Transform, &mut FloatingText, &mut TextColor)>,
+) {
+    for (entity, mut transform, mut floating, mut color) in query.iter_mut() {
+        floating.lifetime.tick(time.delta());
+
+        // Move
+        transform.translation.x += floating.velocity.x * time.delta_secs();
+        transform.translation.y += floating.velocity.y * time.delta_secs();
+
+        // Fade out
+        let alpha = floating.lifetime.fraction_remaining();
+        color.0.set_alpha(alpha);
+
+        if floating.lifetime.just_finished() {
+            commands.entity(entity).despawn();
+        }
     }
 }

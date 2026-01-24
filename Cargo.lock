@@ -1928,6 +1928,7 @@ dependencies = [
  "crafting_ui",
  "divinity_components",
  "enemy_encyclopedia",
+ "enemy_events",
  "hero_components",
  "hero_events",
  "hero_ui",
@@ -2376,6 +2377,13 @@ dependencies = [
  "states",
  "village_components",
  "widgets",
+]
+
+[[package]]
+name = "enemy_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
@@ -4098,6 +4106,7 @@ dependencies = [
  "divinity_components",
  "divinity_events",
  "enemy_components",
+ "enemy_events",
  "hero_events",
  "loading",
  "portal_assets",

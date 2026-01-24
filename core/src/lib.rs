@@ -1,7 +1,8 @@
 use {
     bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
     crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
-    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, hero_events::HeroEventsPlugin,
+    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, enemy_events::EnemyEventsPlugin,
+    hero_events::HeroEventsPlugin,
     heroes::HeroesPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
     portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
     progress_bars::ProgressBarsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
@@ -34,6 +35,7 @@ impl Plugin for CorePlugin {
                 CraftingUiPlugin,
                 DivinityComponentsPlugin,
                 EnemyEncyclopediaUiPlugin,
+                EnemyEventsPlugin,
                 HeroesPlugin,
                 HeroEventsPlugin,
                 PortalsPlugin,
