@@ -313,7 +313,7 @@ fn draw_range_gizmos(mut gizmos: Gizmos) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use {super::*, divinity_components::Divinity};
 
     #[test]
     fn test_current_divinity_spawn_filter() {

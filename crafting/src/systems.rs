@@ -5,7 +5,6 @@ use {
     crafting_resources::RecipeMap,
     recipes_assets::RecipeDefinition,
     unlocks_events::StatusCompleted,
-
 };
 
 /// Observer that handles StartCraftingRequest events.
@@ -58,7 +57,10 @@ pub fn on_recipe_unlock_achieved(
 ) {
     let event = trigger.event();
 
-    if let Some(recipe_id) = event.reward_id.strip_prefix(unlocks_events::RECIPE_REWARD_PREFIX) {
+    if let Some(recipe_id) = event
+        .reward_id
+        .strip_prefix(unlocks_events::RECIPE_REWARD_PREFIX)
+    {
         if let Some(&entity) = recipe_map.entities.get(recipe_id) {
             // Only transition if currently Locked
             if locked_query.get(entity).is_ok() {
@@ -89,8 +91,6 @@ pub fn update_crafting_progress(
         if crafting.timer.is_finished() {
             info!("Crafting complete for: {}", crafting.recipe_id);
 
-
-
             // Process all outcomes
             for outcome in &crafting.outcomes {
                 match outcome {
@@ -107,7 +107,11 @@ pub fn update_crafting_progress(
             // Despawn the crafting entity
             commands.entity(entity).despawn();
             commands.trigger(StatusCompleted {
-                topic: format!("{}{}", unlocks_events::CRAFTING_TOPIC_PREFIX, crafting.recipe_id),
+                topic: format!(
+                    "{}{}",
+                    unlocks_events::CRAFTING_TOPIC_PREFIX,
+                    crafting.recipe_id
+                ),
             });
         }
     }
@@ -125,9 +129,14 @@ pub fn on_crafting_completed(
 ) {
     let event = trigger.event();
 
-    if let Some(recipe_id) = event.topic.strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX) {
+    if let Some(recipe_id) = event
+        .topic
+        .strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX)
+    {
         // Check if this is a construction recipe
-        let is_construction = recipe_map.entities.get(recipe_id)
+        let is_construction = recipe_map
+            .entities
+            .get(recipe_id)
             .and_then(|&e| recipe_nodes.get(e).ok())
             .and_then(|node| recipe_assets.get(&node.handle))
             .map(|def| matches!(def.category, recipes_assets::RecipeCategory::Construction))

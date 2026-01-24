@@ -1,10 +1,10 @@
 use {
     bevy::prelude::*,
+    blessings::Blessings,
     buildings_components::{EntropyGenerator, TheMaw},
     shared_components::IncludeInSave,
-    unlocks_events::{StatusCompleted, ValueChanged, CRAFTING_TOPIC_PREFIX},
+    unlocks_events::{CRAFTING_TOPIC_PREFIX, StatusCompleted, ValueChanged},
     wallet::Wallet,
-    blessings::Blessings,
 };
 
 pub struct TheMawPlugin;
@@ -12,15 +12,12 @@ pub struct TheMawPlugin;
 impl Plugin for TheMawPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, generate_entropy)
-           .add_observer(on_construction_completed);
+            .add_observer(on_construction_completed);
     }
 }
 
 /// Spawns 'The Maw' when construction is completed.
-fn on_construction_completed(
-    trigger: On<StatusCompleted>,
-    mut commands: Commands,
-) {
+fn on_construction_completed(trigger: On<StatusCompleted>, mut commands: Commands) {
     let event = trigger.event();
     // Check if the completed crafting was "the_maw"
     // Topic format: "craft:{recipe_id}"
@@ -61,25 +58,31 @@ fn generate_entropy(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use bevy::prelude::*;
-    use buildings_components::EntropyGenerator;
-    use wallet::Wallet;
-    use std::time::Duration;
+    use {
+        super::*, bevy::prelude::*, buildings_components::EntropyGenerator, std::time::Duration,
+        wallet::Wallet,
+    };
 
     #[test]
     fn test_entropy_generation() {
         let mut app = App::new();
         // Don't use MinimalPlugins to avoid Time conflict, just add what we need
         app.init_resource::<Wallet>()
-           .init_resource::<Time>() // Initialize Time explicitly
-           .add_systems(Update, generate_entropy);
+            .init_resource::<Time>() // Initialize Time explicitly
+            .add_systems(Update, generate_entropy);
 
         // Spawn entity with EntropyGenerator
         app.world_mut().spawn(EntropyGenerator::default());
 
         // Initial check
-        assert_eq!(*app.world().resource::<Wallet>().resources.get("entropy").unwrap_or(&0), 0);
+        assert_eq!(
+            *app.world()
+                .resource::<Wallet>()
+                .resources
+                .get("entropy")
+                .unwrap_or(&0),
+            0
+        );
 
         // First update to initialize systems (Time delta is 0)
         app.update();
@@ -88,14 +91,14 @@ mod tests {
         let mut time = app.world().resource::<Time>().clone();
         time.advance_by(Duration::from_secs_f32(1.1));
         app.insert_resource(time);
-        
+
         // Run update to process the time advance
         app.update();
 
         // Check wallet
         let wallet = app.world().resource::<Wallet>();
         let entropy = *wallet.resources.get("entropy").unwrap_or(&0);
-        
+
         println!("Entropy in wallet: {}", entropy);
         assert_eq!(entropy, 1, "Expected 1 entropy after 1.1 seconds");
     }

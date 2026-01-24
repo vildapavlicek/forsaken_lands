@@ -1,9 +1,11 @@
-use bevy::prelude::*;
-use std::collections::HashMap;
-use bevy_common_assets::ron::RonAssetPlugin;
-use serde::{Deserialize, Serialize};
-use growth::GrowthStrategy;
-use wallet::Wallet;
+use {
+    bevy::prelude::*,
+    bevy_common_assets::ron::RonAssetPlugin,
+    growth::GrowthStrategy,
+    serde::{Deserialize, Serialize},
+    std::collections::HashMap,
+    wallet::Wallet,
+};
 
 pub struct BlessingsPlugin;
 
@@ -40,34 +42,45 @@ fn purchase_blessing(
 ) {
     let event = trigger.event();
     if let Ok((entity, mut blessings)) = blessings_query.single_mut() {
-    if let Some((_, def)) = blessing_definitions.iter().find(|(_, d)| d.id == event.blessing_id) {
-                let current_level = *blessings.unlocked.get(&event.blessing_id).unwrap_or(&0);
-                let cost = def.cost.calculate(current_level);
+        if let Some((_, def)) = blessing_definitions
+            .iter()
+            .find(|(_, d)| d.id == event.blessing_id)
+        {
+            let current_level = *blessings.unlocked.get(&event.blessing_id).unwrap_or(&0);
+            let cost = def.cost.calculate(current_level);
 
-                // Check affordability
-                let entropy_key = "entropy".to_string();
-                let current_entropy = *wallet.resources.get(&entropy_key).unwrap_or(&0);
-                
-                if current_entropy >= cost as u32 {
-                     // Deduct cost
-                     if let Some(val) = wallet.resources.get_mut(&entropy_key) {
-                         *val -= cost as u32;
-                     }
-                     
-                     // Increment level
-                     let new_level = current_level + 1;
-                     blessings.unlocked.insert(event.blessing_id.clone(), new_level);
-                     
-                     info!("Purchased blessing {}. New Level: {}", event.blessing_id, new_level);
-                     
-                     commands.trigger(BlessingPurchased {
-                         blessing_id: event.blessing_id.clone(),
-                         new_level,
-                         buyer: entity,
-                     });
-                } else {
-                    warn!("Not enough Entropy. Cost: {}, Current: {}", cost, current_entropy);
+            // Check affordability
+            let entropy_key = "entropy".to_string();
+            let current_entropy = *wallet.resources.get(&entropy_key).unwrap_or(&0);
+
+            if current_entropy >= cost as u32 {
+                // Deduct cost
+                if let Some(val) = wallet.resources.get_mut(&entropy_key) {
+                    *val -= cost as u32;
                 }
+
+                // Increment level
+                let new_level = current_level + 1;
+                blessings
+                    .unlocked
+                    .insert(event.blessing_id.clone(), new_level);
+
+                info!(
+                    "Purchased blessing {}. New Level: {}",
+                    event.blessing_id, new_level
+                );
+
+                commands.trigger(BlessingPurchased {
+                    blessing_id: event.blessing_id.clone(),
+                    new_level,
+                    buyer: entity,
+                });
+            } else {
+                warn!(
+                    "Not enough Entropy. Cost: {}, Current: {}",
+                    cost, current_entropy
+                );
+            }
         }
     }
 }

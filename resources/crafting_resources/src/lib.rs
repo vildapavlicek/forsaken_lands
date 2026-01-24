@@ -57,7 +57,7 @@ impl Plugin for CraftingResourcesPlugin {
 
         // New entity-based resources
         app.init_resource::<RecipeMap>()
-           .register_type::<ConstructedBuildings>()
-           .init_resource::<ConstructedBuildings>();
+            .register_type::<ConstructedBuildings>()
+            .init_resource::<ConstructedBuildings>();
     }
 }

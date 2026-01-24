@@ -1,9 +1,10 @@
 use {
-    bevy::prelude::*, crafting::CraftingPlugin, crafting_resources::CraftingResourcesPlugin,
-    crafting_ui::CraftingUiPlugin, divinity_components::DivinityComponentsPlugin,
-    enemy_encyclopedia::EnemyEncyclopediaUiPlugin, enemy_events::EnemyEventsPlugin,
-    hero_events::HeroEventsPlugin,
-    heroes::HeroesPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
+    bevy::prelude::*, buildings::BuildingsPlugin, buildings_assets::BuildingsAssetsPlugin,
+    buildings_components::BuildingsComponentsPlugin, crafting::CraftingPlugin,
+    crafting_resources::CraftingResourcesPlugin, crafting_ui::CraftingUiPlugin,
+    divinity_components::DivinityComponentsPlugin, enemy_encyclopedia::EnemyEncyclopediaUiPlugin,
+    enemy_events::EnemyEventsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
+    loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
     portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
     progress_bars::ProgressBarsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
     resources_ui::ResourcesUiPlugin, save_load::SaveLoadPlugin,
@@ -11,8 +12,6 @@ use {
     unlocks::UnlocksPlugin, unlocks_assets::UnlocksAssetsPlugin, village::VillagePlugin,
     village_ui::VillageUiPlugin, wallet::WalletPlugin, weapon_assets::WeaponAssetsPlugin,
     weapon_factory::WeaponFactoryPlugin, widgets::WidgetsPlugin,
-    buildings::BuildingsPlugin, buildings_components::BuildingsComponentsPlugin,
-    buildings_assets::BuildingsAssetsPlugin,
 };
 
 pub struct CorePlugin;

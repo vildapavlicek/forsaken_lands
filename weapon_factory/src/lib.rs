@@ -71,20 +71,22 @@ fn on_crafting_completed(
 ) {
     let event = trigger.event();
 
-    if let Some(recipe_id) = event.topic.strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX) {
-
+    if let Some(recipe_id) = event
+        .topic
+        .strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX)
+    {
         // Ensure this recipe ID corresponds to a registered weapon
         let Some(handle) = weapon_map.handles.get(recipe_id) else {
-             // Not a weapon, ignore
-             return;
+            // Not a weapon, ignore
+            return;
         };
 
         let Some(def) = weapon_assets.get(handle) else {
             // Weapon asset not loaded yet?
-             warn!("Weapon definition not loaded for '{}'", recipe_id);
-             return;
+            warn!("Weapon definition not loaded for '{}'", recipe_id);
+            return;
         };
-        
+
         // Spawn weapon
         spawn_weapon(&mut commands, def);
         info!("Spawned weapon '{}' from crafting", recipe_id);

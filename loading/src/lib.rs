@@ -2,8 +2,8 @@ mod resources;
 
 use {
     crate::resources::{
-        EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle, UnlocksFolderHandle,
-        WeaponsFolderHandle, BlessingsFolderHandle,
+        BlessingsFolderHandle, EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle,
+        UnlocksFolderHandle, WeaponsFolderHandle,
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,

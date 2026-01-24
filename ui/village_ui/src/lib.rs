@@ -2,8 +2,8 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     blessings::{BlessingDefinition, Blessings},
     buildings_components::TheMaw,
-    growth::GrowthStrategy,
     crafting::{Available, RecipeNode},
+    growth::GrowthStrategy,
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
     recipes_assets::{RecipeCategory, RecipeDefinition},
@@ -197,7 +197,9 @@ impl Command for SpawnMenuContentCommand {
             );
             spawn_menu_button(
                 parent,
-                maw_exists.then_some("✨ Blessings").unwrap_or("✨ Blessings (Locked)"),
+                maw_exists
+                    .then_some("✨ Blessings")
+                    .unwrap_or("✨ Blessings (Locked)"),
                 VillageMenuButton {
                     target: VillageContent::Blessings,
                 },
@@ -498,21 +500,21 @@ impl Command for SpawnBlessingsContentCommand {
         world.resource_scope(|world, assets: Mut<Assets<BlessingDefinition>>| {
             let wallet = world.resource::<Wallet>();
             let current_entropy = wallet.resources.get("entropy").copied().unwrap_or(0);
-            
-             // Fetch blessings component
+
+            // Fetch blessings component
             let mut blessings_query = world.query::<&Blessings>();
-            
-             // If blessings component exists
-             if let Some(blessings) = blessings_query.iter(world).next() {
-                  for (id, def) in assets.iter() {
+
+            // If blessings component exists
+            if let Some(blessings) = blessings_query.iter(world).next() {
+                for (id, def) in assets.iter() {
                     let id_str = def.id.clone();
                     let current_level = blessings.unlocked.get(&id_str).copied().unwrap_or(0);
-                    let cost = def.cost.calculate(current_level) as u32; 
+                    let cost = def.cost.calculate(current_level) as u32;
                     let can_afford = current_entropy >= cost;
-    
+
                     // Skip if keeping internal ids clean, but we used id in loop
-                    let _ = id; 
-    
+                    let _ = id;
+
                     data.push(blessings_ui::BlessingDisplayData {
                         id: id_str,
                         name: def.name.clone(),
@@ -522,10 +524,10 @@ impl Command for SpawnBlessingsContentCommand {
                         can_afford,
                     });
                 }
-             }
+            }
         });
-         
-         data.sort_by(|a, b| a.name.cmp(&b.name));
+
+        data.sort_by(|a, b| a.name.cmp(&b.name));
 
         // Spawn back button and blessings content
         world.commands().entity(container).with_children(|parent| {

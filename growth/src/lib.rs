@@ -54,7 +54,11 @@ pub struct StepGrowth {
 
 impl StepGrowth {
     pub fn new(base: f64, step_at: u32, step_increment: f64) -> Self {
-        Self { base, step_at, step_increment }
+        Self {
+            base,
+            step_at,
+            step_increment,
+        }
     }
 }
 
