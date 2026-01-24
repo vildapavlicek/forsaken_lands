@@ -7,7 +7,7 @@ use {
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
     recipes_assets::{RecipeCategory, RecipeDefinition},
-    research::{InProgress, ResearchCompletionCount, ResearchNode},
+    research::{InProgress, ResearchCompletionCount, ResearchNode, ResearchState},
     research_assets::ResearchDefinition,
     shared_components::DisplayName,
     states::{EnemyEncyclopediaState, GameState},
@@ -161,16 +161,15 @@ impl Command for SpawnMenuContentCommand {
         // Check if The Maw exists to enable Blessings
         let maw_exists = !world.query::<&TheMaw>().iter(world).next().is_none();
 
+        // Check if simple crafting is researched
+        let research_state = world.resource::<ResearchState>();
+        let crafting_researched = research_state
+            .completion_counts
+            .get("simple_crafting")
+            .is_some();
+
         // Spawn menu buttons
         world.commands().entity(container).with_children(|parent| {
-            spawn_menu_button(
-                parent,
-                "⚒ Crafting",
-                VillageMenuButton {
-                    target: VillageContent::Crafting,
-                },
-                true,
-            );
             spawn_menu_button(
                 parent,
                 "🔬 Research",
@@ -178,6 +177,18 @@ impl Command for SpawnMenuContentCommand {
                     target: VillageContent::Research,
                 },
                 true,
+            );
+            spawn_menu_button(
+                parent,
+                if crafting_researched {
+                    "⚒ Crafting"
+                } else {
+                    "⚒ Crafting (Locked)"
+                },
+                VillageMenuButton {
+                    target: VillageContent::Crafting,
+                },
+                crafting_researched,
             );
             spawn_menu_button(
                 parent,
