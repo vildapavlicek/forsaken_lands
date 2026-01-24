@@ -9,7 +9,7 @@
         "shared_components::DisplayName": ("Goblin Shaman"),
         "enemy_components::Health": (current: 12.0, max: 12.0),
         "enemy_components::MovementSpeed": (180.0),
-        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 5, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
+        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 10, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
         "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),
         "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.70718265, green: 0.26286125, blue: 0.12359625, alpha: 1.0)), custom_size: Some((16.0, 16.0))),
       },

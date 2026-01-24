@@ -2,7 +2,7 @@
     id: "bone_sword",
     display_name: "Bone Sword",
     weapon_type: Melee(arc_width: 1.047),
-    damage: 1.5,
+    damage: 0.75,
     attack_range: 150.0,
     attack_speed_ms: 750,
 )
