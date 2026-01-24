@@ -329,7 +329,7 @@ fn spawn_weapon_section(
         spawn_stat_row(card, "Name", &weapon.name);
 
         // Damage
-        spawn_stat_row(card, "Damage", &format!("{:.1}", weapon.damage));
+        spawn_stat_row(card, "Damage", &format!("{:.2}", weapon.damage));
 
         // Range
         spawn_stat_row(card, "Range", &format!("{:.1}", weapon.range));
@@ -597,7 +597,7 @@ fn spawn_popup_weapon_card(
 
                 info.spawn((
                     Text::new(format!(
-                        "DMG: {:.1} | RNG: {:.1}",
+                        "DMG: {:.2} | RNG: {:.1}",
                         weapon_damage, weapon_range
                     )),
                     TextFont {
