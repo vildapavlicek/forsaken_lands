@@ -19,7 +19,9 @@ use {
 
 /// Event to trigger a game save (used with observers).
 #[derive(Event)]
-pub struct SaveGame;
+pub struct SaveGame {
+    is_autosave: bool,
+}
 
 /// Event to trigger loading the latest save file.
 #[derive(Event)]
@@ -48,7 +50,7 @@ impl Plugin for SaveLoadPlugin {
                     trigger_save_on_keypress,
                     trigger_load_on_keypress,
                     //  disable auto save for testing purposes
-                    // autosave_tick
+                    autosave_tick,
                 )
                     .run_if(in_state(GameState::Running)),
             )
@@ -77,7 +79,7 @@ impl Plugin for SaveLoadPlugin {
 fn trigger_save_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
     if keyboard.just_pressed(KeyCode::F5) {
         info!("Manual save triggered (F5)");
-        commands.trigger(SaveGame);
+        commands.trigger(SaveGame { is_autosave: false });
     }
 }
 
@@ -90,17 +92,16 @@ fn trigger_load_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: C
 }
 
 /// Ticks the autosave timer and triggers save when elapsed.
-#[expect(unused, reason = "autosave disabled for now")]
 fn autosave_tick(time: Res<Time>, mut timer: ResMut<AutosaveTimer>, mut commands: Commands) {
     if timer.0.tick(time.delta()).just_finished() {
         info!("Autosave triggered");
-        commands.trigger(SaveGame);
+        commands.trigger(SaveGame { is_autosave: true });
     }
 }
 
 /// Observer that handles the SaveGame event and performs the actual save.
 fn execute_save(
-    _trigger: On<SaveGame>,
+    trigger: On<SaveGame>,
     world: &World,
     saveable_query: Query<
         Entity,
@@ -110,9 +111,16 @@ fn execute_save(
         ),
     >,
 ) {
-    // Generate filename with timestamp
-    let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
-    let filename = format!("save_{}.scn.ron", timestamp);
+    let SaveGame { is_autosave } = trigger.event();
+
+    let filename = if *is_autosave {
+        format!("autosave.scn.ron")
+    } else {
+        // Generate filename with timestamp
+        let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
+        format!("save_{}.scn.ron", timestamp)
+    };
+
     let saves_dir = Path::new("assets/saves");
     let filepath = saves_dir.join(&filename);
 
@@ -141,7 +149,12 @@ fn execute_save(
     };
 
     // Write to file
-    match fs::File::create(&filepath) {
+    match fs::File::options()
+        .write(true)
+        .truncate(true)
+        .create(true)
+        .open(&filepath)
+    {
         Ok(mut file) => {
             if let Err(e) = file.write_all(serialized.as_bytes()) {
                 error!("Failed to write save file: {}", e);
