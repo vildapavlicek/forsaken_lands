@@ -4,7 +4,7 @@
     category: Weapons,
     craft_time: 25.0,
     cost: {
-        "sinew": 10,
+        "sinew": 5,
     },
     outcomes: [],
 )

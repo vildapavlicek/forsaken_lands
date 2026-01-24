@@ -2,7 +2,7 @@
     id: "sling",
     name: "Sling",
     description: "Let's use their intestines to enhance our rock throwing.",
-    cost: { "sinew": 10 },
+    cost: { "sinew": 5 },
     time_required: 90,
     max_repeats: 1,
 )
