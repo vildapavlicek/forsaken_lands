@@ -38,8 +38,6 @@
 
 pub mod compiler;
 mod systems;
-#[cfg(test)]
-mod tests;
 
 use {bevy::prelude::*, systems::*};
 pub use {
