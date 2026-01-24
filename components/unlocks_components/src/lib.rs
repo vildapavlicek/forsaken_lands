@@ -21,11 +21,24 @@ pub struct LogicGate {
     pub was_active: bool,
 }
 
+/// Defines the boolean logic behavior for a `LogicGate`.
+///
+/// This enum determines how signals from child entities (Conditions or other Gates)
+/// are aggregated to determine the state of the parent Gate.
+///
+/// # Usage
+/// - **Unlocks System**: Used in `propagate_logic_signal` to evaluate if an unlock condition is met.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogicOperator {
+    /// Requires ALL child conditions to be met (Signal count == Child count).
+    /// Used for "Complete X AND Y" objectives.
     And,
+    /// Requires ANY child condition to be met (Signal count > 0).
+    /// Used for "Complete X OR Y" objectives.
     Or,
-    Not, // Special: inverts single child
+    /// Inverts the signal of its single child (Signal count == 0 is TRUE).
+    /// Used for "Complete X but NOT Y" (rare) or gating logic.
+    Not,
 }
 
 /// Represents a Leaf Node (Sensor).
