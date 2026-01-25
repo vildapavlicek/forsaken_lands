@@ -179,7 +179,7 @@ fn spawn_crafting_ui(
 
 /// Spawns the crafting content (tabs + recipe list) into a parent container.
 /// This does NOT include the outer panel or header.
-pub fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingData) {
+fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingData) {
     // Create a container for the crafting content
     let crafting_root = parent
         .spawn((
