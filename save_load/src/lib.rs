@@ -17,11 +17,7 @@ use {
     wallet::Wallet,
 };
 
-/// Event to trigger a game save (used with observers).
-#[derive(Event)]
-pub struct SaveGame {
-    is_autosave: bool,
-}
+
 
 /// Event to trigger loading the latest save file.
 #[derive(Event)]
@@ -46,17 +42,15 @@ impl Plugin for SaveLoadPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AutosaveTimer>()
             // Save systems (only in Running state)
+            // Save systems (only in Running state)
             .add_systems(
                 Update,
-                (
-                    trigger_save_on_keypress,
-                    trigger_load_on_keypress,
-                    //  disable auto save for testing purposes
-                    autosave_tick,
-                )
-                    .run_if(in_state(GameState::Running)),
+                trigger_load_on_keypress.run_if(in_state(GameState::Running)),
             )
-            .add_observer(execute_save)
+            .add_systems(
+                PostUpdate,
+                execute_save.run_if(in_state(GameState::Running)),
+            )
             .add_observer(execute_load)
             // Reconstruction phases - Unified Loading
             .add_systems(
@@ -77,53 +71,50 @@ impl Plugin for SaveLoadPlugin {
     }
 }
 
-/// Triggers a save when F5 is pressed.
-fn trigger_save_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
-    if keyboard.just_pressed(KeyCode::F5) {
-        info!("Manual save triggered (F5)");
-        commands.trigger(SaveGame { is_autosave: false });
+
+
+/// Exclusive system that handles manual and automatic saves.
+fn execute_save(world: &mut World) {
+    let mut is_autosave = false;
+    let mut manual_triggered = false;
+
+    // 1. Check Manual Save (F5)
+    if let Some(keyboard) = world.get_resource::<ButtonInput<KeyCode>>() {
+        if keyboard.just_pressed(KeyCode::F5) {
+            info!("Manual save triggered (F5)");
+            manual_triggered = true;
+            is_autosave = false;
+        }
     }
-}
 
-/// Triggers a load when F9 is pressed.
-fn trigger_load_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
-    if keyboard.just_pressed(KeyCode::F9) {
-        info!("Load triggered (F9)");
-        commands.trigger(LoadGame { is_autosave: false });
+    // 2. Check Autosave Timer
+    if !manual_triggered {
+        let delta = world.get_resource::<Time>().map(|t| t.delta());
+        if let Some(delta) = delta {
+            if let Some(mut timer) = world.get_resource_mut::<AutosaveTimer>() {
+                if timer.0.tick(delta).just_finished() {
+                    info!("Autosave triggered");
+                    is_autosave = true;
+                } else {
+                    return; // No save triggered
+                }
+            } else {
+                return;
+            }
+        } else {
+            return;
+        }
+    } else {
+        // Reset autosave timer on manual save to avoid back-to-back saves
+        if let Some(mut timer) = world.get_resource_mut::<AutosaveTimer>() {
+            timer.0.reset();
+        }
     }
 
-    if keyboard.just_pressed(KeyCode::F8) {
-        info!("Load triggered (F9)");
-        commands.trigger(LoadGame { is_autosave: true });
-    }
-}
-
-/// Ticks the autosave timer and triggers save when elapsed.
-fn autosave_tick(time: Res<Time>, mut timer: ResMut<AutosaveTimer>, mut commands: Commands) {
-    if timer.0.tick(time.delta()).just_finished() {
-        info!("Autosave triggered");
-        commands.trigger(SaveGame { is_autosave: true });
-    }
-}
-
-/// Observer that handles the SaveGame event and performs the actual save.
-fn execute_save(
-    trigger: On<SaveGame>,
-    world: &World,
-    saveable_query: Query<
-        Entity,
-        (
-            With<shared_components::IncludeInSave>,
-            Without<hero_components::Weapon>,
-        ),
-    >,
-) {
-    let SaveGame { is_autosave } = trigger.event();
-
-    let filename = if *is_autosave {
+    // 3. Process Save
+    let filename = if is_autosave {
         format!("autosave.scn.ron")
     } else {
-        // Generate filename with timestamp
         let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
         format!("save_{}.scn.ron", timestamp)
     };
@@ -131,20 +122,21 @@ fn execute_save(
     let saves_dir = Path::new("assets/saves");
     let filepath = saves_dir.join(&filename);
 
-    // Ensure saves directory exists
     if let Err(e) = fs::create_dir_all(saves_dir) {
         error!("Failed to create saves directory: {}", e);
         return;
     }
 
-    // Collect saveable entities from query
-    let saveable_entities: Vec<Entity> = saveable_query.iter().collect();
+    // Collect saveable entities
+    let mut query = world.query_filtered::<Entity, (
+        With<shared_components::IncludeInSave>,
+        Without<hero_components::Weapon>,
+    )>();
+    let saveable_entities: Vec<Entity> = query.iter(world).collect();
 
-    // Build the save scene with filtered components
     let scene = build_save_scene(world, saveable_entities);
 
-    // Serialize the scene
-    let type_registry = world.resource::<AppTypeRegistry>();
+    let type_registry = world.resource::<AppTypeRegistry>().clone();
     let type_registry = type_registry.read();
 
     let serialized = match scene.serialize(&type_registry) {
@@ -155,7 +147,6 @@ fn execute_save(
         }
     };
 
-    // Write to file
     match fs::File::options()
         .write(true)
         .truncate(true)
@@ -172,6 +163,19 @@ fn execute_save(
         Err(e) => {
             error!("Failed to create save file: {}", e);
         }
+    }
+}
+
+/// Triggers a load when F9 is pressed.
+fn trigger_load_on_keypress(keyboard: Res<ButtonInput<KeyCode>>, mut commands: Commands) {
+    if keyboard.just_pressed(KeyCode::F9) {
+        info!("Load triggered (F9)");
+        commands.trigger(LoadGame { is_autosave: false });
+    }
+
+    if keyboard.just_pressed(KeyCode::F8) {
+        info!("Load triggered (F8)");
+        commands.trigger(LoadGame { is_autosave: true });
     }
 }
 
