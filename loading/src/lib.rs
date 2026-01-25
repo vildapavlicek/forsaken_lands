@@ -66,7 +66,7 @@ impl Plugin for LoadingManagerPlugin {
             // Loading UI
             .add_systems(
                 OnEnter(GameState::Loading),
-                (setup_loading_ui, reset_loading_phase),
+                (setup_loading_ui, reset_loading_phase, clear_unlock_state),
             )
             .add_systems(
                 Update,
@@ -574,4 +574,9 @@ fn cleanup_loading_ui(mut commands: Commands, query: Query<Entity, With<LoadingU
 fn reset_loading_phase(mut next_phase: ResMut<NextState<LoadingPhase>>) {
     info!("Resetting LoadingPhase to Assets");
     next_phase.set(LoadingPhase::Assets);
+}
+
+fn clear_unlock_state(mut unlock_state: ResMut<UnlockState>) {
+    info!("Clearing UnlockState to prevent state leakage from previous sessions");
+    unlock_state.completed.clear();
 }
