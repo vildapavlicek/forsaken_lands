@@ -7,14 +7,14 @@ use {
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
     recipes_assets::{RecipeCategory, RecipeDefinition},
-    research::{InProgress, ResearchCompletionCount, ResearchNode, ResearchState},
-    research_assets::ResearchDefinition,
+    research::ResearchState,
     shared_components::DisplayName,
     states::{EnemyEncyclopediaState, GameState, VillageView},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
     widgets::{
-        PanelWrapperRef, spawn_menu_button, spawn_menu_panel, spawn_panel_header_with_close,
+        ContentContainer, PanelWrapperRef, spawn_menu_button, spawn_menu_panel,
+        spawn_panel_header_with_close,
     },
 };
 
@@ -29,6 +29,7 @@ impl Plugin for VillageUiPlugin {
                 (handle_menu_button, handle_back_button, handle_close_button)
                     .run_if(in_state(GameState::Running)),
             )
+            .add_systems(OnEnter(VillageView::Menu), show_menu_content)
             .add_systems(OnExit(GameState::Running), clean_up_village_ui);
     }
 }
@@ -59,9 +60,7 @@ pub struct VillageUiRoot {
 #[derive(Component)]
 struct VillageCloseButton;
 
-/// Container for switchable content
-#[derive(Component)]
-struct ContentContainer;
+
 
 /// Menu button with target content
 #[derive(Component)]
@@ -138,6 +137,10 @@ fn spawn_village_ui(commands: &mut Commands) {
     });
 
     // Populate with menu content
+    // commands.queue(SpawnMenuContentCommand); // Handled by OnEnter(VillageView::Menu)
+}
+
+fn show_menu_content(mut commands: Commands) {
     commands.queue(SpawnMenuContentCommand);
 }
 
@@ -313,140 +316,7 @@ impl Command for SpawnCraftingContentCommand {
 // Research Content Command
 // ============================================================================
 
-struct SpawnResearchContentCommand;
 
-impl Command for SpawnResearchContentCommand {
-    fn apply(self, world: &mut World) {
-        let mut query =
-            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
-
-        let Some((container, children)) = query.iter(world).next() else {
-            return;
-        };
-
-        // Despawn existing children
-        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
-        for child in to_despawn {
-            world.commands().entity(child).despawn();
-        }
-
-        // Query research entities by state FIRST - collect into owned data
-        let mut available_query = world.query_filtered::<(
-            Entity,
-            &ResearchNode,
-            &ResearchCompletionCount,
-        ), With<research::Available>>();
-        let available_ids: Vec<(Entity, String, u32)> = available_query
-            .iter(world)
-            .map(|(e, n, c)| (e, n.id.clone(), c.0))
-            .collect();
-
-        let mut in_progress_query =
-            world.query::<(Entity, &ResearchNode, &InProgress, &ResearchCompletionCount)>();
-        let in_progress_ids: Vec<(Entity, String, u32)> = in_progress_query
-            .iter(world)
-            .map(|(e, n, _, c)| (e, n.id.clone(), c.0))
-            .collect();
-
-        // Now get resources needed for research content
-        let assets = world.resource::<Assets<ResearchDefinition>>();
-        let wallet = world.resource::<Wallet>();
-
-        // Build research data directly using the assets
-        let mut items = Vec::new();
-
-        // Available research
-        for (_, id, count) in &available_ids {
-            if let Some((_handle, def)) = assets.iter().find(|(_, d)| &d.id == id) {
-                let mut can_afford = true;
-                let mut cost_str = String::from("Cost: ");
-                for (res, amt) in &def.cost {
-                    let current = wallet.resources.get(res).copied().unwrap_or(0);
-                    cost_str.push_str(&format!("{}: {}/{} ", res, current, amt));
-                    if current < *amt {
-                        can_afford = false;
-                    }
-                }
-
-                // Build progress info for repeatable research
-                let progress_info = if def.max_repeats > 1 {
-                    Some(format!("{}/{}", count, def.max_repeats))
-                } else {
-                    None
-                };
-
-                items.push(research_ui::ResearchDisplayData {
-                    id: id.clone(),
-                    name: def.name.clone(),
-                    description: def.description.clone(),
-                    time: def.time_required,
-                    cost_str,
-                    can_afford,
-                    is_completed: false,
-                    btn_text: if can_afford {
-                        "Start".to_string()
-                    } else {
-                        "Start".to_string()
-                    },
-                    btn_color: if can_afford {
-                        widgets::UiTheme::AFFORDABLE
-                    } else {
-                        widgets::UiTheme::BORDER_DISABLED
-                    },
-                    btn_border: if can_afford {
-                        widgets::UiTheme::BORDER_SUCCESS
-                    } else {
-                        widgets::UiTheme::BORDER_DISABLED
-                    },
-                    progress_info,
-                });
-            }
-        }
-
-        // In-progress research
-        for (_, id, count) in &in_progress_ids {
-            if let Some((_handle, def)) = assets.iter().find(|(_, d)| &d.id == id) {
-                // Build progress info for repeatable research
-                let progress_info = if def.max_repeats > 1 {
-                    Some(format!("{}/{}", count, def.max_repeats))
-                } else {
-                    None
-                };
-
-                items.push(research_ui::ResearchDisplayData {
-                    id: id.clone(),
-                    name: def.name.clone(),
-                    description: def.description.clone(),
-                    time: def.time_required,
-                    cost_str: String::new(),
-                    can_afford: true,
-                    is_completed: false,
-                    btn_text: "Researching...".to_string(),
-                    btn_color: widgets::UiTheme::TEXT_INFO,
-                    btn_border: bevy::color::Color::srgba(0.4, 0.4, 1.0, 1.0),
-                    progress_info,
-                });
-            }
-        }
-
-        // Sort by name
-        items.sort_by(|a, b| a.name.cmp(&b.name));
-
-        let research_data = research_ui::ResearchData {
-            active_tab: research_ui::ResearchTab::Available,
-            items,
-        };
-
-        // Spawn back button and research content
-        world.commands().entity(container).with_children(|parent| {
-            // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton, true);
-
-            // Spawn research content
-            research_ui::spawn_research_content(parent, research_data);
-        });
-    }
-}
 
 // ============================================================================
 // Encyclopedia Content Command
@@ -707,7 +577,6 @@ fn handle_menu_button(
                     }
                     VillageContent::Research => {
                         next_state.set(EnemyEncyclopediaState::Closed);
-                        commands.queue(SpawnResearchContentCommand);
                     }
                     VillageContent::Encyclopedia => {
                         next_state.set(EnemyEncyclopediaState::Open);
@@ -715,7 +584,6 @@ fn handle_menu_button(
                     }
                     VillageContent::Menu => {
                         next_state.set(EnemyEncyclopediaState::Closed);
-                        commands.queue(SpawnMenuContentCommand);
                     }
                     VillageContent::Heroes => {
                         next_state.set(EnemyEncyclopediaState::Closed);
@@ -732,7 +600,7 @@ fn handle_menu_button(
 }
 
 fn handle_back_button(
-    mut commands: Commands,
+    _commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
     mut ui_query: Query<&mut VillageUiRoot>,
     mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
@@ -744,7 +612,6 @@ fn handle_back_button(
                 ui_root.content = VillageContent::Menu;
                 next_village_state.set(VillageView::Menu);
                 next_state.set(EnemyEncyclopediaState::Closed);
-                commands.queue(SpawnMenuContentCommand);
             }
         }
     }

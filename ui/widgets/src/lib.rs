@@ -607,6 +607,10 @@ pub fn spawn_icon_button<M: Component>(
 // Menu Button Widget
 // ============================================================================
 
+/// Container for switchable content
+#[derive(Component)]
+pub struct ContentContainer;
+
 /// Spawns a large menu button for navigation (e.g., in village menu)
 pub fn spawn_menu_button<M: Component>(
     parent: &mut ChildSpawnerCommands,

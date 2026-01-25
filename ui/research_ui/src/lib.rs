@@ -5,42 +5,38 @@ use {
         StartResearchRequest,
     },
     research_assets::ResearchDefinition,
-    states::GameState,
+    states::{GameState, VillageView},
     wallet::Wallet,
     widgets::{
-        UiTheme, spawn_action_button, spawn_card_title, spawn_description_text,
-        spawn_scrollable_container, spawn_tab_bar, spawn_tab_button, spawn_timer_text,
+        ContentContainer, UiTheme, spawn_action_button, spawn_card_title, spawn_description_text,
+        spawn_menu_button, spawn_scrollable_container, spawn_tab_bar, spawn_tab_button,
+        spawn_timer_text,
     },
 };
 
-#[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResearchUiState {
-    #[default]
-    Closed,
-    Open,
-}
+/// Back button to return to menu - we need this marker to match village_ui's behavior
+#[derive(Component)]
+struct VillageBackButton;
 
 pub struct ResearchUiPlugin;
 
 impl Plugin for ResearchUiPlugin {
     fn build(&self, app: &mut App) {
-        app.init_state::<ResearchUiState>();
-        app.add_systems(
-            Update,
-            (
-                handle_research_close_button,
-                handle_tab_switch,
-                handle_research_button,
+        app.add_systems(OnEnter(VillageView::Research), spawn_research_ui)
+            .add_systems(
+                Update,
+                (
+                    handle_research_close_button,
+                    handle_tab_switch,
+                    handle_research_button,
+                    handle_back_button,
+                )
+                    .run_if(in_state(GameState::Running)),
             )
-                .run_if(in_state(GameState::Running)),
-        )
-        .add_systems(
-            Update,
-            update_research_ui
-                .run_if(in_state(GameState::Running).and(in_state(ResearchUiState::Open))),
-        )
-        .add_observer(set_research_state_open)
-        .add_observer(set_research_state_closed);
+            .add_systems(
+                Update,
+                update_research_ui.run_if(in_state(VillageView::Research)),
+            );
     }
 }
 
@@ -255,8 +251,56 @@ fn build_research_list(
 }
 
 // ============================================================================
-// Spawn Research Content (for embedding in village UI)
+// Spawn Research UI System
 // ============================================================================
+
+fn spawn_research_ui(
+    mut commands: Commands,
+    mut query: Query<(Entity, Option<&Children>), With<ContentContainer>>,
+    assets: Res<Assets<ResearchDefinition>>,
+    wallet: Res<Wallet>,
+    available_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Available>>,
+    in_progress_query: Query<(Entity, &ResearchNode, &InProgress, &ResearchCompletionCount)>,
+    completed_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Completed>>,
+) {
+    let Some((container, children)) = query.iter_mut().next() else {
+        return;
+    };
+
+    // Despawn existing children
+    let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
+    for child in to_despawn {
+        commands.entity(child).despawn();
+    }
+
+    // Collect query results
+    let available: Vec<_> = available_query.iter().collect();
+    let in_progress: Vec<_> = in_progress_query.iter().collect();
+    let completed: Vec<_> = completed_query.iter().collect();
+
+    let items = build_research_list(
+        &assets,
+        &wallet,
+        ResearchTab::Available, // Default to available
+        &available,
+        &in_progress,
+        &completed,
+    );
+
+    let research_data = ResearchData {
+        active_tab: ResearchTab::Available,
+        items,
+    };
+
+    // Spawn back button and research content
+    commands.entity(container).with_children(|parent| {
+        // Back button
+        spawn_menu_button(parent, "← Back", VillageBackButton, true);
+
+        // Spawn research content
+        spawn_research_content(parent, research_data);
+    });
+}
 
 /// Spawns the research content (tabs + research list) into a parent container.
 /// This does NOT include the outer panel or header.
@@ -339,12 +383,26 @@ fn handle_research_close_button(
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<ResearchCloseButton>)>,
     ui_query: Query<Entity, With<ResearchUiRoot>>,
+    mut next_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             for ui_entity in ui_query.iter() {
                 commands.entity(ui_entity).despawn();
+                next_state.set(VillageView::Menu);
             }
+        }
+    }
+}
+
+// Back button handler (needed since we spawn it)
+fn handle_back_button(
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
+    mut next_state: ResMut<NextState<VillageView>>,
+) {
+    for interaction in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            next_state.set(VillageView::Menu);
         }
     }
 }
@@ -622,18 +680,4 @@ fn handle_research_button(
             }
         }
     }
-}
-
-fn set_research_state_open(
-    _trigger: On<Add, ResearchUiRoot>,
-    mut state: ResMut<NextState<ResearchUiState>>,
-) {
-    state.set(ResearchUiState::Open);
-}
-
-fn set_research_state_closed(
-    _trigger: On<Remove, ResearchUiRoot>,
-    mut state: ResMut<NextState<ResearchUiState>>,
-) {
-    state.set(ResearchUiState::Closed);
 }
