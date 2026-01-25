@@ -26,7 +26,6 @@ impl Plugin for ResearchUiPlugin {
             .add_systems(
                 Update,
                 (
-                    handle_research_close_button,
                     handle_tab_switch,
                     handle_research_button,
                     handle_back_button,
@@ -56,9 +55,6 @@ pub struct ResearchUiRoot {
     pub active_tab: ResearchTab,
 }
 
-/// Close button marker
-#[derive(Component)]
-pub struct ResearchCloseButton;
 
 /// Tab button with category
 #[derive(Component)]
@@ -379,21 +375,6 @@ pub fn spawn_research_content(parent: &mut ChildSpawnerCommands, data: ResearchD
 // Close Button Handler
 // ============================================================================
 
-fn handle_research_close_button(
-    mut commands: Commands,
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<ResearchCloseButton>)>,
-    ui_query: Query<Entity, With<ResearchUiRoot>>,
-    mut next_state: ResMut<NextState<VillageView>>,
-) {
-    for interaction in interaction_query.iter() {
-        if *interaction == Interaction::Pressed {
-            for ui_entity in ui_query.iter() {
-                commands.entity(ui_entity).despawn();
-                next_state.set(VillageView::Menu);
-            }
-        }
-    }
-}
 
 // Back button handler (needed since we spawn it)
 fn handle_back_button(
