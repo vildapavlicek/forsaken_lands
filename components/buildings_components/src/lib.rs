@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use shared_components::IncludeInSave;
 
 pub struct BuildingsComponentsPlugin;
 
@@ -12,6 +13,7 @@ impl Plugin for BuildingsComponentsPlugin {
 /// Tag component for 'The Maw' building entity.
 #[derive(Component, Reflect, Default, Debug)]
 #[reflect(Component)]
+#[require(IncludeInSave)]
 pub struct TheMaw;
 
 /// Component for entities that generate entropy over time.
