@@ -2,11 +2,9 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     blessings::{BlessingDefinition, Blessings},
     buildings_components::TheMaw,
-    crafting::{Available, RecipeNode},
     growth::GrowthStrategy,
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
-    recipes_assets::{RecipeCategory, RecipeDefinition},
     research::ResearchState,
     shared_components::DisplayName,
     states::{EnemyEncyclopediaState, GameState, VillageView},
@@ -227,90 +225,7 @@ impl Command for SpawnMenuContentCommand {
     }
 }
 
-// ============================================================================
-// Crafting Content Command
-// ============================================================================
 
-struct SpawnCraftingContentCommand;
-
-impl Command for SpawnCraftingContentCommand {
-    fn apply(self, world: &mut World) {
-        let mut query =
-            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
-
-        let Some((container, children)) = query.iter(world).next() else {
-            return;
-        };
-
-        // Despawn existing children
-        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
-        for child in to_despawn {
-            world.commands().entity(child).despawn();
-        }
-
-        // Query available recipe entities and collect ids and handles
-        let mut recipe_query = world.query_filtered::<&RecipeNode, With<Available>>();
-        let recipe_data: Vec<(String, bevy::asset::Handle<RecipeDefinition>)> = recipe_query
-            .iter(world)
-            .map(|node| (node.id.clone(), node.handle.clone()))
-            .collect();
-
-        let assets = world.resource::<Assets<RecipeDefinition>>();
-        let wallet = world.resource::<Wallet>();
-
-        // Build crafting display data from available recipes
-        let active_tab = RecipeCategory::Weapons;
-        let mut recipes = Vec::new();
-
-        for (id, handle) in &recipe_data {
-            let Some(def) = assets.get(handle) else {
-                continue;
-            };
-
-            // Filter by active tab (default to Weapons)
-            if def.category != active_tab {
-                continue;
-            }
-
-            // Calculate cost string and affordability
-            let mut can_afford = true;
-            let mut cost_str = String::from("Cost: ");
-
-            let mut cost_items: Vec<_> = def.cost.iter().collect();
-            cost_items.sort_by_key(|(res_id, _)| *res_id);
-
-            for (res_id, amt) in cost_items {
-                let current = wallet.resources.get(res_id).copied().unwrap_or(0);
-                cost_str.push_str(&format!("{}: {}/{} ", res_id, current, amt));
-                if current < *amt {
-                    can_afford = false;
-                }
-            }
-
-            recipes.push(crafting_ui::RecipeDisplayData {
-                id: id.clone(),
-                display_name: def.display_name.clone(),
-                craft_time: def.craft_time,
-                cost_str,
-                can_afford,
-            });
-        }
-
-        let crafting_data = crafting_ui::CraftingData {
-            active_tab,
-            recipes,
-        };
-
-        // Spawn back button and crafting content
-        world.commands().entity(container).with_children(|parent| {
-            // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton, true);
-
-            // Spawn crafting content
-            crafting_ui::spawn_crafting_content(parent, crafting_data);
-        });
-    }
-}
 
 // ============================================================================
 // Research Content Command
@@ -573,7 +488,7 @@ fn handle_menu_button(
                 match btn.target {
                     VillageContent::Crafting => {
                         next_state.set(EnemyEncyclopediaState::Closed);
-                        commands.queue(SpawnCraftingContentCommand);
+                        // commands.queue(SpawnCraftingContentCommand); // Handled by state transition
                     }
                     VillageContent::Research => {
                         next_state.set(EnemyEncyclopediaState::Closed);

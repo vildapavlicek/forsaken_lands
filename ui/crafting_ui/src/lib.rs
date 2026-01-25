@@ -4,28 +4,37 @@ use {
     crafting_events::StartCraftingRequest,
     crafting_resources::RecipeCategory,
     recipes_assets::RecipeDefinition,
-    states::GameState,
+    states::{GameState, VillageView},
     wallet::Wallet,
     widgets::{
-        UiTheme, spawn_action_button, spawn_card_title, spawn_cost_text,
+        spawn_action_button, spawn_card_title, spawn_cost_text, spawn_menu_button,
         spawn_scrollable_container, spawn_tab_bar, spawn_tab_button, spawn_timer_text,
+        ContentContainer, UiTheme,
     },
 };
+
+/// Back button to return to menu - we need this marker to match village_ui's behavior
+#[derive(Component)]
+struct VillageBackButton;
 
 pub struct CraftingUiPlugin;
 
 impl Plugin for CraftingUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            (
-                handle_recipes_close_button,
-                handle_tab_switch,
-                update_recipes_ui,
-                handle_crafting_button,
+        app.add_systems(OnEnter(VillageView::Crafting), spawn_crafting_ui)
+            .add_systems(
+                Update,
+                (
+                    handle_tab_switch,
+                    handle_crafting_button,
+                    handle_back_button,
+                )
+                    .run_if(in_state(GameState::Running)),
             )
-                .run_if(in_state(GameState::Running)),
-        );
+            .add_systems(
+                Update,
+                update_recipes_ui.run_if(in_state(VillageView::Crafting)),
+            );
     }
 }
 
@@ -38,10 +47,6 @@ impl Plugin for CraftingUiPlugin {
 pub struct RecipesUiRoot {
     pub active_tab: RecipeCategory,
 }
-
-/// Close button marker
-#[derive(Component)]
-pub struct RecipesCloseButton;
 
 /// Tab button with category
 #[derive(Component)]
@@ -136,6 +141,39 @@ fn build_recipe_list(
 }
 
 // ============================================================================
+// Spawn Crafting UI System
+// ============================================================================
+
+fn spawn_crafting_ui(
+    mut commands: Commands,
+    mut query: Query<(Entity, Option<&Children>), With<ContentContainer>>,
+    recipe_query: Query<&RecipeNode, With<Available>>,
+    assets: Res<Assets<RecipeDefinition>>,
+    wallet: Res<Wallet>,
+) {
+    let Some((container, children)) = query.iter_mut().next() else {
+        return;
+    };
+
+    // Despawn existing children
+    let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
+    for child in to_despawn {
+        commands.entity(child).despawn();
+    }
+
+    let crafting_data = build_crafting_data(&recipe_query, &assets, &wallet);
+
+    // Spawn back button and crafting content
+    commands.entity(container).with_children(|parent| {
+        // Back button
+        spawn_menu_button(parent, "← Back", VillageBackButton, true);
+
+        // Spawn crafting content
+        spawn_crafting_content(parent, crafting_data);
+    });
+}
+
+// ============================================================================
 // Spawn Crafting Content (for embedding in village UI)
 // ============================================================================
 
@@ -210,16 +248,14 @@ pub fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingD
 // Close Button Handler
 // ============================================================================
 
-fn handle_recipes_close_button(
-    mut commands: Commands,
-    interaction_query: Query<&Interaction, (Changed<Interaction>, With<RecipesCloseButton>)>,
-    ui_query: Query<Entity, With<RecipesUiRoot>>,
+// Back button handler (needed since we spawn it)
+fn handle_back_button(
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
+    mut next_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
-            for ui_entity in ui_query.iter() {
-                commands.entity(ui_entity).despawn();
-            }
+            next_state.set(VillageView::Menu);
         }
     }
 }
