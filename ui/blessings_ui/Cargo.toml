@@ -9,3 +9,4 @@ widgets.workspace = true
 wallet.workspace = true
 blessings = { path = "../../blessings" }
 growth = { path = "../../growth" }
+states = { path = "../../states" }

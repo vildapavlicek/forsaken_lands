@@ -1625,6 +1625,7 @@ dependencies = [
  "bevy",
  "blessings",
  "growth",
+ "states",
  "wallet",
  "widgets",
 ]
@@ -1692,6 +1693,7 @@ name = "buildings_components"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "shared_components",
 ]
 
 [[package]]
@@ -1919,6 +1921,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "blessings",
+ "blessings_ui",
  "buildings",
  "buildings_assets",
  "buildings_components",
@@ -5252,18 +5255,14 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "blessings",
- "blessings_ui",
  "buildings_components",
  "crafting",
- "crafting_ui",
- "enemy_encyclopedia",
  "growth",
  "hero_components",
  "hero_ui",
  "recipes_assets",
  "research",
  "research_assets",
- "research_ui",
  "shared_components",
  "states",
  "unlock_states",

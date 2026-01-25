@@ -6,13 +6,10 @@ edition = "2024"
 [dependencies]
 bevy.workspace = true
 crafting.workspace = true
-crafting_ui.workspace = true
-enemy_encyclopedia.workspace = true
 hero_components.workspace = true
 hero_ui.workspace = true
 recipes_assets.workspace = true
 research.workspace = true
-research_ui.workspace = true
 shared_components.workspace = true
 states.workspace = true
 unlock_states.workspace = true
@@ -22,6 +19,4 @@ wallet.workspace = true
 widgets.workspace = true
 research_assets.workspace = true
 blessings.workspace = true
-blessings_ui.workspace = true
 growth.workspace = true
-

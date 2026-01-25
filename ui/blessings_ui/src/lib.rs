@@ -2,10 +2,11 @@ use {
     bevy::prelude::*,
     blessings::{BlessingDefinition, Blessings, BuyBlessing},
     growth::GrowthStrategy,
+    states::{GameState, VillageView},
     wallet::Wallet,
     widgets::{
-        UiTheme, spawn_action_button, spawn_card_title, spawn_description_text,
-        spawn_scrollable_container,
+        spawn_action_button, spawn_card_title, spawn_description_text, spawn_menu_button,
+        spawn_scrollable_container, ContentContainer, UiTheme,
     },
 };
 
@@ -13,9 +14,22 @@ pub struct BlessingsUiPlugin;
 
 impl Plugin for BlessingsUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (handle_blessing_button, update_blessings_ui));
+        app.add_systems(OnEnter(VillageView::Blessings), spawn_blessings_ui)
+            .add_systems(
+                Update,
+                handle_back_button.run_if(in_state(GameState::Running)),
+            )
+            .add_systems(
+                Update,
+                (handle_blessing_button, update_blessings_ui)
+                    .run_if(in_state(VillageView::Blessings)),
+            );
     }
 }
+
+/// Back button to return to menu - we need this marker to match village_ui's behavior
+#[derive(Component)]
+struct VillageBackButton;
 
 #[derive(Component)]
 pub struct BlessingsUiRoot;
@@ -38,22 +52,52 @@ pub struct BlessingDisplayData {
     pub can_afford: bool,
 }
 
-pub fn spawn_blessings_content(parent: &mut ChildSpawnerCommands, data: Vec<BlessingDisplayData>) {
-    parent
-        .spawn((
-            Node {
-                flex_direction: FlexDirection::Column,
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                ..default()
-            },
-            BlessingsUiRoot,
-        ))
-        .with_children(|container| {
-            spawn_scrollable_container(container, BlessingsItemsContainer);
-        });
+fn spawn_blessings_ui(
+    mut commands: Commands,
+    mut query: Query<(Entity, Option<&Children>), With<ContentContainer>>,
+) {
+    let Some((container, children)) = query.iter_mut().next() else {
+        return;
+    };
 
-    parent.commands().queue(PopulateBlessingsCommand { data });
+    // Despawn existing children
+    let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
+    for child in to_despawn {
+        commands.entity(child).despawn();
+    }
+
+    // Spawn back button and blessings content
+    commands.entity(container).with_children(|parent| {
+        // Back button
+        spawn_menu_button(parent, "← Back", VillageBackButton, true);
+
+        // Spawn blessings root and scroll container
+        parent
+            .spawn((
+                Node {
+                    flex_direction: FlexDirection::Column,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    ..default()
+                },
+                BlessingsUiRoot,
+            ))
+            .with_children(|container| {
+                spawn_scrollable_container(container, BlessingsItemsContainer);
+            });
+    });
+}
+
+// Back button handler (needed since we spawn it)
+fn handle_back_button(
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
+    mut next_state: ResMut<NextState<VillageView>>,
+) {
+    for interaction in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            next_state.set(VillageView::Menu);
+        }
+    }
 }
 
 struct PopulateBlessingsCommand {
@@ -152,12 +196,16 @@ fn update_blessings_ui(
     let mut data = Vec::new();
     let current_entropy = wallet.resources.get("entropy").copied().unwrap_or(0);
 
-    for (_id, def) in assets.iter() {
+    for (id, def) in assets.iter() {
         let id_str = def.id.clone();
         let current_level = blessings.unlocked.get(&id_str).copied().unwrap_or(0);
         let cost = def.cost.calculate(current_level) as u32;
 
         let can_afford = current_entropy >= cost;
+
+        // Ensure we are using valid asset handle logic if we need to filter? 
+        // Currently iterating all assets seems fine as there are no complicated conditions yet.
+        let _ = id;
 
         data.push(BlessingDisplayData {
             id: id_str,

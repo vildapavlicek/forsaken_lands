@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 bevy.workspace = true
 blessings = { path = "../blessings" }
+blessings_ui = { path = "../ui/blessings_ui" }
 buildings.workspace = true
 buildings_assets.workspace = true
 buildings_components.workspace = true

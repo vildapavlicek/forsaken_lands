@@ -1,5 +1,5 @@
 use {
-    bevy::prelude::*, buildings::BuildingsPlugin, buildings_assets::BuildingsAssetsPlugin,
+    bevy::prelude::*, blessings_ui::BlessingsUiPlugin, buildings::BuildingsPlugin, buildings_assets::BuildingsAssetsPlugin,
     buildings_components::BuildingsComponentsPlugin, crafting::CraftingPlugin,
     crafting_resources::CraftingResourcesPlugin, crafting_ui::CraftingUiPlugin,
     divinity_components::DivinityComponentsPlugin, enemy_encyclopedia::EnemyEncyclopediaUiPlugin,
@@ -41,6 +41,7 @@ impl Plugin for CorePlugin {
                 PortalAssetsPlugin,
             ))
             .add_plugins((
+                BlessingsUiPlugin,
                 PortalUiPlugin,
                 ResearchPlugin,
                 ResearchUiPlugin,

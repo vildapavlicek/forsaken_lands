@@ -1,15 +1,12 @@
 use {
     bevy::{picking::prelude::*, prelude::*},
-    blessings::{BlessingDefinition, Blessings},
     buildings_components::TheMaw,
-    growth::GrowthStrategy,
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
     research::ResearchState,
     shared_components::DisplayName,
-    states::{EnemyEncyclopediaState, GameState, VillageView},
-    village_components::{EnemyEncyclopedia, Village},
-    wallet::Wallet,
+    states::{GameState, VillageView},
+    village_components::Village,
     widgets::{
         ContentContainer, PanelWrapperRef, spawn_menu_button, spawn_menu_panel,
         spawn_panel_header_with_close,
@@ -57,8 +54,6 @@ pub struct VillageUiRoot {
 /// Close button marker
 #[derive(Component)]
 struct VillageCloseButton;
-
-
 
 /// Menu button with target content
 #[derive(Component)]
@@ -164,7 +159,7 @@ impl Command for SpawnMenuContentCommand {
         }
 
         // Check if The Maw exists to enable Blessings
-        let maw_exists = !world.query::<&TheMaw>().iter(world).next().is_none();
+        let maw_exists = world.query::<&TheMaw>().iter(world).next().is_some();
 
         // Check if simple crafting is researched
         let research_state = world.resource::<ResearchState>();
@@ -221,121 +216,6 @@ impl Command for SpawnMenuContentCommand {
                 },
                 maw_exists,
             );
-        });
-    }
-}
-
-
-
-// ============================================================================
-// Research Content Command
-// ============================================================================
-
-
-
-// ============================================================================
-// Encyclopedia Content Command
-// ============================================================================
-
-struct SpawnEncyclopediaContentCommand;
-
-impl Command for SpawnEncyclopediaContentCommand {
-    fn apply(self, world: &mut World) {
-        let mut query =
-            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
-
-        let Some((container, children)) = query.iter(world).next() else {
-            return;
-        };
-
-        // Despawn existing children
-        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
-        for child in to_despawn {
-            world.commands().entity(child).despawn();
-        }
-
-        // Get encyclopedia from village
-        let mut village_query = world.query::<&EnemyEncyclopedia>();
-        let Some(encyclopedia) = village_query.iter(world).next() else {
-            return;
-        };
-
-        let encyclopedia = encyclopedia.clone();
-
-        // Spawn back button and encyclopedia content
-        world.commands().entity(container).with_children(|parent| {
-            // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton, true);
-
-            // Spawn encyclopedia content
-            enemy_encyclopedia::spawn_enemy_encyclopedia_content(parent, &encyclopedia);
-        });
-    }
-}
-
-// ============================================================================
-// Blessings Content Command
-// ============================================================================
-
-struct SpawnBlessingsContentCommand;
-
-impl Command for SpawnBlessingsContentCommand {
-    fn apply(self, world: &mut World) {
-        let mut query =
-            world.query_filtered::<(Entity, Option<&Children>), With<ContentContainer>>();
-
-        let Some((container, children)) = query.iter(world).next() else {
-            return;
-        };
-
-        // Despawn existing children
-        let to_despawn: Vec<Entity> = children.map(|c| c.iter().collect()).unwrap_or_default();
-        for child in to_despawn {
-            world.commands().entity(child).despawn();
-        }
-
-        // Fetch required resources using resource_scope to avoid borrow conflicts
-        let mut data = Vec::new();
-
-        world.resource_scope(|world, assets: Mut<Assets<BlessingDefinition>>| {
-            let wallet = world.resource::<Wallet>();
-            let current_entropy = wallet.resources.get("entropy").copied().unwrap_or(0);
-
-            // Fetch blessings component
-            let mut blessings_query = world.query::<&Blessings>();
-
-            // If blessings component exists
-            if let Some(blessings) = blessings_query.iter(world).next() {
-                for (id, def) in assets.iter() {
-                    let id_str = def.id.clone();
-                    let current_level = blessings.unlocked.get(&id_str).copied().unwrap_or(0);
-                    let cost = def.cost.calculate(current_level) as u32;
-                    let can_afford = current_entropy >= cost;
-
-                    // Skip if keeping internal ids clean, but we used id in loop
-                    let _ = id;
-
-                    data.push(blessings_ui::BlessingDisplayData {
-                        id: id_str,
-                        name: def.name.clone(),
-                        description: def.description.clone(),
-                        current_level,
-                        cost,
-                        can_afford,
-                    });
-                }
-            }
-        });
-
-        data.sort_by(|a, b| a.name.cmp(&b.name));
-
-        // Spawn back button and blessings content
-        world.commands().entity(container).with_children(|parent| {
-            // Back button
-            spawn_menu_button(parent, "← Back", VillageBackButton, true);
-
-            // Spawn blessings content
-            blessings_ui::spawn_blessings_content(parent, data);
         });
     }
 }
@@ -468,7 +348,6 @@ fn handle_menu_button(
         (Changed<Interaction>, With<Button>),
     >,
     mut ui_query: Query<&mut VillageUiRoot>,
-    mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
     mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
@@ -479,35 +358,19 @@ fn handle_menu_button(
                 match btn.target {
                     VillageContent::Crafting => next_village_state.set(VillageView::Crafting),
                     VillageContent::Research => next_village_state.set(VillageView::Research),
-                    VillageContent::Encyclopedia => next_village_state.set(VillageView::Encyclopedia),
+                    VillageContent::Encyclopedia => {
+                        next_village_state.set(VillageView::Encyclopedia)
+                    }
                     VillageContent::Heroes => next_village_state.set(VillageView::Heroes),
                     VillageContent::Blessings => next_village_state.set(VillageView::Blessings),
                     VillageContent::Menu => next_village_state.set(VillageView::Menu),
                 }
 
                 match btn.target {
-                    VillageContent::Crafting => {
-                        next_state.set(EnemyEncyclopediaState::Closed);
-                        // commands.queue(SpawnCraftingContentCommand); // Handled by state transition
-                    }
-                    VillageContent::Research => {
-                        next_state.set(EnemyEncyclopediaState::Closed);
-                    }
-                    VillageContent::Encyclopedia => {
-                        next_state.set(EnemyEncyclopediaState::Open);
-                        commands.queue(SpawnEncyclopediaContentCommand);
-                    }
-                    VillageContent::Menu => {
-                        next_state.set(EnemyEncyclopediaState::Closed);
-                    }
                     VillageContent::Heroes => {
-                        next_state.set(EnemyEncyclopediaState::Closed);
                         commands.queue(SpawnHeroesContentCommand);
                     }
-                    VillageContent::Blessings => {
-                        next_state.set(EnemyEncyclopediaState::Closed);
-                        commands.queue(SpawnBlessingsContentCommand);
-                    }
+                    _ => {} // Other views handle their own content via state monitoring
                 }
             }
         }
@@ -518,7 +381,6 @@ fn handle_back_button(
     _commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
     mut ui_query: Query<&mut VillageUiRoot>,
-    mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
     mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
@@ -526,7 +388,6 @@ fn handle_back_button(
             if let Ok(mut ui_root) = ui_query.single_mut() {
                 ui_root.content = VillageContent::Menu;
                 next_village_state.set(VillageView::Menu);
-                next_state.set(EnemyEncyclopediaState::Closed);
             }
         }
     }
@@ -536,14 +397,12 @@ fn handle_close_button(
     mut commands: Commands,
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageCloseButton>)>,
     ui_query: Query<(Entity, Option<&PanelWrapperRef>), With<VillageUiRoot>>,
-    mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
     mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             for (ui_entity, wrapper_ref) in ui_query.iter() {
                 next_village_state.set(VillageView::Closed);
-                next_state.set(EnemyEncyclopediaState::Closed);
                 // Despawn wrapper if it exists, otherwise just despawn the panel
                 if let Some(wrapper) = wrapper_ref {
                     commands.entity(wrapper.0).despawn();
