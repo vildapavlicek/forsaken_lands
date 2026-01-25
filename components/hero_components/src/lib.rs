@@ -1,5 +1,14 @@
 use {bevy::prelude::*, shared_components::IncludeInSave};
 
+/// The primary marker component for the player-controlled character.
+///
+/// This singleton component acts as the central anchor for the player's existence in the world.
+///
+/// # Usage
+/// - **Input & Movement**: Systems query for this component to apply player input vectors.
+/// - **Camera**: The camera system tracks the `Transform` of the entity with this component.
+/// - **Save/Load**: The `IncludeInSave` requirement ensures the hero's state (and hierarchy) is persisted.
+/// - **Equipment**: It serves as the root for the weapon hierarchy via `EquippedWeaponId`.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 #[require(EquippedWeaponId, IncludeInSave)]
