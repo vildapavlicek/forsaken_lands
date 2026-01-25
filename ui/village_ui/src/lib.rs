@@ -10,7 +10,7 @@ use {
     research::{InProgress, ResearchCompletionCount, ResearchNode, ResearchState},
     research_assets::ResearchDefinition,
     shared_components::DisplayName,
-    states::{EnemyEncyclopediaState, GameState},
+    states::{EnemyEncyclopediaState, GameState, VillageView},
     village_components::{EnemyEncyclopedia, Village},
     wallet::Wallet,
     widgets::{
@@ -22,7 +22,8 @@ pub struct VillageUiPlugin;
 
 impl Plugin for VillageUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_observer(on_village_clicked)
+        app.init_state::<VillageView>()
+            .add_observer(on_village_clicked)
             .add_systems(
                 Update,
                 (handle_menu_button, handle_back_button, handle_close_button)
@@ -81,6 +82,7 @@ fn on_village_clicked(
     mut commands: Commands,
     village_query: Query<(), With<Village>>,
     existing_ui: Query<(Entity, Option<&PanelWrapperRef>), With<VillageUiRoot>>,
+    mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     // Verify this is a village entity
     let clicked_entity = trigger.entity;
@@ -90,6 +92,7 @@ fn on_village_clicked(
 
     // Toggle: if UI exists, close it; otherwise open
     if let Ok((ui_entity, wrapper_ref)) = existing_ui.single() {
+        next_village_state.set(VillageView::Closed);
         // Despawn wrapper if it exists, otherwise just despawn the panel
         if let Some(wrapper) = wrapper_ref {
             commands.entity(wrapper.0).despawn();
@@ -99,6 +102,7 @@ fn on_village_clicked(
         return;
     }
 
+    next_village_state.set(VillageView::Menu);
     spawn_village_ui(&mut commands);
 }
 
@@ -680,11 +684,21 @@ fn handle_menu_button(
     >,
     mut ui_query: Query<&mut VillageUiRoot>,
     mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
+    mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             if let Ok(mut ui_root) = ui_query.single_mut() {
                 ui_root.content = btn.target;
+
+                match btn.target {
+                    VillageContent::Crafting => next_village_state.set(VillageView::Crafting),
+                    VillageContent::Research => next_village_state.set(VillageView::Research),
+                    VillageContent::Encyclopedia => next_village_state.set(VillageView::Encyclopedia),
+                    VillageContent::Heroes => next_village_state.set(VillageView::Heroes),
+                    VillageContent::Blessings => next_village_state.set(VillageView::Blessings),
+                    VillageContent::Menu => next_village_state.set(VillageView::Menu),
+                }
 
                 match btn.target {
                     VillageContent::Crafting => {
@@ -722,11 +736,13 @@ fn handle_back_button(
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageBackButton>)>,
     mut ui_query: Query<&mut VillageUiRoot>,
     mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
+    mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             if let Ok(mut ui_root) = ui_query.single_mut() {
                 ui_root.content = VillageContent::Menu;
+                next_village_state.set(VillageView::Menu);
                 next_state.set(EnemyEncyclopediaState::Closed);
                 commands.queue(SpawnMenuContentCommand);
             }
@@ -739,10 +755,12 @@ fn handle_close_button(
     interaction_query: Query<&Interaction, (Changed<Interaction>, With<VillageCloseButton>)>,
     ui_query: Query<(Entity, Option<&PanelWrapperRef>), With<VillageUiRoot>>,
     mut next_state: ResMut<NextState<EnemyEncyclopediaState>>,
+    mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             for (ui_entity, wrapper_ref) in ui_query.iter() {
+                next_village_state.set(VillageView::Closed);
                 next_state.set(EnemyEncyclopediaState::Closed);
                 // Despawn wrapper if it exists, otherwise just despawn the panel
                 if let Some(wrapper) = wrapper_ref {

@@ -10,6 +10,18 @@ pub enum GameState {
 }
 
 #[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum VillageView {
+    #[default]
+    Closed,
+    Menu,
+    Crafting,
+    Research,
+    Encyclopedia,
+    Heroes,
+    Blessings,
+}
+
+#[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum EnemyEncyclopediaState {
     #[default]
     Closed,
