@@ -1668,6 +1668,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "bonus_stats"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "buildings"
 version = "0.1.0"
 dependencies = [

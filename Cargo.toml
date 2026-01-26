@@ -31,7 +31,8 @@ members = [
   "game_assets/recipes_assets",
   "game_assets/research_assets",
   "game_assets/unlocks_assets",
-  "game_assets/weapon_assets", "growth",
+  "game_assets/weapon_assets",
+  "growth",
   "heroes",
   "loading",
   "portals",
@@ -39,6 +40,7 @@ members = [
   "resources/crafting_resources",
   "resources/unlocks_resources",
   "save_load",
+  "bonus_stats",
   "states",
   "system_schedule",
   "ui/blessings_ui",
@@ -98,6 +100,7 @@ research_ui = { path = "ui/research_ui" }
 resources_ui = { path = "ui/resources_ui" }
 save_load = { path = "save_load" }
 shared_components = { path = "components/shared_components" }
+bonus_stats = { path = "bonus_stats" }
 states = { path = "states" }
 system_schedule = { path = "system_schedule" }
 unlock_states = { path = "components/unlock_states" }
