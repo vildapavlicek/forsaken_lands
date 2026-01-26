@@ -81,6 +81,15 @@ pub struct AttackSpeed {
 #[derive(Component, Default)]
 pub struct Projectile;
 
+/// Designates a target entity for a projectile to follow (homing behavior).
+///
+/// This component is attached to projectile entities to guide their movement.
+///
+/// # Usage
+/// - **Movement**: `projectile_movement_system` queries this to adjust the projectile's
+///   velocity towards the target's current position.
+/// - **Collision**: `projectile_collision_system` uses this to check distance to the specific target
+///   and trigger a hit if close enough.
 #[derive(Component)]
 pub struct ProjectileTarget(pub Entity);
 
