@@ -63,6 +63,17 @@ pub struct ResearchState {
 
 // --- Events ---
 
+/// Represents the successful completion of a research project's timer.
+///
+/// This **Observer** event signals that the time requirement has been met.
+/// It is triggered via `commands.trigger` for immediate handling.
+///
+/// # Observers
+/// - `ui/notification_ui`: Queues a visual notification (toast) for the player.
+///
+/// # Related Events
+/// - `unlocks_events::StatusCompleted`: Triggered simultaneously to update the Unlock System (logic).
+///   This event (`ResearchCompleted`) focuses on immediate feedback/effects.
 #[derive(Event)]
 pub struct ResearchCompleted {
     pub research_id: String,
