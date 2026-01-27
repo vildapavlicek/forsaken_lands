@@ -1974,17 +1974,7 @@ impl EditorState {
                     changed = true;
                 }
             }
-            EnemyComponent::RewardCoefficient(coeff) => {
-                ui.horizontal(|ui| {
-                    ui.label("Coefficient:");
-                    if ui.add(egui::DragValue::new(coeff).speed(0.1)).changed() {
-                        changed = true;
-                    }
-                });
-            }
-            EnemyComponent::NeedsHydration => {
-                ui.label("(Marker component, no fields)");
-            }
+
         }
 
         changed

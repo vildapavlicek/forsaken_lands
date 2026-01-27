@@ -57,8 +57,6 @@ pub enum EnemyComponent {
 
     // Optional components
     Drops(Vec<Drop>),
-    RewardCoefficient(f32),
-    NeedsHydration,
 }
 
 impl EnemyComponent {
@@ -75,8 +73,6 @@ impl EnemyComponent {
             EnemyComponent::Transform { .. } => "Transform",
             EnemyComponent::Sprite { .. } => "Sprite",
             EnemyComponent::Drops(_) => "Drops",
-            EnemyComponent::RewardCoefficient(_) => "Reward Coefficient",
-            EnemyComponent::NeedsHydration => "Needs Hydration",
         }
     }
 
@@ -109,8 +105,6 @@ pub struct Drop {
 pub fn optional_components() -> Vec<(&'static str, EnemyComponent)> {
     vec![
         ("Drops", EnemyComponent::Drops(vec![])),
-        ("Reward Coefficient", EnemyComponent::RewardCoefficient(1.0)),
-        ("Needs Hydration", EnemyComponent::NeedsHydration),
     ]
 }
 
@@ -246,13 +240,6 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
                 ))
             }
         }
-        EnemyComponent::RewardCoefficient(coeff) => Some(format!(
-            r#""enemy_components::RewardCoefficient": ({})"#,
-            format_f32(*coeff)
-        )),
-        EnemyComponent::NeedsHydration => {
-            Some(r#""enemy_components::NeedsHydration": ()"#.to_string())
-        }
     }
 }
 
@@ -381,17 +368,7 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
         components.push(EnemyComponent::Drops(drops));
     }
 
-    // RewardCoefficient
-    let coeff_re = Regex::new(r#""enemy_components::RewardCoefficient":\s*\(([\d.]+)\)"#).ok()?;
-    if let Some(caps) = coeff_re.captures(content) {
-        let coeff: f32 = caps.get(1)?.as_str().parse().ok()?;
-        components.push(EnemyComponent::RewardCoefficient(coeff));
-    }
 
-    // NeedsHydration marker
-    if content.contains("\"enemy_components::NeedsHydration\"") {
-        components.push(EnemyComponent::NeedsHydration);
-    }
 
     if components.is_empty() {
         None

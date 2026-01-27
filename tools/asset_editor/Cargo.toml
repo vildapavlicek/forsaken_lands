@@ -27,5 +27,5 @@ unlocks_components = { path = "../../components/unlocks_components" }
 divinity_components = { path = "../../components/divinity_components" }
 weapon_assets = { path = "../../game_assets/weapon_assets" }
 recipes_assets = { path = "../../game_assets/recipes_assets" }
-bevy = { version = "0.17", default-features = false, features = [] }
+bevy = { version = "0.18", default-features = false, features = [] }
 

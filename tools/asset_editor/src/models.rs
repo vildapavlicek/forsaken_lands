@@ -353,6 +353,8 @@ impl From<&ConditionNode> for LeafCondition {
             // Checking the file content of `unlocks_assets/src/lib.rs` (Step 35), `ConditionNode`
             // ONLY has `And`, `Or`, `Not`, `True`, `Value`, `Completed`. 
             // So we MUST REMOVE `Stat`, `Resource`, `Unlock` match arms.
+            // Legacy/Direct variants are no longer supported or needed as ConditionNode has changed.
+            // We only rely on Completed and Value variants which are handled above.
             _ => LeafCondition::default(),
 
         }
