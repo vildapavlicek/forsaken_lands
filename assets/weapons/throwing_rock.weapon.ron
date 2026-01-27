@@ -5,4 +5,5 @@
     damage: 0.25,
     attack_range: 250.0,
     attack_speed_ms: 500,
+    tags: ["damage", "damage:ranged", "damage:throwing_rock"],
 )

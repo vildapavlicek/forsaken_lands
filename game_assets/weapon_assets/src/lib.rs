@@ -37,6 +37,8 @@ pub struct WeaponDefinition {
     pub attack_range: f32,
     /// Time between attacks in milliseconds
     pub attack_speed_ms: u32,
+    /// Tags associated with this weapon (e.g., "melee", "bone_sword")
+    pub tags: Vec<String>,
 }
 
 /// Type of weapon with type-specific attributes.

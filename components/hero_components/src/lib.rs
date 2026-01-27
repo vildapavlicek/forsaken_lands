@@ -16,9 +16,15 @@ pub struct Hero;
 
 /// Stable identifier for weapons that persists across save/load.
 /// This ID is used to reference weapons by name rather than entity ID.
-#[derive(Component, Reflect, Default, Clone)]
+#[derive(Component, Reflect, Default, Clone, Debug)]
 #[reflect(Component)]
 pub struct WeaponId(pub String);
+
+/// Collection of tags assigned to a weapon (e.g., "melee", "bone_sword").
+/// Used by the `bonus_stats` crate to apply conditional bonuses.
+#[derive(Component, Reflect, Default, Clone, Debug)]
+#[reflect(Component)]
+pub struct WeaponTags(pub Vec<String>);
 
 /// References which weapon a hero has equipped by its WeaponId.
 /// Uses Option<String> to represent no weapon equipped (None).
