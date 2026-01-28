@@ -2384,6 +2384,7 @@ name = "enemy_encyclopedia"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "enemy_resources",
  "states",
  "village_components",
  "widgets",
@@ -2391,6 +2392,13 @@ dependencies = [
 
 [[package]]
 name = "enemy_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "enemy_resources"
 version = "0.1.0"
 dependencies = [
  "bevy",
@@ -4117,6 +4125,7 @@ dependencies = [
  "divinity_events",
  "enemy_components",
  "enemy_events",
+ "enemy_resources",
  "hero_events",
  "loading",
  "portal_assets",
@@ -4124,6 +4133,7 @@ dependencies = [
  "rand",
  "states",
  "system_schedule",
+ "unlocks",
 ]
 
 [[package]]

@@ -5,4 +5,3 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-bevy_platform_support = "0.1"
