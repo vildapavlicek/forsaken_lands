@@ -34,6 +34,18 @@ pub struct WeaponInventory {
     pub weapons: Vec<String>,
 }
 
+/// The singleton marker component for the central hub entity.
+///
+/// This component anchors the persistent state of the player's progression, specifically
+/// regarding knowledge (Encyclopedia) and armory (Inventory). It exists as a single
+/// entity in the world that persists across save/load cycles.
+///
+/// # Usage
+/// - **Persistence**: Tagged with `IncludeInSave` to ensure all attached progression data
+///   (Encyclopedia, Inventory) is serialized to disk.
+/// - **Progression Anchor**: Systems query for `Village` to access the `EnemyEncyclopedia`
+///   (for unlocks/stats) and `WeaponInventory` (for equipment management).
+/// - **Interaction**: Tagged with `Pickable` to allow UI or gameplay interaction (e.g., opening menus).
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
 #[require(EnemyEncyclopedia, WeaponInventory, Pickable, IncludeInSave)]
