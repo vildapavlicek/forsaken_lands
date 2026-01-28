@@ -3,7 +3,7 @@
 //! Generates RON content and handles file saving.
 
 use {
-    crate::models::{RecipeUnlockFormData, ResearchFormData},
+    crate::models::{GenericUnlockFormData, RecipeUnlockFormData, ResearchFormData},
     std::path::Path,
 };
 
@@ -67,6 +67,36 @@ pub fn generate_recipe_unlock_ron(data: &RecipeUnlockFormData) -> String {
         data.display_name
     ));
     ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
+    ron.push_str(&format!(
+        "    condition: {},\n",
+        data.unlock_condition.to_ron()
+    ));
+    ron.push_str(")\n");
+
+    ron
+}
+
+
+
+/// Generates the .unlock.ron file content for generic unlocks.
+pub fn generate_generic_unlock_ron(data: &GenericUnlockFormData) -> String {
+    let mut ron = String::new();
+
+    ron.push_str("(\n");
+    ron.push_str(&format!("    id: \"{}\",\n", data.id));
+    
+    if !data.display_name.is_empty() {
+        ron.push_str(&format!(
+            "    display_name: Some(\"{}\"),\n",
+            data.display_name
+        ));
+    } else {
+        ron.push_str("    display_name: None,\n");
+    }
+
+    // Generic unlocks explicitly define their reward ID
+    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id));
+    
     ron.push_str(&format!(
         "    condition: {},\n",
         data.unlock_condition.to_ron()
@@ -150,6 +180,30 @@ pub fn save_recipe_unlock_file(
     Ok(RecipeSaveResult {
         unlock_path: unlock_path.display().to_string(),
     })
+}
+
+/// Saves generic unlock file to the specified assets directory.
+pub fn save_generic_unlock_file(
+    data: &GenericUnlockFormData,
+    assets_dir: &Path,
+) -> Result<String, std::io::Error> {
+    // Generate content
+    let unlock_content = generate_generic_unlock_ron(data);
+
+    // Build paths
+    // We'll put them in assets/unlocks/generic/ by default
+    let unlock_dir = assets_dir.join("unlocks").join("generic");
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&unlock_dir)?;
+
+    // Build file path
+    let unlock_path = unlock_dir.join(data.unlock_filename());
+
+    // Write file
+    std::fs::write(&unlock_path, unlock_content)?;
+
+    Ok(unlock_path.display().to_string())
 }
 
 #[cfg(test)]

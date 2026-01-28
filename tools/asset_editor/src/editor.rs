@@ -5,13 +5,14 @@
 use {
     crate::{
         file_generator::{
-            generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
-            save_recipe_unlock_file, save_research_files,
+            generate_generic_unlock_ron, generate_recipe_unlock_ron, generate_research_ron,
+            generate_unlock_ron, save_generic_unlock_file, save_recipe_unlock_file,
+            save_research_files,
         },
         models::{
             CompareOp, EditorCraftingOutcome, EditorRecipeCategory, EditorWeaponType,
-            LeafCondition, RecipeFormData, RecipeUnlockFormData, ResearchFormData, ResourceCost,
-            UnlockCondition, WeaponFormData,
+            GenericUnlockFormData, LeafCondition, RecipeFormData, RecipeUnlockFormData,
+            ResearchFormData, ResourceCost, UnlockCondition, WeaponFormData,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
@@ -33,6 +34,7 @@ pub enum EditorTab {
     #[default]
     Research,
     RecipeUnlock,
+    GenericUnlock,
     Weapon,
     Recipe,
     MonsterPrefab,
@@ -48,6 +50,8 @@ pub struct EditorState {
     research_form: ResearchFormData,
     /// Form data for the current recipe unlock.
     recipe_unlock_form: RecipeUnlockFormData,
+    /// Form data for the current generic unlock.
+    generic_unlock_form: GenericUnlockFormData,
     /// Form data for the current weapon.
     weapon_form: WeaponFormData,
     /// Form data for the current recipe.
@@ -60,6 +64,8 @@ pub struct EditorState {
     existing_research_ids: Vec<String>,
     /// List of existing recipe unlock IDs.
     existing_recipe_unlock_ids: Vec<String>,
+    /// List of existing generic unlock IDs.
+    existing_generic_unlock_ids: Vec<String>,
     /// List of existing weapon IDs.
     existing_weapon_ids: Vec<String>,
     /// List of existing recipe IDs.
@@ -115,12 +121,14 @@ impl EditorState {
             active_tab: EditorTab::Research,
             research_form: ResearchFormData::new(),
             recipe_unlock_form: RecipeUnlockFormData::new(),
+            generic_unlock_form: GenericUnlockFormData::new(),
             weapon_form: WeaponFormData::new(),
             recipe_data_form: RecipeFormData::new(),
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
             existing_recipe_unlock_ids: Vec::new(),
+            existing_generic_unlock_ids: Vec::new(),
             existing_weapon_ids: Vec::new(),
             existing_recipe_ids: Vec::new(),
             existing_research_filenames: Vec::new(),
@@ -219,6 +227,15 @@ impl EditorState {
                                     .desired_width(f32::INFINITY),
                             );
                         }
+                        EditorTab::GenericUnlock => {
+                            ui.label("Generic Unlock File:");
+                            let unlock_ron = generate_generic_unlock_ron(&self.generic_unlock_form);
+                            ui.add(
+                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
                         EditorTab::Weapon => {
                             ui.label("Weapon File:");
                             let weapon_ron = self.weapon_form.to_ron();
@@ -271,6 +288,7 @@ impl EditorState {
                     EditorTab::RecipeUnlock,
                     "🔧 Recipe Unlock",
                 );
+                ui.selectable_value(&mut self.active_tab, EditorTab::GenericUnlock, "🔓 Generic Unlock");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Weapon, "⚔ Weapon");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Recipe, "🧪 Recipe");
                 ui.selectable_value(
@@ -294,6 +312,7 @@ impl EditorState {
             egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
                 EditorTab::Research => self.show_research_form(ui),
                 EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
+                EditorTab::GenericUnlock => self.show_generic_unlock_form(ui),
                 EditorTab::Weapon => self.show_weapon_form(ui),
                 EditorTab::Recipe => self.show_recipe_form(ui),
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
@@ -579,6 +598,121 @@ impl EditorState {
         ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
             if ui.button("💾 Save Recipe Unlock").clicked() {
                 self.save_recipe_unlock();
+            }
+        });
+
+        if self.assets_dir.is_none() {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ Select assets directory first (File → Select Assets Directory)",
+            );
+        }
+    }
+
+    fn show_generic_unlock_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Generic Unlock Definition");
+        ui.add_space(4.0);
+
+        // Load existing generic unlocks
+        ui.group(|ui| {
+            ui.heading("Load Existing Generic Unlock");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_generic_unlock_ids.is_empty() {
+                ui.label("No generic unlock assets found in assets/unlocks/generic/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_id = None;
+                    for id in &self.existing_generic_unlock_ids {
+                        if ui.button(id).clicked() {
+                            load_id = Some(id.clone());
+                        }
+                    }
+                    if let Some(id) = load_id {
+                        self.load_generic_unlock(&id);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+
+        ui.small(
+            "Define a generic unlock condition. The ID can be used by any system to check if unlocked.",
+        );
+        ui.add_space(8.0);
+
+        // Unlock ID
+        ui.horizontal(|ui| {
+            ui.label("Unlock ID:");
+            ui.text_edit_singleline(&mut self.generic_unlock_form.id);
+        });
+        ui.small("The unique ID (e.g., \"extra_stash_tab\")");
+        ui.add_space(8.0);
+
+        // Display Name
+        ui.horizontal(|ui| {
+            ui.label("Display Name:");
+            ui.text_edit_singleline(&mut self.generic_unlock_form.display_name);
+        });
+        ui.small("Shown in notifications (optional)");
+        ui.add_space(8.0);
+
+        // Reward ID
+        ui.horizontal(|ui| {
+            ui.label("Reward ID:");
+            ui.text_edit_singleline(&mut self.generic_unlock_form.reward_id);
+        });
+        ui.small("The ID of the thing being unlocked (e.g., \"extra_stash_tab\")");
+        ui.add_space(8.0);
+
+        // Unlock condition section
+        ui.separator();
+        ui.heading("Unlock Condition");
+        show_condition_editor(
+            ui,
+            "generic",
+            &self.existing_research_ids,
+            &self.existing_monster_ids,
+            &mut self.generic_unlock_form.unlock_condition,
+        );
+        ui.add_space(16.0);
+
+        // ID Preview section
+        ui.separator();
+        ui.heading("Generated IDs (Preview)");
+        ui.add_enabled_ui(false, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Unlock file:");
+                ui.monospace(self.generic_unlock_form.unlock_filename());
+            });
+            ui.horizontal(|ui| {
+                ui.label("Unlock ID:");
+                ui.monospace(self.generic_unlock_form.unlock_id());
+            });
+        });
+        ui.add_space(16.0);
+
+        // Validation and Save
+        ui.separator();
+        let errors = self.generic_unlock_form.validate();
+        if !errors.is_empty() {
+            ui.colored_label(egui::Color32::RED, "Validation Errors:");
+            for error in &errors {
+                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
+            }
+            ui.add_space(8.0);
+        }
+
+        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
+            if ui.button("💾 Save Generic Unlock").clicked() {
+                self.save_generic_unlock();
             }
         });
 
@@ -1173,6 +1307,10 @@ impl EditorState {
                 self.recipe_unlock_form = RecipeUnlockFormData::new();
                 self.status = "New recipe unlock form created".to_string();
             }
+            EditorTab::GenericUnlock => {
+                self.generic_unlock_form = GenericUnlockFormData::new();
+                self.status = "New generic unlock form created".to_string();
+            }
             EditorTab::Weapon => {
                 self.weapon_form = WeaponFormData::new();
                 self.status = "New weapon form created".to_string();
@@ -1261,6 +1399,25 @@ impl EditorState {
             }
         }
         self.existing_recipe_unlock_ids.sort();
+
+        // Load generic unlock IDs
+        self.existing_generic_unlock_ids.clear();
+        let generic_unlock_dir = assets_dir.join("unlocks").join("generic");
+        if let Ok(entries) = std::fs::read_dir(generic_unlock_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".unlock.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".unlock.ron") {
+                            // filename is {id}.unlock.ron
+                            self.existing_generic_unlock_ids.push(stem.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_generic_unlock_ids.sort();
 
         // Load monster IDs from prefabs/enemies
         self.existing_monster_ids.clear();
@@ -1472,6 +1629,38 @@ impl EditorState {
         }
     }
 
+    fn load_generic_unlock(&mut self, id: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            // Construct path
+            let unlock_path = assets_dir
+                .join("unlocks")
+                .join("generic")
+                .join(format!("{}.unlock.ron", id));
+
+            // Read file
+            let unlock_content = match std::fs::read_to_string(&unlock_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read unlock file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse RON
+            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
+                    return;
+                }
+            };
+
+            // Convert and populate form
+            self.generic_unlock_form = GenericUnlockFormData::from_assets(&unlock_def);
+            self.status = format!("✓ Loaded generic unlock: {}", id);
+        }
+    }
+
     fn save_weapon(&mut self) {
         if let Some(assets_dir) = &self.assets_dir {
             let weapons_dir = assets_dir.join("weapons");
@@ -1673,6 +1862,21 @@ impl EditorState {
             match save_recipe_unlock_file(&self.recipe_unlock_form, assets_dir) {
                 Ok(result) => {
                     self.status = format!("✓ Saved: {}", result.unlock_path);
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to save: {}", e);
+                }
+            }
+        }
+    }
+
+    fn save_generic_unlock(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            match save_generic_unlock_file(&self.generic_unlock_form, assets_dir) {
+                Ok(path) => {
+                    self.status = format!("✓ Saved: {}", path);
                     let assets_dir = assets_dir.clone();
                     self.load_existing_ids(&assets_dir);
                 }

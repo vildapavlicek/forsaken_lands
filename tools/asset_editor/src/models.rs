@@ -559,6 +559,70 @@ impl RecipeUnlockFormData {
     }
 }
 
+// ==================== Generic Unlock Form Data ====================
+
+/// The form data for a generic unlock.
+#[derive(Clone, Debug, Default)]
+pub struct GenericUnlockFormData {
+    /// The unique ID of the unlock (e.g., "generic_feature_x")
+    pub id: String,
+    /// Display name (optional)
+    pub display_name: String,
+    /// The ID of the thing being unlocked
+    pub reward_id: String,
+    /// Unlock condition
+    pub unlock_condition: UnlockCondition,
+}
+
+impl GenericUnlockFormData {
+    /// Creates a new form with default values.
+    pub fn new() -> Self {
+        Self {
+            id: String::new(),
+            display_name: String::new(),
+            reward_id: String::new(),
+            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock { id: String::new() }),
+        }
+    }
+
+    /// Returns the unlock ID.
+    pub fn unlock_id(&self) -> String {
+        self.id.clone()
+    }
+
+    /// Returns the unlock filename.
+    /// Pattern: {id}.unlock.ron
+    pub fn unlock_filename(&self) -> String {
+        format!("{}.unlock.ron", self.id)
+    }
+
+    /// Validates the form data.
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        if self.id.trim().is_empty() {
+            errors.push("Unlock ID is required".to_string());
+        }
+        if self.reward_id.trim().is_empty() {
+            errors.push("Reward ID is required".to_string());
+        }
+
+        // Validate unlock condition
+        errors.extend(self.unlock_condition.validate());
+
+        errors
+    }
+
+    pub fn from_assets(unlock: &UnlockDefinition) -> Self {
+        Self {
+            id: unlock.id.clone(),
+            display_name: unlock.display_name.clone().unwrap_or_default(),
+            reward_id: unlock.reward_id.clone(),
+            unlock_condition: UnlockCondition::from(&unlock.condition),
+        }
+    }
+}
+
 // ==================== Weapon Form Data ====================
 
 /// Type of weapon for the editor.
