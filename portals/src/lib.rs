@@ -7,6 +7,7 @@ use {
         Dead, Drop, Drops, Enemy, EnemyRange, Health, Lifetime, MELEE_ENGAGEMENT_RADIUS, MonsterId,
         MovementSpeed, TargetDestination,
     },
+    enemy_resources::EnemyDetailsCache,
     enemy_events::EnemyEscaped,
     hero_events::EnemyKilled,
     loading::GameAssets,
@@ -16,6 +17,8 @@ use {
     system_schedule::GameSchedule,
 };
 
+pub mod enemy_details;
+
 pub struct PortalsPlugin;
 
 impl Plugin for PortalsPlugin {
@@ -23,6 +26,7 @@ impl Plugin for PortalsPlugin {
         app.register_type::<Portal>();
         app.register_type::<SpawnTimer>();
         app.register_type::<SpawnTableId>();
+        app.init_resource::<enemy_resources::EnemyDetailsCache>();
 
         app.register_type::<Enemy>();
         app.register_type::<MovementSpeed>();
@@ -48,6 +52,7 @@ impl Plugin for PortalsPlugin {
         app.add_observer(assign_enemy_destination);
         app.add_observer(apply_blessing_to_lifetime);
         app.add_observer(on_enemy_escaped);
+        app.add_observer(enemy_details::cache_details_on_unlock);
         app.add_systems(OnExit(states::GameState::Running), clean_up_portals);
     }
 }
