@@ -58,10 +58,7 @@ fn generate_entropy(
 
 #[cfg(test)]
 mod tests {
-    use {
-        super::*, bevy::prelude::*, buildings_components::EntropyGenerator, std::time::Duration,
-        wallet::Wallet,
-    };
+    use {super::*, buildings_components::EntropyGenerator, std::time::Duration, wallet::Wallet};
 
     #[test]
     fn test_entropy_generation() {
