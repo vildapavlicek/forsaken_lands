@@ -134,6 +134,7 @@ fn handle_divinity_increase(
 
 fn divinity_increase_unlock(
     event: On<UnlockAchieved>,
+    mut cmd: Commands,
     mut divinity: Query<&mut Divinity, With<Village>>,
     mut claimed_state: ResMut<DivinityUnlockState>,
 ) {
@@ -167,6 +168,11 @@ fn divinity_increase_unlock(
                 level = divinity.level,
                 "Divinity level-up granted"
             );
+
+            cmd.trigger(unlocks_events::ValueChanged {
+                topic: "divinity".into(),
+                value: (divinity.tier * 100 + divinity.level) as f32,
+            });
         }
         Err(err) => error!(%err, "failed to query village's divinity"),
     }
