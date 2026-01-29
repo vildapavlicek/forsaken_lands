@@ -1,0 +1,8 @@
+(
+    id: "invaders",
+    name: "Invaders",
+    description: "The came from nowhere. Bringing death... And resources.",
+    cost: {},
+    time_required: 20.0,
+    max_repeats: 1,
+)

@@ -1,0 +1,10 @@
+(
+    id: "divinity_1_2",
+    display_name: Some("Divinity Tier 1 Level 2"),
+    condition: And([
+        Completed(
+            topic: "research:invaders",
+        ),
+    ]),
+    reward_id: "divinity:1-2",
+)
