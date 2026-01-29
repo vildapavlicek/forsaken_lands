@@ -1,0 +1,8 @@
+(
+    id: "autopsy_siled_alpha",
+    name: "Autopsy: siled_alpha",
+    description: "Bigger and meaner.",
+    cost: {},
+    time_required: 15.0,
+    max_repeats: 1,
+)

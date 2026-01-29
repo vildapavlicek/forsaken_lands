@@ -1,0 +1,15 @@
+(
+    id: "divinity_1_3",
+    display_name: Some("Divinity Tier 1 Level 3"),
+    condition: And([
+        Value(
+            topic: "divinity",
+            op: Ge,
+            target: 102.0,
+        ),
+        Completed(
+            topic: "research:corpse_scavenging",
+        ),
+    ]),
+    reward_id: "divinity:1-3",
+)
