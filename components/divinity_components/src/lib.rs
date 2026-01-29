@@ -50,6 +50,21 @@ impl Divinity {
             false
         }
     }
+
+    pub fn from_dashed_str(value: &str) -> Result<Self, String> {
+        let Some((tier, level)) = value.split_once('-') else {
+            return Err(format!("invalid value for divinity: '{value}'"));
+        };
+
+        let Ok(tier) = tier.parse() else {
+            return Err(format!("invalid tier number: {tier}"));
+        };
+        let Ok(level) = level.parse() else {
+            return Err(format!("invalid level number {level}"));
+        };
+
+        Ok(Divinity { tier, level })
+    }
 }
 
 impl PartialOrd for Divinity {

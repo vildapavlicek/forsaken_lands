@@ -139,29 +139,36 @@ fn divinity_increase_unlock(
 ) {
     let event = event.event();
 
-    if event.reward_id == "divinity_level_up" {
-        // Check if this unlock has already granted its divinity level-up
-        if claimed_state.claimed.contains(&event.unlock_id) {
-            debug!(
-                unlock_id = %event.unlock_id,
-                "Divinity level-up already claimed, skipping"
-            );
-            return;
-        }
+    let Some(divinity_event) = event.reward_id.strip_prefix("divinity:") else {
+        return;
+    };
 
-        match divinity.single_mut() {
-            Ok(mut divinity) => {
-                divinity.level_up();
-                claimed_state.claimed.insert(event.unlock_id.clone());
-                info!(
-                    unlock_id = %event.unlock_id,
-                    tier = divinity.tier,
-                    level = divinity.level,
-                    "Divinity level-up granted"
-                );
-            }
-            Err(err) => error!(%err, "failed to query village's divinity"),
+    let Ok(new_divinity) = Divinity::from_dashed_str(divinity_event) else {
+        error!(%divinity_event, "Divinity in invalid format");
+        return;
+    };
+
+    // Check if this unlock has already granted its divinity level-up
+    if claimed_state.claimed.contains(&event.unlock_id) {
+        debug!(
+            unlock_id = %event.unlock_id,
+            "Divinity level-up already claimed, skipping"
+        );
+        return;
+    }
+
+    match divinity.single_mut() {
+        Ok(mut divinity) => {
+            *divinity = new_divinity;
+            claimed_state.claimed.insert(event.unlock_id.clone());
+            info!(
+                unlock_id = %event.unlock_id,
+                tier = divinity.tier,
+                level = divinity.level,
+                "Divinity level-up granted"
+            );
         }
+        Err(err) => error!(%err, "failed to query village's divinity"),
     }
 }
 
