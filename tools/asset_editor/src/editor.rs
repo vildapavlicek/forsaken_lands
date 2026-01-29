@@ -8,12 +8,14 @@ use {
             generate_generic_unlock_ron, generate_recipe_unlock_ron, generate_research_ron,
             generate_unlock_ron, save_generic_unlock_file, save_recipe_unlock_file,
             save_research_files,
+            generate_autopsy_research_unlock_ron, generate_autopsy_research_ron, 
+            generate_autopsy_encyclopedia_unlock_ron, save_autopsy_files,
         },
         models::{
             CompareOp, EditorCraftingOutcome, EditorRecipeCategory, GenericUnlockFormData,
             LeafCondition, RecipeFormData, RecipeUnlockFormData, ResearchFormData, ResourceCost,
             UnlockCondition, WeaponDefinitionExt, WeaponTypeExt,
-            CachedEnemy, CachedWeapon,
+            CachedEnemy, CachedWeapon, AutopsyFormData,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
@@ -44,6 +46,7 @@ pub enum EditorTab {
     SpawnTable,
     Graph,
     TimeToKill,
+    Autopsy,
 }
 
 /// Current state of the editor.
@@ -121,6 +124,9 @@ pub struct EditorState {
     ttk_data_loaded: bool,
     cached_enemies: Vec<CachedEnemy>,
     cached_weapons: Vec<CachedWeapon>,
+    
+    // Autopsy Tab
+    autopsy_form: AutopsyFormData,
 }
 
 impl EditorState {
@@ -165,6 +171,8 @@ impl EditorState {
             ttk_data_loaded: false,
             cached_enemies: Vec::new(),
             cached_weapons: Vec::new(),
+            
+            autopsy_form: AutopsyFormData::new(),
         }
     }
 
@@ -292,6 +300,21 @@ impl EditorState {
                         EditorTab::Graph | EditorTab::TimeToKill => {
                              ui.label("No RON preview for this tab");
                         }
+                        EditorTab::Autopsy => {
+                            ui.label("Research Unlock:");
+                            let ru = generate_autopsy_research_unlock_ron(&self.autopsy_form);
+                            ui.add(egui::TextEdit::multiline(&mut ru.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                            
+                            ui.add_space(10.0);
+                            ui.label("Research Definition:");
+                            let r = generate_autopsy_research_ron(&self.autopsy_form);
+                            ui.add(egui::TextEdit::multiline(&mut r.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                            
+                            ui.add_space(10.0);
+                            ui.label("Encyclopedia Unlock:");
+                            let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
+                            ui.add(egui::TextEdit::multiline(&mut eu.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                        }
                     });
                 });
         }
@@ -329,6 +352,11 @@ impl EditorState {
                     EditorTab::TimeToKill,
                     "⏱ TTK",
                 );
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::Autopsy,
+                    "🧬 Autopsy",
+                );
             });
             ui.separator();
 
@@ -342,6 +370,7 @@ impl EditorState {
                 EditorTab::SpawnTable => self.show_spawn_table_form(ui),
                 EditorTab::Graph => self.graph_state.show(ui, self.assets_dir.as_deref()),
                 EditorTab::TimeToKill => self.show_ttk_tab(ui),
+                EditorTab::Autopsy => self.show_autopsy_form(ui),
             });
         });
     }
@@ -1382,7 +1411,11 @@ impl EditorState {
                 self.status = "Graph view active".to_string();
             }
             EditorTab::TimeToKill => {
-                 self.status = "Time To Kill calculator active".to_string();
+                // No form to create for TTK
+            }
+            EditorTab::Autopsy => {
+                self.autopsy_form = AutopsyFormData::new();
+                self.status = "New autopsy form created".to_string();
             }
         }
     }
@@ -2812,6 +2845,158 @@ impl EditorState {
                 }
                 Err(e) => {
                     self.status = format!("✗ Failed to save: {}", e);
+                }
+            }
+        }
+    }
+
+    fn show_autopsy_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Autopsy Definition");
+        ui.add_space(4.0);
+        
+        ui.group(|ui| {
+            ui.label("Define autopsy research for a monster. This will generate:");
+            ui.label("• Research Unlock (Kill 1 monster -> Unlock Research)");
+            ui.label("• Research Definition (Cost/Time/Desc)");
+            ui.label("• Encyclopedia Unlock (Research Complete -> Show Data)");
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+        
+        if self.assets_dir.is_none() {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ Select assets directory first (File → Select Assets Directory)",
+            );
+        }
+
+        // Monster Selection
+        ui.horizontal(|ui| {
+            ui.label("Monster ID:");
+            // Autocomplete or dropdown would be nice, but simple text + dropdown helper is good
+            ui.text_edit_singleline(&mut self.autopsy_form.monster_id);
+            
+            egui::ComboBox::from_id_salt("monster_select")
+                .selected_text("Select existing...")
+                .show_ui(ui, |ui| {
+                    if self.existing_monster_ids.is_empty() {
+                         ui.label("No monsters found");
+                    } else {
+                        for monster_id in &self.existing_monster_ids {
+                             if ui.selectable_label(self.autopsy_form.monster_id == *monster_id, monster_id).clicked() {
+                                 self.autopsy_form.monster_id = monster_id.clone();
+                             }
+                        }
+                    }
+                });
+        });
+        ui.small("The ID of the monster (e.g., \"zombie_basic\").");
+        ui.add_space(8.0);
+
+        // Description
+        ui.label("Research Description:");
+        ui.add(
+            egui::TextEdit::multiline(&mut self.autopsy_form.research_description)
+                .desired_rows(2)
+                .desired_width(f32::INFINITY),
+        );
+        ui.add_space(8.0);
+
+        // Cost section
+        ui.separator();
+        ui.heading("Research Costs");
+
+        let mut remove_idx: Option<usize> = None;
+        for (i, cost) in self.autopsy_form.research_costs.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label("Resource:");
+                ui.add(egui::TextEdit::singleline(&mut cost.resource_id).desired_width(120.0));
+                ui.label("Amount:");
+                ui.add(egui::DragValue::new(&mut cost.amount).range(1..=10000));
+                if ui.button("🗑").clicked() {
+                    remove_idx = Some(i);
+                }
+            });
+        }
+
+        if let Some(idx) = remove_idx {
+            self.autopsy_form.research_costs.remove(idx);
+        }
+
+        if ui.button("+ Add Resource").clicked() {
+            self.autopsy_form.research_costs.push(ResourceCost::default());
+        }
+        ui.add_space(8.0);
+
+        // Time required
+        ui.separator();
+        ui.horizontal(|ui| {
+            ui.label("Time Required:");
+            ui.add(
+                egui::DragValue::new(&mut self.autopsy_form.research_time)
+                    .range(0.1..=3600.0)
+                    .speed(1.0),
+            );
+            ui.label("seconds");
+        });
+        ui.add_space(16.0);
+        
+        // Preview Generated IDs
+        ui.separator();
+        ui.heading("Generated Assets (Preview)");
+        ui.add_enabled_ui(false, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Research ID:");
+                ui.monospace(self.autopsy_form.generate_research_id());
+            });
+            ui.horizontal(|ui| {
+                ui.label("Research Unlock File:");
+                ui.monospace(self.autopsy_form.research_unlock_filename());
+            });
+             ui.horizontal(|ui| {
+                ui.label("Research File:");
+                ui.monospace(self.autopsy_form.research_filename());
+            });
+             ui.horizontal(|ui| {
+                ui.label("Encyc. Unlock File:");
+                ui.monospace(self.autopsy_form.encyclopedia_unlock_filename());
+            });
+        });
+        ui.add_space(16.0);
+
+        // Validation and Save
+        ui.separator();
+        let errors = self.autopsy_form.validate();
+        if !errors.is_empty() {
+            ui.colored_label(egui::Color32::RED, "Validation Errors:");
+            for error in &errors {
+                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
+            }
+            ui.add_space(8.0);
+        }
+
+        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
+            if ui.button("💾 Save Autopsy Assets").clicked() {
+                self.save_autopsy();
+            }
+        });
+    }
+
+    fn save_autopsy(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            match save_autopsy_files(&self.autopsy_form, assets_dir) {
+                Ok(paths) => {
+                    self.status = format!(
+                        "Saved autopsy assets to: {}, {}, {}", 
+                        paths.research_unlock_path, 
+                        paths.research_path, 
+                        paths.encyclopedia_unlock_path
+                    );
+                }
+                Err(e) => {
+                    self.status = format!("Error saving autopsy assets: {}", e);
                 }
             }
         }

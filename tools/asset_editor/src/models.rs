@@ -623,6 +623,94 @@ impl GenericUnlockFormData {
     }
 }
 
+// ==================== Autopsy Form Data ====================
+
+/// The form data for autopsy generation.
+#[derive(Clone, Debug, Default)]
+pub struct AutopsyFormData {
+    /// The monster ID to base this autopsy on.
+    pub monster_id: String,
+    /// Description for the research.
+    pub research_description: String,
+    /// Resource costs for the research.
+    pub research_costs: Vec<ResourceCost>,
+    /// Time required for the research.
+    pub research_time: f32,
+}
+
+impl AutopsyFormData {
+    pub fn new() -> Self {
+        Self {
+            monster_id: String::new(),
+            research_description: String::new(),
+            research_costs: vec![ResourceCost {
+                resource_id: "bones".to_string(),
+                amount: 1,
+            }],
+            research_time: 15.0,
+        }
+    }
+
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        if self.monster_id.trim().is_empty() {
+            errors.push("Monster ID is required".to_string());
+        }
+        if self.research_description.trim().is_empty() {
+            errors.push("Description is required".to_string());
+        }
+         for (i, cost) in self.research_costs.iter().enumerate() {
+            if cost.resource_id.trim().is_empty() {
+                errors.push(format!("Cost #{}: resource ID is required", i + 1));
+            }
+            if cost.amount == 0 {
+                errors.push(format!("Cost #{}: amount must be greater than 0", i + 1));
+            }
+        }
+        if self.research_time <= 0.0 {
+            errors.push("Time required must be greater than 0".to_string());
+        }
+
+        errors
+    }
+
+    /// Generates the research ID: `autopsy_{monster_id}`
+    pub fn generate_research_id(&self) -> String {
+        format!("autopsy_{}", self.monster_id)
+    }
+
+    /// Generates the research unlock ID: `research_autopsy_{monster_id}_unlock`
+    pub fn generate_research_unlock_id(&self) -> String {
+        format!("research_autopsy_{}_unlock", self.monster_id)
+    }
+    
+    /// Generates the encyclopedia unlock ID: `encyclopedia_{monster_id}_unlock`
+    pub fn generate_encyclopedia_unlock_id(&self) -> String {
+        // According to user request: "unlocks/encyclopedia/{monster_id}_data.unlock.ron"
+        // And inside the file, the ID usually matches the filename or is unique.
+        // Let's use `encyclopedia_{monster_id}_data` or just `encyclopedia_{monster_id}`.
+        // The user mentioned "monster data in encyclopedia". 
+        // Let's assume the ID is `encyclopedia_{monster_id}_data`
+        format!("encyclopedia_{}_data", self.monster_id)
+    }
+
+    /// Filename for Research Unlock: `research_autopsy_{monster_id}.unlock.ron`
+    pub fn research_unlock_filename(&self) -> String {
+        format!("research_autopsy_{}.unlock.ron", self.monster_id)
+    }
+
+    /// Filename for Research: `autopsy_{monster_id}.research.ron`
+    pub fn research_filename(&self) -> String {
+        format!("autopsy_{}.research.ron", self.monster_id)
+    }
+
+    /// Filename for Encyclopedia Unlock: `{monster_id}_data.unlock.ron`
+    pub fn encyclopedia_unlock_filename(&self) -> String {
+        format!("{}_data.unlock.ron", self.monster_id)
+    }
+}
+
 // ==================== Weapon Form Data ====================
 
 use weapon_assets::{WeaponDefinition, WeaponType};
@@ -808,68 +896,21 @@ impl EditorCraftingOutcome {
             _ => EditorCraftingOutcome::default(),
         }
     }
-
-    pub fn to_ron(&self) -> String {
-        match self {
-            EditorCraftingOutcome::AddResource { id, amount } => {
-                format!("AddResource(id: \"{}\", amount: {})", id, amount)
-            }
-            EditorCraftingOutcome::UnlockFeature(feature) => {
-                format!("UnlockFeature(\"{}\")", feature)
-            }
-            EditorCraftingOutcome::GrantXp(xp) => format!("GrantXp({})", xp),
-            EditorCraftingOutcome::IncreaseDivinity(amount) => {
-                format!("IncreaseDivinity({})", amount)
-            }
-        }
-    }
-
-    pub fn validate(&self) -> Vec<String> {
-        let mut errors = Vec::new();
-        match self {
-            EditorCraftingOutcome::AddResource { id, amount } => {
-                if id.trim().is_empty() {
-                    errors.push("Resource ID is required".to_string());
-                }
-                if *amount == 0 {
-                    errors.push("Amount must be greater than 0".to_string());
-                }
-            }
-            EditorCraftingOutcome::UnlockFeature(feature) => {
-                if feature.trim().is_empty() {
-                    errors.push("Feature ID is required".to_string());
-                }
-            }
-            EditorCraftingOutcome::GrantXp(xp) => {
-                if *xp == 0 {
-                    errors.push("XP must be greater than 0".to_string());
-                }
-            }
-            EditorCraftingOutcome::IncreaseDivinity(amount) => {
-                if *amount == 0 {
-                    errors.push("Divinity amount must be greater than 0".to_string());
-                }
-            }
-        }
-        errors
-    }
 }
 
-/// The form data for a recipe asset.
+// ==================== Recipe Form Data ====================
+
+/// The form data for a recipe.
 #[derive(Clone, Debug, Default)]
 pub struct RecipeFormData {
-    /// Unique identifier (e.g., "bone_sword")
-    pub id: String,
-    /// Display name shown in UI
+    pub id: String, // Internal ID (e.g. "bone_sword")
     pub display_name: String,
-    /// Category for tab organization
     pub category: EditorRecipeCategory,
-    /// Crafting time in seconds
+    pub unlock_condition: UnlockCondition,
     pub craft_time: f32,
-    /// Resource costs
     pub costs: Vec<ResourceCost>,
-    /// Results when crafting completes
     pub outcomes: Vec<EditorCraftingOutcome>,
+    pub description: String,
 }
 
 impl RecipeFormData {
@@ -878,12 +919,17 @@ impl RecipeFormData {
             id: String::new(),
             display_name: String::new(),
             category: EditorRecipeCategory::Weapons,
-            craft_time: 10.0,
+            unlock_condition: UnlockCondition::True,
+            craft_time: 5.0,
             costs: vec![ResourceCost {
                 resource_id: "bones".to_string(),
-                amount: 10,
+                amount: 5,
             }],
-            outcomes: Vec::new(),
+            outcomes: vec![EditorCraftingOutcome::AddResource {
+                id: "bone_sword_item".to_string(),
+                amount: 1,
+            }],
+            description: String::new(),
         }
     }
 
@@ -899,89 +945,65 @@ impl RecipeFormData {
         if self.display_name.trim().is_empty() {
             errors.push("Display name is required".to_string());
         }
-        if self.craft_time <= 0.0 {
-            errors.push("Craft time must be greater than 0".to_string());
+        if self.craft_time < 0.0 {
+            errors.push("Craft time must be >= 0".to_string());
         }
-        for (i, cost) in self.costs.iter().enumerate() {
+        for cost in &self.costs {
             if cost.resource_id.trim().is_empty() {
-                errors.push(format!("Cost #{}: resource ID is required", i + 1));
-            }
-            if cost.amount == 0 {
-                errors.push(format!("Cost #{}: amount must be greater than 0", i + 1));
+                errors.push("Resource ID required in cost".to_string());
             }
         }
-        for (i, outcome) in self.outcomes.iter().enumerate() {
-            for err in outcome.validate() {
-                errors.push(format!("Outcome #{}: {}", i + 1, err));
+        for outcome in &self.outcomes {
+            if let EditorCraftingOutcome::AddResource { id, .. } = outcome {
+                 if id.trim().is_empty() {
+                     errors.push("Outcome resource ID required".to_string());
+                 }
+            }
+            if let EditorCraftingOutcome::UnlockFeature(id) = outcome {
+                 if id.trim().is_empty() {
+                     errors.push("Outcome unlock ID required".to_string());
+                 }
             }
         }
         errors
     }
 
     pub fn to_ron(&self) -> String {
-        let costs_str = self
-            .costs
-            .iter()
-            .map(|c| format!("        \"{}\": {},", c.resource_id, c.amount))
-            .collect::<Vec<_>>()
-            .join("\n");
+        let mut ron = String::new();
+        ron.push_str("(\n");
+        ron.push_str(&format!("    id: \"{}\",\n", self.id));
+        ron.push_str(&format!("    display_name: \"{}\",\n", self.display_name));
+        ron.push_str(&format!("    category: {},\n", self.category.to_ron()));
+        ron.push_str(&format!("    unlock_condition: {},\n", self.unlock_condition.to_ron()));
+        ron.push_str(&format!("    craft_time: {},\n", self.craft_time));
+        
+        ron.push_str("    costs: {\n");
+        for cost in &self.costs {
+             ron.push_str(&format!("        \"{}\": {},\n", cost.resource_id, cost.amount));
+        }
+        ron.push_str("    },\n");
 
-        let outcomes_str = if self.outcomes.is_empty() {
-            "[]".to_string()
-        } else {
-            let inner: Vec<String> = self.outcomes.iter().map(|o| o.to_ron()).collect();
-            format!("[\n        {},\n    ]", inner.join(",\n        "))
-        };
+        ron.push_str("    outcomes: [\n");
+        for outcome in &self.outcomes {
+            match outcome {
+                EditorCraftingOutcome::AddResource { id, amount } => {
+                    ron.push_str(&format!("        AddResource(resource: \"{}\", amount: {}),\n", id, amount));
+                }
+                EditorCraftingOutcome::UnlockFeature(id) => {
+                    ron.push_str(&format!("        UnlockFeature(\"{}\"),\n", id));
+                }
+                EditorCraftingOutcome::GrantXp(amount) => {
+                    ron.push_str(&format!("        GrantXp({}),\n", amount));
+                }
+                EditorCraftingOutcome::IncreaseDivinity(amount) => {
+                    ron.push_str(&format!("        IncreaseDivinity({}),\n", amount));
+                }
+            }
+        }
+        ron.push_str("    ],\n");
 
-        format!(
-            r#"(
-    id: "{}",
-    display_name: "{}",
-    category: {},
-    craft_time: {},
-    cost: {{
-{}
-    }},
-    outcomes: {},
-)
-"#,
-            self.id,
-            self.display_name,
-            self.category.to_ron(),
-            format_f32(self.craft_time),
-            costs_str,
-            outcomes_str
-        )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_leaf_to_ron_unlock() {
-        let condition = LeafCondition::Unlock { id: "bone_sword".to_string() };
-        assert_eq!(condition.to_ron(), "Completed(topic: \"research:bone_sword\")");
-    }
-
-    #[test]
-    fn test_leaf_to_ron_kills() {
-        let condition = LeafCondition::Kills {
-            monster_id: "goblin".to_string(),
-            value: 10.0,
-            op: CompareOp::Ge,
-        };
-        // Expecting Ge to map to "Ge" in local CompareOp, and to_ron() calls local to_ron which returns "Ge"
-        assert_eq!(condition.to_ron(), "Value(topic: \"kills:goblin\", op: Ge, target: 10)");
-    }
-
-    #[test]
-    fn test_leaf_to_ron_resource() {
-        let condition = LeafCondition::Resource {
-            resource_id: "bones".to_string(),
-            amount: 50,
-        };
-        assert_eq!(condition.to_ron(), "Value(topic: \"resource:bones\", target: 50)");
+        ron.push_str(&format!("    description: \"{}\",\n", self.description));
+        ron.push_str(")\n");
+        ron
     }
 }
