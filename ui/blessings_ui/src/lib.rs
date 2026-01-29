@@ -5,8 +5,8 @@ use {
     states::{GameState, VillageView},
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_card_title, spawn_description_text, spawn_menu_button,
-        spawn_scrollable_container, ContentContainer, UiTheme,
+        ContentContainer, UiTheme, spawn_action_button, spawn_card_title, spawn_description_text,
+        spawn_menu_button, spawn_scrollable_container,
     },
 };
 
@@ -203,7 +203,7 @@ fn update_blessings_ui(
 
         let can_afford = current_entropy >= cost;
 
-        // Ensure we are using valid asset handle logic if we need to filter? 
+        // Ensure we are using valid asset handle logic if we need to filter?
         // Currently iterating all assets seems fine as there are no complicated conditions yet.
         let _ = id;
 

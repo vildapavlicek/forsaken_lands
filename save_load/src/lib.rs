@@ -17,8 +17,6 @@ use {
     wallet::Wallet,
 };
 
-
-
 /// Event to trigger loading the latest save file.
 #[derive(Event)]
 pub struct LoadGame {
@@ -70,8 +68,6 @@ impl Plugin for SaveLoadPlugin {
             .add_systems(OnExit(GameState::Running), clean_up_save_load);
     }
 }
-
-
 
 /// Exclusive system that handles manual and automatic saves.
 fn execute_save(world: &mut World) {

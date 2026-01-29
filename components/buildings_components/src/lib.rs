@@ -1,5 +1,4 @@
-use bevy::prelude::*;
-use shared_components::IncludeInSave;
+use {bevy::prelude::*, shared_components::IncludeInSave};
 
 pub struct BuildingsComponentsPlugin;
 

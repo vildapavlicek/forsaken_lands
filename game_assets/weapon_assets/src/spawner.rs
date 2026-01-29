@@ -71,10 +71,16 @@ mod tests {
         let entity = spawn_weapon(&mut app.world_mut().commands(), &def);
         app.update();
 
-        let tags = app.world().get::<WeaponTags>(entity).expect("WeaponTags component missing");
+        let tags = app
+            .world()
+            .get::<WeaponTags>(entity)
+            .expect("WeaponTags component missing");
         assert_eq!(tags.0, vec!["tag1", "tag2"]);
 
-        let id = app.world().get::<WeaponId>(entity).expect("WeaponId component missing");
+        let id = app
+            .world()
+            .get::<WeaponId>(entity)
+            .expect("WeaponId component missing");
         assert_eq!(id.0, "test_weapon");
     }
 }

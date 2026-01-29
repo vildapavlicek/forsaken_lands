@@ -49,4 +49,3 @@ pub struct StatusCompleted {
 /// Prefix for crafting completion topics (used in StatusCompleted).
 /// Usage: `craft:{recipe_id}`
 pub const CRAFTING_TOPIC_PREFIX: &str = "craft:";
-

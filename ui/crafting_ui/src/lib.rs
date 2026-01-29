@@ -7,9 +7,9 @@ use {
     states::{GameState, VillageView},
     wallet::Wallet,
     widgets::{
-        spawn_action_button, spawn_card_title, spawn_cost_text, spawn_menu_button,
-        spawn_scrollable_container, spawn_tab_bar, spawn_tab_button, spawn_timer_text,
-        ContentContainer, UiTheme,
+        ContentContainer, UiTheme, spawn_action_button, spawn_card_title, spawn_cost_text,
+        spawn_menu_button, spawn_scrollable_container, spawn_tab_bar, spawn_tab_button,
+        spawn_timer_text,
     },
 };
 

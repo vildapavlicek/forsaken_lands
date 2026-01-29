@@ -55,7 +55,6 @@ pub struct ResearchUiRoot {
     pub active_tab: ResearchTab,
 }
 
-
 /// Tab button with category
 #[derive(Component)]
 pub struct ResearchTabButton {
@@ -374,7 +373,6 @@ pub fn spawn_research_content(parent: &mut ChildSpawnerCommands, data: ResearchD
 // ============================================================================
 // Close Button Handler
 // ============================================================================
-
 
 // Back button handler (needed since we spawn it)
 fn handle_back_button(

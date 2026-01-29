@@ -3,7 +3,7 @@ use {
     enemy_resources::EnemyDetailsCache,
     states::{GameState, VillageView},
     village_components::EnemyEncyclopedia,
-    widgets::{spawn_menu_button, ContentContainer},
+    widgets::{ContentContainer, spawn_menu_button},
 };
 
 pub struct EnemyEncyclopediaUiPlugin;
@@ -109,7 +109,8 @@ pub fn spawn_enemy_encyclopedia_content(
                 row_gap: Val::Px(10.0),
                 width: Val::Percent(100.0),
                 ..default()
-            }).with_children(|grid| {
+            })
+            .with_children(|grid| {
                 // List of enemies
                 for (enemy_id, entry) in &encyclopedia.inner {
                     spawn_enemy_card(grid, entry, enemy_id, details_cache);
@@ -135,95 +136,122 @@ fn spawn_enemy_card(
     enemy_id: &str,
     details_cache: &EnemyDetailsCache,
 ) {
-    parent.spawn(Node {
-        flex_direction: FlexDirection::Column,
-        width: Val::Px(250.0),
-        padding: UiRect::all(Val::Px(10.0)),
-        border: UiRect::all(Val::Px(2.0)),
-        ..default()
-    })
-    .insert(BorderColor::all(Color::srgb(0.3, 0.3, 0.3)))
-    .insert(BackgroundColor(Color::srgb(0.15, 0.15, 0.15)))
-    .with_children(|card| {
-        // Name
-        card.spawn((
-            Text::new(entry.display_name.clone()),
-            TextFont {
-                font_size: 18.0,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-            Node {
-                margin: UiRect::bottom(Val::Px(5.0)),
-                ..default()
-            },
-        ));
-
-        // Basic Stats (Kills/Escapes)
-        card.spawn(Node {
+    parent
+        .spawn(Node {
             flex_direction: FlexDirection::Column,
-            margin: UiRect::bottom(Val::Px(5.0)),
+            width: Val::Px(250.0),
+            padding: UiRect::all(Val::Px(10.0)),
+            border: UiRect::all(Val::Px(2.0)),
             ..default()
-        }).with_children(|stats| {
-            stats.spawn((
-                Text::new(format!("Kills: {}", entry.kill_count)),
-                TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                TextFont { font_size: 14.0, ..default() },
-            ));
-            stats.spawn((
-                Text::new(format!("Escapes: {}", entry.escape_count)),
-                TextColor(Color::srgb(0.8, 0.8, 0.8)),
-                TextFont { font_size: 14.0, ..default() },
-            ));
-        });
-
-        // Advanced Stats (from cache)
-        if let Some(details) = details_cache.details.get(enemy_id) {
-            card.spawn(Node {
-                flex_direction: FlexDirection::Column,
-                margin: UiRect::top(Val::Px(5.0)),
-                ..default()
-            }).with_children(|details_node| {
-                details_node.spawn((
-                    Text::new(format!("♥ Max Health: {:.1}", details.health)),
-                    TextColor(Color::srgb(0.4, 1.0, 0.4)),
-                    TextFont { font_size: 14.0, ..default() },
-                ));
-                details_node.spawn((
-                    Text::new(format!("⏩ Speed: {:.1}", details.speed)),
-                    TextColor(Color::srgb(0.4, 0.8, 1.0)),
-                    TextFont { font_size: 14.0, ..default() },
-                ));
-                
-                if !details.drops.is_empty() {
-                    details_node.spawn((
-                        Text::new("Drops:"),
-                        TextColor(Color::srgb(1.0, 0.84, 0.0)),
-                        TextFont { font_size: 14.0, ..default() },
-                        Node { margin: UiRect::top(Val::Px(2.0)), ..default() },
-                    ));
-                    for drop in &details.drops {
-                        details_node.spawn((
-                            Text::new(format!(" • {}", drop)),
-                            TextColor(Color::srgb(1.0, 1.0, 0.8)),
-                            TextFont { font_size: 12.0, ..default() },
-                        ));
-                    }
-                }
-            });
-        } else {
-            // Locked info
-             card.spawn((
-                Text::new("Stats: ???\n(Research required)"),
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                TextFont { font_size: 12.0, ..default() },
+        })
+        .insert(BorderColor::all(Color::srgb(0.3, 0.3, 0.3)))
+        .insert(BackgroundColor(Color::srgb(0.15, 0.15, 0.15)))
+        .with_children(|card| {
+            // Name
+            card.spawn((
+                Text::new(entry.display_name.clone()),
+                TextFont {
+                    font_size: 18.0,
+                    ..default()
+                },
+                TextColor(Color::WHITE),
                 Node {
-                    margin: UiRect::top(Val::Px(10.0)),
+                    margin: UiRect::bottom(Val::Px(5.0)),
                     ..default()
                 },
             ));
-        }
-    });
+
+            // Basic Stats (Kills/Escapes)
+            card.spawn(Node {
+                flex_direction: FlexDirection::Column,
+                margin: UiRect::bottom(Val::Px(5.0)),
+                ..default()
+            })
+            .with_children(|stats| {
+                stats.spawn((
+                    Text::new(format!("Kills: {}", entry.kill_count)),
+                    TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                    TextFont {
+                        font_size: 14.0,
+                        ..default()
+                    },
+                ));
+                stats.spawn((
+                    Text::new(format!("Escapes: {}", entry.escape_count)),
+                    TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                    TextFont {
+                        font_size: 14.0,
+                        ..default()
+                    },
+                ));
+            });
+
+            // Advanced Stats (from cache)
+            if let Some(details) = details_cache.details.get(enemy_id) {
+                card.spawn(Node {
+                    flex_direction: FlexDirection::Column,
+                    margin: UiRect::top(Val::Px(5.0)),
+                    ..default()
+                })
+                .with_children(|details_node| {
+                    details_node.spawn((
+                        Text::new(format!("♥ Max Health: {:.1}", details.health)),
+                        TextColor(Color::srgb(0.4, 1.0, 0.4)),
+                        TextFont {
+                            font_size: 14.0,
+                            ..default()
+                        },
+                    ));
+                    details_node.spawn((
+                        Text::new(format!("⏩ Speed: {:.1}", details.speed)),
+                        TextColor(Color::srgb(0.4, 0.8, 1.0)),
+                        TextFont {
+                            font_size: 14.0,
+                            ..default()
+                        },
+                    ));
+
+                    if !details.drops.is_empty() {
+                        details_node.spawn((
+                            Text::new("Drops:"),
+                            TextColor(Color::srgb(1.0, 0.84, 0.0)),
+                            TextFont {
+                                font_size: 14.0,
+                                ..default()
+                            },
+                            Node {
+                                margin: UiRect::top(Val::Px(2.0)),
+                                ..default()
+                            },
+                        ));
+                        for drop in &details.drops {
+                            details_node.spawn((
+                                Text::new(format!(" • {}", drop)),
+                                TextColor(Color::srgb(1.0, 1.0, 0.8)),
+                                TextFont {
+                                    font_size: 12.0,
+                                    ..default()
+                                },
+                            ));
+                        }
+                    }
+                });
+            } else {
+                // Locked info
+                card.spawn((
+                    Text::new("Stats: ???\n(Research required)"),
+                    TextColor(Color::srgb(0.5, 0.5, 0.5)),
+                    TextFont {
+                        font_size: 12.0,
+                        ..default()
+                    },
+                    Node {
+                        margin: UiRect::top(Val::Px(10.0)),
+                        ..default()
+                    },
+                ));
+            }
+        });
 }
 
 fn update_encyclopedia_ui(
@@ -269,7 +297,8 @@ fn update_encyclopedia_ui(
             row_gap: Val::Px(10.0),
             width: Val::Percent(100.0),
             ..default()
-        }).with_children(|grid| {
+        })
+        .with_children(|grid| {
             // List of enemies
             for (enemy_id, entry) in &encyclopedia.inner {
                 spawn_enemy_card(grid, entry, enemy_id, &details_cache);
