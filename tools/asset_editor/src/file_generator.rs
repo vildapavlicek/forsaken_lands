@@ -3,7 +3,7 @@
 //! Generates RON content and handles file saving.
 
 use {
-    crate::models::{AutopsyFormData, GenericUnlockFormData, RecipeUnlockFormData, ResearchFormData},
+    crate::models::{AutopsyFormData, DivinityFormData, GenericUnlockFormData, RecipeUnlockFormData, ResearchFormData},
     serde::Serialize,
     std::path::Path,
 };
@@ -114,6 +114,37 @@ pub fn save_generic_unlock_file(
     // Build paths
     // We'll put them in assets/unlocks/generic/ by default
     let unlock_dir = assets_dir.join("unlocks").join("generic");
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&unlock_dir)?;
+
+    // Build file path
+    let unlock_path = unlock_dir.join(data.unlock_filename());
+
+    // Write file
+    std::fs::write(&unlock_path, unlock_content)?;
+
+    Ok(unlock_path.display().to_string())
+}
+
+// ==================== Divinity Generators ====================
+
+/// Generates the .unlock.ron file content for divinity.
+pub fn generate_divinity_unlock_ron(data: &DivinityFormData) -> String {
+    to_ron(&data.to_unlock_definition())
+}
+
+/// Saves divinity unlock file to the specified assets directory.
+pub fn save_divinity_unlock_file(
+    data: &DivinityFormData,
+    assets_dir: &Path,
+) -> Result<String, std::io::Error> {
+    // Generate content
+    let unlock_content = generate_divinity_unlock_ron(data);
+
+    // Build paths
+    // assets/unlocks/divinity/
+    let unlock_dir = assets_dir.join("unlocks").join("divinity");
 
     // Ensure directory exists
     std::fs::create_dir_all(&unlock_dir)?;

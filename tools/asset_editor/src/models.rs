@@ -99,6 +99,12 @@ pub enum LeafCondition {
     },
     /// Resource condition: triggers when player has enough resources
     Resource { resource_id: String, amount: u32 },
+    /// Divinity condition: triggers when player reaches a specific divinity tier and level
+    Divinity {
+        tier: u32,
+        level: u32,
+        op: CompareOp,
+    },
 }
 
 impl Default for LeafCondition {
@@ -113,11 +119,12 @@ impl LeafCondition {
             LeafCondition::Unlock { .. } => "Unlock",
             LeafCondition::Kills { .. } => "Kills",
             LeafCondition::Resource { .. } => "Resource",
+            LeafCondition::Divinity { .. } => "Divinity",
         }
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Unlock", "Kills", "Resource"]
+        vec!["Unlock", "Kills", "Resource", "Divinity"]
     }
 
     pub fn from_type_name(name: &str) -> Self {
@@ -131,6 +138,11 @@ impl LeafCondition {
             "Resource" => LeafCondition::Resource {
                 resource_id: String::new(),
                 amount: 1,
+            },
+            "Divinity" => LeafCondition::Divinity {
+                tier: 1,
+                level: 1,
+                op: CompareOp::Ge,
             },
             _ => LeafCondition::default(),
         }
@@ -162,6 +174,14 @@ impl LeafCondition {
                     resource_id, amount
                 )
             }
+            LeafCondition::Divinity { tier, level, op } => {
+                let val = tier * 100 + level;
+                format!(
+                    "Value(topic: \"divinity\", op: {}, target: {})",
+                    op.to_ron(),
+                    val
+                )
+            }
         }
     }
 
@@ -189,6 +209,14 @@ impl LeafCondition {
                     errors.push("Resource amount must be > 0".to_string());
                 }
             }
+            LeafCondition::Divinity { tier, level, .. } => {
+                if *tier == 0 {
+                    errors.push("Tier must be > 0".to_string());
+                }
+                if *level == 0 || *level > 99 {
+                    errors.push("Level must be 1-99".to_string());
+                }
+            }
         }
         errors
     }
@@ -214,6 +242,11 @@ impl LeafCondition {
                 topic: format!("resource:{}", resource_id),
                 op: unlocks_components::ComparisonOp::Ge, // Default to >= for resources
                 target: *amount as f32,
+            },
+            LeafCondition::Divinity { tier, level, op } => ConditionNode::Value {
+                topic: "divinity".to_string(),
+                op: (*op).into(),
+                target: (tier * 100 + level) as f32,
             },
         }
     }
@@ -376,6 +409,15 @@ impl From<&ConditionNode> for LeafCondition {
                     LeafCondition::Resource {
                         resource_id: resource_id.to_string(),
                         amount: *target as u32,
+                    }
+                } else if topic == "divinity" {
+                    let val = *target as u32;
+                    let tier = val / 100;
+                    let level = val % 100;
+                    LeafCondition::Divinity {
+                        tier,
+                        level,
+                        op: CompareOp::from(*op),
                     }
                 } else {
                      LeafCondition::default()
@@ -830,6 +872,78 @@ impl AutopsyFormData {
             condition: ConditionNode::Completed {
                 topic: format!("research:{}", self.generate_research_id()),
             },
+        }
+    }
+}
+
+// ==================== Divinity Form Data ====================
+
+/// The form data for a divinity unlock.
+#[derive(Clone, Debug, Default)]
+pub struct DivinityFormData {
+    /// The divinity tier (1-9)
+    pub tier: u32,
+    /// The divinity level (1-99)
+    pub level: u32,
+    /// Unlock condition
+    pub unlock_condition: UnlockCondition,
+}
+
+impl DivinityFormData {
+    /// Creates a new form with default values.
+    pub fn new() -> Self {
+        Self {
+            tier: 1,
+            level: 1,
+            unlock_condition: UnlockCondition::Single(LeafCondition::Kills {
+                monster_id: "goblin".to_string(),
+                value: 10.0,
+                op: CompareOp::Ge,
+            }),
+        }
+    }
+
+    /// Derives the unlock file ID.
+    /// Pattern: divinity_{tier}_{level}
+    pub fn unlock_id(&self) -> String {
+        format!("divinity_{}_{}", self.tier, self.level)
+    }
+
+    /// Derives the reward ID.
+    /// Pattern: divinity:{tier}-{level}
+    pub fn reward_id(&self) -> String {
+        format!("divinity:{}-{}", self.tier, self.level)
+    }
+
+    /// Derives the unlock file name.
+    /// Pattern: divinity_{tier}_{level}.unlock.ron
+    pub fn unlock_filename(&self) -> String {
+        format!("divinity_{}_{}.unlock.ron", self.tier, self.level)
+    }
+
+    /// Validates the form data.
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+
+        if self.tier == 0 {
+            errors.push("Tier must be at least 1".to_string());
+        }
+        if self.level == 0 || self.level > 99 {
+            errors.push("Level must be between 1 and 99".to_string());
+        }
+
+        // Validate unlock condition
+        errors.extend(self.unlock_condition.validate());
+
+        errors
+    }
+
+    pub fn to_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.unlock_id(),
+            display_name: Some(format!("Divinity Tier {} Level {}", self.tier, self.level)),
+            reward_id: self.reward_id(),
+            condition: self.unlock_condition.to_condition_node(),
         }
     }
 }

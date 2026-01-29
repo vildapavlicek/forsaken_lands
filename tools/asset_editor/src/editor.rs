@@ -10,12 +10,13 @@ use {
             save_research_files,
             generate_autopsy_research_unlock_ron, generate_autopsy_research_ron, 
             generate_autopsy_encyclopedia_unlock_ron, save_autopsy_files,
+            generate_divinity_unlock_ron, save_divinity_unlock_file,
         },
         models::{
             CompareOp, EditorCraftingOutcome, EditorRecipeCategory, GenericUnlockFormData,
             LeafCondition, RecipeFormData, RecipeUnlockFormData, ResearchFormData, ResourceCost,
             UnlockCondition, WeaponDefinitionExt, WeaponTypeExt,
-            CachedEnemy, CachedWeapon, AutopsyFormData,
+            CachedEnemy, CachedWeapon, AutopsyFormData, DivinityFormData,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
@@ -47,6 +48,7 @@ pub enum EditorTab {
     Graph,
     TimeToKill,
     Autopsy,
+    Divinity,
 }
 
 /// Current state of the editor.
@@ -127,6 +129,10 @@ pub struct EditorState {
     
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
+
+    // Divinity Tab
+    divinity_form: DivinityFormData,
+    existing_divinity_ids: Vec<String>,
 }
 
 impl EditorState {
@@ -173,6 +179,8 @@ impl EditorState {
             cached_weapons: Vec::new(),
             
             autopsy_form: AutopsyFormData::new(),
+            divinity_form: DivinityFormData::new(),
+            existing_divinity_ids: Vec::new(),
         }
     }
 
@@ -313,7 +321,17 @@ impl EditorState {
                             ui.add_space(10.0);
                             ui.label("Encyclopedia Unlock:");
                             let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
+                            let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
                             ui.add(egui::TextEdit::multiline(&mut eu.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                        }
+                        EditorTab::Divinity => {
+                            ui.label("Divinity Unlock File:");
+                            let unlock_ron = generate_divinity_unlock_ron(&self.divinity_form);
+                            ui.add(
+                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
                         }
                     });
                 });
@@ -357,6 +375,11 @@ impl EditorState {
                     EditorTab::Autopsy,
                     "🧬 Autopsy",
                 );
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::Divinity,
+                    "✨ Divinity",
+                );
             });
             ui.separator();
 
@@ -371,6 +394,7 @@ impl EditorState {
                 EditorTab::Graph => self.graph_state.show(ui, self.assets_dir.as_deref()),
                 EditorTab::TimeToKill => self.show_ttk_tab(ui),
                 EditorTab::Autopsy => self.show_autopsy_form(ui),
+                EditorTab::Divinity => self.show_divinity_form(ui),
             });
         });
     }
@@ -1367,6 +1391,27 @@ fn show_leaf_editor(
             });
             ui.small("Triggers when player has at least this amount");
         }
+        LeafCondition::Divinity { tier, level, op } => {
+            ui.horizontal(|ui| {
+                ui.label("Tier:");
+                ui.add(egui::DragValue::new(tier).range(1..=9));
+                ui.label("Level:");
+                ui.add(egui::DragValue::new(level).range(1..=99));
+                
+                ui.label("Op:");
+                egui::ComboBox::from_id_salt(format!("{}_div_op", id_prefix))
+                    .selected_text(op.display_name())
+                    .width(50.0)
+                    .show_ui(ui, |ui| {
+                        for op_name in CompareOp::all() {
+                            if ui.selectable_label(op.display_name() == op_name, op_name).clicked() {
+                                *op = CompareOp::from_display(op_name);
+                            }
+                        }
+                    });
+            });
+            ui.small("Triggers when player reaches this divinity tier/level");
+        }
     }
 }
 
@@ -1416,6 +1461,10 @@ impl EditorState {
             EditorTab::Autopsy => {
                 self.autopsy_form = AutopsyFormData::new();
                 self.status = "New autopsy form created".to_string();
+            }
+            EditorTab::Divinity => {
+                self.divinity_form = DivinityFormData::new();
+                self.status = "New divinity form created".to_string();
             }
         }
     }
@@ -1499,6 +1548,26 @@ impl EditorState {
             }
         }
         self.existing_generic_unlock_ids.sort();
+
+        // Load divinity unlock IDs
+        self.existing_divinity_ids.clear();
+        let divinity_unlock_dir = assets_dir.join("unlocks").join("divinity");
+        if let Ok(entries) = std::fs::read_dir(divinity_unlock_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".unlock.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".unlock.ron") {
+                            // filename is divinity_{tier}_{level}.unlock.ron
+                            // ID is divinity_{tier}_{level}
+                            self.existing_divinity_ids.push(stem.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_divinity_ids.sort();
 
         // Load monster IDs from prefabs/enemies
         self.existing_monster_ids.clear();
@@ -3016,4 +3085,176 @@ fn extract_f32(content: &str, field: &str) -> Option<f32> {
 fn extract_u32(content: &str, field: &str) -> Option<u32> {
     let re = regex::Regex::new(&format!("{}:\\s*(\\d+)", field)).ok()?;
     re.captures(content).and_then(|caps| caps[1].parse().ok())
+}
+
+impl EditorState {
+    fn show_divinity_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Divinity Unlock Definition");
+        ui.add_space(4.0);
+
+        // Load existing divinity unlocks
+        ui.group(|ui| {
+            ui.heading("Load Existing Divinity Unlock");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_divinity_ids.is_empty() {
+                ui.label("No divinity unlock assets found in assets/unlocks/divinity/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_id = None;
+                    for id in &self.existing_divinity_ids {
+                        if ui.button(id).clicked() {
+                            load_id = Some(id.clone());
+                        }
+                    }
+                    if let Some(id) = load_id {
+                        self.load_divinity(&id);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
+
+        ui.small("Define an unlock for a specific Divinity Tier & Level.");
+        ui.add_space(8.0);
+
+        // Tier
+        ui.horizontal(|ui| {
+            ui.label("Tier:");
+            ui.add(egui::DragValue::new(&mut self.divinity_form.tier).range(1..=9));
+        });
+        ui.small("Divinity Tier (1-9)");
+        ui.add_space(8.0);
+
+        // Level
+        ui.horizontal(|ui| {
+            ui.label("Level:");
+            ui.add(egui::DragValue::new(&mut self.divinity_form.level).range(1..=99));
+        });
+        ui.small("Divinity Level within the Tier (1-99)");
+        ui.add_space(8.0);
+
+        // Unlock condition
+        ui.separator();
+        ui.heading("Unlock Condition");
+        show_condition_editor(
+            ui,
+            "divinity",
+            &self.existing_research_ids,
+            &self.existing_monster_ids,
+            &mut self.divinity_form.unlock_condition,
+        );
+        ui.add_space(16.0);
+
+        // Preview
+        ui.separator();
+        ui.heading("Generated IDs (Preview)");
+        ui.add_enabled_ui(false, |ui| {
+            ui.horizontal(|ui| {
+                ui.label("Unlock file:");
+                ui.monospace(self.divinity_form.unlock_filename());
+            });
+            ui.horizontal(|ui| {
+                ui.label("Unlock ID:");
+                ui.monospace(self.divinity_form.unlock_id());
+            });
+            ui.horizontal(|ui| {
+                ui.label("Reward ID:");
+                ui.monospace(self.divinity_form.reward_id());
+            });
+        });
+        ui.add_space(16.0);
+
+        // Validation and Save
+        ui.separator();
+        let errors = self.divinity_form.validate();
+        if !errors.is_empty() {
+            ui.colored_label(egui::Color32::RED, "Validation Errors:");
+            for error in &errors {
+                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
+            }
+            ui.add_space(8.0);
+        }
+
+        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
+            if ui.button("💾 Save Divinity Unlock").clicked() {
+                self.save_divinity();
+            }
+        });
+
+        if self.assets_dir.is_none() {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ Select assets directory first (File → Select Assets Directory)",
+            );
+        }
+    }
+
+    fn load_divinity(&mut self, id: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            // Construct path
+            let unlock_path = assets_dir
+                .join("unlocks")
+                .join("divinity")
+                .join(format!("{}.unlock.ron", id));
+
+            // Read file
+            let unlock_content = match std::fs::read_to_string(&unlock_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read unlock file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse RON
+            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
+                    return;
+                }
+            };
+
+            // Extract tier/level from reward_id: divinity:{tier}-{level}
+            if let Some(val_str) = unlock_def.reward_id.strip_prefix("divinity:") {
+                let parts: Vec<&str> = val_str.split('-').collect();
+                if parts.len() == 2 {
+                    if let (Ok(tier), Ok(level)) = (parts[0].parse(), parts[1].parse()) {
+                         self.divinity_form = DivinityFormData {
+                             tier,
+                             level,
+                             unlock_condition: UnlockCondition::from(&unlock_def.condition),
+                         };
+                         self.status = format!("✓ Loaded divinity unlock: {}", id);
+                         return;
+                    }
+                }
+            }
+            
+            self.status = format!("⚠ Failed to parse tier/level from reward_id: {}", unlock_def.reward_id);
+        }
+    }
+
+    fn save_divinity(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            match save_divinity_unlock_file(&self.divinity_form, assets_dir) {
+                Ok(path) => {
+                    self.status = format!("✓ Saved: {}", path);
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to save: {}", e);
+                }
+            }
+        }
+    }
 }
