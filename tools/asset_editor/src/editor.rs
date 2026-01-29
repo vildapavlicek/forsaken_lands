@@ -10,9 +10,9 @@ use {
             save_research_files,
         },
         models::{
-            CompareOp, EditorCraftingOutcome, EditorRecipeCategory, EditorWeaponType,
-            GenericUnlockFormData, LeafCondition, RecipeFormData, RecipeUnlockFormData,
-            ResearchFormData, ResourceCost, UnlockCondition, WeaponFormData,
+            CompareOp, EditorCraftingOutcome, EditorRecipeCategory, GenericUnlockFormData,
+            LeafCondition, RecipeFormData, RecipeUnlockFormData, ResearchFormData, ResourceCost,
+            UnlockCondition, WeaponDefinitionExt, WeaponTypeExt,
             CachedEnemy, CachedWeapon,
         },
         monster_prefab::{
@@ -20,12 +20,14 @@ use {
             optional_components, parse_components_from_ron,
         },
     },
+    portal_assets::SpawnTable,
     divinity_components::Divinity,
     eframe::egui,
-    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
+    portal_assets::{SpawnCondition, SpawnEntry, SpawnType},
     research_assets::ResearchDefinition,
     std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
+    weapon_assets::{WeaponDefinition, WeaponType},
 };
 use crate::research_graph::ResearchGraphState;
 
@@ -55,7 +57,7 @@ pub struct EditorState {
     /// Form data for the current generic unlock.
     generic_unlock_form: GenericUnlockFormData,
     /// Form data for the current weapon.
-    weapon_form: WeaponFormData,
+    weapon_form: WeaponDefinition,
     /// Form data for the current recipe.
     recipe_data_form: RecipeFormData,
     /// Path to the assets directory.
@@ -130,7 +132,7 @@ impl EditorState {
             research_form: ResearchFormData::new(),
             recipe_unlock_form: RecipeUnlockFormData::new(),
             generic_unlock_form: GenericUnlockFormData::new(),
-            weapon_form: WeaponFormData::new(),
+            weapon_form: WeaponDefinition::new_default(),
             recipe_data_form: RecipeFormData::new(),
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
@@ -250,7 +252,11 @@ impl EditorState {
                         }
                         EditorTab::Weapon => {
                             ui.label("Weapon File:");
-                            let weapon_ron = self.weapon_form.to_ron();
+                            let weapon_ron = ron::ser::to_string_pretty(
+                                &self.weapon_form,
+                                ron::ser::PrettyConfig::default(),
+                            )
+                            .unwrap_or_default();
                             ui.add(
                                 egui::TextEdit::multiline(&mut weapon_ron.as_str())
                                     .font(egui::TextStyle::Monospace)
@@ -800,19 +806,19 @@ impl EditorState {
             egui::ComboBox::from_id_salt("weapon_type")
                 .selected_text(current_type)
                 .show_ui(ui, |ui| {
-                    for type_name in EditorWeaponType::all_types() {
+                    for type_name in WeaponType::all_types() {
                         if ui
                             .selectable_label(current_type == type_name, type_name)
                             .clicked()
                         {
-                            self.weapon_form.weapon_type = EditorWeaponType::from_type_name(type_name);
+                            self.weapon_form.weapon_type = WeaponType::from_type_name(type_name);
                         }
                     }
                 });
         });
 
         // Melee-specific: arc width
-        if let EditorWeaponType::Melee { arc_width } = &mut self.weapon_form.weapon_type {
+        if let WeaponType::Melee { arc_width } = &mut self.weapon_form.weapon_type {
             ui.horizontal(|ui| {
                 ui.label("Arc Width (radians):");
                 ui.add(egui::DragValue::new(arc_width).speed(0.01).range(0.1..=6.28));
@@ -836,6 +842,27 @@ impl EditorState {
             ui.label("Attack Speed (ms):");
             ui.add(egui::DragValue::new(&mut self.weapon_form.attack_speed_ms).speed(10).range(100..=10000));
         });
+        ui.add_space(8.0);
+
+        // Tags
+        ui.separator();
+        ui.heading("Tags");
+        let mut remove_tag_idx: Option<usize> = None;
+        for (i, tag) in self.weapon_form.tags.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label(format!("Tag #{}:", i + 1));
+                ui.text_edit_singleline(tag);
+                if ui.button("🗑").clicked() {
+                    remove_tag_idx = Some(i);
+                }
+            });
+        }
+        if let Some(idx) = remove_tag_idx {
+            self.weapon_form.tags.remove(idx);
+        }
+        if ui.button("+ Add Tag").clicked() {
+            self.weapon_form.tags.push(String::new());
+        }
         ui.add_space(8.0);
 
         // Preview
@@ -1330,7 +1357,7 @@ impl EditorState {
                 self.status = "New generic unlock form created".to_string();
             }
             EditorTab::Weapon => {
-                self.weapon_form = WeaponFormData::new();
+                self.weapon_form = WeaponDefinition::new_default();
                 self.status = "New weapon form created".to_string();
             }
             EditorTab::Recipe => {
@@ -1831,9 +1858,15 @@ impl EditorState {
                 return;
             }
 
-            // Write file
-            let ron_content = self.weapon_form.to_ron();
-            match std::fs::write(&file_path, ron_content) {
+            // Serialize using RON
+            let content = match ron::ser::to_string_pretty(&self.weapon_form, ron::ser::PrettyConfig::default()) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to serialize weapon: {}", e);
+                    return;
+                }
+            };
+            match std::fs::write(&file_path, content) {
                 Ok(()) => {
                     self.status = format!("✓ Saved weapon: {}", file_path.display());
                     let assets_dir = assets_dir.clone();
@@ -1858,63 +1891,16 @@ impl EditorState {
                 }
             };
 
-            // Parse weapon file using regex (similar to how we parse monster prefabs)
-            // Extract fields from RON content
-            use regex::Regex;
-            let id_re = Regex::new(r#"id:\s*"([^"]+)""#).ok();
-            let name_re = Regex::new(r#"display_name:\s*"([^"]+)""#).ok();
-            let damage_re = Regex::new(r#"damage:\s*([\d.]+)"#).ok();
-            let range_re = Regex::new(r#"attack_range:\s*([\d.]+)"#).ok();
-            let speed_re = Regex::new(r#"attack_speed_ms:\s*(\d+)"#).ok();
-            let melee_re = Regex::new(r#"Melee\(arc_width:\s*([\d.]+)\)"#).ok();
-            let ranged_re = Regex::new(r#"Ranged"#).ok();
-
-            let mut form = WeaponFormData::new();
-            
-            if let Some(re) = id_re {
-                if let Some(caps) = re.captures(&content) {
-                    form.id = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+            // Parse weapon file using RON deserialization
+            match ron::from_str::<WeaponDefinition>(&content) {
+                Ok(form) => {
+                    self.weapon_form = form;
+                    self.status = format!("✓ Loaded weapon: {}", filename_stem);
+                }
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse weapon file: {}", e);
                 }
             }
-            if let Some(re) = name_re {
-                if let Some(caps) = re.captures(&content) {
-                    form.display_name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
-                }
-            }
-            if let Some(re) = damage_re {
-                if let Some(caps) = re.captures(&content) {
-                    if let Some(m) = caps.get(1) {
-                        form.damage = m.as_str().parse().unwrap_or(5.0);
-                    }
-                }
-            }
-            if let Some(re) = range_re {
-                if let Some(caps) = re.captures(&content) {
-                    if let Some(m) = caps.get(1) {
-                        form.attack_range = m.as_str().parse().unwrap_or(150.0);
-                    }
-                }
-            }
-            if let Some(re) = speed_re {
-                if let Some(caps) = re.captures(&content) {
-                    if let Some(m) = caps.get(1) {
-                        form.attack_speed_ms = m.as_str().parse().unwrap_or(750);
-                    }
-                }
-            }
-            if let Some(re) = melee_re {
-                if let Some(caps) = re.captures(&content) {
-                    let arc = caps.get(1).map(|m| m.as_str().parse().unwrap_or(1.047)).unwrap_or(1.047);
-                    form.weapon_type = EditorWeaponType::Melee { arc_width: arc };
-                }
-            } else if let Some(re) = ranged_re {
-                if re.is_match(&content) && melee_re.map(|r| !r.is_match(&content)).unwrap_or(true) {
-                    form.weapon_type = EditorWeaponType::Ranged;
-                }
-            }
-
-            self.weapon_form = form;
-            self.status = format!("✓ Loaded weapon: {}", filename_stem);
         }
     }
 

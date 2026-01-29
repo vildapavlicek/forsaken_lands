@@ -625,92 +625,59 @@ impl GenericUnlockFormData {
 
 // ==================== Weapon Form Data ====================
 
-/// Type of weapon for the editor.
-#[derive(Clone, Debug, PartialEq)]
-pub enum EditorWeaponType {
-    Melee { arc_width: f32 },
-    Ranged,
+use weapon_assets::{WeaponDefinition, WeaponType};
+
+pub trait WeaponTypeExt {
+    fn display_name(&self) -> &'static str;
+    fn all_types() -> Vec<&'static str>;
+    fn from_type_name(name: &str) -> Self;
 }
 
-impl Default for EditorWeaponType {
-    fn default() -> Self {
-        EditorWeaponType::Melee { arc_width: 1.047 }
-    }
-}
-
-impl EditorWeaponType {
-    pub fn display_name(&self) -> &'static str {
+impl WeaponTypeExt for WeaponType {
+    fn display_name(&self) -> &'static str {
         match self {
-            EditorWeaponType::Melee { .. } => "Melee",
-            EditorWeaponType::Ranged => "Ranged",
+            WeaponType::Melee { .. } => "Melee",
+            WeaponType::Ranged => "Ranged",
         }
     }
 
-    pub fn all_types() -> Vec<&'static str> {
+    fn all_types() -> Vec<&'static str> {
         vec!["Melee", "Ranged"]
     }
 
-    pub fn from_type_name(name: &str) -> Self {
+    fn from_type_name(name: &str) -> Self {
         match name {
-            "Melee" => EditorWeaponType::Melee { arc_width: 1.047 },
-            "Ranged" => EditorWeaponType::Ranged,
-            _ => EditorWeaponType::default(),
-        }
-    }
-
-    pub fn to_ron(&self) -> String {
-        match self {
-            EditorWeaponType::Melee { arc_width } => {
-                format!("Melee(arc_width: {})", format_f32(*arc_width))
-            }
-            EditorWeaponType::Ranged => "Ranged".to_string(),
+            "Melee" => WeaponType::Melee { arc_width: 1.047 },
+            "Ranged" => WeaponType::Ranged,
+            _ => WeaponType::Melee { arc_width: 1.047 },
         }
     }
 }
 
-fn format_f32(v: f32) -> String {
-    let s = v.to_string();
-    if s.contains('.') {
-        s
-    } else {
-        format!("{}.0", s)
-    }
+pub trait WeaponDefinitionExt {
+    fn new_default() -> Self;
+    fn weapon_filename(&self) -> String;
+    fn validate(&self) -> Vec<String>;
 }
 
-/// The form data for a weapon asset.
-#[derive(Clone, Debug, Default)]
-pub struct WeaponFormData {
-    /// Unique identifier (e.g., "bone_sword")
-    pub id: String,
-    /// Display name shown in UI
-    pub display_name: String,
-    /// Type of weapon
-    pub weapon_type: EditorWeaponType,
-    /// Base damage
-    pub damage: f32,
-    /// Attack range in game units
-    pub attack_range: f32,
-    /// Attack speed in milliseconds
-    pub attack_speed_ms: u32,
-}
-
-impl WeaponFormData {
-    pub fn new() -> Self {
+impl WeaponDefinitionExt for WeaponDefinition {
+    fn new_default() -> Self {
         Self {
             id: String::new(),
             display_name: String::new(),
-            weapon_type: EditorWeaponType::Melee { arc_width: 1.047 },
+            weapon_type: WeaponType::Melee { arc_width: 1.047 },
             damage: 5.0,
             attack_range: 150.0,
             attack_speed_ms: 750,
+            tags: Vec::new(),
         }
     }
 
-    pub fn weapon_filename(&self) -> String {
+    fn weapon_filename(&self) -> String {
         format!("{}.weapon.ron", self.id)
     }
 
-    pub fn validate(&self) -> Vec<String> {
+    fn validate(&self) -> Vec<String> {
         let mut errors = Vec::new();
         if self.id.trim().is_empty() {
             errors.push("Weapon ID is required".to_string());
@@ -729,25 +696,14 @@ impl WeaponFormData {
         }
         errors
     }
+}
 
-    pub fn to_ron(&self) -> String {
-        format!(
-            r#"(
-    id: "{}",
-    display_name: "{}",
-    weapon_type: {},
-    damage: {},
-    attack_range: {},
-    attack_speed_ms: {},
-)
-"#,
-            self.id,
-            self.display_name,
-            self.weapon_type.to_ron(),
-            format_f32(self.damage),
-            format_f32(self.attack_range),
-            self.attack_speed_ms
-        )
+fn format_f32(v: f32) -> String {
+    let s = v.to_string();
+    if s.contains('.') {
+        s
+    } else {
+        format!("{}.0", s)
     }
 }
 
