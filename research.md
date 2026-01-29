@@ -1,117 +1,62 @@
-# (1) Invaders
-Cost: Free
-Requires: -
-Time: 10s
-ID: `invaders`
+The progression should follow from very basic and primitive tools to more complex ones by utilizing resources gathered from enemies.
+Weapon upgrades should be closely followed by the research progression as well as enemy progression.
 
-This is introductory research and story flavored one.
-Point of this research is to give player sense that what comes from the portal
-are enemies and not friends.
-Also introduces research mechanics.
+The draft for a progression should be as follows:
 
-# (2a) Corpse Scavenging
-Cost: Free
-Requires: `invaders`
-Time: 20s
-ID: `corpse_scavenging`
+1. enemies appear from portal, we kill them with rocks we find
+2. as more enemies appear from the portal, it is clear we might need better weapons
+3. unlocked simple crafting research
+4. sharp rocks, deal more damage with rocks 
+5. as we kill more and more enemies their bodies start to pile up
+6. unlock corpse scavenging research
+7. unlock sling recipe
+8. we need even better tools, bones are piling up
+9. research bone crafting,
+10. recipe bone mace, bone bow
+11. break bones into bone dust to enhance bones, bones make toughter bones 
+12. unlock weapon upgrades, repeatable research, affects only bone-crafted weapons
 
-Another story-flavor research. After we researched invaders a bit, we want to learn to process
-them for useful materials. Since we start at primitive technology, only bones make sense now.
+NOTE: Each weapons should be use-able for 2-3 levels before replaced by another. Thus 3 types of weapons should takes us from level
+1 to level 9 or 10.
+NOTE 2: For start, we will make the transition as meelee rock > sling > bone weapons, let's say meelee rock will be only weapon for first 3 levels when it should be replaced by sling, later weapons should come in pairs so player can choose
 
-Unlocks: Bones (resource), Bone production (research), xykego (resource)
+The issue with weapons is that in early levels ranged weapons will probably be preferred over melee due to ranged enemies
 
-# (2b) Where did they come from?
-Cost: None
-Requires: `invaders`
-Time: 20s
-ID: `portal_discovery`
+Levels 1-5 are meant to be tutorial levels, let player to familizarize with UI and core loop kill > scavenge > research
 
-We have some basic understanding of the invaders but where did they come from?
-This planet is supposed to be dead. Story-flavor research. Establishes portals
-existence story-wise
+Progression description:
+# Level 1
+Enemy: Siled
+Research: Autopsy Siled, Invaders (5 kills)
 
-Unlocks: Portal Research, `portal_creator`
+Next level condition: Invaders research
 
-# (3c) What is this?
-Cost: 10 xykego
-Requires: `invaders`
-Time: 30s
-ID: `xykego`
+# Level 2
+Enemies: group(Siled, Siled Alpha)
+Research: Alpha Autopsy, Corpse Scavenging (20kills)
 
-Every monster drops this strange object we do not understand
+Next level condition: Corpse Scavenging
 
-Unlocks: Theology I
+# Level 3
+Enemies: goblin scout, group(scout + siled)
+Research: goblin autopsy, simple crafting, primitive sling
 
-# (3b) Who made the portal?
-Cost: None,
-Requires: `portal_discovery`
-Time: 40s,
-ID: `portal_creator`
+Next level unlock: primitive sling (research)
 
-Research into super natural, as there is no normal explanation for portal.
-This establishes existence of the god which spawned portal.
+# Level 4
+Enemies: Goblin scout, Group(Scout + Siled Alpha), Elite Scout
+Research: Elite scout autopsy,
 
-Unlocks: Portal (research), Theology I (research)
+Next level unlock: 10 elite scouts kills
 
-# (3a) Bone crafting
-Cost: 80 bones
-Requires: corpse_scavenging
-Time: 60s
-ID: `bone_crafting`
+# Level 5
+Enemies: Goblin
+Research: Goblin Autopsy, Portal discovery, Bone Pile (have 200(?) bones)
 
-Since corpse scavenging introduces first resource - bones, we want to figure out usage for those.
-This research unlocks first bone crafts
+Next level unlock: research Portal discovery, Bone pile
 
-Unlocks: Bone Sword (research), Bone Idol (research)
+# Level 6
+Enemies: Goblin, Goblin Warrior
+Reserach: warrior autopsy, Bone Crafting, Bone Sword, Bone Bow, Bone idol
 
-# (4a) Bone Sword
-Cost: 100 bones
-Requires: `bone_crafting`
-Time: 90s
-ID: `bone_sword`
-
-We can craft from bones, but can we craft weapons from them?
-
-Unlocks: Bone Sword (recipe)
-
-# (4b) Theology I
-Cost: 50 xykegos
-Requires: `portal_creator`, `xykego`
-Time: 60s
-ID: `theology_i`
-
-Is there a god? Can we please him?
-
-Unlocks: Bone Idol (recipe), xykego (resource)
-
-# (5c) A vision
-Cost: 20 xykegos
-Requires: `theology_i`
-Time: 90s
-ID: `vision_i`
-
-The god has spoken to us. We shall present a gift of devotion.
-
-Unlocks: `bone_idol`
-
-# (5c) Hardened bones (0/10)
-Cost: 100 bones (*2 per level)
-Requires: `bone_production`
-Time: 60s (*2 per level)
-ID: `hardened_bones`
-
-We found out we can grind bones to "bone dust" and use that
-to enhance other bones durability.
-
-Unlocks: Melee damage +2% (per level, 20% total)
-
-# (6) Bone Idol
-Cost: 50 bones
-Requires: `bone_crafting`, `vision_i`
-Time: 90s
-ID: `bone_idol`
-
-Would this be a good gift?
-
-Unlocks: Bone Idol (recipe)
-
+Next level unlock: bone idol

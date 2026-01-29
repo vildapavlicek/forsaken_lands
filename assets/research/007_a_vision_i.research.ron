@@ -1,8 +1,0 @@
-(
-    id: "vision_i",
-    name: "Vision I",
-    description: "God gave us a vision.",
-    cost: {  },
-    time_required: 180,
-    max_repeats: 1,
-)

@@ -1,8 +1,0 @@
-(
-    id: "bone_idol",
-    name: "Bone Idol",
-    description: "God shall be pleased.",
-    cost: { "bones": 150 },
-    time_required: 210,
-    max_repeats: 1,
-)

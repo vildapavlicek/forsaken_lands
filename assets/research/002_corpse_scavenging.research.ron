@@ -1,8 +1,0 @@
-(
-    id: "corpse_scavenging",
-    name: "Corpse Scavenging",
-    description: "Their death is blessing to us.",
-    cost: {  },
-    time_required: 20,
-    max_repeats: 1,
-)

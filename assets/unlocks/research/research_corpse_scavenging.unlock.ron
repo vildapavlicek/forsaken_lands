@@ -1,6 +1,0 @@
-(
-    id: "research_corpse_scavenging_unlock",
-    display_name: Some("Corpse Scavenging Research"),
-    reward_id: "research_corpse_scavenging",
-    condition: Completed(topic: "research:invaders"),
-)
