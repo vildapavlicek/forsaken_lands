@@ -8,3 +8,4 @@ bevy.workspace = true
 states.workspace = true
 village_components.workspace = true
 widgets.workspace = true
+enemy_resources.workspace = true

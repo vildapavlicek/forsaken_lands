@@ -1,6 +1,0 @@
-(
-    id: "research_vision_i_unlock",
-    display_name: Some("Vision I Research"),
-    reward_id: "research_vision_i",
-    condition: Completed(topic: "research:theology_i"),
-)

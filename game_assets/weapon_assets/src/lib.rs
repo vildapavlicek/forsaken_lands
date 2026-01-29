@@ -9,7 +9,7 @@ pub use spawner::*;
 use {
     bevy::{platform::collections::HashMap, prelude::*},
     bevy_common_assets::ron::RonAssetPlugin,
-    serde::Deserialize,
+    serde::{Deserialize, Serialize},
 };
 
 pub struct WeaponAssetsPlugin;
@@ -23,7 +23,7 @@ impl Plugin for WeaponAssetsPlugin {
 }
 
 /// Weapon definition loaded from `.weapon.ron` asset files.
-#[derive(Asset, TypePath, Debug, Clone, Deserialize)]
+#[derive(Asset, TypePath, Debug, Clone, Serialize, Deserialize)]
 pub struct WeaponDefinition {
     /// Unique identifier for the weapon (e.g., "bone_sword")
     pub id: String,
@@ -42,7 +42,7 @@ pub struct WeaponDefinition {
 }
 
 /// Type of weapon with type-specific attributes.
-#[derive(Reflect, Debug, Clone, Deserialize)]
+#[derive(Reflect, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum WeaponType {
     Melee { arc_width: f32 },
     // TODO: Add projectile_speed: f32 field for ranged weapons

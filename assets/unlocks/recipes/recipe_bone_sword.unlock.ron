@@ -1,6 +1,0 @@
-(
-    id: "recipe_bone_sword_unlock",
-    display_name: Some("Bone Sword Recipe"),
-    reward_id: "recipe_bone_sword",
-    condition: Completed(topic: "research:bone_sword"),
-)

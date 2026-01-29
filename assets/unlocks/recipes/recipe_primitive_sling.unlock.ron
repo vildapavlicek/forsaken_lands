@@ -1,6 +1,0 @@
-(
-    id: "recipe_primitive_sling_unlock",
-    display_name: Some("Primitive Sling Recipe"),
-    reward_id: "recipe_primitive_sling",
-    condition: Completed(topic: "research:sling"),
-)
