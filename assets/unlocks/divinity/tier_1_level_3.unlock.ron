@@ -1,6 +1,0 @@
-(
-    id: "divinity:tier_1_level_3",
-    display_name: Some("Divinity increase"),
-    reward_id: "divinity_level_up",
-    condition: Completed(topic: "research:sling"),
-)
