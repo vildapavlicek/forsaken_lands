@@ -1,8 +1,0 @@
-(
-    id: "invaders",
-    name: "Invaders",
-    description: "They appeared on our lifeless planet. Black, red eyes, six legs..",
-    cost: {  },
-    time_required: 10,
-    max_repeats: 1,
-)

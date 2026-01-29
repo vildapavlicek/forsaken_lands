@@ -14,7 +14,7 @@ impl Plugin for UnlocksAssetsPlugin {
 }
 
 /// The top-level asset definition for an unlockable item.
-#[derive(Asset, TypePath, Debug, Clone, Deserialize)]
+#[derive(Asset, TypePath, Debug, Clone, Deserialize, Serialize)]
 pub struct UnlockDefinition {
     /// Unique key for this unlock (e.g., "recipe_bone_sword").
     pub id: String,

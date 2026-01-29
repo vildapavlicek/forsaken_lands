@@ -1,6 +1,0 @@
-(
-    id: "research_invaders_unlock",
-    display_name: Some("Invaders Research"),
-    reward_id: "research_invaders",
-    condition: Value(topic: "kills:siled", target: 5.0, op: Ge),
-)

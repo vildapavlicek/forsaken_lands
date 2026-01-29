@@ -1,6 +1,0 @@
-(
-    id: "research_bone_idol_unlock",
-    display_name: Some("Bone Idol Research"),
-    reward_id: "research_bone_idol",
-    condition: Completed(topic: "research:bone_crafting"),
-)

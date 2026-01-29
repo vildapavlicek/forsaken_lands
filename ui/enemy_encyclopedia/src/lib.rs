@@ -1,5 +1,6 @@
 use {
     bevy::prelude::*,
+    enemy_resources::EnemyDetailsCache,
     states::{GameState, VillageView},
     village_components::EnemyEncyclopedia,
     widgets::{spawn_menu_button, ContentContainer},
@@ -32,6 +33,7 @@ fn spawn_encyclopedia_ui(
     mut commands: Commands,
     mut query: Query<(Entity, Option<&Children>), With<ContentContainer>>,
     encyclopedia_query: Query<&EnemyEncyclopedia>,
+    details_cache: Res<EnemyDetailsCache>,
 ) {
     let Some((container, children)) = query.iter_mut().next() else {
         return;
@@ -53,7 +55,7 @@ fn spawn_encyclopedia_ui(
         spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
         // Spawn encyclopedia content
-        spawn_enemy_encyclopedia_content(parent, encyclopedia);
+        spawn_enemy_encyclopedia_content(parent, encyclopedia, &details_cache);
     });
 }
 
@@ -72,6 +74,7 @@ fn handle_back_button(
 pub fn spawn_enemy_encyclopedia_content(
     parent: &mut ChildSpawnerCommands,
     encyclopedia: &EnemyEncyclopedia,
+    details_cache: &EnemyDetailsCache,
 ) {
     parent
         .spawn((
@@ -92,55 +95,141 @@ pub fn spawn_enemy_encyclopedia_content(
                     ..default()
                 },
                 TextColor(Color::WHITE),
+                Node {
+                    margin: UiRect::bottom(Val::Px(10.0)),
+                    ..default()
+                },
             ));
 
-            // List of enemies
-            for (_enemy_id, entry) in &encyclopedia.inner {
-                list.spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    justify_content: JustifyContent::SpaceBetween,
-                    width: Val::Percent(100.0),
-                    padding: UiRect::vertical(Val::Px(5.0)),
-                    ..default()
-                })
-                .with_children(|row| {
-                    row.spawn((Text::new(entry.display_name.clone()), TextColor(Color::WHITE)));
+            // Grid Container for cards
+            list.spawn(Node {
+                flex_direction: FlexDirection::Row,
+                flex_wrap: FlexWrap::Wrap,
+                column_gap: Val::Px(10.0),
+                row_gap: Val::Px(10.0),
+                width: Val::Percent(100.0),
+                ..default()
+            }).with_children(|grid| {
+                // List of enemies
+                for (enemy_id, entry) in &encyclopedia.inner {
+                    spawn_enemy_card(grid, entry, enemy_id, details_cache);
+                }
 
-                    row.spawn(Node {
-                        flex_direction: FlexDirection::Row,
-                        column_gap: Val::Px(15.0),
-                        ..default()
-                    })
-                    .with_children(|stats| {
-                        stats.spawn((
-                            Text::new(format!("Kills: {}", entry.kill_count)),
-                            TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                        ));
-
-                        stats.spawn((
-                            Text::new(format!("Escapes: {}", entry.escape_count)),
-                            TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                        ));
-                    });
-                });
-            }
-
-            if encyclopedia.inner.is_empty() {
-                list.spawn((
-                    Text::new("No enemies encountered yet."),
-                    TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                    TextFont {
-                        font_size: 16.0,
-                        ..default()
-                    },
-                ));
-            }
+                if encyclopedia.inner.is_empty() {
+                    grid.spawn((
+                        Text::new("No enemies encountered yet."),
+                        TextColor(Color::srgb(0.5, 0.5, 0.5)),
+                        TextFont {
+                            font_size: 16.0,
+                            ..default()
+                        },
+                    ));
+                }
+            });
         });
+}
+
+fn spawn_enemy_card(
+    parent: &mut ChildSpawnerCommands,
+    entry: &village_components::EncyclopediaEntry,
+    enemy_id: &str,
+    details_cache: &EnemyDetailsCache,
+) {
+    parent.spawn(Node {
+        flex_direction: FlexDirection::Column,
+        width: Val::Px(250.0),
+        padding: UiRect::all(Val::Px(10.0)),
+        border: UiRect::all(Val::Px(2.0)),
+        ..default()
+    })
+    .insert(BorderColor::all(Color::srgb(0.3, 0.3, 0.3)))
+    .insert(BackgroundColor(Color::srgb(0.15, 0.15, 0.15)))
+    .with_children(|card| {
+        // Name
+        card.spawn((
+            Text::new(entry.display_name.clone()),
+            TextFont {
+                font_size: 18.0,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            Node {
+                margin: UiRect::bottom(Val::Px(5.0)),
+                ..default()
+            },
+        ));
+
+        // Basic Stats (Kills/Escapes)
+        card.spawn(Node {
+            flex_direction: FlexDirection::Column,
+            margin: UiRect::bottom(Val::Px(5.0)),
+            ..default()
+        }).with_children(|stats| {
+            stats.spawn((
+                Text::new(format!("Kills: {}", entry.kill_count)),
+                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                TextFont { font_size: 14.0, ..default() },
+            ));
+            stats.spawn((
+                Text::new(format!("Escapes: {}", entry.escape_count)),
+                TextColor(Color::srgb(0.8, 0.8, 0.8)),
+                TextFont { font_size: 14.0, ..default() },
+            ));
+        });
+
+        // Advanced Stats (from cache)
+        if let Some(details) = details_cache.details.get(enemy_id) {
+            card.spawn(Node {
+                flex_direction: FlexDirection::Column,
+                margin: UiRect::top(Val::Px(5.0)),
+                ..default()
+            }).with_children(|details_node| {
+                details_node.spawn((
+                    Text::new(format!("♥ Max Health: {:.1}", details.health)),
+                    TextColor(Color::srgb(0.4, 1.0, 0.4)),
+                    TextFont { font_size: 14.0, ..default() },
+                ));
+                details_node.spawn((
+                    Text::new(format!("⏩ Speed: {:.1}", details.speed)),
+                    TextColor(Color::srgb(0.4, 0.8, 1.0)),
+                    TextFont { font_size: 14.0, ..default() },
+                ));
+                
+                if !details.drops.is_empty() {
+                    details_node.spawn((
+                        Text::new("Drops:"),
+                        TextColor(Color::srgb(1.0, 0.84, 0.0)),
+                        TextFont { font_size: 14.0, ..default() },
+                        Node { margin: UiRect::top(Val::Px(2.0)), ..default() },
+                    ));
+                    for drop in &details.drops {
+                        details_node.spawn((
+                            Text::new(format!(" • {}", drop)),
+                            TextColor(Color::srgb(1.0, 1.0, 0.8)),
+                            TextFont { font_size: 12.0, ..default() },
+                        ));
+                    }
+                }
+            });
+        } else {
+            // Locked info
+             card.spawn((
+                Text::new("Stats: ???\n(Research required)"),
+                TextColor(Color::srgb(0.5, 0.5, 0.5)),
+                TextFont { font_size: 12.0, ..default() },
+                Node {
+                    margin: UiRect::top(Val::Px(10.0)),
+                    ..default()
+                },
+            ));
+        }
+    });
 }
 
 fn update_encyclopedia_ui(
     mut commands: Commands,
     encyclopedia_query: Query<&EnemyEncyclopedia, Changed<EnemyEncyclopedia>>,
+    details_cache: Res<EnemyDetailsCache>,
     container_query: Query<(Entity, &Children), With<EncyclopediaListContainer>>,
 ) {
     let Some(encyclopedia) = encyclopedia_query.iter().next() else {
@@ -166,48 +255,36 @@ fn update_encyclopedia_ui(
                 ..default()
             },
             TextColor(Color::WHITE),
+            Node {
+                margin: UiRect::bottom(Val::Px(10.0)),
+                ..default()
+            },
         ));
 
-        // List of enemies
-        for (_enemy_id, entry) in &encyclopedia.inner {
-            list.spawn(Node {
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::SpaceBetween,
-                width: Val::Percent(100.0),
-                padding: UiRect::vertical(Val::Px(5.0)),
-                ..default()
-            })
-            .with_children(|row| {
-                row.spawn((Text::new(entry.display_name.clone()), TextColor(Color::WHITE)));
+        // Grid Container for cards
+        list.spawn(Node {
+            flex_direction: FlexDirection::Row,
+            flex_wrap: FlexWrap::Wrap,
+            column_gap: Val::Px(10.0),
+            row_gap: Val::Px(10.0),
+            width: Val::Percent(100.0),
+            ..default()
+        }).with_children(|grid| {
+            // List of enemies
+            for (enemy_id, entry) in &encyclopedia.inner {
+                spawn_enemy_card(grid, entry, enemy_id, &details_cache);
+            }
 
-                row.spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(15.0),
-                    ..default()
-                })
-                .with_children(|stats| {
-                    stats.spawn((
-                        Text::new(format!("Kills: {}", entry.kill_count)),
-                        TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                    ));
-
-                    stats.spawn((
-                        Text::new(format!("Escapes: {}", entry.escape_count)),
-                        TextColor(Color::srgb(0.7, 0.7, 0.7)),
-                    ));
-                });
-            });
-        }
-
-        if encyclopedia.inner.is_empty() {
-            list.spawn((
-                Text::new("No enemies encountered yet."),
-                TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                TextFont {
-                    font_size: 16.0,
-                    ..default()
-                },
-            ));
-        }
+            if encyclopedia.inner.is_empty() {
+                grid.spawn((
+                    Text::new("No enemies encountered yet."),
+                    TextColor(Color::srgb(0.5, 0.5, 0.5)),
+                    TextFont {
+                        font_size: 16.0,
+                        ..default()
+                    },
+                ));
+            }
+        });
     });
 }

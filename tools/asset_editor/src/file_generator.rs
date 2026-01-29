@@ -3,87 +3,38 @@
 //! Generates RON content and handles file saving.
 
 use {
-    crate::models::{RecipeUnlockFormData, ResearchFormData},
+    crate::models::{AutopsyFormData, GenericUnlockFormData, RecipeUnlockFormData, ResearchFormData},
+    serde::Serialize,
     std::path::Path,
 };
 
 /// Generates the .research.ron file content.
 pub fn generate_research_ron(data: &ResearchFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.id));
-    ron.push_str(&format!("    name: \"{}\",\n", data.name));
-    ron.push_str(&format!(
-        "    description: \"{}\",\n",
-        escape_string(&data.description)
-    ));
-
-    // Generate cost map
-    ron.push_str("    cost: { ");
-    let cost_entries: Vec<String> = data
-        .costs
-        .iter()
-        .map(|c| format!("\"{}\": {}", c.resource_id, c.amount))
-        .collect();
-    ron.push_str(&cost_entries.join(", "));
-    ron.push_str(" },\n");
-
-    ron.push_str(&format!("    time_required: {},\n", data.time_required));
-    ron.push_str(&format!("    max_repeats: {},\n", data.max_repeats));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_research_definition())
 }
 
 /// Generates the .unlock.ron file content for research.
 pub fn generate_unlock_ron(data: &ResearchFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.unlock_id()));
-    ron.push_str(&format!(
-        "    display_name: Some(\"{} Research\"),\n",
-        data.name
-    ));
-    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
-    ron.push_str(&format!(
-        "    condition: {},\n",
-        data.unlock_condition.to_ron()
-    ));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_unlock_definition())
 }
 
 /// Generates the .unlock.ron file content for recipe.
 pub fn generate_recipe_unlock_ron(data: &RecipeUnlockFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.unlock_id()));
-    ron.push_str(&format!(
-        "    display_name: Some(\"{}\"),\n",
-        data.display_name
-    ));
-    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
-    ron.push_str(&format!(
-        "    condition: {},\n",
-        data.unlock_condition.to_ron()
-    ));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_unlock_definition())
 }
 
-/// Escapes a string for RON output.
-fn escape_string(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
-        .replace('\t', "\\t")
+
+
+/// Generates the .unlock.ron file content for generic unlocks.
+pub fn generate_generic_unlock_ron(data: &GenericUnlockFormData) -> String {
+    to_ron(&data.to_unlock_definition())
 }
+
+fn to_ron<T: Serialize>(value: &T) -> String {
+    ron::ser::to_string_pretty(value, ron::ser::PrettyConfig::default()).unwrap_or_default()
+}
+
+
 
 /// Result of saving research files.
 pub struct SaveResult {
@@ -152,6 +103,91 @@ pub fn save_recipe_unlock_file(
     })
 }
 
+/// Saves generic unlock file to the specified assets directory.
+pub fn save_generic_unlock_file(
+    data: &GenericUnlockFormData,
+    assets_dir: &Path,
+) -> Result<String, std::io::Error> {
+    // Generate content
+    let unlock_content = generate_generic_unlock_ron(data);
+
+    // Build paths
+    // We'll put them in assets/unlocks/generic/ by default
+    let unlock_dir = assets_dir.join("unlocks").join("generic");
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&unlock_dir)?;
+
+    // Build file path
+    let unlock_path = unlock_dir.join(data.unlock_filename());
+
+    // Write file
+    std::fs::write(&unlock_path, unlock_content)?;
+
+    Ok(unlock_path.display().to_string())
+}
+
+// ==================== Autopsy Generators ====================
+
+/// Generates the research unlock RON for autopsy (Kill monster -> Unlock research).
+pub fn generate_autopsy_research_unlock_ron(data: &AutopsyFormData) -> String {
+    to_ron(&data.to_research_unlock_definition())
+}
+
+/// Generates the research definition RON for autopsy.
+pub fn generate_autopsy_research_ron(data: &AutopsyFormData) -> String {
+    to_ron(&data.to_research_definition())
+}
+
+/// Generates the encyclopedia unlock RON (Research complete -> Unlock data).
+pub fn generate_autopsy_encyclopedia_unlock_ron(data: &AutopsyFormData) -> String {
+    to_ron(&data.to_encyclopedia_unlock_definition())
+}
+
+/// Settings for saving autopsy (paths).
+pub struct AutopsySaveResult {
+    pub research_unlock_path: String,
+    pub research_path: String,
+    pub encyclopedia_unlock_path: String,
+}
+
+/// Saves all three autopsy-related files.
+pub fn save_autopsy_files(
+    data: &AutopsyFormData,
+    assets_dir: &Path,
+) -> Result<AutopsySaveResult, std::io::Error> {
+    
+    // 1. Research Unlock (Kill -> Research)
+    // Saved to assets/unlocks/research/research_autopsy_{monster_id}.unlock.ron
+    let research_unlock_content = generate_autopsy_research_unlock_ron(data);
+    let research_unlock_dir = assets_dir.join("unlocks").join("research");
+    std::fs::create_dir_all(&research_unlock_dir)?;
+    let research_unlock_path = research_unlock_dir.join(data.research_unlock_filename());
+    std::fs::write(&research_unlock_path, research_unlock_content)?;
+    
+    // 2. Research Definition
+    // Saved to assets/research/autopsy_{monster_id}.research.ron
+    let research_content = generate_autopsy_research_ron(data);
+    let research_dir = assets_dir.join("research");
+    std::fs::create_dir_all(&research_dir)?;
+    let research_path = research_dir.join(data.research_filename());
+    std::fs::write(&research_path, research_content)?;
+    
+    // 3. Encyclopedia Unlock (Research -> Data)
+    // Saved to assets/unlocks/encyclopedia/{monster_id}_data.unlock.ron
+    let encyclopedia_unlock_content = generate_autopsy_encyclopedia_unlock_ron(data);
+    let encyclopedia_unlock_dir = assets_dir.join("unlocks").join("encyclopedia");
+    std::fs::create_dir_all(&encyclopedia_unlock_dir)?;
+    let encyclopedia_unlock_path = encyclopedia_unlock_dir.join(data.encyclopedia_unlock_filename());
+    std::fs::write(&encyclopedia_unlock_path, encyclopedia_unlock_content)?;
+    
+    Ok(AutopsySaveResult {
+        research_unlock_path: research_unlock_path.display().to_string(),
+        research_path: research_path.display().to_string(),
+        encyclopedia_unlock_path: encyclopedia_unlock_path.display().to_string(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use {
@@ -201,7 +237,8 @@ mod tests {
         let ron = generate_unlock_ron(&data);
         assert!(ron.contains("id: \"research_test_research_unlock\""));
         assert!(ron.contains("reward_id: \"research_test_research\""));
-        assert!(ron.contains("condition: Completed(topic: \"research:bone_crafting\")"));
+        assert!(ron.contains("condition: Completed("));
+        assert!(ron.contains("topic: \"research:bone_crafting\""));
     }
 
     #[test]
@@ -219,6 +256,6 @@ mod tests {
 
         let ron = generate_research_ron(&data);
         assert!(ron.contains("id: \"free_research\""));
-        assert!(ron.contains("cost: {  }"));
+        assert!(ron.contains("cost: {}"));
     }
 }

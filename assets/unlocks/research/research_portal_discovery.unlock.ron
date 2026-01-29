@@ -1,9 +1,0 @@
-(
-    id: "research_portal_discovery_unlock",
-    display_name: Some("Portal Discovery Research"),
-    reward_id: "research_portal_discovery",
-    condition: And([
-        Completed(topic: "research:invaders"),
-        Completed(topic: "research:xykego"),
-    ]),
-)

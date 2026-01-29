@@ -1,8 +1,0 @@
-(
-    id: "simple_crafting",
-    name: "Simple Crafting",
-    description: "We can use their dead bodies to produce tools.",
-    cost: { "bones": 10, "sinew": 1 },
-    time_required: 30,
-    max_repeats: 1,
-)
