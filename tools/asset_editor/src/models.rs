@@ -449,9 +449,9 @@ impl ResearchFormData {
     }
 
     /// Derives the reward ID from the base research ID.
-    /// Pattern: research_{id}
+    /// Pattern: research:{id}
     pub fn reward_id(&self) -> String {
-        format!("research_{}", self.id)
+        format!("research:{}", self.id)
     }
 
     /// Derives the research file name.
@@ -578,9 +578,9 @@ impl RecipeUnlockFormData {
     }
 
     /// Derives the reward ID from the base recipe ID.
-    /// Pattern: recipe_{id}
+    /// Pattern: recipe:{id}
     pub fn reward_id(&self) -> String {
-        format!("recipe_{}", self.id)
+        format!("recipe:{}", self.id)
     }
 
     /// Derives the unlock file name.
@@ -607,12 +607,14 @@ impl RecipeUnlockFormData {
     }
 
     pub fn from_assets(unlock: &UnlockDefinition) -> Self {
-        // Extract recipe ID from reward_id (recipe_{id})
-        let id = unlock
-            .reward_id
-            .strip_prefix("recipe_")
-            .unwrap_or(&unlock.reward_id)
-            .to_string();
+        // Extract recipe ID from reward_id (recipe:{id} or recipe_{id})
+        let id = if let Some(stripped) = unlock.reward_id.strip_prefix("recipe:") {
+            stripped.to_string()
+        } else if let Some(stripped) = unlock.reward_id.strip_prefix("recipe_") {
+            stripped.to_string()
+        } else {
+            unlock.reward_id.clone()
+        };
 
         Self {
             id,
@@ -811,7 +813,7 @@ impl AutopsyFormData {
         UnlockDefinition {
             id: self.generate_research_unlock_id(),
             display_name: Some(format!("Autopsy: {}", self.monster_id)),
-            reward_id: self.generate_research_id(),
+            reward_id: format!("research:{}", self.generate_research_id()),
             condition: ConditionNode::Value {
                 topic: format!("kills:{}", self.monster_id),
                 op: unlocks_components::ComparisonOp::Ge,
@@ -824,7 +826,7 @@ impl AutopsyFormData {
         UnlockDefinition {
             id: self.generate_encyclopedia_unlock_id(),
             display_name: None,
-            reward_id: format!("encyclopedia_{}_data", self.monster_id),
+            reward_id: format!("encyclopedia_data:{}", self.monster_id),
             condition: ConditionNode::Completed {
                 topic: format!("research:{}", self.generate_research_id()),
             },

@@ -50,6 +50,3 @@ pub struct StatusCompleted {
 /// Usage: `craft:{recipe_id}`
 pub const CRAFTING_TOPIC_PREFIX: &str = "craft:";
 
-/// Prefix for recipe rewards (used in UnlockAchieved).
-/// Usage: `recipe_{recipe_id}`
-pub const RECIPE_REWARD_PREFIX: &str = "recipe_";

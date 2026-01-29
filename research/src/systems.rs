@@ -4,7 +4,7 @@ use {
         ResearchDefinition, ResearchMap, ResearchNode, StartResearchRequest,
     },
     bevy::prelude::*,
-    unlocks_resources::UnlockState,
+    unlocks_events,
     wallet::Wallet,
 };
 
@@ -88,10 +88,16 @@ pub fn on_unlock_achieved(
     locked_query: Query<(), With<Locked>>,
 ) {
     let event = trigger.event();
-    const PREFIX: &str = "research_";
+    const RESEARCH_REWARD_PREFIX: &str = "research:";
+    
+    // Check for standard prefix "research:" or legacy "research_"
+    let research_id_opt = if event.reward_id.starts_with(RESEARCH_REWARD_PREFIX) {
+        event.reward_id.strip_prefix(RESEARCH_REWARD_PREFIX)
+    } else {
+        event.reward_id.strip_prefix("research_")
+    };
 
-    if event.reward_id.starts_with(PREFIX) {
-        let research_id = &event.reward_id[PREFIX.len()..];
+    if let Some(research_id) = research_id_opt {
         if let Some(&entity) = research_map.entities.get(research_id) {
             // Only transition if currently Locked
             if locked_query.get(entity).is_ok() {

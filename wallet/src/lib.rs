@@ -123,10 +123,16 @@ fn process_enemy_killed_rewards(
 /// Adds the resource ID to the wallet's unlocked_resources set.
 fn on_resource_unlock_achieved(trigger: On<UnlockAchieved>, mut wallet: ResMut<Wallet>) {
     let event = trigger.event();
-    const PREFIX: &str = "resource_";
+    const RESOURCE_REWARD_PREFIX: &str = "resource:";
 
-    if event.reward_id.starts_with(PREFIX) {
-        let resource_id = &event.reward_id[PREFIX.len()..];
+    // Check for standard prefix "resource:" or legacy "resource_"
+    let resource_id_opt = if event.reward_id.starts_with(RESOURCE_REWARD_PREFIX) {
+        event.reward_id.strip_prefix(RESOURCE_REWARD_PREFIX)
+    } else {
+        event.reward_id.strip_prefix("resource_")
+    };
+    
+    if let Some(resource_id) = resource_id_opt {
         wallet.unlocked_resources.insert(resource_id.to_string());
         info!("Resource '{}' is now unlocked", resource_id);
     }

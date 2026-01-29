@@ -57,9 +57,16 @@ pub fn on_recipe_unlock_achieved(
 ) {
     let event = trigger.event();
 
-    if let Some(recipe_id) = event
-        .reward_id
-        .strip_prefix(unlocks_events::RECIPE_REWARD_PREFIX)
+    const RECIPE_REWARD_PREFIX: &str = "recipe:";
+
+    let mut recipe_id_opt = event.reward_id.strip_prefix(RECIPE_REWARD_PREFIX);
+    
+    // Fallback to legacy "recipe_" prefix
+    if recipe_id_opt.is_none() {
+        recipe_id_opt = event.reward_id.strip_prefix("recipe_");
+    }
+
+    if let Some(recipe_id) = recipe_id_opt
     {
         if let Some(&entity) = recipe_map.entities.get(recipe_id) {
             // Only transition if currently Locked
