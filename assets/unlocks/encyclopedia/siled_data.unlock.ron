@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_siled_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_siled",
+    ),
+    reward_id: "encyclopedia_data:siled",
+)

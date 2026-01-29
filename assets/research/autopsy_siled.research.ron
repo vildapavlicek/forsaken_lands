@@ -1,0 +1,8 @@
+(
+    id: "autopsy_siled",
+    name: "Autopsy: siled",
+    description: "Ugly teeth, six legs.. Where did they come from?",
+    cost: {},
+    time_required: 10.0,
+    max_repeats: 1,
+)
