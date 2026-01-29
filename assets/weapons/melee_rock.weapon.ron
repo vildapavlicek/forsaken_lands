@@ -1,9 +1,15 @@
 (
     id: "melee_rock",
-    display_name: "Legendary melee rock",
-    weapon_type: Melee(arc_width: 1.047),
+    display_name: "Melee rock",
+    weapon_type: Melee(
+        arc_width: 1.047,
+    ),
     damage: 0.25,
     attack_range: 150.0,
     attack_speed_ms: 500,
-    tags: ["damage", "damage:melee", "damage:melee_rock"],
+    tags: [
+        "damage",
+        "damage:melee",
+        "damage:melee_rock",
+    ],
 )

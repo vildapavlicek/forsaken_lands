@@ -1,9 +1,13 @@
 (
     id: "throwing_rock",
-    display_name: "Legendary throwing rock",
+    display_name: "Throwing rock",
     weapon_type: Ranged,
     damage: 0.25,
     attack_range: 250.0,
     attack_speed_ms: 500,
-    tags: ["damage", "damage:ranged", "damage:throwing_rock"],
+    tags: [
+        "damage",
+        "damage:ranged",
+        "damage:throwing_rock",
+    ],
 )
