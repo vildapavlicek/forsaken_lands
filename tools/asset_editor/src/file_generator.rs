@@ -3,7 +3,7 @@
 //! Generates RON content and handles file saving.
 
 use {
-    crate::models::{AutopsyFormData, DivinityFormData, GenericUnlockFormData, RecipeUnlockFormData, ResearchFormData},
+    crate::models::{AutopsyFormData, DivinityFormData, RecipeUnlockFormData, ResearchFormData},
     serde::Serialize,
     std::path::Path,
 };
@@ -23,18 +23,9 @@ pub fn generate_recipe_unlock_ron(data: &RecipeUnlockFormData) -> String {
     to_ron(&data.to_unlock_definition())
 }
 
-
-
-/// Generates the .unlock.ron file content for generic unlocks.
-pub fn generate_generic_unlock_ron(data: &GenericUnlockFormData) -> String {
-    to_ron(&data.to_unlock_definition())
-}
-
 fn to_ron<T: Serialize>(value: &T) -> String {
     ron::ser::to_string_pretty(value, ron::ser::PrettyConfig::default()).unwrap_or_default()
 }
-
-
 
 /// Result of saving research files.
 pub struct SaveResult {
@@ -103,30 +94,6 @@ pub fn save_recipe_unlock_file(
     })
 }
 
-/// Saves generic unlock file to the specified assets directory.
-pub fn save_generic_unlock_file(
-    data: &GenericUnlockFormData,
-    assets_dir: &Path,
-) -> Result<String, std::io::Error> {
-    // Generate content
-    let unlock_content = generate_generic_unlock_ron(data);
-
-    // Build paths
-    // We'll put them in assets/unlocks/generic/ by default
-    let unlock_dir = assets_dir.join("unlocks").join("generic");
-
-    // Ensure directory exists
-    std::fs::create_dir_all(&unlock_dir)?;
-
-    // Build file path
-    let unlock_path = unlock_dir.join(data.unlock_filename());
-
-    // Write file
-    std::fs::write(&unlock_path, unlock_content)?;
-
-    Ok(unlock_path.display().to_string())
-}
-
 // ==================== Divinity Generators ====================
 
 /// Generates the .unlock.ron file content for divinity.
@@ -187,7 +154,6 @@ pub fn save_autopsy_files(
     data: &AutopsyFormData,
     assets_dir: &Path,
 ) -> Result<AutopsySaveResult, std::io::Error> {
-    
     // 1. Research Unlock (Kill -> Research)
     // Saved to assets/unlocks/research/research_autopsy_{monster_id}.unlock.ron
     let research_unlock_content = generate_autopsy_research_unlock_ron(data);
@@ -195,7 +161,7 @@ pub fn save_autopsy_files(
     std::fs::create_dir_all(&research_unlock_dir)?;
     let research_unlock_path = research_unlock_dir.join(data.research_unlock_filename());
     std::fs::write(&research_unlock_path, research_unlock_content)?;
-    
+
     // 2. Research Definition
     // Saved to assets/research/autopsy_{monster_id}.research.ron
     let research_content = generate_autopsy_research_ron(data);
@@ -203,15 +169,16 @@ pub fn save_autopsy_files(
     std::fs::create_dir_all(&research_dir)?;
     let research_path = research_dir.join(data.research_filename());
     std::fs::write(&research_path, research_content)?;
-    
+
     // 3. Encyclopedia Unlock (Research -> Data)
     // Saved to assets/unlocks/encyclopedia/{monster_id}_data.unlock.ron
     let encyclopedia_unlock_content = generate_autopsy_encyclopedia_unlock_ron(data);
     let encyclopedia_unlock_dir = assets_dir.join("unlocks").join("encyclopedia");
     std::fs::create_dir_all(&encyclopedia_unlock_dir)?;
-    let encyclopedia_unlock_path = encyclopedia_unlock_dir.join(data.encyclopedia_unlock_filename());
+    let encyclopedia_unlock_path =
+        encyclopedia_unlock_dir.join(data.encyclopedia_unlock_filename());
     std::fs::write(&encyclopedia_unlock_path, encyclopedia_unlock_content)?;
-    
+
     Ok(AutopsySaveResult {
         research_unlock_path: research_unlock_path.display().to_string(),
         research_path: research_path.display().to_string(),

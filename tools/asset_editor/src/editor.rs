@@ -2,37 +2,36 @@
 //!
 //! Main egui-based editor interface with tabbed forms for research, recipe unlocks, and monster prefabs.
 
+use crate::research_graph::ResearchGraphState;
 use {
     crate::{
         file_generator::{
-            generate_generic_unlock_ron, generate_recipe_unlock_ron, generate_research_ron,
-            generate_unlock_ron, save_generic_unlock_file, save_recipe_unlock_file,
+            generate_autopsy_encyclopedia_unlock_ron, generate_autopsy_research_ron,
+            generate_autopsy_research_unlock_ron, generate_divinity_unlock_ron,
+            generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
+            save_autopsy_files, save_divinity_unlock_file, save_recipe_unlock_file,
             save_research_files,
-            generate_autopsy_research_unlock_ron, generate_autopsy_research_ron, 
-            generate_autopsy_encyclopedia_unlock_ron, save_autopsy_files,
-            generate_divinity_unlock_ron, save_divinity_unlock_file,
         },
         models::{
-            CompareOp, EditorCraftingOutcome, EditorRecipeCategory, GenericUnlockFormData,
-            LeafCondition, RecipeFormData, RecipeUnlockFormData, ResearchFormData, ResourceCost,
-            UnlockCondition, WeaponDefinitionExt, WeaponTypeExt,
-            CachedEnemy, CachedWeapon, AutopsyFormData, DivinityFormData,
+            AutopsyFormData, CachedEnemy, CachedWeapon, CompareOp, DivinityFormData,
+            EditorCraftingOutcome, EditorRecipeCategory, LeafCondition, RecipeFormData,
+            RecipeUnlockFormData, ResearchFormData, ResourceCost, UnlockCondition,
+            WeaponDefinitionExt, WeaponTypeExt,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
             optional_components, parse_components_from_ron,
         },
     },
-    portal_assets::SpawnTable,
     divinity_components::Divinity,
     eframe::egui,
+    portal_assets::SpawnTable,
     portal_assets::{SpawnCondition, SpawnEntry, SpawnType},
     research_assets::ResearchDefinition,
     std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
     weapon_assets::{WeaponDefinition, WeaponType},
 };
-use crate::research_graph::ResearchGraphState;
 
 /// Available editor tabs.
 #[derive(Clone, Copy, PartialEq, Default)]
@@ -40,7 +39,6 @@ pub enum EditorTab {
     #[default]
     Research,
     RecipeUnlock,
-    GenericUnlock,
     Weapon,
     Recipe,
     MonsterPrefab,
@@ -59,8 +57,6 @@ pub struct EditorState {
     research_form: ResearchFormData,
     /// Form data for the current recipe unlock.
     recipe_unlock_form: RecipeUnlockFormData,
-    /// Form data for the current generic unlock.
-    generic_unlock_form: GenericUnlockFormData,
     /// Form data for the current weapon.
     weapon_form: WeaponDefinition,
     /// Form data for the current recipe.
@@ -73,8 +69,6 @@ pub struct EditorState {
     existing_research_ids: Vec<String>,
     /// List of existing recipe unlock IDs.
     existing_recipe_unlock_ids: Vec<String>,
-    /// List of existing generic unlock IDs.
-    existing_generic_unlock_ids: Vec<String>,
     /// List of existing weapon IDs.
     existing_weapon_ids: Vec<String>,
     /// List of existing recipe IDs.
@@ -126,7 +120,7 @@ pub struct EditorState {
     ttk_data_loaded: bool,
     cached_enemies: Vec<CachedEnemy>,
     cached_weapons: Vec<CachedWeapon>,
-    
+
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
 
@@ -143,14 +137,12 @@ impl EditorState {
             active_tab: EditorTab::Research,
             research_form: ResearchFormData::new(),
             recipe_unlock_form: RecipeUnlockFormData::new(),
-            generic_unlock_form: GenericUnlockFormData::new(),
             weapon_form: WeaponDefinition::new_default(),
             recipe_data_form: RecipeFormData::new(),
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
             existing_recipe_unlock_ids: Vec::new(),
-            existing_generic_unlock_ids: Vec::new(),
             existing_weapon_ids: Vec::new(),
             existing_recipe_ids: Vec::new(),
             existing_research_filenames: Vec::new(),
@@ -171,13 +163,13 @@ impl EditorState {
             spawn_table_filename: "new_spawn_table".to_string(),
             existing_spawn_tables: Vec::new(),
             spawn_table_preview: String::new(),
-            
+
             graph_state: ResearchGraphState::new(),
 
             ttk_data_loaded: false,
             cached_enemies: Vec::new(),
             cached_weapons: Vec::new(),
-            
+
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
             existing_divinity_ids: Vec::new(),
@@ -257,15 +249,6 @@ impl EditorState {
                                     .desired_width(f32::INFINITY),
                             );
                         }
-                        EditorTab::GenericUnlock => {
-                            ui.label("Generic Unlock File:");
-                            let unlock_ron = generate_generic_unlock_ron(&self.generic_unlock_form);
-                            ui.add(
-                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
-                                    .font(egui::TextStyle::Monospace)
-                                    .desired_width(f32::INFINITY),
-                            );
-                        }
                         EditorTab::Weapon => {
                             ui.label("Weapon File:");
                             let weapon_ron = ron::ser::to_string_pretty(
@@ -306,23 +289,35 @@ impl EditorState {
                             );
                         }
                         EditorTab::Graph | EditorTab::TimeToKill => {
-                             ui.label("No RON preview for this tab");
+                            ui.label("No RON preview for this tab");
                         }
                         EditorTab::Autopsy => {
                             ui.label("Research Unlock:");
                             let ru = generate_autopsy_research_unlock_ron(&self.autopsy_form);
-                            ui.add(egui::TextEdit::multiline(&mut ru.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
-                            
+                            ui.add(
+                                egui::TextEdit::multiline(&mut ru.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+
                             ui.add_space(10.0);
                             ui.label("Research Definition:");
                             let r = generate_autopsy_research_ron(&self.autopsy_form);
-                            ui.add(egui::TextEdit::multiline(&mut r.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
-                            
+                            ui.add(
+                                egui::TextEdit::multiline(&mut r.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+
                             ui.add_space(10.0);
                             ui.label("Encyclopedia Unlock:");
                             let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
                             let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
-                            ui.add(egui::TextEdit::multiline(&mut eu.as_str()).font(egui::TextStyle::Monospace).desired_width(f32::INFINITY));
+                            ui.add(
+                                egui::TextEdit::multiline(&mut eu.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
                         }
                         EditorTab::Divinity => {
                             ui.label("Divinity Unlock File:");
@@ -347,7 +342,6 @@ impl EditorState {
                     EditorTab::RecipeUnlock,
                     "🔧 Recipe Unlock",
                 );
-                ui.selectable_value(&mut self.active_tab, EditorTab::GenericUnlock, "🔓 Generic Unlock");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Weapon, "⚔ Weapon");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Recipe, "🧪 Recipe");
                 ui.selectable_value(
@@ -360,33 +354,16 @@ impl EditorState {
                     EditorTab::SpawnTable,
                     "💀 Spawn Tables",
                 );
-                ui.selectable_value(
-                    &mut self.active_tab,
-                    EditorTab::Graph,
-                    "📊 Graph",
-                );
-                ui.selectable_value(
-                    &mut self.active_tab,
-                    EditorTab::TimeToKill,
-                    "⏱ TTK",
-                );
-                ui.selectable_value(
-                    &mut self.active_tab,
-                    EditorTab::Autopsy,
-                    "🧬 Autopsy",
-                );
-                ui.selectable_value(
-                    &mut self.active_tab,
-                    EditorTab::Divinity,
-                    "✨ Divinity",
-                );
+                ui.selectable_value(&mut self.active_tab, EditorTab::Graph, "📊 Graph");
+                ui.selectable_value(&mut self.active_tab, EditorTab::TimeToKill, "⏱ TTK");
+                ui.selectable_value(&mut self.active_tab, EditorTab::Autopsy, "🧬 Autopsy");
+                ui.selectable_value(&mut self.active_tab, EditorTab::Divinity, "✨ Divinity");
             });
             ui.separator();
 
             egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
                 EditorTab::Research => self.show_research_form(ui),
                 EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
-                EditorTab::GenericUnlock => self.show_generic_unlock_form(ui),
                 EditorTab::Weapon => self.show_weapon_form(ui),
                 EditorTab::Recipe => self.show_recipe_form(ui),
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
@@ -686,121 +663,6 @@ impl EditorState {
         }
     }
 
-    fn show_generic_unlock_form(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Generic Unlock Definition");
-        ui.add_space(4.0);
-
-        // Load existing generic unlocks
-        ui.group(|ui| {
-            ui.heading("Load Existing Generic Unlock");
-            ui.separator();
-            if self.assets_dir.is_none() {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    "⚠ Select assets directory first (File → Select Assets Directory)",
-                );
-            } else if self.existing_generic_unlock_ids.is_empty() {
-                ui.label("No generic unlock assets found in assets/unlocks/generic/.");
-            } else {
-                ui.horizontal_wrapped(|ui| {
-                    let mut load_id = None;
-                    for id in &self.existing_generic_unlock_ids {
-                        if ui.button(id).clicked() {
-                            load_id = Some(id.clone());
-                        }
-                    }
-                    if let Some(id) = load_id {
-                        self.load_generic_unlock(&id);
-                    }
-                });
-            }
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-        ui.add_space(8.0);
-
-        ui.small(
-            "Define a generic unlock condition. The ID can be used by any system to check if unlocked.",
-        );
-        ui.add_space(8.0);
-
-        // Unlock ID
-        ui.horizontal(|ui| {
-            ui.label("Unlock ID:");
-            ui.text_edit_singleline(&mut self.generic_unlock_form.id);
-        });
-        ui.small("The unique ID (e.g., \"extra_stash_tab\")");
-        ui.add_space(8.0);
-
-        // Display Name
-        ui.horizontal(|ui| {
-            ui.label("Display Name:");
-            ui.text_edit_singleline(&mut self.generic_unlock_form.display_name);
-        });
-        ui.small("Shown in notifications (optional)");
-        ui.add_space(8.0);
-
-        // Reward ID
-        ui.horizontal(|ui| {
-            ui.label("Reward ID:");
-            ui.text_edit_singleline(&mut self.generic_unlock_form.reward_id);
-        });
-        ui.small("The ID of the thing being unlocked (e.g., \"extra_stash_tab\")");
-        ui.add_space(8.0);
-
-        // Unlock condition section
-        ui.separator();
-        ui.heading("Unlock Condition");
-        show_condition_editor(
-            ui,
-            "generic",
-            &self.existing_research_ids,
-            &self.existing_monster_ids,
-            &mut self.generic_unlock_form.unlock_condition,
-        );
-        ui.add_space(16.0);
-
-        // ID Preview section
-        ui.separator();
-        ui.heading("Generated IDs (Preview)");
-        ui.add_enabled_ui(false, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Unlock file:");
-                ui.monospace(self.generic_unlock_form.unlock_filename());
-            });
-            ui.horizontal(|ui| {
-                ui.label("Unlock ID:");
-                ui.monospace(self.generic_unlock_form.unlock_id());
-            });
-        });
-        ui.add_space(16.0);
-
-        // Validation and Save
-        ui.separator();
-        let errors = self.generic_unlock_form.validate();
-        if !errors.is_empty() {
-            ui.colored_label(egui::Color32::RED, "Validation Errors:");
-            for error in &errors {
-                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
-            }
-            ui.add_space(8.0);
-        }
-
-        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
-            if ui.button("💾 Save Generic Unlock").clicked() {
-                self.save_generic_unlock();
-            }
-        });
-
-        if self.assets_dir.is_none() {
-            ui.colored_label(
-                egui::Color32::YELLOW,
-                "⚠ Select assets directory first (File → Select Assets Directory)",
-            );
-        }
-    }
-
     fn show_weapon_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Weapon Definition");
         ui.add_space(4.0);
@@ -874,7 +736,11 @@ impl EditorState {
         if let WeaponType::Melee { arc_width } = &mut self.weapon_form.weapon_type {
             ui.horizontal(|ui| {
                 ui.label("Arc Width (radians):");
-                ui.add(egui::DragValue::new(arc_width).speed(0.01).range(0.1..=6.28));
+                ui.add(
+                    egui::DragValue::new(arc_width)
+                        .speed(0.01)
+                        .range(0.1..=6.28),
+                );
             });
             ui.small("Melee attack arc width (1.047 = 60 degrees)");
         }
@@ -885,15 +751,27 @@ impl EditorState {
         ui.heading("Stats");
         ui.horizontal(|ui| {
             ui.label("Damage:");
-            ui.add(egui::DragValue::new(&mut self.weapon_form.damage).speed(0.1).range(0.1..=1000.0));
+            ui.add(
+                egui::DragValue::new(&mut self.weapon_form.damage)
+                    .speed(0.1)
+                    .range(0.1..=1000.0),
+            );
         });
         ui.horizontal(|ui| {
             ui.label("Attack Range:");
-            ui.add(egui::DragValue::new(&mut self.weapon_form.attack_range).speed(1.0).range(1.0..=1000.0));
+            ui.add(
+                egui::DragValue::new(&mut self.weapon_form.attack_range)
+                    .speed(1.0)
+                    .range(1.0..=1000.0),
+            );
         });
         ui.horizontal(|ui| {
             ui.label("Attack Speed (ms):");
-            ui.add(egui::DragValue::new(&mut self.weapon_form.attack_speed_ms).speed(10).range(100..=10000));
+            ui.add(
+                egui::DragValue::new(&mut self.weapon_form.attack_speed_ms)
+                    .speed(10)
+                    .range(100..=10000),
+            );
         });
         ui.add_space(8.0);
 
@@ -1015,7 +893,8 @@ impl EditorState {
                             .selectable_label(current_category == cat_name, cat_name)
                             .clicked()
                         {
-                            self.recipe_data_form.category = EditorRecipeCategory::from_type_name(cat_name);
+                            self.recipe_data_form.category =
+                                EditorRecipeCategory::from_type_name(cat_name);
                         }
                     }
                 });
@@ -1025,7 +904,11 @@ impl EditorState {
         // Craft Time
         ui.horizontal(|ui| {
             ui.label("Craft Time:");
-            ui.add(egui::DragValue::new(&mut self.recipe_data_form.craft_time).speed(0.1).range(0.1..=3600.0));
+            ui.add(
+                egui::DragValue::new(&mut self.recipe_data_form.craft_time)
+                    .speed(0.1)
+                    .range(0.1..=3600.0),
+            );
             ui.label("seconds");
         });
         ui.add_space(8.0);
@@ -1116,7 +999,9 @@ impl EditorState {
             self.recipe_data_form.outcomes.remove(idx);
         }
         if ui.button("+ Add Outcome").clicked() {
-            self.recipe_data_form.outcomes.push(EditorCraftingOutcome::default());
+            self.recipe_data_form
+                .outcomes
+                .push(EditorCraftingOutcome::default());
         }
         ui.add_space(16.0);
 
@@ -1397,14 +1282,17 @@ fn show_leaf_editor(
                 ui.add(egui::DragValue::new(tier).range(1..=9));
                 ui.label("Level:");
                 ui.add(egui::DragValue::new(level).range(1..=99));
-                
+
                 ui.label("Op:");
                 egui::ComboBox::from_id_salt(format!("{}_div_op", id_prefix))
                     .selected_text(op.display_name())
                     .width(50.0)
                     .show_ui(ui, |ui| {
                         for op_name in CompareOp::all() {
-                            if ui.selectable_label(op.display_name() == op_name, op_name).clicked() {
+                            if ui
+                                .selectable_label(op.display_name() == op_name, op_name)
+                                .clicked()
+                            {
                                 *op = CompareOp::from_display(op_name);
                             }
                         }
@@ -1425,10 +1313,6 @@ impl EditorState {
             EditorTab::RecipeUnlock => {
                 self.recipe_unlock_form = RecipeUnlockFormData::new();
                 self.status = "New recipe unlock form created".to_string();
-            }
-            EditorTab::GenericUnlock => {
-                self.generic_unlock_form = GenericUnlockFormData::new();
-                self.status = "New generic unlock form created".to_string();
             }
             EditorTab::Weapon => {
                 self.weapon_form = WeaponDefinition::new_default();
@@ -1529,25 +1413,6 @@ impl EditorState {
             }
         }
         self.existing_recipe_unlock_ids.sort();
-
-        // Load generic unlock IDs
-        self.existing_generic_unlock_ids.clear();
-        let generic_unlock_dir = assets_dir.join("unlocks").join("generic");
-        if let Ok(entries) = std::fs::read_dir(generic_unlock_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".unlock.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".unlock.ron") {
-                            // filename is {id}.unlock.ron
-                            self.existing_generic_unlock_ids.push(stem.to_string());
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_generic_unlock_ids.sort();
 
         // Load divinity unlock IDs
         self.existing_divinity_ids.clear();
@@ -1720,7 +1585,8 @@ impl EditorState {
             let unlock_content = match std::fs::read_to_string(&unlock_path) {
                 Ok(c) => c,
                 Err(e) => {
-                    self.status = format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
+                    self.status =
+                        format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
                     return;
                 }
             };
@@ -1742,8 +1608,15 @@ impl EditorState {
             };
 
             // Convert and populate form
-            self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def, filename_stem.to_string());
-            self.status = format!("✓ Loaded research: {} (Internal ID: {})", filename_stem, internal_id);
+            self.research_form = ResearchFormData::from_assets(
+                &research_def,
+                &unlock_def,
+                filename_stem.to_string(),
+            );
+            self.status = format!(
+                "✓ Loaded research: {} (Internal ID: {})",
+                filename_stem, internal_id
+            );
         }
     }
 
@@ -1769,7 +1642,7 @@ impl EditorState {
         }
 
         ui.add_space(8.0);
-        
+
         egui::ScrollArea::both().show(ui, |ui| {
             egui::Grid::new("ttk_grid").striped(true).show(ui, |ui| {
                 // Header row
@@ -1782,13 +1655,13 @@ impl EditorState {
                 // Rows
                 for enemy in &self.cached_enemies {
                     ui.label(&enemy.display_name).on_hover_text(&enemy.id);
-                    
+
                     for weapon in &self.cached_weapons {
-                         let hits = (enemy.max_health / weapon.damage).ceil();
-                         let time_ms = hits * weapon.attack_speed_ms as f32;
-                         let time_sec = time_ms / 1000.0;
-                         
-                         ui.label(format!("{:.2}s ({} hits)", time_sec, hits));
+                        let hits = (enemy.max_health / weapon.damage).ceil();
+                        let time_ms = hits * weapon.attack_speed_ms as f32;
+                        let time_sec = time_ms / 1000.0;
+
+                        ui.label(format!("{:.2}s ({} hits)", time_sec, hits));
                     }
                     ui.end_row();
                 }
@@ -1805,39 +1678,55 @@ impl EditorState {
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if let Ok(content) = std::fs::read_to_string(&path) {
-                        if let Some(components) = crate::monster_prefab::parse_components_from_ron(&content) {
-                             let mut id = "unknown".to_string();
-                             let mut name = "Unknown".to_string();
-                             let mut max_health = 1.0;
-                             
-                             for comp in components {
-                                 match comp {
-                                     crate::monster_prefab::EnemyComponent::MonsterId(val) => id = val,
-                                     crate::monster_prefab::EnemyComponent::DisplayName(val) => name = val,
-                                     crate::monster_prefab::EnemyComponent::Health { max, .. } => max_health = max,
-                                     _ => {}
-                                 }
-                             }
-                             
-                             if id != "unknown" {
-                                 self.cached_enemies.push(CachedEnemy {
-                                     id,
-                                     display_name: name,
-                                     max_health,
-                                     filename: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
-                                 });
-                             }
+                        if let Some(components) =
+                            crate::monster_prefab::parse_components_from_ron(&content)
+                        {
+                            let mut id = "unknown".to_string();
+                            let mut name = "Unknown".to_string();
+                            let mut max_health = 1.0;
+
+                            for comp in components {
+                                match comp {
+                                    crate::monster_prefab::EnemyComponent::MonsterId(val) => {
+                                        id = val
+                                    }
+                                    crate::monster_prefab::EnemyComponent::DisplayName(val) => {
+                                        name = val
+                                    }
+                                    crate::monster_prefab::EnemyComponent::Health {
+                                        max, ..
+                                    } => max_health = max,
+                                    _ => {}
+                                }
+                            }
+
+                            if id != "unknown" {
+                                self.cached_enemies.push(CachedEnemy {
+                                    id,
+                                    display_name: name,
+                                    max_health,
+                                    filename: path
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_string_lossy()
+                                        .to_string(),
+                                });
+                            }
                         }
                     }
                 }
             }
-            self.cached_enemies.sort_by(|a, b| a.max_health.partial_cmp(&b.max_health).unwrap_or(std::cmp::Ordering::Equal));
+            self.cached_enemies.sort_by(|a, b| {
+                a.max_health
+                    .partial_cmp(&b.max_health)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
 
             // Load Weapons
             self.cached_weapons.clear();
             let weapons_dir = assets_dir.join("weapons");
             if let Ok(entries) = std::fs::read_dir(&weapons_dir) {
-                 for entry in entries.flatten() {
+                for entry in entries.flatten() {
                     let path = entry.path();
                     if let Ok(content) = std::fs::read_to_string(&path) {
                         // We use the WeaponFormData parsing logic via extracting ID from RON which is incomplete for getting full data.
@@ -1861,26 +1750,36 @@ impl EditorState {
                         // OR, I can add `Deserialize` to `WeaponFormData` in `models.rs`?
                         // It's safer to use regex like in `extract_id_from_ron` to be robust, OR better:
                         // I'll implement a simple regex parser for weapons here since I just need 3 fields.
-                        
+
                         let id = extract_field(&content, "id");
                         let damage = extract_f32(&content, "damage");
                         let attack_speed_ms = extract_u32(&content, "attack_speed_ms");
                         let display_name = extract_field(&content, "display_name");
 
-                        if let (Some(id), Some(damage), Some(attack_speed_ms)) = (id, damage, attack_speed_ms) {
+                        if let (Some(id), Some(damage), Some(attack_speed_ms)) =
+                            (id, damage, attack_speed_ms)
+                        {
                             self.cached_weapons.push(CachedWeapon {
                                 id,
                                 display_name: display_name.unwrap_or_else(|| "Unknown".to_string()),
                                 damage,
                                 attack_speed_ms,
-                                filename: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                                filename: path
+                                    .file_name()
+                                    .unwrap_or_default()
+                                    .to_string_lossy()
+                                    .to_string(),
                             });
                         }
                     }
                 }
             }
-            self.cached_weapons.sort_by(|a, b| a.damage.partial_cmp(&b.damage).unwrap_or(std::cmp::Ordering::Equal));
-            
+            self.cached_weapons.sort_by(|a, b| {
+                a.damage
+                    .partial_cmp(&b.damage)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+
             self.ttk_data_loaded = true;
         }
     }
@@ -1917,43 +1816,11 @@ impl EditorState {
         }
     }
 
-    fn load_generic_unlock(&mut self, id: &str) {
-        if let Some(assets_dir) = &self.assets_dir {
-            // Construct path
-            let unlock_path = assets_dir
-                .join("unlocks")
-                .join("generic")
-                .join(format!("{}.unlock.ron", id));
-
-            // Read file
-            let unlock_content = match std::fs::read_to_string(&unlock_path) {
-                Ok(c) => c,
-                Err(e) => {
-                    self.status = format!("✗ Failed to read unlock file: {}", e);
-                    return;
-                }
-            };
-
-            // Parse RON
-            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
-                    return;
-                }
-            };
-
-            // Convert and populate form
-            self.generic_unlock_form = GenericUnlockFormData::from_assets(&unlock_def);
-            self.status = format!("✓ Loaded generic unlock: {}", id);
-        }
-    }
-
     fn save_weapon(&mut self) {
         if let Some(assets_dir) = &self.assets_dir {
             let weapons_dir = assets_dir.join("weapons");
             let file_path = weapons_dir.join(self.weapon_form.weapon_filename());
-            
+
             // Ensure weapons directory exists
             if let Err(e) = std::fs::create_dir_all(&weapons_dir) {
                 self.status = format!("✗ Failed to create weapons directory: {}", e);
@@ -1961,7 +1828,10 @@ impl EditorState {
             }
 
             // Serialize using RON
-            let content = match ron::ser::to_string_pretty(&self.weapon_form, ron::ser::PrettyConfig::default()) {
+            let content = match ron::ser::to_string_pretty(
+                &self.weapon_form,
+                ron::ser::PrettyConfig::default(),
+            ) {
                 Ok(c) => c,
                 Err(e) => {
                     self.status = format!("✗ Failed to serialize weapon: {}", e);
@@ -1983,7 +1853,9 @@ impl EditorState {
 
     fn load_weapon(&mut self, filename_stem: &str) {
         if let Some(assets_dir) = &self.assets_dir {
-            let file_path = assets_dir.join("weapons").join(format!("{}.weapon.ron", filename_stem));
+            let file_path = assets_dir
+                .join("weapons")
+                .join(format!("{}.weapon.ron", filename_stem));
 
             let content = match std::fs::read_to_string(&file_path) {
                 Ok(c) => c,
@@ -2010,7 +1882,7 @@ impl EditorState {
         if let Some(assets_dir) = &self.assets_dir {
             let recipes_dir = assets_dir.join("recipes");
             let file_path = recipes_dir.join(self.recipe_data_form.recipe_filename());
-            
+
             // Ensure recipes directory exists
             if let Err(e) = std::fs::create_dir_all(&recipes_dir) {
                 self.status = format!("✗ Failed to create recipes directory: {}", e);
@@ -2034,7 +1906,9 @@ impl EditorState {
 
     fn load_recipe(&mut self, filename_stem: &str) {
         if let Some(assets_dir) = &self.assets_dir {
-            let file_path = assets_dir.join("recipes").join(format!("{}.recipe.ron", filename_stem));
+            let file_path = assets_dir
+                .join("recipes")
+                .join(format!("{}.recipe.ron", filename_stem));
 
             let content = match std::fs::read_to_string(&file_path) {
                 Ok(c) => c,
@@ -2055,15 +1929,21 @@ impl EditorState {
             let mut form = RecipeFormData::new();
             form.costs.clear();
             form.outcomes.clear();
-            
+
             if let Some(re) = id_re {
                 if let Some(caps) = re.captures(&content) {
-                    form.id = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                    form.id = caps
+                        .get(1)
+                        .map(|m| m.as_str().to_string())
+                        .unwrap_or_default();
                 }
             }
             if let Some(re) = name_re {
                 if let Some(caps) = re.captures(&content) {
-                    form.display_name = caps.get(1).map(|m| m.as_str().to_string()).unwrap_or_default();
+                    form.display_name = caps
+                        .get(1)
+                        .map(|m| m.as_str().to_string())
+                        .unwrap_or_default();
                 }
             }
             if let Some(re) = time_re {
@@ -2109,21 +1989,6 @@ impl EditorState {
             match save_recipe_unlock_file(&self.recipe_unlock_form, assets_dir) {
                 Ok(result) => {
                     self.status = format!("✓ Saved: {}", result.unlock_path);
-                    let assets_dir = assets_dir.clone();
-                    self.load_existing_ids(&assets_dir);
-                }
-                Err(e) => {
-                    self.status = format!("✗ Failed to save: {}", e);
-                }
-            }
-        }
-    }
-
-    fn save_generic_unlock(&mut self) {
-        if let Some(assets_dir) = &self.assets_dir {
-            match save_generic_unlock_file(&self.generic_unlock_form, assets_dir) {
-                Ok(path) => {
-                    self.status = format!("✓ Saved: {}", path);
                     let assets_dir = assets_dir.clone();
                     self.load_existing_ids(&assets_dir);
                 }
@@ -2404,7 +2269,11 @@ impl EditorState {
                         }
                         ui.label("Chance:");
                         if ui
-                            .add(egui::DragValue::new(&mut drop.chance).speed(0.01).range(0.0..=1.0))
+                            .add(
+                                egui::DragValue::new(&mut drop.chance)
+                                    .speed(0.01)
+                                    .range(0.0..=1.0),
+                            )
                             .changed()
                         {
                             changed = true;
@@ -2421,11 +2290,13 @@ impl EditorState {
                 }
 
                 if ui.button("+ Add Drop").clicked() {
-                    drops.push(Drop { chance: 1.0, ..Default::default() });
+                    drops.push(Drop {
+                        chance: 1.0,
+                        ..Default::default()
+                    });
                     changed = true;
                 }
             }
-
         }
 
         changed
@@ -2590,14 +2461,20 @@ impl EditorState {
                         .selected_text(type_name)
                         .show_ui(ui, |ui| {
                             if ui
-                                .selectable_label(matches!(spawn_type, SpawnType::Single(_)), "Single")
+                                .selectable_label(
+                                    matches!(spawn_type, SpawnType::Single(_)),
+                                    "Single",
+                                )
                                 .clicked()
                             {
                                 *spawn_type = SpawnType::Single("goblin_scout".to_string());
                                 changed = true;
                             }
                             if ui
-                                .selectable_label(matches!(spawn_type, SpawnType::Group(_)), "Group")
+                                .selectable_label(
+                                    matches!(spawn_type, SpawnType::Group(_)),
+                                    "Group",
+                                )
                                 .clicked()
                             {
                                 *spawn_type = SpawnType::Group(vec!["goblin_scout".to_string()]);
@@ -2628,8 +2505,7 @@ impl EditorState {
                                 changed = true;
                             }
                         });
-                        if !monster_id.is_empty()
-                            && !self.existing_monster_ids.contains(monster_id)
+                        if !monster_id.is_empty() && !self.existing_monster_ids.contains(monster_id)
                         {
                             ui.colored_label(
                                 egui::Color32::YELLOW,
@@ -2644,7 +2520,8 @@ impl EditorState {
                                 ui.label(format!("  #{}", j + 1));
                                 if !self.existing_monster_ids.is_empty() {
                                     egui::ComboBox::from_id_salt(format!(
-                                        "spawn_group_{}_{}", i, j
+                                        "spawn_group_{}_{}",
+                                        i, j
                                     ))
                                     .selected_text(monster_id.as_str())
                                     .show_ui(ui, |ui| {
@@ -2922,7 +2799,7 @@ impl EditorState {
     fn show_autopsy_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Autopsy Definition");
         ui.add_space(4.0);
-        
+
         ui.group(|ui| {
             ui.label("Define autopsy research for a monster. This will generate:");
             ui.label("• Research Unlock (Kill 1 monster -> Unlock Research)");
@@ -2933,7 +2810,7 @@ impl EditorState {
         ui.add_space(8.0);
         ui.separator();
         ui.add_space(8.0);
-        
+
         if self.assets_dir.is_none() {
             ui.colored_label(
                 egui::Color32::YELLOW,
@@ -2946,17 +2823,23 @@ impl EditorState {
             ui.label("Monster ID:");
             // Autocomplete or dropdown would be nice, but simple text + dropdown helper is good
             ui.text_edit_singleline(&mut self.autopsy_form.monster_id);
-            
+
             egui::ComboBox::from_id_salt("monster_select")
                 .selected_text("Select existing...")
                 .show_ui(ui, |ui| {
                     if self.existing_monster_ids.is_empty() {
-                         ui.label("No monsters found");
+                        ui.label("No monsters found");
                     } else {
                         for monster_id in &self.existing_monster_ids {
-                             if ui.selectable_label(self.autopsy_form.monster_id == *monster_id, monster_id).clicked() {
-                                 self.autopsy_form.monster_id = monster_id.clone();
-                             }
+                            if ui
+                                .selectable_label(
+                                    self.autopsy_form.monster_id == *monster_id,
+                                    monster_id,
+                                )
+                                .clicked()
+                            {
+                                self.autopsy_form.monster_id = monster_id.clone();
+                            }
                         }
                     }
                 });
@@ -2995,7 +2878,9 @@ impl EditorState {
         }
 
         if ui.button("+ Add Resource").clicked() {
-            self.autopsy_form.research_costs.push(ResourceCost::default());
+            self.autopsy_form
+                .research_costs
+                .push(ResourceCost::default());
         }
         ui.add_space(8.0);
 
@@ -3011,7 +2896,7 @@ impl EditorState {
             ui.label("seconds");
         });
         ui.add_space(16.0);
-        
+
         // Preview Generated IDs
         ui.separator();
         ui.heading("Generated Assets (Preview)");
@@ -3024,11 +2909,11 @@ impl EditorState {
                 ui.label("Research Unlock File:");
                 ui.monospace(self.autopsy_form.research_unlock_filename());
             });
-             ui.horizontal(|ui| {
+            ui.horizontal(|ui| {
                 ui.label("Research File:");
                 ui.monospace(self.autopsy_form.research_filename());
             });
-             ui.horizontal(|ui| {
+            ui.horizontal(|ui| {
                 ui.label("Encyc. Unlock File:");
                 ui.monospace(self.autopsy_form.encyclopedia_unlock_filename());
             });
@@ -3058,9 +2943,9 @@ impl EditorState {
             match save_autopsy_files(&self.autopsy_form, assets_dir) {
                 Ok(paths) => {
                     self.status = format!(
-                        "Saved autopsy assets to: {}, {}, {}", 
-                        paths.research_unlock_path, 
-                        paths.research_path, 
+                        "Saved autopsy assets to: {}, {}, {}",
+                        paths.research_unlock_path,
+                        paths.research_path,
                         paths.encyclopedia_unlock_path
                     );
                 }
@@ -3228,18 +3113,21 @@ impl EditorState {
                 let parts: Vec<&str> = val_str.split('-').collect();
                 if parts.len() == 2 {
                     if let (Ok(tier), Ok(level)) = (parts[0].parse(), parts[1].parse()) {
-                         self.divinity_form = DivinityFormData {
-                             tier,
-                             level,
-                             unlock_condition: UnlockCondition::from(&unlock_def.condition),
-                         };
-                         self.status = format!("✓ Loaded divinity unlock: {}", id);
-                         return;
+                        self.divinity_form = DivinityFormData {
+                            tier,
+                            level,
+                            unlock_condition: UnlockCondition::from(&unlock_def.condition),
+                        };
+                        self.status = format!("✓ Loaded divinity unlock: {}", id);
+                        return;
                     }
                 }
             }
-            
-            self.status = format!("⚠ Failed to parse tier/level from reward_id: {}", unlock_def.reward_id);
+
+            self.status = format!(
+                "⚠ Failed to parse tier/level from reward_id: {}",
+                unlock_def.reward_id
+            );
         }
     }
 

@@ -375,7 +375,6 @@ impl From<&ConditionNode> for UnlockCondition {
             ConditionNode::Completed { .. } | ConditionNode::Value { .. } => {
                 UnlockCondition::Single(LeafCondition::from(node))
             }
-
         }
     }
 }
@@ -384,15 +383,14 @@ impl From<&ConditionNode> for UnlockCondition {
 impl From<&ConditionNode> for LeafCondition {
     fn from(node: &ConditionNode) -> Self {
         match node {
-
             // New Generic Variants
             ConditionNode::Completed { topic } => {
                 // Heuristic to detect type based on topic prefix
                 if let Some(id) = topic.strip_prefix("research:") {
                     LeafCondition::Unlock { id: id.to_string() }
                 } else if let Some(id) = topic.strip_prefix("unlock:") {
-                     // Handle older or alternative unlock topics if necessary, or just treat as Unlock
-                     LeafCondition::Unlock { id: id.to_string() }
+                    // Handle older or alternative unlock topics if necessary, or just treat as Unlock
+                    LeafCondition::Unlock { id: id.to_string() }
                 } else {
                     // Fallback or generic completion
                     LeafCondition::Unlock { id: topic.clone() }
@@ -420,28 +418,25 @@ impl From<&ConditionNode> for LeafCondition {
                         op: CompareOp::from(*op),
                     }
                 } else {
-                     LeafCondition::default()
+                    LeafCondition::default()
                 }
             }
-            
-            // Legacy/Direct variants support (keep if still needed for compilation or migration, 
-            // but the goal is to move away from them. The error message "ConditionNode::Stat" 
-            // suggests the enum definitions have changed in the external crate, so we must rely 
-            // on what's actually there. The user said "changed the data structure", so 
+
+            // Legacy/Direct variants support (keep if still needed for compilation or migration,
+            // but the goal is to move away from them. The error message "ConditionNode::Stat"
+            // suggests the enum definitions have changed in the external crate, so we must rely
+            // on what's actually there. The user said "changed the data structure", so
             // Stat/Resource/Unlock variants verify likely GONE from ConditionNode enum).
             //
             // Checking the file content of `unlocks_assets/src/lib.rs` (Step 35), `ConditionNode`
-            // ONLY has `And`, `Or`, `Not`, `True`, `Value`, `Completed`. 
+            // ONLY has `And`, `Or`, `Not`, `True`, `Value`, `Completed`.
             // So we MUST REMOVE `Stat`, `Resource`, `Unlock` match arms.
             // Legacy/Direct variants are no longer supported or needed as ConditionNode has changed.
             // We only rely on Completed and Value variants which are handled above.
             _ => LeafCondition::default(),
-
         }
     }
 }
-
-
 
 // ==================== Form Data Structures ====================
 
@@ -675,79 +670,6 @@ impl RecipeUnlockFormData {
     }
 }
 
-// ==================== Generic Unlock Form Data ====================
-
-/// The form data for a generic unlock.
-#[derive(Clone, Debug, Default)]
-pub struct GenericUnlockFormData {
-    /// The unique ID of the unlock (e.g., "generic_feature_x")
-    pub id: String,
-    /// Display name (optional)
-    pub display_name: String,
-    /// The ID of the thing being unlocked
-    pub reward_id: String,
-    /// Unlock condition
-    pub unlock_condition: UnlockCondition,
-}
-
-impl GenericUnlockFormData {
-    /// Creates a new form with default values.
-    pub fn new() -> Self {
-        Self {
-            id: String::new(),
-            display_name: String::new(),
-            reward_id: String::new(),
-            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock { id: String::new() }),
-        }
-    }
-
-    /// Returns the unlock ID.
-    pub fn unlock_id(&self) -> String {
-        self.id.clone()
-    }
-
-    /// Returns the unlock filename.
-    /// Pattern: {id}.unlock.ron
-    pub fn unlock_filename(&self) -> String {
-        format!("{}.unlock.ron", self.id)
-    }
-
-    /// Validates the form data.
-    pub fn validate(&self) -> Vec<String> {
-        let mut errors = Vec::new();
-
-        if self.id.trim().is_empty() {
-            errors.push("Unlock ID is required".to_string());
-        }
-        if self.reward_id.trim().is_empty() {
-            errors.push("Reward ID is required".to_string());
-        }
-
-        // Validate unlock condition
-        errors.extend(self.unlock_condition.validate());
-
-        errors
-    }
-
-    pub fn from_assets(unlock: &UnlockDefinition) -> Self {
-        Self {
-            id: unlock.id.clone(),
-            display_name: unlock.display_name.clone().unwrap_or_default(),
-            reward_id: unlock.reward_id.clone(),
-            unlock_condition: UnlockCondition::from(&unlock.condition),
-        }
-    }
-
-    pub fn to_unlock_definition(&self) -> UnlockDefinition {
-        UnlockDefinition {
-            id: self.id.clone(),
-            display_name: if self.display_name.is_empty() { None } else { Some(self.display_name.clone()) },
-            reward_id: self.reward_id.clone(),
-            condition: self.unlock_condition.to_condition_node(),
-        }
-    }
-}
-
 // ==================== Autopsy Form Data ====================
 
 /// The form data for autopsy generation.
@@ -785,7 +707,7 @@ impl AutopsyFormData {
         if self.research_description.trim().is_empty() {
             errors.push("Description is required".to_string());
         }
-         for (i, cost) in self.research_costs.iter().enumerate() {
+        for (i, cost) in self.research_costs.iter().enumerate() {
             if cost.resource_id.trim().is_empty() {
                 errors.push(format!("Cost #{}: resource ID is required", i + 1));
             }
@@ -809,13 +731,13 @@ impl AutopsyFormData {
     pub fn generate_research_unlock_id(&self) -> String {
         format!("research_autopsy_{}_unlock", self.monster_id)
     }
-    
+
     /// Generates the encyclopedia unlock ID: `encyclopedia_{monster_id}_unlock`
     pub fn generate_encyclopedia_unlock_id(&self) -> String {
         // According to user request: "unlocks/encyclopedia/{monster_id}_data.unlock.ron"
         // And inside the file, the ID usually matches the filename or is unique.
         // Let's use `encyclopedia_{monster_id}_data` or just `encyclopedia_{monster_id}`.
-        // The user mentioned "monster data in encyclopedia". 
+        // The user mentioned "monster data in encyclopedia".
         // Let's assume the ID is `encyclopedia_{monster_id}_data`
         format!("encyclopedia_{}_data", self.monster_id)
     }
@@ -1118,7 +1040,12 @@ impl EditorCraftingOutcome {
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Add Resource", "Unlock Feature", "Grant XP", "Increase Divinity"]
+        vec![
+            "Add Resource",
+            "Unlock Feature",
+            "Grant XP",
+            "Increase Divinity",
+        ]
     }
 
     pub fn from_type_name(name: &str) -> Self {
@@ -1192,14 +1119,14 @@ impl RecipeFormData {
         }
         for outcome in &self.outcomes {
             if let EditorCraftingOutcome::AddResource { id, .. } = outcome {
-                 if id.trim().is_empty() {
-                     errors.push("Outcome resource ID required".to_string());
-                 }
+                if id.trim().is_empty() {
+                    errors.push("Outcome resource ID required".to_string());
+                }
             }
             if let EditorCraftingOutcome::UnlockFeature(id) = outcome {
-                 if id.trim().is_empty() {
-                     errors.push("Outcome unlock ID required".to_string());
-                 }
+                if id.trim().is_empty() {
+                    errors.push("Outcome unlock ID required".to_string());
+                }
             }
         }
         errors
@@ -1211,12 +1138,18 @@ impl RecipeFormData {
         ron.push_str(&format!("    id: \"{}\",\n", self.id));
         ron.push_str(&format!("    display_name: \"{}\",\n", self.display_name));
         ron.push_str(&format!("    category: {},\n", self.category.to_ron()));
-        ron.push_str(&format!("    unlock_condition: {},\n", self.unlock_condition.to_ron()));
+        ron.push_str(&format!(
+            "    unlock_condition: {},\n",
+            self.unlock_condition.to_ron()
+        ));
         ron.push_str(&format!("    craft_time: {},\n", self.craft_time));
-        
+
         ron.push_str("    costs: {\n");
         for cost in &self.costs {
-             ron.push_str(&format!("        \"{}\": {},\n", cost.resource_id, cost.amount));
+            ron.push_str(&format!(
+                "        \"{}\": {},\n",
+                cost.resource_id, cost.amount
+            ));
         }
         ron.push_str("    },\n");
 
@@ -1224,7 +1157,10 @@ impl RecipeFormData {
         for outcome in &self.outcomes {
             match outcome {
                 EditorCraftingOutcome::AddResource { id, amount } => {
-                    ron.push_str(&format!("        AddResource(resource: \"{}\", amount: {}),\n", id, amount));
+                    ron.push_str(&format!(
+                        "        AddResource(resource: \"{}\", amount: {}),\n",
+                        id, amount
+                    ));
                 }
                 EditorCraftingOutcome::UnlockFeature(id) => {
                     ron.push_str(&format!("        UnlockFeature(\"{}\"),\n", id));
