@@ -125,17 +125,12 @@ fn on_resource_unlock_achieved(trigger: On<UnlockAchieved>, mut wallet: ResMut<W
     let event = trigger.event();
     const RESOURCE_REWARD_PREFIX: &str = "resource:";
 
-    // Check for standard prefix "resource:" or legacy "resource_"
-    let resource_id_opt = if event.reward_id.starts_with(RESOURCE_REWARD_PREFIX) {
-        event.reward_id.strip_prefix(RESOURCE_REWARD_PREFIX)
-    } else {
-        event.reward_id.strip_prefix("resource_")
+    let Some(resource_id) = event.reward_id.strip_prefix(RESOURCE_REWARD_PREFIX) else {
+        return;
     };
-    
-    if let Some(resource_id) = resource_id_opt {
-        wallet.unlocked_resources.insert(resource_id.to_string());
-        info!("Resource '{}' is now unlocked", resource_id);
-    }
+
+    wallet.unlocked_resources.insert(resource_id.to_string());
+    info!("Resource '{}' is now unlocked", resource_id);
 }
 
 pub fn clean_up_wallet(mut wallet: ResMut<Wallet>) {

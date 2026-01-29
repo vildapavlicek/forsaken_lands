@@ -59,27 +59,22 @@ pub fn on_recipe_unlock_achieved(
 
     const RECIPE_REWARD_PREFIX: &str = "recipe:";
 
-    let mut recipe_id_opt = event.reward_id.strip_prefix(RECIPE_REWARD_PREFIX);
-    
-    // Fallback to legacy "recipe_" prefix
-    if recipe_id_opt.is_none() {
-        recipe_id_opt = event.reward_id.strip_prefix("recipe_");
-    }
+    let Some(entity) = event
+        .reward_id
+        .strip_prefix(RECIPE_REWARD_PREFIX)
+        .and_then(|recipe_id| recipe_map.entities.get(recipe_id))
+    else {
+        trace!(%event.reward_id, "unlock achieved not related to recipe");
+        return;
+    };
 
-    if let Some(recipe_id) = recipe_id_opt
-    {
-        if let Some(&entity) = recipe_map.entities.get(recipe_id) {
-            // Only transition if currently Locked
-            if locked_query.get(entity).is_ok() {
-                commands.entity(entity).remove::<Locked>().insert(Available);
-                info!("Recipe '{}' is now available", recipe_id);
-            }
-        } else {
-            debug!(
-                "Recipe '{}' not found in RecipeMap (unlock may have fired before asset load)",
-                recipe_id
-            );
-        }
+    // Only transition if currently Locked
+    if locked_query.get(*entity).is_ok() {
+        commands
+            .entity(*entity)
+            .remove::<Locked>()
+            .insert(Available);
+        info!("Recipe '{}' is now available", event.reward_id);
     }
 }
 
@@ -88,9 +83,6 @@ pub fn update_crafting_progress(
     mut commands: Commands,
     time: Res<Time>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
-    recipe_map: Res<RecipeMap>,
-    recipe_nodes: Query<&RecipeNode>,
-    recipe_assets: Res<Assets<RecipeDefinition>>,
 ) {
     for (entity, mut crafting) in query.iter_mut() {
         crafting.timer.tick(time.delta());
