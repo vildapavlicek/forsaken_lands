@@ -1,0 +1,8 @@
+(
+    id: "divinity_1_4",
+    display_name: Some("Divinity Tier 1 Level 4"),
+    condition: Completed(
+        topic: "research:primitive_sling",
+    ),
+    reward_id: "divinity:1-4",
+)

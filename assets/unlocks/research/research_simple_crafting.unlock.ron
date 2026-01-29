@@ -1,0 +1,15 @@
+(
+    id: "research_simple_crafting_unlock",
+    display_name: Some("Simple Crafting Research"),
+    condition: And([
+        Value(
+            topic: "divinity",
+            op: Ge,
+            target: 103.0,
+        ),
+        Completed(
+            topic: "research:corpse_scavenging",
+        ),
+    ]),
+    reward_id: "research:simple_crafting",
+)

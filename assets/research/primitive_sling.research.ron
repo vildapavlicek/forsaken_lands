@@ -1,0 +1,10 @@
+(
+    id: "primitive_sling",
+    name: "Primitive Sling",
+    description: "We can use their sinew to throw rocks further and with more force.",
+    cost: {
+        "sinew": 3,
+    },
+    time_required: 30.0,
+    max_repeats: 1,
+)

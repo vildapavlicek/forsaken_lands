@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_goblin_scout_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_goblin_scout",
+    ),
+    reward_id: "encyclopedia_data:goblin_scout",
+)
