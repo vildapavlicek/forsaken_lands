@@ -8,7 +8,6 @@ use {
         MovementSpeed, TargetDestination,
     },
     enemy_events::EnemyEscaped,
-    enemy_resources::EnemyDetailsCache,
     hero_events::EnemyKilled,
     loading::GameAssets,
     portal_assets::{SpawnCondition, SpawnTable, SpawnType},
