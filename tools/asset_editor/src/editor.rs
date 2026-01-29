@@ -13,6 +13,7 @@ use {
             CompareOp, EditorCraftingOutcome, EditorRecipeCategory, EditorWeaponType,
             GenericUnlockFormData, LeafCondition, RecipeFormData, RecipeUnlockFormData,
             ResearchFormData, ResourceCost, UnlockCondition, WeaponFormData,
+            CachedEnemy, CachedWeapon,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
@@ -40,6 +41,7 @@ pub enum EditorTab {
     MonsterPrefab,
     SpawnTable,
     Graph,
+    TimeToKill,
 }
 
 /// Current state of the editor.
@@ -110,7 +112,13 @@ pub struct EditorState {
     spawn_table_preview: String,
 
     // Research Graph
+    // Research Graph
     graph_state: ResearchGraphState,
+
+    // TTK Tab
+    ttk_data_loaded: bool,
+    cached_enemies: Vec<CachedEnemy>,
+    cached_weapons: Vec<CachedWeapon>,
 }
 
 impl EditorState {
@@ -151,6 +159,10 @@ impl EditorState {
             spawn_table_preview: String::new(),
             
             graph_state: ResearchGraphState::new(),
+
+            ttk_data_loaded: false,
+            cached_enemies: Vec::new(),
+            cached_weapons: Vec::new(),
         }
     }
 
@@ -271,8 +283,8 @@ impl EditorState {
                                     .desired_width(f32::INFINITY),
                             );
                         }
-                        EditorTab::Graph => {
-                             ui.label("No RON preview for Research Graph");
+                        EditorTab::Graph | EditorTab::TimeToKill => {
+                             ui.label("No RON preview for this tab");
                         }
                     });
                 });
@@ -306,6 +318,11 @@ impl EditorState {
                     EditorTab::Graph,
                     "📊 Graph",
                 );
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::TimeToKill,
+                    "⏱ TTK",
+                );
             });
             ui.separator();
 
@@ -318,6 +335,7 @@ impl EditorState {
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
                 EditorTab::SpawnTable => self.show_spawn_table_form(ui),
                 EditorTab::Graph => self.graph_state.show(ui, self.assets_dir.as_deref()),
+                EditorTab::TimeToKill => self.show_ttk_tab(ui),
             });
         });
     }
@@ -1336,6 +1354,9 @@ impl EditorState {
                 // No form to create for graph
                 self.status = "Graph view active".to_string();
             }
+            EditorTab::TimeToKill => {
+                 self.status = "Time To Kill calculator active".to_string();
+            }
         }
     }
 
@@ -1594,6 +1615,144 @@ impl EditorState {
             // Convert and populate form
             self.research_form = ResearchFormData::from_assets(&research_def, &unlock_def, filename_stem.to_string());
             self.status = format!("✓ Loaded research: {} (Internal ID: {})", filename_stem, internal_id);
+        }
+    }
+
+    fn show_ttk_tab(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Time To Kill (TTK) Calculator");
+        ui.add_space(4.0);
+
+        if self.assets_dir.is_none() {
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ Select assets directory first (File → Select Assets Directory)",
+            );
+            return;
+        }
+
+        if ui.button("🔄 Reload Data").clicked() || !self.ttk_data_loaded {
+            self.load_ttk_data();
+        }
+
+        if self.cached_enemies.is_empty() || self.cached_weapons.is_empty() {
+            ui.label("No enemies or weapons found.");
+            return;
+        }
+
+        ui.add_space(8.0);
+        
+        egui::ScrollArea::both().show(ui, |ui| {
+            egui::Grid::new("ttk_grid").striped(true).show(ui, |ui| {
+                // Header row
+                ui.label("Enemy \\ Weapon");
+                for weapon in &self.cached_weapons {
+                    ui.label(&weapon.display_name).on_hover_text(&weapon.id);
+                }
+                ui.end_row();
+
+                // Rows
+                for enemy in &self.cached_enemies {
+                    ui.label(&enemy.display_name).on_hover_text(&enemy.id);
+                    
+                    for weapon in &self.cached_weapons {
+                         let hits = (enemy.max_health / weapon.damage).ceil();
+                         let time_ms = hits * weapon.attack_speed_ms as f32;
+                         let time_sec = time_ms / 1000.0;
+                         
+                         ui.label(format!("{:.2}s ({} hits)", time_sec, hits));
+                    }
+                    ui.end_row();
+                }
+            });
+        });
+    }
+
+    fn load_ttk_data(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            // Load Enemies
+            self.cached_enemies.clear();
+            let enemies_dir = assets_dir.join("prefabs").join("enemies");
+            if let Ok(entries) = std::fs::read_dir(&enemies_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        if let Some(components) = crate::monster_prefab::parse_components_from_ron(&content) {
+                             let mut id = "unknown".to_string();
+                             let mut name = "Unknown".to_string();
+                             let mut max_health = 1.0;
+                             
+                             for comp in components {
+                                 match comp {
+                                     crate::monster_prefab::EnemyComponent::MonsterId(val) => id = val,
+                                     crate::monster_prefab::EnemyComponent::DisplayName(val) => name = val,
+                                     crate::monster_prefab::EnemyComponent::Health { max, .. } => max_health = max,
+                                     _ => {}
+                                 }
+                             }
+                             
+                             if id != "unknown" {
+                                 self.cached_enemies.push(CachedEnemy {
+                                     id,
+                                     display_name: name,
+                                     max_health,
+                                     filename: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                                 });
+                             }
+                        }
+                    }
+                }
+            }
+            self.cached_enemies.sort_by(|a, b| a.max_health.partial_cmp(&b.max_health).unwrap_or(std::cmp::Ordering::Equal));
+
+            // Load Weapons
+            self.cached_weapons.clear();
+            let weapons_dir = assets_dir.join("weapons");
+            if let Ok(entries) = std::fs::read_dir(&weapons_dir) {
+                 for entry in entries.flatten() {
+                    let path = entry.path();
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        // We use the WeaponFormData parsing logic via extracting ID from RON which is incomplete for getting full data.
+                        // Ideally we should impl Deserialize for WeaponFormData but it's not derive(Deserialize) currently?
+                        // Actually models.rs says `#[derive(Clone, Debug, Default)]` for `WeaponFormData`.
+                        // But `models.rs` imports `serde::{Deserialize, Serialize}`.
+                        // Wait, `WeaponFormData` does NOT have `Serialize, Deserialize` derived in the file I saw?
+                        // Let me check models.rs again mentally.
+                        // Line 682: `pub struct WeaponFormData` derives `Clone, Debug, Default`.
+                        // Line 3: `use serde::{Deserialize, Serialize};`
+                        // So I cannot use `ron::from_str::<WeaponFormData>`.
+                        // I should verify if I can parse it manually or if I should add De/Ser to WeaponFormData.
+                        // Adding De/Ser to WeaponFormData is the clean way.
+                        // I will assume for now I can parse it manually or I'll add the derives.
+                        // Actually, looking at `editor.rs` `load_weapon` (line 1447 not shown, but similar to `load_research`), it seems it parses `WeaponDefinition`?
+                        // No, `load_research` parses `ResearchDefinition` from `research_assets`.
+                        // `WeaponFormData` is the EDITOR'S representation.
+                        // I don't see `WeaponDefinition` imported in `editor.rs`?
+                        // Let's look at `load_weapon` logic. I didn't see `load_weapon` implementation.
+                        // I'll assume I need to parse it myself or use regex like `monster_prefab` if I want to avoid dependency issues.
+                        // OR, I can add `Deserialize` to `WeaponFormData` in `models.rs`?
+                        // It's safer to use regex like in `extract_id_from_ron` to be robust, OR better:
+                        // I'll implement a simple regex parser for weapons here since I just need 3 fields.
+                        
+                        let id = extract_field(&content, "id");
+                        let damage = extract_f32(&content, "damage");
+                        let attack_speed_ms = extract_u32(&content, "attack_speed_ms");
+                        let display_name = extract_field(&content, "display_name");
+
+                        if let (Some(id), Some(damage), Some(attack_speed_ms)) = (id, damage, attack_speed_ms) {
+                            self.cached_weapons.push(CachedWeapon {
+                                id,
+                                display_name: display_name.unwrap_or_else(|| "Unknown".to_string()),
+                                damage,
+                                attack_speed_ms,
+                                filename: path.file_name().unwrap_or_default().to_string_lossy().to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+            self.cached_weapons.sort_by(|a, b| a.damage.partial_cmp(&b.damage).unwrap_or(std::cmp::Ordering::Equal));
+            
+            self.ttk_data_loaded = true;
         }
     }
 
@@ -2671,4 +2830,19 @@ impl EditorState {
             }
         }
     }
+}
+// Helper functions for parsing RON without full structs
+fn extract_field(content: &str, field: &str) -> Option<String> {
+    let re = regex::Regex::new(&format!("{}:\\s*\"([^\"]+)\"", field)).ok()?;
+    re.captures(content).map(|caps| caps[1].to_string())
+}
+
+fn extract_f32(content: &str, field: &str) -> Option<f32> {
+    let re = regex::Regex::new(&format!("{}:\\s*([\\d.]+)", field)).ok()?;
+    re.captures(content).and_then(|caps| caps[1].parse().ok())
+}
+
+fn extract_u32(content: &str, field: &str) -> Option<u32> {
+    let re = regex::Regex::new(&format!("{}:\\s*(\\d+)", field)).ok()?;
+    re.captures(content).and_then(|caps| caps[1].parse().ok())
 }

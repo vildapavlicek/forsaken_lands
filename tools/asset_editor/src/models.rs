@@ -798,6 +798,25 @@ pub enum EditorCraftingOutcome {
     IncreaseDivinity(u32),
 }
 
+// ==================== TTK Cache Models ====================
+
+#[derive(Clone, Debug)]
+pub struct CachedEnemy {
+    pub id: String,
+    pub display_name: String,
+    pub max_health: f32,
+    pub filename: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct CachedWeapon {
+    pub id: String,
+    pub display_name: String,
+    pub damage: f32,
+    pub attack_speed_ms: u32,
+    pub filename: String,
+}
+
 impl Default for EditorCraftingOutcome {
     fn default() -> Self {
         EditorCraftingOutcome::AddResource {
