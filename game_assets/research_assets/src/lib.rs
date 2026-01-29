@@ -5,7 +5,7 @@ use {
 
 // --- Asset Definition ---
 
-#[derive(Asset, TypePath, Debug, Clone, Deserialize)]
+#[derive(Asset, TypePath, Debug, Clone, Deserialize, serde::Serialize)]
 pub struct ResearchDefinition {
     pub id: String,
     pub name: String,

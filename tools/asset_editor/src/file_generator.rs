@@ -4,116 +4,37 @@
 
 use {
     crate::models::{AutopsyFormData, GenericUnlockFormData, RecipeUnlockFormData, ResearchFormData},
+    serde::Serialize,
     std::path::Path,
 };
 
 /// Generates the .research.ron file content.
 pub fn generate_research_ron(data: &ResearchFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.id));
-    ron.push_str(&format!("    name: \"{}\",\n", data.name));
-    ron.push_str(&format!(
-        "    description: \"{}\",\n",
-        escape_string(&data.description)
-    ));
-
-    // Generate cost map
-    ron.push_str("    cost: { ");
-    let cost_entries: Vec<String> = data
-        .costs
-        .iter()
-        .map(|c| format!("\"{}\": {}", c.resource_id, c.amount))
-        .collect();
-    ron.push_str(&cost_entries.join(", "));
-    ron.push_str(" },\n");
-
-    ron.push_str(&format!("    time_required: {},\n", data.time_required));
-    ron.push_str(&format!("    max_repeats: {},\n", data.max_repeats));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_research_definition())
 }
 
 /// Generates the .unlock.ron file content for research.
 pub fn generate_unlock_ron(data: &ResearchFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.unlock_id()));
-    ron.push_str(&format!(
-        "    display_name: Some(\"{} Research\"),\n",
-        data.name
-    ));
-    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
-    ron.push_str(&format!(
-        "    condition: {},\n",
-        data.unlock_condition.to_ron()
-    ));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_unlock_definition())
 }
 
 /// Generates the .unlock.ron file content for recipe.
 pub fn generate_recipe_unlock_ron(data: &RecipeUnlockFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.unlock_id()));
-    ron.push_str(&format!(
-        "    display_name: Some(\"{}\"),\n",
-        data.display_name
-    ));
-    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id()));
-    ron.push_str(&format!(
-        "    condition: {},\n",
-        data.unlock_condition.to_ron()
-    ));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_unlock_definition())
 }
 
 
 
 /// Generates the .unlock.ron file content for generic unlocks.
 pub fn generate_generic_unlock_ron(data: &GenericUnlockFormData) -> String {
-    let mut ron = String::new();
-
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.id));
-    
-    if !data.display_name.is_empty() {
-        ron.push_str(&format!(
-            "    display_name: Some(\"{}\"),\n",
-            data.display_name
-        ));
-    } else {
-        ron.push_str("    display_name: None,\n");
-    }
-
-    // Generic unlocks explicitly define their reward ID
-    ron.push_str(&format!("    reward_id: \"{}\",\n", data.reward_id));
-    
-    ron.push_str(&format!(
-        "    condition: {},\n",
-        data.unlock_condition.to_ron()
-    ));
-    ron.push_str(")\n");
-
-    ron
+    to_ron(&data.to_unlock_definition())
 }
 
-/// Escapes a string for RON output.
-fn escape_string(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
-        .replace('\t', "\\t")
+fn to_ron<T: Serialize>(value: &T) -> String {
+    ron::ser::to_string_pretty(value, ron::ser::PrettyConfig::default()).unwrap_or_default()
 }
+
+
 
 /// Result of saving research files.
 pub struct SaveResult {
@@ -210,68 +131,17 @@ pub fn save_generic_unlock_file(
 
 /// Generates the research unlock RON for autopsy (Kill monster -> Unlock research).
 pub fn generate_autopsy_research_unlock_ron(data: &AutopsyFormData) -> String {
-    let mut ron = String::new();
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.generate_research_unlock_id()));
-    ron.push_str(&format!(
-        "    display_name: Some(\"Autopsy: {}\"),\n",
-        data.monster_id
-    ));
-    ron.push_str(&format!("    reward_id: \"{}\",\n", data.generate_research_id()));
-    
-    // Condition: Kills { monster_id: data.monster_id, value: 1.0, op: Ge }
-    ron.push_str(&format!(
-        "    condition: Value(topic: \"kills:{}\", op: Ge, target: 1),\n",
-        data.monster_id
-    ));
-    
-    ron.push_str(")\n");
-    ron
+    to_ron(&data.to_research_unlock_definition())
 }
 
 /// Generates the research definition RON for autopsy.
 pub fn generate_autopsy_research_ron(data: &AutopsyFormData) -> String {
-    let mut ron = String::new();
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.generate_research_id()));
-    ron.push_str(&format!("    name: \"Autopsy: {}\",\n", data.monster_id));
-    ron.push_str(&format!(
-        "    description: \"{}\",\n",
-        escape_string(&data.research_description)
-    ));
-    
-    // Cost
-    ron.push_str("    cost: { ");
-    let cost_entries: Vec<String> = data
-        .research_costs
-        .iter()
-        .map(|c| format!("\"{}\": {}", c.resource_id, c.amount))
-        .collect();
-    ron.push_str(&cost_entries.join(", "));
-    ron.push_str(" },\n");
-    
-    ron.push_str(&format!("    time_required: {},\n", data.research_time));
-    ron.push_str("    max_repeats: 1,\n"); // Autopsies are one-time
-    ron.push_str(")\n");
-    ron
+    to_ron(&data.to_research_definition())
 }
 
 /// Generates the encyclopedia unlock RON (Research complete -> Unlock data).
 pub fn generate_autopsy_encyclopedia_unlock_ron(data: &AutopsyFormData) -> String {
-    let mut ron = String::new();
-    ron.push_str("(\n");
-    ron.push_str(&format!("    id: \"{}\",\n", data.generate_encyclopedia_unlock_id()));
-    ron.push_str("    display_name: None,\n"); // Usually hidden or handled by UI
-    ron.push_str(&format!("    reward_id: \"encyclopedia_{}_data\",\n", data.monster_id)); // Reward ID isn't strictly defined but this is consistent
-    
-    // Condition: Completed(topic: "research:autopsy_{monster_id}")
-    ron.push_str(&format!(
-        "    condition: Completed(topic: \"research:{}\"),\n",
-        data.generate_research_id()
-    ));
-    
-    ron.push_str(")\n");
-    ron
+    to_ron(&data.to_encyclopedia_unlock_definition())
 }
 
 /// Settings for saving autopsy (paths).
@@ -367,7 +237,8 @@ mod tests {
         let ron = generate_unlock_ron(&data);
         assert!(ron.contains("id: \"research_test_research_unlock\""));
         assert!(ron.contains("reward_id: \"research_test_research\""));
-        assert!(ron.contains("condition: Completed(topic: \"research:bone_crafting\")"));
+        assert!(ron.contains("condition: Completed("));
+        assert!(ron.contains("topic: \"research:bone_crafting\""));
     }
 
     #[test]
@@ -385,6 +256,6 @@ mod tests {
 
         let ron = generate_research_ron(&data);
         assert!(ron.contains("id: \"free_research\""));
-        assert!(ron.contains("cost: {  }"));
+        assert!(ron.contains("cost: {}"));
     }
 }

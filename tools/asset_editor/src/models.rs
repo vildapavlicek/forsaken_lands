@@ -192,6 +192,31 @@ impl LeafCondition {
         }
         errors
     }
+
+    pub fn to_condition_node(&self) -> ConditionNode {
+        match self {
+            LeafCondition::Unlock { id } => ConditionNode::Completed {
+                topic: format!("research:{}", id),
+            },
+            LeafCondition::Kills {
+                monster_id,
+                value,
+                op,
+            } => ConditionNode::Value {
+                topic: format!("kills:{}", monster_id),
+                op: (*op).into(),
+                target: *value,
+            },
+            LeafCondition::Resource {
+                resource_id,
+                amount,
+            } => ConditionNode::Value {
+                topic: format!("resource:{}", resource_id),
+                op: unlocks_components::ComparisonOp::Ge, // Default to >= for resources
+                target: *amount as f32,
+            },
+        }
+    }
 }
 
 /// The top-level unlock condition structure.
@@ -277,6 +302,19 @@ impl UnlockCondition {
             }
         }
         errors
+    }
+
+    pub fn to_condition_node(&self) -> ConditionNode {
+        match self {
+            UnlockCondition::True => ConditionNode::True,
+            UnlockCondition::Single(leaf) => leaf.to_condition_node(),
+            UnlockCondition::And(leaves) => {
+                ConditionNode::And(leaves.iter().map(|l| l.to_condition_node()).collect())
+            }
+            UnlockCondition::Or(leaves) => {
+                ConditionNode::Or(leaves.iter().map(|l| l.to_condition_node()).collect())
+            }
+        }
     }
 }
 
@@ -485,6 +523,31 @@ impl ResearchFormData {
             unlock_condition: UnlockCondition::from(&unlock.condition),
         }
     }
+
+    pub fn to_research_definition(&self) -> ResearchDefinition {
+        let mut cost = bevy::platform::collections::HashMap::new();
+        for c in &self.costs {
+            cost.insert(c.resource_id.clone(), c.amount);
+        }
+
+        ResearchDefinition {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            description: self.description.clone(),
+            cost,
+            time_required: self.time_required,
+            max_repeats: self.max_repeats,
+        }
+    }
+
+    pub fn to_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.unlock_id(),
+            display_name: Some(format!("{} Research", self.name)),
+            reward_id: self.reward_id(),
+            condition: self.unlock_condition.to_condition_node(),
+        }
+    }
 }
 
 /// The form data for a recipe unlock.
@@ -557,6 +620,15 @@ impl RecipeUnlockFormData {
             unlock_condition: UnlockCondition::from(&unlock.condition),
         }
     }
+
+    pub fn to_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.unlock_id(),
+            display_name: Some(self.display_name.clone()),
+            reward_id: self.reward_id(),
+            condition: self.unlock_condition.to_condition_node(),
+        }
+    }
 }
 
 // ==================== Generic Unlock Form Data ====================
@@ -619,6 +691,15 @@ impl GenericUnlockFormData {
             display_name: unlock.display_name.clone().unwrap_or_default(),
             reward_id: unlock.reward_id.clone(),
             unlock_condition: UnlockCondition::from(&unlock.condition),
+        }
+    }
+
+    pub fn to_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.id.clone(),
+            display_name: if self.display_name.is_empty() { None } else { Some(self.display_name.clone()) },
+            reward_id: self.reward_id.clone(),
+            condition: self.unlock_condition.to_condition_node(),
         }
     }
 }
@@ -708,6 +789,46 @@ impl AutopsyFormData {
     /// Filename for Encyclopedia Unlock: `{monster_id}_data.unlock.ron`
     pub fn encyclopedia_unlock_filename(&self) -> String {
         format!("{}_data.unlock.ron", self.monster_id)
+    }
+
+    pub fn to_research_definition(&self) -> ResearchDefinition {
+        let mut cost = bevy::platform::collections::HashMap::new();
+        for c in &self.research_costs {
+            cost.insert(c.resource_id.clone(), c.amount);
+        }
+
+        ResearchDefinition {
+            id: self.generate_research_id(),
+            name: format!("Autopsy: {}", self.monster_id),
+            description: self.research_description.clone(),
+            cost,
+            time_required: self.research_time,
+            max_repeats: 1,
+        }
+    }
+
+    pub fn to_research_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.generate_research_unlock_id(),
+            display_name: Some(format!("Autopsy: {}", self.monster_id)),
+            reward_id: self.generate_research_id(),
+            condition: ConditionNode::Value {
+                topic: format!("kills:{}", self.monster_id),
+                op: unlocks_components::ComparisonOp::Ge,
+                target: 1.0,
+            },
+        }
+    }
+
+    pub fn to_encyclopedia_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.generate_encyclopedia_unlock_id(),
+            display_name: None,
+            reward_id: format!("encyclopedia_{}_data", self.monster_id),
+            condition: ConditionNode::Completed {
+                topic: format!("research:{}", self.generate_research_id()),
+            },
+        }
     }
 }
 
