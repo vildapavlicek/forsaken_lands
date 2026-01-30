@@ -115,7 +115,7 @@ fn execute_save(world: &mut World) {
         format!("save_{}.scn.ron", timestamp)
     };
 
-    let saves_dir = Path::new("assets/saves");
+    let saves_dir = Path::new("saves");
     let filepath = saves_dir.join(&filename);
 
     if let Err(e) = fs::create_dir_all(saves_dir) {
@@ -183,12 +183,12 @@ fn execute_load(
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     let LoadGame { is_autosave } = trigger.event();
-    let saves_dir = Path::new("assets/saves");
+    let saves_dir = Path::new("saves");
 
     // Find the latest save file
 
     let latest_save = if *is_autosave {
-        Path::new("assets/saves/autosave.scn.ron").into()
+        Path::new("saves/autosave.scn.ron").into()
     } else {
         match find_latest_save(saves_dir) {
             Some(path) => path,
@@ -205,7 +205,7 @@ fn execute_load(
     info!("Manual cleanup delegated to OnExit(GameState::Running) systems");
 
     // Configure loading state
-    let relative_path = latest_save.strip_prefix("assets").unwrap_or(&latest_save);
+    let relative_path = latest_save.strip_prefix("saves").unwrap_or(&latest_save);
     scene_to_load.path = relative_path.to_string_lossy().to_string();
     scene_to_load.is_save = true;
 

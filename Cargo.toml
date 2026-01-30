@@ -2,6 +2,7 @@
 name = "forsaken_lands"
 version = "0.1.0"
 edition = "2024"
+resolver = "2"
 
 [workspace]
 members = [
@@ -62,7 +63,7 @@ members = [
 ]
 
 [workspace.dependencies]
-bevy = { version = "0.18", default-features = false, features = ["2d", "dev"] }
+bevy = { version = "0.18", default-features = false, features = ["2d"] }
 bevy_common_assets = { version = "0.15", features = ["ron"] }
 blessings = { path = "blessings" }
 blessings_ui = { path = "ui/blessings_ui" }
@@ -124,3 +125,6 @@ widgets = { path = "ui/widgets" }
 bevy.workspace = true
 core.workspace = true
 states.workspace = true
+
+[target.'cfg(debug_assertions)'.dependencies]
+bevy = { workspace = true, features = ["dev"] }

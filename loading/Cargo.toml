@@ -21,3 +21,5 @@ village_components.workspace = true
 wallet.workspace = true
 research_assets.workspace = true
 weapon_assets.workspace = true
+ron = "0.8"
+serde = "1.0"

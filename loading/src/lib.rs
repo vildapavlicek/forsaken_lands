@@ -1,6 +1,8 @@
 mod resources;
 
 use {
+    std::{fs, path::Path},
+    serde::de::DeserializeSeed,
     crate::resources::{
         BlessingsFolderHandle, EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle,
         UnlocksFolderHandle, WeaponsFolderHandle,
@@ -120,7 +122,11 @@ fn update_scene_handle(
         "Starting asset load phase. target scene: {}",
         scene_to_load.path
     );
-    assets.startup_scene = asset_server.load(&scene_to_load.path);
+    if !scene_to_load.is_save {
+        assets.startup_scene = asset_server.load(&scene_to_load.path);
+    } else {
+        info!("Skipping asset server load for save file (will be loaded manually)");
+    }
 }
 
 fn load_static_assets(mut assets: ResMut<LoadingManager>, asset_server: Res<AssetServer>) {
@@ -497,14 +503,46 @@ fn evaluate_unlocks(
 
 fn spawn_scene(
     mut scene_spawner: ResMut<SceneSpawner>,
+    mut dynamic_scenes: ResMut<Assets<DynamicScene>>,
     loading_manager: Res<LoadingManager>,
     mut status: ResMut<LoadingStatus>,
+    scene_to_load: Res<SceneToLoad>,
+    type_registry: Res<AppTypeRegistry>,
 ) {
     status.current_phase = "Spawning Scene".into();
     status.detail = "Loading world...".into();
 
     info!("spawning scene");
-    scene_spawner.spawn_dynamic(loading_manager.startup_scene.clone());
+    
+    if scene_to_load.is_save {
+        // MANUAL LOAD for save files
+        // Bypasses AssetServer to prevent hot-reloading when the save file is overwritten
+        let path = Path::new("saves").join(&scene_to_load.path);
+        info!("Manually loading save file from: {}", path.display());
+        
+        match fs::read(&path) {
+            Ok(bytes) => {
+                let type_registry = type_registry.read();
+                let scene_deserializer = bevy::scene::serde::SceneDeserializer {
+                    type_registry: &type_registry,
+                };
+                
+                let mut deserializer = ron::Deserializer::from_bytes(&bytes).expect("Failed to create deserializer");
+                
+                match scene_deserializer.deserialize(&mut deserializer) {
+                    Ok(dynamic_scene) => {
+                        info!("Successfully manually deserialized save scene");
+                        let handle = dynamic_scenes.add(dynamic_scene);
+                        scene_spawner.spawn_dynamic(handle);
+                    },
+                    Err(e) => error!("Failed to deserialize save scene: {}", e),
+                }
+            }
+            Err(e) => error!("Failed to read save file {}: {}", path.display(), e),
+        }
+    } else {
+        scene_spawner.spawn_dynamic(loading_manager.startup_scene.clone());
+    }
 }
 
 fn check_scene_spawned(
