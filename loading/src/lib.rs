@@ -1,8 +1,6 @@
 mod resources;
 
 use {
-    std::{fs, path::Path},
-    serde::de::DeserializeSeed,
     crate::resources::{
         BlessingsFolderHandle, EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle,
         UnlocksFolderHandle, WeaponsFolderHandle,
@@ -15,7 +13,9 @@ use {
     recipes_assets::RecipeDefinition,
     research::ResearchMap,
     research_assets::ResearchDefinition,
+    serde::de::DeserializeSeed,
     states::{GameState, LoadingPhase},
+    std::{fs, path::Path},
     unlocks::{CompiledUnlock, TopicMap, UnlockRoot, UnlockState, compiler::build_condition_node},
     unlocks_assets::UnlockDefinition,
     unlocks_events::{StatusCompleted, ValueChanged},
@@ -513,28 +513,29 @@ fn spawn_scene(
     status.detail = "Loading world...".into();
 
     info!("spawning scene");
-    
+
     if scene_to_load.is_save {
         // MANUAL LOAD for save files
         // Bypasses AssetServer to prevent hot-reloading when the save file is overwritten
         let path = Path::new("saves").join(&scene_to_load.path);
         info!("Manually loading save file from: {}", path.display());
-        
+
         match fs::read(&path) {
             Ok(bytes) => {
                 let type_registry = type_registry.read();
                 let scene_deserializer = bevy::scene::serde::SceneDeserializer {
                     type_registry: &type_registry,
                 };
-                
-                let mut deserializer = ron::Deserializer::from_bytes(&bytes).expect("Failed to create deserializer");
-                
+
+                let mut deserializer =
+                    ron::Deserializer::from_bytes(&bytes).expect("Failed to create deserializer");
+
                 match scene_deserializer.deserialize(&mut deserializer) {
                     Ok(dynamic_scene) => {
                         info!("Successfully manually deserialized save scene");
                         let handle = dynamic_scenes.add(dynamic_scene);
                         scene_spawner.spawn_dynamic(handle);
-                    },
+                    }
                     Err(e) => error!("Failed to deserialize save scene: {}", e),
                 }
             }
