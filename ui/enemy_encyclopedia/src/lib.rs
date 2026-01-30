@@ -3,6 +3,7 @@ use {
     enemy_resources::EnemyDetailsCache,
     states::{GameState, VillageView},
     village_components::EnemyEncyclopedia,
+    wallet::Wallet,
     widgets::{ContentContainer, spawn_menu_button},
 };
 
@@ -34,6 +35,7 @@ fn spawn_encyclopedia_ui(
     mut query: Query<(Entity, Option<&Children>), With<ContentContainer>>,
     encyclopedia_query: Query<&EnemyEncyclopedia>,
     details_cache: Res<EnemyDetailsCache>,
+    wallet: Res<Wallet>,
 ) {
     let Some((container, children)) = query.iter_mut().next() else {
         return;
@@ -55,7 +57,7 @@ fn spawn_encyclopedia_ui(
         spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
         // Spawn encyclopedia content
-        spawn_enemy_encyclopedia_content(parent, encyclopedia, &details_cache);
+        spawn_enemy_encyclopedia_content(parent, encyclopedia, &details_cache, &wallet);
     });
 }
 
@@ -75,6 +77,7 @@ pub fn spawn_enemy_encyclopedia_content(
     parent: &mut ChildSpawnerCommands,
     encyclopedia: &EnemyEncyclopedia,
     details_cache: &EnemyDetailsCache,
+    wallet: &Wallet,
 ) {
     parent
         .spawn((
@@ -113,7 +116,7 @@ pub fn spawn_enemy_encyclopedia_content(
             .with_children(|grid| {
                 // List of enemies
                 for (enemy_id, entry) in &encyclopedia.inner {
-                    spawn_enemy_card(grid, entry, enemy_id, details_cache);
+                    spawn_enemy_card(grid, entry, enemy_id, details_cache, wallet);
                 }
 
                 if encyclopedia.inner.is_empty() {
@@ -135,6 +138,7 @@ fn spawn_enemy_card(
     entry: &village_components::EncyclopediaEntry,
     enemy_id: &str,
     details_cache: &EnemyDetailsCache,
+    wallet: &Wallet,
 ) {
     parent
         .spawn(Node {
@@ -225,8 +229,13 @@ fn spawn_enemy_card(
                             },
                         ));
                         for drop in &details.drops {
+                            let drop_text = if wallet.unlocked_resources.contains(drop) {
+                                format!(" • {}", drop)
+                            } else {
+                                format!(" • Unidentified")
+                            };
                             details_node.spawn((
-                                Text::new(format!(" • {}", drop)),
+                                Text::new(drop_text),
                                 TextColor(Color::srgb(1.0, 1.0, 0.8)),
                                 TextFont {
                                     font_size: 12.0,
@@ -258,6 +267,7 @@ fn update_encyclopedia_ui(
     mut commands: Commands,
     encyclopedia_query: Query<&EnemyEncyclopedia, Changed<EnemyEncyclopedia>>,
     details_cache: Res<EnemyDetailsCache>,
+    wallet: Res<Wallet>,
     container_query: Query<(Entity, &Children), With<EncyclopediaListContainer>>,
 ) {
     let Some(encyclopedia) = encyclopedia_query.iter().next() else {
@@ -301,7 +311,7 @@ fn update_encyclopedia_ui(
         .with_children(|grid| {
             // List of enemies
             for (enemy_id, entry) in &encyclopedia.inner {
-                spawn_enemy_card(grid, entry, enemy_id, &details_cache);
+                spawn_enemy_card(grid, entry, enemy_id, &details_cache, &wallet);
             }
 
             if encyclopedia.inner.is_empty() {
