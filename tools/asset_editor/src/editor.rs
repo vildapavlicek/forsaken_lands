@@ -809,60 +809,6 @@ impl EditorState {
         }
         ui.add_space(8.0);
 
-        // Bonus Stats
-        ui.separator();
-        ui.heading("Bonus Stats");
-        
-        let mut remove_bonus_key: Option<String> = None;
-        // Sort keys for stable display
-        let mut sorted_keys: Vec<String> = self.weapon_form.bonuses.keys().cloned().collect();
-        sorted_keys.sort();
-
-        for key in sorted_keys {
-            if let Some(bonus) = self.weapon_form.bonuses.get_mut(&key) {
-                 ui.horizontal(|ui| {
-                     ui.label(format!("{}:", key));
-                     ui.add(egui::DragValue::new(&mut bonus.value).speed(0.1));
-                     
-                     let current_mode = match bonus.mode {
-                         bonus_stats::StatMode::Additive => "Additive",
-                         bonus_stats::StatMode::Percent => "Percent",
-                         bonus_stats::StatMode::Multiplicative => "Multiplicative",
-                     };
-                     
-                     egui::ComboBox::from_id_salt(format!("bonus_mode_{}", key))
-                        .selected_text(current_mode)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut bonus.mode, bonus_stats::StatMode::Additive, "Additive");
-                            ui.selectable_value(&mut bonus.mode, bonus_stats::StatMode::Percent, "Percent");
-                            ui.selectable_value(&mut bonus.mode, bonus_stats::StatMode::Multiplicative, "Multiplicative");
-                        });
-
-                     if ui.button("🗑").clicked() {
-                         remove_bonus_key = Some(key.clone());
-                     }
-                 });
-            }
-        }
-
-        if let Some(key) = remove_bonus_key {
-            self.weapon_form.bonuses.remove(&key);
-        }
-
-        ui.horizontal(|ui| {
-            // Simple way to add new bonus: prompt for key or just add "new_stat"
-            if ui.button("+ Add Bonus").clicked() {
-                let mut base = "new_stat".to_string();
-                let mut i = 0;
-                while self.weapon_form.bonuses.contains_key(&base) {
-                    i += 1;
-                    base = format!("new_stat_{}", i);
-                }
-                self.weapon_form.bonuses.insert(base, bonus_stats::StatBonus::default());
-            }
-            ui.small("(Key editing not supported yet, delete and re-add to rename)");
-        });
-        ui.add_space(8.0);
 
         // Preview
         ui.separator();
