@@ -57,6 +57,12 @@ Next level unlock: research Portal discovery, Bone pile
 
 # Level 6
 Enemies: Goblin, Goblin Warrior
-Reserach: warrior autopsy, Bone Crafting, Bone Sword, Bone Bow, Bone idol
+Research: warrior autopsy, Bone Crafting, Bone Sword, Bone Bow 
 
-Next level unlock: bone idol
+Next level unlock: warrior autopsy, bone crafting
+
+# Level 7
+Enemies: Goblin Defender, Goblin Archer
+Research: autopsies, pile of bones (400)
+
+Next level unlock: research pile of bones

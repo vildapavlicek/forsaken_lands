@@ -1,0 +1,10 @@
+(
+    id: "autopsy_goblin_archer",
+    name: "Autopsy: goblin_archer",
+    description: "They stay behind, hiding and laughing. It\'s annoying.",
+    cost: {
+        "xykego": 50,
+    },
+    time_required: 80.0,
+    max_repeats: 1,
+)

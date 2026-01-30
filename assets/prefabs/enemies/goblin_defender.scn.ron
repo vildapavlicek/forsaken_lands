@@ -1,0 +1,19 @@
+(
+  resources: {},
+  entities: {
+    1: (
+      components: {
+        "enemy_components::Enemy": (),
+        "enemy_components::MonsterId": ("goblin_defender"),
+        "enemy_components::EnemyRange": CloseRange,
+        "shared_components::DisplayName": ("Goblin Defender"),
+        "enemy_components::Health": (current: 3.25, max: 3.25),
+        "enemy_components::MovementSpeed": (150.0),
+        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 8, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
+        "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.25109893, green: 0.096171625, blue: 0.06853859, alpha: 1.0)), custom_size: Some((16.0, 16.0))),
+        "enemy_components::Drops": ([(id: "bones", value: 10, chance: 1.0), (id: "xykego", value: 1, chance: 1.0)]),
+      },
+    ),
+  },
+)

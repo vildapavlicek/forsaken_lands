@@ -1,0 +1,10 @@
+(
+    id: "bone_pile_ii",
+    name: "Pile of Bones",
+    description: "The whispers grow stronger as the bones keep piling",
+    cost: {
+        "bones": 300,
+    },
+    time_required: 90.0,
+    max_repeats: 1,
+)

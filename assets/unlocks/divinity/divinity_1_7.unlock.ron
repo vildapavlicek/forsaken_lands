@@ -1,0 +1,18 @@
+(
+    id: "divinity_1_7",
+    display_name: Some("Divinity Tier 1 Level 7"),
+    condition: And([
+        Completed(
+            topic: "research:bone_crafting",
+        ),
+        Value(
+            topic: "divinity",
+            op: Ge,
+            target: 107.0,
+        ),
+        Completed(
+            topic: "research:autopsy_goblin_warrior",
+        ),
+    ]),
+    reward_id: "divinity:1-7",
+)

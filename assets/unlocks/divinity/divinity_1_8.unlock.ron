@@ -1,0 +1,8 @@
+(
+    id: "divinity_1_8",
+    display_name: Some("Divinity Tier 1 Level 8"),
+    condition: Completed(
+        topic: "research:bone_pile_ii",
+    ),
+    reward_id: "divinity:1-8",
+)
