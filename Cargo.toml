@@ -7,6 +7,7 @@ resolver = "2"
 [workspace]
 members = [
   "blessings",
+  "bonus_stats",
   "buildings",
   "components/buildings_components",
   "components/crafting_components",
@@ -42,7 +43,6 @@ members = [
   "resources/enemy_resources",
   "resources/unlocks_resources",
   "save_load",
-  "bonus_stats",
   "states",
   "system_schedule",
   "ui/blessings_ui",
@@ -67,6 +67,7 @@ bevy = { version = "0.18", default-features = false, features = ["2d"] }
 bevy_common_assets = { version = "0.15", features = ["ron"] }
 blessings = { path = "blessings" }
 blessings_ui = { path = "ui/blessings_ui" }
+bonus_stats = { path = "bonus_stats" }
 buildings = { path = "buildings" }
 buildings_assets = { path = "game_assets/buildings_assets" }
 buildings_components = { path = "components/buildings_components" }
@@ -79,9 +80,9 @@ crafting_ui = { path = "ui/crafting_ui" }
 divinity_components = { path = "components/divinity_components" }
 divinity_events = { path = "events/divinity_events" }
 enemy_components = { path = "components/enemy_components" }
-enemy_resources = { path = "resources/enemy_resources" }
 enemy_encyclopedia = { path = "ui/enemy_encyclopedia" }
 enemy_events = { path = "events/enemy_events" }
+enemy_resources = { path = "resources/enemy_resources" }
 equipment_events = { path = "events/equipment_events" }
 growth = { path = "growth" }
 hero_components = { path = "components/hero_components" }
@@ -103,7 +104,6 @@ research_ui = { path = "ui/research_ui" }
 resources_ui = { path = "ui/resources_ui" }
 save_load = { path = "save_load" }
 shared_components = { path = "components/shared_components" }
-bonus_stats = { path = "bonus_stats" }
 states = { path = "states" }
 system_schedule = { path = "system_schedule" }
 unlock_states = { path = "components/unlock_states" }
