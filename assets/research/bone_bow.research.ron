@@ -1,0 +1,11 @@
+(
+    id: "bone_bow",
+    name: "Bone Bow",
+    description: "Their bones and sinews combined to kill them all more easily.",
+    cost: {
+        "bones": 75,
+        "sinew": 10,
+    },
+    time_required: 60.0,
+    max_repeats: 1,
+)

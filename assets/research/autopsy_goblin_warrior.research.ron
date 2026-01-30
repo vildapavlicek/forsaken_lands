@@ -1,0 +1,11 @@
+(
+    id: "autopsy_goblin_warrior",
+    name: "Autopsy: goblin_warrior",
+    description: "This one has weapons of bones and some scars. Still green and even more uglier.",
+    cost: {
+        "bones": 30,
+        "xykego": 10,
+    },
+    time_required: 60.0,
+    max_repeats: 1,
+)

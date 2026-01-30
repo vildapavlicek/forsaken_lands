@@ -1,0 +1,19 @@
+(
+  resources: {},
+  entities: {
+    1: (
+      components: {
+        "enemy_components::Enemy": (),
+        "enemy_components::MonsterId": ("goblin_warrior"),
+        "enemy_components::EnemyRange": CloseRange,
+        "shared_components::DisplayName": ("Goblin Warrior"),
+        "enemy_components::Health": (current: 2.5, max: 2.5),
+        "enemy_components::MovementSpeed": (150.0),
+        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 8, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
+        "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.17507792, green: 0.9192638, blue: 0.0, alpha: 1.0)), custom_size: Some((16.0, 16.0))),
+        "enemy_components::Drops": ([(id: "bones", value: 5, chance: 1.0), (id: "xykego", value: 1, chance: 1.0), (id: "sinew", value: 1, chance: 0.3)]),
+      },
+    ),
+  },
+)

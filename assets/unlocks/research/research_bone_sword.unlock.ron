@@ -1,0 +1,8 @@
+(
+    id: "research_bone_sword_unlock",
+    display_name: Some("Bone Sword Research"),
+    condition: Completed(
+        topic: "research:bone_crafting",
+    ),
+    reward_id: "research:bone_sword",
+)

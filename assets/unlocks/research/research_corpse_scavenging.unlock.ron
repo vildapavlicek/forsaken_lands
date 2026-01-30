@@ -12,6 +12,9 @@
             op: Ge,
             target: 10.0,
         ),
+        Completed(
+            topic: "research:invaders",
+        ),
     ]),
     reward_id: "research:corpse_scavenging",
 )

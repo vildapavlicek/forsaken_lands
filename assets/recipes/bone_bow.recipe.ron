@@ -1,11 +1,12 @@
 (
-    id: "bone_sword",
-    display_name: "Bone Sword",
+    id: "bone_bow",
+    display_name: "Bone Bow",
     category: Weapons,
     unlock_condition: True,
     craft_time: 60,
     costs: {
-        "bones": 100,
+        "bones": 50,
+        "sinew": 5,
     },
     outcomes: [
     ],

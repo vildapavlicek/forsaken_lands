@@ -1,0 +1,10 @@
+(
+    id: "bone_sword",
+    name: "Bone Sword",
+    description: "Their bones are sharp. Sharper than our rocks.",
+    cost: {
+        "bones": 75,
+    },
+    time_required: 60.0,
+    max_repeats: 1,
+)

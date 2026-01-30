@@ -92,5 +92,45 @@
             ]),
             weight: 20,
         ),
+        (
+            condition: Specific((
+                tier: 1,
+                level: 1,
+            )),
+            spawn_type: Single("goblin_scout"),
+            weight: 10,
+        ),
+        (
+            condition: Specific((
+                tier: 1,
+                level: 6,
+            )),
+            spawn_type: Single("goblin_warrior"),
+            weight: 70,
+        ),
+        (
+            condition: Specific((
+                tier: 1,
+                level: 6,
+            )),
+            spawn_type: Group([
+                "elite_goblin_scout",
+                "elite_goblin_scout",
+                "goblin",
+            ]),
+            weight: 35,
+        ),
+        (
+            condition: Specific((
+                tier: 1,
+                level: 6,
+            )),
+            spawn_type: Group([
+                "goblin_warrior",
+                "goblin_scout",
+                "goblin_scout",
+            ]),
+            weight: 35,
+        ),
     ],
 )

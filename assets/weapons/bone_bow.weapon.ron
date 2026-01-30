@@ -1,0 +1,14 @@
+(
+    id: "bone_bow",
+    display_name: "Bone Bow",
+    weapon_type: Ranged,
+    damage: 1.0,
+    attack_range: 380.0,
+    attack_speed_ms: 750,
+    tags: [
+        "damage",
+        "damage:melee",
+        "damage:bone_sword",
+    ],
+    bonuses: {},
+)

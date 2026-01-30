@@ -1,0 +1,10 @@
+(
+    id: "bone_crafting",
+    name: "Bone Crafting",
+    description: "Use their bones against them.",
+    cost: {
+        "bones": 100,
+    },
+    time_required: 45.0,
+    max_repeats: 1,
+)
