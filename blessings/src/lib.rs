@@ -97,9 +97,15 @@ pub struct BlessingDefinition {
     pub cost: growth::Growth,
 }
 
+/// Defines the gameplay impact of a blessing.
+///
+/// This enum is used by gameplay systems (e.g., `PortalsPlugin`) to apply
+/// statistical modifiers based on the blessing's type and level.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Reflect)]
 pub enum BlessingEffect {
+    /// Reduces the interval between enemy spawns (increases spawn rate).
     DecreaseSpawnTimer,
+    /// Extends the duration enemies remain on the field before escaping.
     IncreaseMonsterLifetime,
 }
 
