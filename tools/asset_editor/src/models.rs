@@ -946,61 +946,16 @@ impl WeaponDefinitionExt for WeaponDefinition {
     }
 }
 
-fn format_f32(v: f32) -> String {
-    let s = v.to_string();
-    if s.contains('.') {
-        s
-    } else {
-        format!("{}.0", s)
-    }
-}
+
+
 
 // ==================== Recipe Form Data ====================
 
 /// Category for organizing recipes.
-#[derive(Clone, Debug, PartialEq, Eq, Default)]
-pub enum EditorRecipeCategory {
-    #[default]
-    Weapons,
-    Idols,
-}
+use recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition};
 
-impl EditorRecipeCategory {
-    pub fn display_name(&self) -> &'static str {
-        match self {
-            EditorRecipeCategory::Weapons => "Weapons",
-            EditorRecipeCategory::Idols => "Idols",
-        }
-    }
+// Removing EditorRecipeCategory and EditorCraftingOutcome in favor of recipes_assets types
 
-    pub fn all_types() -> Vec<&'static str> {
-        vec!["Weapons", "Idols"]
-    }
-
-    pub fn from_type_name(name: &str) -> Self {
-        match name {
-            "Weapons" => EditorRecipeCategory::Weapons,
-            "Idols" => EditorRecipeCategory::Idols,
-            _ => EditorRecipeCategory::default(),
-        }
-    }
-
-    pub fn to_ron(&self) -> &'static str {
-        match self {
-            EditorRecipeCategory::Weapons => "Weapons",
-            EditorRecipeCategory::Idols => "Idols",
-        }
-    }
-}
-
-/// Outcomes when crafting completes.
-#[derive(Clone, Debug, PartialEq)]
-pub enum EditorCraftingOutcome {
-    AddResource { id: String, amount: u32 },
-    UnlockFeature(String),
-    GrantXp(u32),
-    IncreaseDivinity(u32),
-}
 
 // ==================== TTK Cache Models ====================
 
@@ -1023,61 +978,76 @@ pub struct CachedWeapon {
     pub tags: Vec<String>,
 }
 
-impl Default for EditorCraftingOutcome {
-    fn default() -> Self {
-        EditorCraftingOutcome::AddResource {
-            id: String::new(),
-            amount: 1,
+// EditorCraftingOutcome impl removed
+
+pub trait RecipeCategoryExt {
+    fn display_name(&self) -> &'static str;
+    fn all_types() -> Vec<&'static str>;
+    fn from_type_name(name: &str) -> Self;
+}
+
+impl RecipeCategoryExt for RecipeCategory {
+    fn display_name(&self) -> &'static str {
+        match self {
+            RecipeCategory::Weapons => "Weapons",
+            RecipeCategory::Idols => "Idols",
+            RecipeCategory::Construction => "Construction",
+        }
+    }
+
+    fn all_types() -> Vec<&'static str> {
+        vec!["Weapons", "Idols", "Construction"]
+    }
+
+    fn from_type_name(name: &str) -> Self {
+        match name {
+            "Weapons" => RecipeCategory::Weapons,
+            "Idols" => RecipeCategory::Idols,
+            "Construction" => RecipeCategory::Construction,
+            _ => RecipeCategory::default(),
         }
     }
 }
 
-impl EditorCraftingOutcome {
-    pub fn display_name(&self) -> &'static str {
+pub trait CraftingOutcomeExt {
+    fn display_name(&self) -> &'static str;
+    fn all_types() -> Vec<&'static str>;
+    fn from_type_name(name: &str) -> Self;
+}
+
+impl CraftingOutcomeExt for CraftingOutcome {
+    fn display_name(&self) -> &'static str {
         match self {
-            EditorCraftingOutcome::AddResource { .. } => "Add Resource",
-            EditorCraftingOutcome::UnlockFeature(_) => "Unlock Feature",
-            EditorCraftingOutcome::GrantXp(_) => "Grant XP",
-            EditorCraftingOutcome::IncreaseDivinity(_) => "Increase Divinity",
+            CraftingOutcome::AddResource { .. } => "Add Resource",
+            CraftingOutcome::UnlockFeature(_) => "Unlock Feature",
         }
     }
 
-    pub fn all_types() -> Vec<&'static str> {
-        vec![
-            "Add Resource",
-            "Unlock Feature",
-            "Grant XP",
-            "Increase Divinity",
-        ]
+    fn all_types() -> Vec<&'static str> {
+        vec!["Add Resource", "Unlock Feature"]
     }
 
-    pub fn from_type_name(name: &str) -> Self {
+    fn from_type_name(name: &str) -> Self {
         match name {
-            "Add Resource" => EditorCraftingOutcome::AddResource {
+            "Add Resource" => CraftingOutcome::AddResource {
                 id: String::new(),
                 amount: 1,
             },
-            "Unlock Feature" => EditorCraftingOutcome::UnlockFeature(String::new()),
-            "Grant XP" => EditorCraftingOutcome::GrantXp(10),
-            "Increase Divinity" => EditorCraftingOutcome::IncreaseDivinity(10),
-            _ => EditorCraftingOutcome::default(),
+            "Unlock Feature" => CraftingOutcome::UnlockFeature(String::new()),
+            _ => CraftingOutcome::AddResource { id: String::new(), amount: 1 },
         }
     }
 }
-
-// ==================== Recipe Form Data ====================
 
 /// The form data for a recipe.
 #[derive(Clone, Debug, Default)]
 pub struct RecipeFormData {
     pub id: String, // Internal ID (e.g. "bone_sword")
     pub display_name: String,
-    pub category: EditorRecipeCategory,
-    pub unlock_condition: UnlockCondition,
+    pub category: RecipeCategory,
     pub craft_time: f32,
     pub costs: Vec<ResourceCost>,
-    pub outcomes: Vec<EditorCraftingOutcome>,
-    pub description: String,
+    pub outcomes: Vec<CraftingOutcome>,
 }
 
 impl RecipeFormData {
@@ -1085,18 +1055,16 @@ impl RecipeFormData {
         Self {
             id: String::new(),
             display_name: String::new(),
-            category: EditorRecipeCategory::Weapons,
-            unlock_condition: UnlockCondition::True,
+            category: RecipeCategory::Weapons,
             craft_time: 5.0,
             costs: vec![ResourceCost {
                 resource_id: "bones".to_string(),
                 amount: 5,
             }],
-            outcomes: vec![EditorCraftingOutcome::AddResource {
+            outcomes: vec![CraftingOutcome::AddResource {
                 id: "bone_sword_item".to_string(),
                 amount: 1,
             }],
-            description: String::new(),
         }
     }
 
@@ -1121,12 +1089,12 @@ impl RecipeFormData {
             }
         }
         for outcome in &self.outcomes {
-            if let EditorCraftingOutcome::AddResource { id, .. } = outcome {
+            if let CraftingOutcome::AddResource { id, .. } = outcome {
                 if id.trim().is_empty() {
                     errors.push("Outcome resource ID required".to_string());
                 }
             }
-            if let EditorCraftingOutcome::UnlockFeature(id) = outcome {
+            if let CraftingOutcome::UnlockFeature(id) = outcome {
                 if id.trim().is_empty() {
                     errors.push("Outcome unlock ID required".to_string());
                 }
@@ -1135,51 +1103,39 @@ impl RecipeFormData {
         errors
     }
 
-    pub fn to_ron(&self) -> String {
-        let mut ron = String::new();
-        ron.push_str("(\n");
-        ron.push_str(&format!("    id: \"{}\",\n", self.id));
-        ron.push_str(&format!("    display_name: \"{}\",\n", self.display_name));
-        ron.push_str(&format!("    category: {},\n", self.category.to_ron()));
-        ron.push_str(&format!(
-            "    unlock_condition: {},\n",
-            self.unlock_condition.to_ron()
-        ));
-        ron.push_str(&format!("    craft_time: {},\n", self.craft_time));
-
-        ron.push_str("    costs: {\n");
-        for cost in &self.costs {
-            ron.push_str(&format!(
-                "        \"{}\": {},\n",
-                cost.resource_id, cost.amount
-            ));
+    pub fn to_recipe_definition(&self) -> RecipeDefinition {
+        let mut cost = bevy::platform::collections::HashMap::new();
+        for c in &self.costs {
+            cost.insert(c.resource_id.clone(), c.amount);
         }
-        ron.push_str("    },\n");
 
-        ron.push_str("    outcomes: [\n");
-        for outcome in &self.outcomes {
-            match outcome {
-                EditorCraftingOutcome::AddResource { id, amount } => {
-                    ron.push_str(&format!(
-                        "        AddResource(resource: \"{}\", amount: {}),\n",
-                        id, amount
-                    ));
-                }
-                EditorCraftingOutcome::UnlockFeature(id) => {
-                    ron.push_str(&format!("        UnlockFeature(\"{}\"),\n", id));
-                }
-                EditorCraftingOutcome::GrantXp(amount) => {
-                    ron.push_str(&format!("        GrantXp({}),\n", amount));
-                }
-                EditorCraftingOutcome::IncreaseDivinity(amount) => {
-                    ron.push_str(&format!("        IncreaseDivinity({}),\n", amount));
-                }
-            }
+        RecipeDefinition {
+            id: self.id.clone(),
+            display_name: self.display_name.clone(),
+            category: self.category.clone(),
+            craft_time: self.craft_time,
+            cost,
+            outcomes: self.outcomes.clone(),
         }
-        ron.push_str("    ],\n");
+    }
 
-        ron.push_str(&format!("    description: \"{}\",\n", self.description));
-        ron.push_str(")\n");
-        ron
+    pub fn from_recipe_definition(def: &RecipeDefinition) -> Self {
+        let costs = def
+            .cost
+            .iter()
+            .map(|(k, v)| ResourceCost {
+                resource_id: k.clone(),
+                amount: *v,
+            })
+            .collect();
+
+        Self {
+            id: def.id.clone(),
+            display_name: def.display_name.clone(),
+            category: def.category.clone(),
+            craft_time: def.craft_time,
+            costs,
+            outcomes: def.outcomes.clone(),
+        }
     }
 }

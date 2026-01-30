@@ -5,7 +5,7 @@
 use {
     bevy::{platform::collections::HashMap, prelude::*},
     bevy_common_assets::ron::RonAssetPlugin,
-    serde::Deserialize,
+    serde::{Deserialize, Serialize},
 };
 
 pub struct RecipesAssetsPlugin;
@@ -19,7 +19,7 @@ impl Plugin for RecipesAssetsPlugin {
 }
 
 /// Recipe definition loaded from `.recipe.ron` asset files.
-#[derive(Asset, TypePath, Debug, Clone, Deserialize)]
+#[derive(Asset, TypePath, Debug, Clone, Serialize, Deserialize)]
 pub struct RecipeDefinition {
     /// Unique identifier for the recipe (e.g., "bone_sword")
     pub id: String,
@@ -36,7 +36,7 @@ pub struct RecipeDefinition {
 }
 
 /// Category for organizing recipes into tabs.
-#[derive(Reflect, Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[derive(Reflect, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RecipeCategory {
     #[default]
     Weapons,
@@ -45,7 +45,7 @@ pub enum RecipeCategory {
 }
 
 /// Actions that occur upon crafting completion.
-#[derive(Reflect, Clone, Debug, Deserialize)]
+#[derive(Reflect, Clone, Debug, Serialize, Deserialize)]
 pub enum CraftingOutcome {
     /// Adds a quantity of a resource to the player's wallet
     AddResource { id: String, amount: u32 },

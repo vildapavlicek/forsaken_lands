@@ -13,8 +13,8 @@ use {
             save_research_files,
         },
         models::{
-            AutopsyFormData, CachedEnemy, CachedWeapon, CompareOp, DivinityFormData,
-            EditorCraftingOutcome, EditorRecipeCategory, LeafCondition, RecipeFormData,
+            AutopsyFormData, CachedEnemy, CachedWeapon, CompareOp, CraftingOutcomeExt,
+            DivinityFormData, LeafCondition, RecipeCategoryExt, RecipeFormData,
             RecipeUnlockFormData, ResearchFormData, ResourceCost, UnlockCondition,
             WeaponDefinitionExt, WeaponTypeExt,
         },
@@ -25,8 +25,8 @@ use {
     },
     divinity_components::Divinity,
     eframe::egui,
-    portal_assets::SpawnTable,
-    portal_assets::{SpawnCondition, SpawnEntry, SpawnType},
+    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
+    recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition},
     research_assets::ResearchDefinition,
     std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
@@ -276,7 +276,11 @@ impl EditorState {
                         }
                         EditorTab::Recipe => {
                             ui.label("Recipe File:");
-                            let recipe_ron = self.recipe_data_form.to_ron();
+                            let recipe_ron = ron::ser::to_string_pretty(
+                                &self.recipe_data_form.to_recipe_definition(),
+                                ron::ser::PrettyConfig::default(),
+                            )
+                            .unwrap_or_else(|e| format!("Error: {}", e));
                             ui.add(
                                 egui::TextEdit::multiline(&mut recipe_ron.as_str())
                                     .font(egui::TextStyle::Monospace)
@@ -799,7 +803,7 @@ impl EditorState {
                 }
             });
         }
-            ui.add_space(8.0);
+        ui.add_space(8.0);
 
         if let Some(idx) = remove_tag_idx {
             self.weapon_form.tags.remove(idx);
@@ -896,34 +900,35 @@ impl EditorState {
         ui.add_space(8.0);
 
         // Category
+        ui.separator();
+        ui.heading("Category");
         let current_category = self.recipe_data_form.category.display_name();
         ui.horizontal(|ui| {
             ui.label("Category:");
             egui::ComboBox::from_id_salt("recipe_category")
                 .selected_text(current_category)
                 .show_ui(ui, |ui| {
-                    for cat_name in EditorRecipeCategory::all_types() {
+                    for type_name in RecipeCategory::all_types() {
                         if ui
-                            .selectable_label(current_category == cat_name, cat_name)
+                            .selectable_label(current_category == type_name, type_name)
                             .clicked()
                         {
                             self.recipe_data_form.category =
-                                EditorRecipeCategory::from_type_name(cat_name);
+                                RecipeCategory::from_type_name(type_name);
                         }
                     }
                 });
         });
         ui.add_space(8.0);
 
-        // Craft Time
+        // Time
         ui.horizontal(|ui| {
-            ui.label("Craft Time:");
+            ui.label("Craft Time (s):");
             ui.add(
                 egui::DragValue::new(&mut self.recipe_data_form.craft_time)
                     .speed(0.1)
-                    .range(0.1..=3600.0),
+                    .range(0.0..=3600.0),
             );
-            ui.label("seconds");
         });
         ui.add_space(8.0);
 
@@ -952,60 +957,38 @@ impl EditorState {
 
         // Outcomes
         ui.separator();
-        ui.heading("Crafting Outcomes");
+        ui.heading("Outcomes");
         let mut remove_outcome_idx: Option<usize> = None;
         for (i, outcome) in self.recipe_data_form.outcomes.iter_mut().enumerate() {
-            ui.group(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(format!("Outcome #{}:", i + 1));
-                    if ui.button("🗑").clicked() {
-                        remove_outcome_idx = Some(i);
-                    }
-                });
-                let current_outcome = outcome.display_name();
-                ui.horizontal(|ui| {
-                    ui.label("Type:");
-                    egui::ComboBox::from_id_salt(format!("outcome_type_{}", i))
-                        .selected_text(current_outcome)
-                        .show_ui(ui, |ui| {
-                            for out_name in EditorCraftingOutcome::all_types() {
-                                if ui
-                                    .selectable_label(current_outcome == out_name, out_name)
-                                    .clicked()
-                                {
-                                    *outcome = EditorCraftingOutcome::from_type_name(out_name);
-                                }
+            ui.horizontal(|ui| {
+                let current_type = outcome.display_name();
+                egui::ComboBox::from_id_salt(format!("outcome_type_{}", i))
+                    .selected_text(current_type)
+                    .show_ui(ui, |ui| {
+                        for type_name in CraftingOutcome::all_types() {
+                            if ui
+                                .selectable_label(current_type == type_name, type_name)
+                                .clicked()
+                            {
+                                *outcome = CraftingOutcome::from_type_name(type_name);
                             }
-                        });
-                });
-                // Outcome-specific fields
+                        }
+                    });
+
                 match outcome {
-                    EditorCraftingOutcome::AddResource { id, amount } => {
-                        ui.horizontal(|ui| {
-                            ui.label("Resource ID:");
-                            ui.add(egui::TextEdit::singleline(id).desired_width(100.0));
-                            ui.label("Amount:");
-                            ui.add(egui::DragValue::new(amount).range(1..=10000));
-                        });
+                    CraftingOutcome::AddResource { id, amount } => {
+                        ui.label("ID:");
+                        ui.text_edit_singleline(id);
+                        ui.label("Amount:");
+                        ui.add(egui::DragValue::new(amount).range(1..=10000));
                     }
-                    EditorCraftingOutcome::UnlockFeature(feature) => {
-                        ui.horizontal(|ui| {
-                            ui.label("Feature ID:");
-                            ui.text_edit_singleline(feature);
-                        });
+                    CraftingOutcome::UnlockFeature(id) => {
+                        ui.label("Feature ID:");
+                        ui.text_edit_singleline(id);
                     }
-                    EditorCraftingOutcome::GrantXp(xp) => {
-                        ui.horizontal(|ui| {
-                            ui.label("XP Amount:");
-                            ui.add(egui::DragValue::new(xp).range(1..=100000));
-                        });
-                    }
-                    EditorCraftingOutcome::IncreaseDivinity(amount) => {
-                        ui.horizontal(|ui| {
-                            ui.label("Divinity Amount:");
-                            ui.add(egui::DragValue::new(amount).range(1..=100000));
-                        });
-                    }
+                }
+                if ui.button("🗑").clicked() {
+                    remove_outcome_idx = Some(i);
                 }
             });
         }
@@ -1013,9 +996,10 @@ impl EditorState {
             self.recipe_data_form.outcomes.remove(idx);
         }
         if ui.button("+ Add Outcome").clicked() {
-            self.recipe_data_form
-                .outcomes
-                .push(EditorCraftingOutcome::default());
+            self.recipe_data_form.outcomes.push(CraftingOutcome::AddResource {
+                id: String::new(),
+                amount: 1,
+            });
         }
         ui.add_space(16.0);
 
@@ -1711,7 +1695,7 @@ impl EditorState {
             ui.text_edit_singleline(&mut self.new_bonus_key);
             ui.label("Value:");
             ui.add(egui::DragValue::new(&mut self.new_bonus_value).speed(0.1));
-            
+
             egui::ComboBox::from_id_salt("new_bonus_mode")
                 .selected_text(format!("{:?}", self.new_bonus_mode))
                 .show_ui(ui, |ui| {
@@ -1759,7 +1743,7 @@ impl EditorState {
                     for weapon in &self.cached_weapons {
                         // Apply bonuses
                         let mut stats = bonus_stats::BonusStats::default();
-                        
+
                         // Apply simulation bonuses first
                         for (key, bonus) in &self.simulation_bonuses {
                             stats.add(key, bonus.clone());
@@ -1987,7 +1971,15 @@ impl EditorState {
             }
 
             // Write file
-            let ron_content = self.recipe_data_form.to_ron();
+            let definition = self.recipe_data_form.to_recipe_definition();
+            let ron_content = match ron::ser::to_string_pretty(&definition, ron::ser::PrettyConfig::default()) {
+                Ok(s) => s,
+                Err(e) => {
+                    self.status = format!("✗ Failed to serialize recipe: {}", e);
+                    return;
+                }
+            };
+
             match std::fs::write(&file_path, ron_content) {
                 Ok(()) => {
                     self.status = format!("✓ Saved recipe: {}", file_path.display());
@@ -2015,70 +2007,16 @@ impl EditorState {
                 }
             };
 
-            // Parse recipe file using regex
-            use regex::Regex;
-            let id_re = Regex::new(r#"id:\s*"([^"]+)""#).ok();
-            let name_re = Regex::new(r#"display_name:\s*"([^"]+)""#).ok();
-            let time_re = Regex::new(r#"craft_time:\s*([\d.]+)"#).ok();
-            let cat_re = Regex::new(r#"category:\s*(\w+)"#).ok();
-            let cost_re = Regex::new(r#""([^"]+)":\s*(\d+)"#).ok();
+            match ron::from_str::<RecipeDefinition>(&content) {
+                Ok(def) => {
+                    self.recipe_data_form = RecipeFormData::from_recipe_definition(&def);
+                    self.status = format!("✓ Loaded recipe: {}", filename_stem);
+                }
 
-            let mut form = RecipeFormData::new();
-            form.costs.clear();
-            form.outcomes.clear();
-
-            if let Some(re) = id_re {
-                if let Some(caps) = re.captures(&content) {
-                    form.id = caps
-                        .get(1)
-                        .map(|m| m.as_str().to_string())
-                        .unwrap_or_default();
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse recipe RON: {}", e);
                 }
             }
-            if let Some(re) = name_re {
-                if let Some(caps) = re.captures(&content) {
-                    form.display_name = caps
-                        .get(1)
-                        .map(|m| m.as_str().to_string())
-                        .unwrap_or_default();
-                }
-            }
-            if let Some(re) = time_re {
-                if let Some(caps) = re.captures(&content) {
-                    if let Some(m) = caps.get(1) {
-                        form.craft_time = m.as_str().parse().unwrap_or(10.0);
-                    }
-                }
-            }
-            if let Some(re) = cat_re {
-                if let Some(caps) = re.captures(&content) {
-                    if let Some(m) = caps.get(1) {
-                        form.category = EditorRecipeCategory::from_type_name(m.as_str());
-                    }
-                }
-            }
-            // Parse costs - find the cost section and extract key-value pairs
-            if let Some(re) = cost_re {
-                // Find cost block
-                if let Some(cost_start) = content.find("cost:") {
-                    if let Some(cost_end) = content[cost_start..].find("},") {
-                        let cost_block = &content[cost_start..cost_start + cost_end];
-                        for caps in re.captures_iter(cost_block) {
-                            if let (Some(res_id), Some(amount)) = (caps.get(1), caps.get(2)) {
-                                form.costs.push(ResourceCost {
-                                    resource_id: res_id.as_str().to_string(),
-                                    amount: amount.as_str().parse().unwrap_or(1),
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            // Note: outcome parsing is complex, for now we leave outcomes empty on load
-            // The user can re-add them if needed
-
-            self.recipe_data_form = form;
-            self.status = format!("✓ Loaded recipe: {}", filename_stem);
         }
     }
     fn save_recipe_unlock(&mut self) {
@@ -3049,21 +2987,6 @@ impl EditorState {
             }
         }
     }
-}
-// Helper functions for parsing RON without full structs
-fn extract_field(content: &str, field: &str) -> Option<String> {
-    let re = regex::Regex::new(&format!("{}:\\s*\"([^\"]+)\"", field)).ok()?;
-    re.captures(content).map(|caps| caps[1].to_string())
-}
-
-fn extract_f32(content: &str, field: &str) -> Option<f32> {
-    let re = regex::Regex::new(&format!("{}:\\s*([\\d.]+)", field)).ok()?;
-    re.captures(content).and_then(|caps| caps[1].parse().ok())
-}
-
-fn extract_u32(content: &str, field: &str) -> Option<u32> {
-    let re = regex::Regex::new(&format!("{}:\\s*(\\d+)", field)).ok()?;
-    re.captures(content).and_then(|caps| caps[1].parse().ok())
 }
 
 impl EditorState {
