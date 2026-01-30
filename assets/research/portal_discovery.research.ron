@@ -1,0 +1,11 @@
+(
+    id: "portal_discovery",
+    name: "Portal Discovery",
+    description: "They come from crack in space. But why? How?",
+    cost: {
+        "bones": 50,
+        "xykego": 75,
+    },
+    time_required: 60.0,
+    max_repeats: 1,
+)

@@ -1,6 +1,6 @@
 (
     id: "autopsy_siled",
-    name: "Autopsy: siled",
+    name: "Autopsy: Siled",
     description: "Ugly teeth, six legs.. And mean.",
     cost: {},
     time_required: 10.0,

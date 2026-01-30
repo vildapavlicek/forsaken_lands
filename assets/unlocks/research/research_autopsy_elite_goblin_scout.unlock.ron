@@ -1,0 +1,10 @@
+(
+    id: "research_autopsy_elite_goblin_scout_unlock",
+    display_name: Some("Autopsy: Elite Goblin Scout Research"),
+    condition: Value(
+        topic: "kills:elite_goblin_scout",
+        op: Ge,
+        target: 1.0,
+    ),
+    reward_id: "research:autopsy_elite_goblin_scout",
+)

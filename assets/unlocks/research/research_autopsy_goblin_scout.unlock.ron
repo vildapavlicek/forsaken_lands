@@ -1,6 +1,6 @@
 (
     id: "research_autopsy_goblin_scout_unlock",
-    display_name: Some("Autopsy: goblin_scout"),
+    display_name: Some("Autopsy: Goblin Scout Research"),
     condition: Value(
         topic: "kills:goblin_scout",
         op: Ge,

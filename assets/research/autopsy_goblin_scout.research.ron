@@ -1,6 +1,6 @@
 (
     id: "autopsy_goblin_scout",
-    name: "Autopsy: goblin_scout",
+    name: "Autopsy: Goblin Scout",
     description: "They are small, thin and angry. And very, very ugly.",
     cost: {
         "xykego": 10,

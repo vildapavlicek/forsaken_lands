@@ -1,6 +1,6 @@
 (
     id: "research_autopsy_siled_unlock",
-    display_name: Some("Autopsy: siled Research"),
+    display_name: Some("Autopsy: Siled Research"),
     condition: Value(
         topic: "kills:siled",
         op: Ge,

@@ -1,0 +1,13 @@
+(
+    id: "divinity_1_6",
+    display_name: Some("Divinity Tier 1 Level 6"),
+    condition: And([
+        Completed(
+            topic: "research:portal_discovery",
+        ),
+        Completed(
+            topic: "research:bone_pile",
+        ),
+    ]),
+    reward_id: "divinity:1-6",
+)

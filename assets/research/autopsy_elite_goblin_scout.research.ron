@@ -1,0 +1,10 @@
+(
+    id: "autopsy_elite_goblin_scout",
+    name: "Autopsy: Elite Goblin Scout",
+    description: "A bit bigger but also uglier. Way uglier. And greener?",
+    cost: {
+        "xykego": 20,
+    },
+    time_required: 45.0,
+    max_repeats: 1,
+)

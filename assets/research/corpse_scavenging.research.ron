@@ -1,7 +1,7 @@
 (
     id: "corpse_scavenging",
     name: "Corpse Scavenging",
-    description: "Their death is our blessing.",
+    description: "Let\'s pull their bodies apart and take what we can.",
     cost: {},
     time_required: 30.0,
     max_repeats: 1,

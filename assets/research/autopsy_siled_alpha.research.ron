@@ -1,6 +1,6 @@
 (
     id: "autopsy_siled_alpha",
-    name: "Autopsy: siled_alpha",
+    name: "Autopsy: Siled Alpha",
     description: "Bigger and meaner.",
     cost: {},
     time_required: 15.0,

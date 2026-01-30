@@ -1,0 +1,10 @@
+(
+    id: "bone_pile",
+    name: "Pile of Bones",
+    description: "Bones have piled up, emanating ominous energy... is it whispering to us?",
+    cost: {
+        "bones": 200,
+    },
+    time_required: 45.0,
+    max_repeats: 1,
+)
