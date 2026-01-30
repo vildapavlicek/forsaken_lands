@@ -1672,6 +1672,7 @@ name = "bonus_stats"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "serde",
 ]
 
 [[package]]
@@ -5499,6 +5500,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
+ "bonus_stats",
  "hero_components",
  "serde",
  "shared_components",

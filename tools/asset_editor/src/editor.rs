@@ -316,7 +316,6 @@ impl EditorState {
                             ui.add_space(10.0);
                             ui.label("Encyclopedia Unlock:");
                             let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
-                            let eu = generate_autopsy_encyclopedia_unlock_ron(&self.autopsy_form);
                             ui.add(
                                 egui::TextEdit::multiline(&mut eu.as_str())
                                     .font(egui::TextStyle::Monospace)
@@ -792,12 +791,69 @@ impl EditorState {
                 }
             });
         }
+            ui.add_space(8.0);
+
         if let Some(idx) = remove_tag_idx {
             self.weapon_form.tags.remove(idx);
         }
         if ui.button("+ Add Tag").clicked() {
             self.weapon_form.tags.push(String::new());
         }
+        ui.add_space(8.0);
+
+        // Bonus Stats
+        ui.separator();
+        ui.heading("Bonus Stats");
+        
+        let mut remove_bonus_key: Option<String> = None;
+        // Sort keys for stable display
+        let mut sorted_keys: Vec<String> = self.weapon_form.bonuses.keys().cloned().collect();
+        sorted_keys.sort();
+
+        for key in sorted_keys {
+            if let Some(bonus) = self.weapon_form.bonuses.get_mut(&key) {
+                 ui.horizontal(|ui| {
+                     ui.label(format!("{}:", key));
+                     ui.add(egui::DragValue::new(&mut bonus.value).speed(0.1));
+                     
+                     let current_mode = match bonus.mode {
+                         bonus_stats::StatMode::Additive => "Additive",
+                         bonus_stats::StatMode::Percent => "Percent",
+                         bonus_stats::StatMode::Multiplicative => "Multiplicative",
+                     };
+                     
+                     egui::ComboBox::from_id_salt(format!("bonus_mode_{}", key))
+                        .selected_text(current_mode)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut bonus.mode, bonus_stats::StatMode::Additive, "Additive");
+                            ui.selectable_value(&mut bonus.mode, bonus_stats::StatMode::Percent, "Percent");
+                            ui.selectable_value(&mut bonus.mode, bonus_stats::StatMode::Multiplicative, "Multiplicative");
+                        });
+
+                     if ui.button("🗑").clicked() {
+                         remove_bonus_key = Some(key.clone());
+                     }
+                 });
+            }
+        }
+
+        if let Some(key) = remove_bonus_key {
+            self.weapon_form.bonuses.remove(&key);
+        }
+
+        ui.horizontal(|ui| {
+            // Simple way to add new bonus: prompt for key or just add "new_stat"
+            if ui.button("+ Add Bonus").clicked() {
+                let mut base = "new_stat".to_string();
+                let mut i = 0;
+                while self.weapon_form.bonuses.contains_key(&base) {
+                    i += 1;
+                    base = format!("new_stat_{}", i);
+                }
+                self.weapon_form.bonuses.insert(base, bonus_stats::StatBonus::default());
+            }
+            ui.small("(Key editing not supported yet, delete and re-add to rename)");
+        });
         ui.add_space(8.0);
 
         // Preview
@@ -1681,11 +1737,23 @@ impl EditorState {
                     ui.label(&enemy.display_name).on_hover_text(&enemy.id);
 
                     for weapon in &self.cached_weapons {
-                        let hits = (enemy.max_health / weapon.damage).ceil();
+                        // Apply bonuses
+                        let mut stats = bonus_stats::BonusStats::default();
+                        for (key, bonus) in &weapon.bonuses {
+                            stats.add(key, bonus.clone());
+                        }
+
+                        // Compute effective damage
+                        // We check "damage" with weapon's tags
+                        let effective_damage =
+                            stats.compute(weapon.damage, "damage", &weapon.tags.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+
+                        let hits = (enemy.max_health / effective_damage).ceil();
                         let time_ms = hits * weapon.attack_speed_ms as f32;
                         let time_sec = time_ms / 1000.0;
 
-                        ui.label(format!("{:.2}s ({} hits)", time_sec, hits));
+                        ui.label(format!("{:.2}s ({} hits)", time_sec, hits))
+                            .on_hover_text(format!("Damage: {:.1} (Base: {:.1})", effective_damage, weapon.damage));
                     }
                     ui.end_row();
                 }
@@ -1753,47 +1821,25 @@ impl EditorState {
                 for entry in entries.flatten() {
                     let path = entry.path();
                     if let Ok(content) = std::fs::read_to_string(&path) {
-                        // We use the WeaponFormData parsing logic via extracting ID from RON which is incomplete for getting full data.
-                        // Ideally we should impl Deserialize for WeaponFormData but it's not derive(Deserialize) currently?
-                        // Actually models.rs says `#[derive(Clone, Debug, Default)]` for `WeaponFormData`.
-                        // But `models.rs` imports `serde::{Deserialize, Serialize}`.
-                        // Wait, `WeaponFormData` does NOT have `Serialize, Deserialize` derived in the file I saw?
-                        // Let me check models.rs again mentally.
-                        // Line 682: `pub struct WeaponFormData` derives `Clone, Debug, Default`.
-                        // Line 3: `use serde::{Deserialize, Serialize};`
-                        // So I cannot use `ron::from_str::<WeaponFormData>`.
-                        // I should verify if I can parse it manually or if I should add De/Ser to WeaponFormData.
-                        // Adding De/Ser to WeaponFormData is the clean way.
-                        // I will assume for now I can parse it manually or I'll add the derives.
-                        // Actually, looking at `editor.rs` `load_weapon` (line 1447 not shown, but similar to `load_research`), it seems it parses `WeaponDefinition`?
-                        // No, `load_research` parses `ResearchDefinition` from `research_assets`.
-                        // `WeaponFormData` is the EDITOR'S representation.
-                        // I don't see `WeaponDefinition` imported in `editor.rs`?
-                        // Let's look at `load_weapon` logic. I didn't see `load_weapon` implementation.
-                        // I'll assume I need to parse it myself or use regex like `monster_prefab` if I want to avoid dependency issues.
-                        // OR, I can add `Deserialize` to `WeaponFormData` in `models.rs`?
-                        // It's safer to use regex like in `extract_id_from_ron` to be robust, OR better:
-                        // I'll implement a simple regex parser for weapons here since I just need 3 fields.
-
-                        let id = extract_field(&content, "id");
-                        let damage = extract_f32(&content, "damage");
-                        let attack_speed_ms = extract_u32(&content, "attack_speed_ms");
-                        let display_name = extract_field(&content, "display_name");
-
-                        if let (Some(id), Some(damage), Some(attack_speed_ms)) =
-                            (id, damage, attack_speed_ms)
-                        {
-                            self.cached_weapons.push(CachedWeapon {
-                                id,
-                                display_name: display_name.unwrap_or_else(|| "Unknown".to_string()),
-                                damage,
-                                attack_speed_ms,
-                                filename: path
-                                    .file_name()
-                                    .unwrap_or_default()
-                                    .to_string_lossy()
-                                    .to_string(),
-                            });
+                        match ron::from_str::<WeaponDefinition>(&content) {
+                            Ok(weapon_def) => {
+                                self.cached_weapons.push(CachedWeapon {
+                                    id: weapon_def.id,
+                                    display_name: weapon_def.display_name,
+                                    damage: weapon_def.damage,
+                                    attack_speed_ms: weapon_def.attack_speed_ms,
+                                    filename: path
+                                        .file_name()
+                                        .unwrap_or_default()
+                                        .to_string_lossy()
+                                        .to_string(),
+                                    bonuses: weapon_def.bonuses.into_iter().collect(), // convert HashMap types if needed, but they should match
+                                    tags: weapon_def.tags,
+                                });
+                            }
+                            Err(e) => {
+                                self.status = format!("✗ Failed to parse weapon for TTK: {}", e);
+                            }
                         }
                     }
                 }

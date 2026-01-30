@@ -9,3 +9,4 @@ bevy_common_assets.workspace = true
 serde = { version = "1", features = ["derive"] }
 hero_components.workspace = true
 shared_components.workspace = true
+bonus_stats = { path = "../../bonus_stats" }

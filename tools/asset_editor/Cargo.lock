@@ -359,6 +359,7 @@ name = "asset_editor"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bonus_stats",
  "divinity_components",
  "eframe",
  "portal_assets",
@@ -1942,6 +1943,14 @@ dependencies = [
  "futures-io",
  "futures-lite",
  "piper",
+]
+
+[[package]]
+name = "bonus_stats"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "serde",
 ]
 
 [[package]]
@@ -6193,6 +6202,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
+ "bonus_stats",
  "hero_components",
  "serde",
  "shared_components",

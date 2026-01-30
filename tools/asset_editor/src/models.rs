@@ -917,6 +917,7 @@ impl WeaponDefinitionExt for WeaponDefinition {
             attack_range: 150.0,
             attack_speed_ms: 750,
             tags: Vec::new(),
+            bonuses: bevy::platform::collections::HashMap::new(),
         }
     }
 
@@ -1018,6 +1019,8 @@ pub struct CachedWeapon {
     pub damage: f32,
     pub attack_speed_ms: u32,
     pub filename: String,
+    pub bonuses: std::collections::HashMap<String, bonus_stats::StatBonus>,
+    pub tags: Vec<String>,
 }
 
 impl Default for EditorCraftingOutcome {

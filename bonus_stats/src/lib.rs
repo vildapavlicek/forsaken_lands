@@ -1,6 +1,10 @@
-use {bevy::prelude::*, std::collections::HashMap};
+use {
+    bevy::prelude::*,
+    serde::{Deserialize, Serialize},
+    std::collections::HashMap,
+};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum StatMode {
     #[default]
     Additive, // +10
@@ -8,14 +12,14 @@ pub enum StatMode {
     Multiplicative, // x2.0
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct StatBonus {
     pub value: f32,
     pub mode: StatMode,
 }
 
 /// Aggregated bonuses for a specific key (e.g., "damage:melee").
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RawStat {
     pub additive: f32,
     pub percent: f32,        // Sum of percentages (e.g., 0.1 + 0.2 = 0.3)
