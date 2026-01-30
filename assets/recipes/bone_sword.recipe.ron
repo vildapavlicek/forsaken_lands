@@ -4,7 +4,7 @@
     category: Weapons,
     unlock_condition: True,
     craft_time: 60,
-    costs: {
+    cost: {
         "bones": 100,
     },
     outcomes: [
