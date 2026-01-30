@@ -48,7 +48,6 @@ impl Plugin for PortalsPlugin {
         app.add_systems(Update, update_floating_text);
 
         app.add_observer(assign_enemy_destination);
-        app.add_observer(assign_enemy_destination);
         app.add_observer(apply_blessing_to_lifetime);
         app.add_observer(on_enemy_escaped);
         app.add_observer(enemy_details::cache_details_on_unlock);
