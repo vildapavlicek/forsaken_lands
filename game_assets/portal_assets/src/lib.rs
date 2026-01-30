@@ -18,7 +18,7 @@ impl Plugin for PortalAssetsPlugin {
     }
 }
 
-#[derive(Reflect, Debug, Clone, Deserialize, Serialize)]
+#[derive(Reflect, Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum SpawnCondition {
     /// Spawns only at this exact Divinity.
     Specific(Divinity),
@@ -35,7 +35,7 @@ impl Default for SpawnCondition {
 }
 
 /// Defines what to spawn: a single monster or a group of monsters together.
-#[derive(Reflect, Debug, Clone, Deserialize, Serialize)]
+#[derive(Reflect, Debug, Clone, Deserialize, Serialize, PartialEq)]
 pub enum SpawnType {
     /// Spawn a single monster by ID.
     Single(String),
@@ -49,14 +49,14 @@ impl Default for SpawnType {
     }
 }
 
-#[derive(Reflect, Debug, Clone, Default, Deserialize, Serialize)]
+#[derive(Reflect, Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct SpawnEntry {
     pub condition: SpawnCondition,
     pub spawn_type: SpawnType,
     pub weight: u32,
 }
 
-#[derive(Asset, TypePath, Default, Debug, Deserialize, Serialize)]
+#[derive(Asset, TypePath, Default, Debug, Deserialize, Serialize, PartialEq)]
 pub struct SpawnTable {
     pub entries: Vec<SpawnEntry>,
 }

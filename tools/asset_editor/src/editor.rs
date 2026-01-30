@@ -127,6 +127,9 @@ pub struct EditorState {
     // Divinity Tab
     divinity_form: DivinityFormData,
     existing_divinity_ids: Vec<String>,
+
+    // Autopsy Tab State
+    existing_autopsies: Vec<String>,
 }
 
 impl EditorState {
@@ -173,6 +176,7 @@ impl EditorState {
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
             existing_divinity_ids: Vec::new(),
+            existing_autopsies: Vec::new(),
         }
     }
 
@@ -1529,6 +1533,26 @@ impl EditorState {
         }
         self.existing_recipe_ids.sort();
         self.existing_recipe_filenames.sort();
+
+        // Load existing autopsies
+        self.existing_autopsies.clear();
+        // search in research folder for autopsy_*.research.ron
+        let research_dir = assets_dir.join("research");
+        if let Ok(entries) = std::fs::read_dir(&research_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.starts_with("autopsy_") && filename_str.ends_with(".research.ron") {
+                        // Extract monster_id from autopsy_{monster_id}.research.ron
+                        if let Some(stem) = filename_str.strip_prefix("autopsy_").and_then(|s| s.strip_suffix(".research.ron")) {
+                            self.existing_autopsies.push(stem.to_string());
+                        }
+                    }
+                }
+            }
+        }
+        self.existing_autopsies.sort();
     }
 
     fn save_research(&mut self) {
@@ -2429,307 +2453,270 @@ impl EditorState {
         ui.add_space(8.0);
         ui.separator();
 
-        ui.heading("Entries");
+        ui.heading("Entries Grouped by Tier");
         ui.add_space(4.0);
 
-        let mut remove_idx: Option<usize> = None;
+        // Group entries by unique SpawnCondition
+        let mut groups: Vec<SpawnCondition> = Vec::new();
+        for entry in &self.spawn_table_form.entries {
+            if !groups.contains(&entry.condition) {
+                groups.push(entry.condition.clone());
+            }
+        }
+        
+        // Sort groups: Specific/Min/Range order, then by divinity logic
+        groups.sort_by(|a, b| {
+            // Helper to extract a sort key (tier, level)
+            let key = |c: &SpawnCondition| match c {
+                SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => *d,
+            };
+            key(a).cmp(&key(b))
+        });
+
         let mut changed = false;
+        let mut entries_to_add = Vec::new();
+        let mut entries_to_remove = std::collections::HashSet::new();
+        let mut condition_replacements = Vec::new();
 
-        for (i, entry) in self.spawn_table_form.entries.iter_mut().enumerate() {
-            ui.group(|ui| {
-                ui.horizontal(|ui| {
-                    ui.label(format!("Entry #{}", i + 1));
-                    if ui.button("🗑").clicked() {
-                        remove_idx = Some(i);
-                    }
-                });
+        for group_condition in groups {
+            let header_text = match &group_condition {
+                SpawnCondition::Specific(d) => format!("Specific: Tier {} Level {}", d.tier, d.level),
+                SpawnCondition::Min(d) => format!("Min: Tier {} Level {}", d.tier, d.level),
+                SpawnCondition::Range { min, max } => format!("Range: {}-{} to {}-{}", min.tier, min.level, max.tier, max.level),
+            };
 
-                ui.add_space(4.0);
-
-                // Spawn Type
-                ui.label("Spawn Type:");
-                let spawn_type = &mut entry.spawn_type;
-
-                // Spawn Type Selector
-                ui.horizontal(|ui| {
-                    let type_name = match spawn_type {
-                        SpawnType::Single(_) => "Single",
-                        SpawnType::Group(_) => "Group",
-                    };
-
-                    egui::ComboBox::from_id_salt(format!("spawn_type_{}", i))
-                        .selected_text(type_name)
-                        .show_ui(ui, |ui| {
-                            if ui
-                                .selectable_label(
-                                    matches!(spawn_type, SpawnType::Single(_)),
-                                    "Single",
-                                )
-                                .clicked()
-                            {
-                                *spawn_type = SpawnType::Single("goblin_scout".to_string());
-                                changed = true;
-                            }
-                            if ui
-                                .selectable_label(
-                                    matches!(spawn_type, SpawnType::Group(_)),
-                                    "Group",
-                                )
-                                .clicked()
-                            {
-                                *spawn_type = SpawnType::Group(vec!["goblin_scout".to_string()]);
-                                changed = true;
-                            }
-                        });
-                });
-
-                // Spawn Type Data
-                match spawn_type {
-                    SpawnType::Single(monster_id) => {
+            // Unique ID for the collapsing header
+            ui.push_id(format!("group_{:?}", group_condition), |ui| {
+                ui.collapsing(header_text, |ui| {
+                    ui.add_space(4.0);
+                    
+                    // --- Group Condition Editor ---
+                    ui.group(|ui| {
                         ui.horizontal(|ui| {
-                            ui.label("Monster ID:");
-                            if !self.existing_monster_ids.is_empty() {
-                                egui::ComboBox::from_id_salt(format!("spawn_table_monster_{}", i))
-                                    .selected_text(monster_id.as_str())
-                                    .show_ui(ui, |ui| {
-                                        for id in &self.existing_monster_ids {
-                                            if ui.selectable_label(monster_id == id, id).clicked() {
-                                                *monster_id = id.clone();
-                                                changed = true;
-                                            }
-                                        }
-                                    });
-                                ui.label("or");
+                            ui.label("Condition:");
+                            
+                            let mut edited_condition = group_condition.clone();
+                            
+                            // Condition Type Selector
+                            let type_name = match edited_condition {
+                                SpawnCondition::Specific(_) => "Specific",
+                                SpawnCondition::Range { .. } => "Range",
+                                SpawnCondition::Min(_) => "Min",
+                            };
+
+                            egui::ComboBox::from_id_salt("cond_type")
+                                .selected_text(type_name)
+                                .show_ui(ui, |ui| {
+                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Min(_)), "Min").clicked() {
+                                        edited_condition = SpawnCondition::Min(match group_condition {
+                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
+                                        });
+                                    }
+                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Range{..}), "Range").clicked() {
+                                        let current_d = match group_condition {
+                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
+                                        };
+                                        edited_condition = SpawnCondition::Range { min: current_d, max: current_d };
+                                    }
+                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Specific(_)), "Specific").clicked() {
+                                        edited_condition = SpawnCondition::Specific(match group_condition {
+                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
+                                        });
+                                    }
+                                });
+
+                            // Condition Values
+                             match &mut edited_condition {
+                                SpawnCondition::Min(div) | SpawnCondition::Specific(div) => {
+                                    ui.label("Tier:");
+                                    ui.add(egui::DragValue::new(&mut div.tier).range(1..=10));
+                                    ui.label("Level:");
+                                    ui.add(egui::DragValue::new(&mut div.level).range(1..=99));
+                                }
+                                SpawnCondition::Range { min, max } => {
+                                    ui.label("Min Tier:");
+                                    ui.add(egui::DragValue::new(&mut min.tier).range(1..=10));
+                                    ui.label("Lvl:");
+                                    ui.add(egui::DragValue::new(&mut min.level).range(1..=99));
+                                    
+                                    ui.label("Max Tier:");
+                                    ui.add(egui::DragValue::new(&mut max.tier).range(1..=10));
+                                    ui.label("Lvl:");
+                                    ui.add(egui::DragValue::new(&mut max.level).range(1..=99));
+                                }
                             }
-                            if ui.text_edit_singleline(monster_id).changed() {
+                            
+                            if edited_condition != group_condition {
+                                condition_replacements.push((group_condition.clone(), edited_condition));
                                 changed = true;
                             }
-                        });
-                        if !monster_id.is_empty() && !self.existing_monster_ids.contains(monster_id)
-                        {
-                            ui.colored_label(
-                                egui::Color32::YELLOW,
-                                format!("⚠ Monster \"{}\" not found", monster_id),
-                            );
-                        }
-                    }
-                    SpawnType::Group(monster_ids) => {
-                        let mut remove_idx: Option<usize> = None;
-                        for (j, monster_id) in monster_ids.iter_mut().enumerate() {
-                            ui.horizontal(|ui| {
-                                ui.label(format!("  #{}", j + 1));
-                                if !self.existing_monster_ids.is_empty() {
-                                    egui::ComboBox::from_id_salt(format!(
-                                        "spawn_group_{}_{}",
-                                        i, j
-                                    ))
-                                    .selected_text(monster_id.as_str())
-                                    .show_ui(ui, |ui| {
-                                        for id in &self.existing_monster_ids {
-                                            if ui.selectable_label(monster_id == id, id).clicked() {
-                                                *monster_id = id.clone();
-                                                changed = true;
-                                            }
+                            
+                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                if ui.button("🗑 Delete Group").clicked() {
+                                    // Mark all entries in this group for removal
+                                    for (idx, entry) in self.spawn_table_form.entries.iter().enumerate() {
+                                        if entry.condition == group_condition {
+                                            entries_to_remove.insert(idx);
                                         }
-                                    });
-                                }
-                                if ui.text_edit_singleline(monster_id).changed() {
+                                    }
                                     changed = true;
                                 }
+                            });
+                        });
+                    });
+
+                    ui.add_space(4.0);
+                    ui.label("Enemies:");
+
+                    // --- Enemies List ---
+                    let mut local_remove_indices = Vec::new();
+                    
+                    // We need to match entries that have the ORIGINAL group_condition
+                    for (idx, entry) in self.spawn_table_form.entries.iter_mut().enumerate() {
+                        if entry.condition == group_condition {
+                            ui.horizontal(|ui| {
+                                // Spawn Type
+                                let spawn_type = &mut entry.spawn_type;
+                                let type_name = match spawn_type {
+                                    SpawnType::Single(_) => "Single",
+                                    SpawnType::Group(_) => "Group",
+                                };
+                                
+                                egui::ComboBox::from_id_salt(format!("type_{}", idx))
+                                    .selected_text(type_name)
+                                    .show_ui(ui, |ui| {
+                                        if ui.selectable_label(matches!(spawn_type, SpawnType::Single(_)), "Single").clicked() {
+                                            *spawn_type = SpawnType::Single("goblin_scout".to_string());
+                                            changed = true;
+                                        }
+                                        if ui.selectable_label(matches!(spawn_type, SpawnType::Group(_)), "Group").clicked() {
+                                            *spawn_type = SpawnType::Group(vec!["goblin_scout".to_string()]);
+                                            changed = true;
+                                        }
+                                    });
+
+                                match spawn_type {
+                                    SpawnType::Single(monster_id) => {
+                                        ui.label("ID:");
+                                        if !self.existing_monster_ids.is_empty() {
+                                            egui::ComboBox::from_id_salt(format!("mon_{}", idx))
+                                                .selected_text(monster_id.as_str())
+                                                .show_ui(ui, |ui| {
+                                                    for id in &self.existing_monster_ids {
+                                                        if ui.selectable_label(monster_id == id, id).clicked() {
+                                                            *monster_id = id.clone();
+                                                            changed = true;
+                                                        }
+                                                    }
+                                                });
+                                        } else {
+                                            if ui.text_edit_singleline(monster_id).changed() {
+                                                changed = true;
+                                            }
+                                        }
+                                    }
+                                    SpawnType::Group(ids) => {
+                                        ui.label("Group:");
+                                        // Simplified group editor for space
+                                        for (j, id) in ids.iter_mut().enumerate() {
+                                            if !self.existing_monster_ids.is_empty() {
+                                                egui::ComboBox::from_id_salt(format!("grp_{}_{}", idx, j))
+                                                    .selected_text(id.as_str())
+                                                    .show_ui(ui, |ui| {
+                                                         for valid_id in &self.existing_monster_ids {
+                                                             if ui.selectable_label(id == valid_id, valid_id).clicked() {
+                                                                 *id = valid_id.clone();
+                                                                 changed = true;
+                                                             }
+                                                         }
+                                                    });
+                                            } else {
+                                                if ui.text_edit_singleline(id).changed() { changed = true; }
+                                            }
+                                        }
+                                        if ui.button("+").clicked() {
+                                            ids.push("goblin_scout".to_string());
+                                            changed = true;
+                                        }
+                                        if ids.len() > 1 && ui.button("-").clicked() {
+                                            ids.pop();
+                                            changed = true;
+                                        }
+                                    }
+                                }
+                                
+                                ui.label("Weight:");
+                                if ui.add(egui::DragValue::new(&mut entry.weight).range(1..=10000)).changed() {
+                                    changed = true;
+                                }
+                                
                                 if ui.button("🗑").clicked() {
-                                    remove_idx = Some(j);
+                                    local_remove_indices.push(idx);
                                 }
                             });
-                            if !monster_id.is_empty()
-                                && !self.existing_monster_ids.contains(monster_id)
-                            {
-                                ui.colored_label(
-                                    egui::Color32::YELLOW,
-                                    format!("⚠ Monster \"{}\" not found", monster_id),
-                                );
-                            }
-                        }
-                        if let Some(idx) = remove_idx {
-                            monster_ids.remove(idx);
-                            changed = true;
-                        }
-                        if ui.button("+ Add to Group").clicked() {
-                            monster_ids.push("goblin_scout".to_string());
-                            changed = true;
                         }
                     }
-                }
+                    
+                    for idx in local_remove_indices {
+                        entries_to_remove.insert(idx);
+                        changed = true;
+                    }
 
-                ui.add_space(4.0);
-
-                // Weight
-                ui.horizontal(|ui| {
-                    ui.label("Weight:");
-                    if ui
-                        .add(egui::DragValue::new(&mut entry.weight).range(1..=10000))
-                        .changed()
-                    {
+                    if ui.button("+ Add Enemy to Tier").clicked() {
+                        entries_to_add.push(SpawnEntry {
+                            condition: group_condition.clone(),
+                            spawn_type: SpawnType::Single("goblin_scout".to_string()),
+                            weight: 10,
+                        });
                         changed = true;
                     }
                 });
-
-                ui.add_space(4.0);
-
-                // Condition
-                ui.label("Condition:");
-                let condition = &mut entry.condition;
-
-                // Condition Type Selector
-                ui.horizontal(|ui| {
-                    let type_name = match condition {
-                        SpawnCondition::Specific(_) => "Specific",
-                        SpawnCondition::Range { .. } => "Range",
-                        SpawnCondition::Min(_) => "Min",
-                    };
-
-                    egui::ComboBox::from_id_salt(format!("spawn_condition_type_{}", i))
-                        .selected_text(type_name)
-                        .show_ui(ui, |ui| {
-                            if ui
-                                .selectable_label(
-                                    match condition {
-                                        SpawnCondition::Min(_) => true,
-                                        _ => false,
-                                    },
-                                    "Min",
-                                )
-                                .clicked()
-                            {
-                                *condition = SpawnCondition::Min(Divinity::default());
-                                changed = true;
-                            }
-                            if ui
-                                .selectable_label(
-                                    match condition {
-                                        SpawnCondition::Range { .. } => true,
-                                        _ => false,
-                                    },
-                                    "Range",
-                                )
-                                .clicked()
-                            {
-                                *condition = SpawnCondition::Range {
-                                    min: Divinity::default(),
-                                    max: Divinity::default(),
-                                };
-                                changed = true;
-                            }
-                            if ui
-                                .selectable_label(
-                                    match condition {
-                                        SpawnCondition::Specific(_) => true,
-                                        _ => false,
-                                    },
-                                    "Specific",
-                                )
-                                .clicked()
-                            {
-                                *condition = SpawnCondition::Specific(Divinity::default());
-                                changed = true;
-                            }
-                        });
-                });
-
-                // Condition Data
-                match condition {
-                    SpawnCondition::Min(div) => {
-                        ui.horizontal(|ui| {
-                            ui.label("Min Tier:");
-                            if ui
-                                .add(egui::DragValue::new(&mut div.tier).range(1..=10))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                            ui.label("Level:");
-                            if ui
-                                .add(egui::DragValue::new(&mut div.level).range(1..=99))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                        });
-                    }
-                    SpawnCondition::Specific(div) => {
-                        ui.horizontal(|ui| {
-                            ui.label("Tier:");
-                            if ui
-                                .add(egui::DragValue::new(&mut div.tier).range(1..=10))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                            ui.label("Level:");
-                            if ui
-                                .add(egui::DragValue::new(&mut div.level).range(1..=99))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                        });
-                    }
-                    SpawnCondition::Range { min, max } => {
-                        ui.horizontal(|ui| {
-                            ui.label("Min Tier:");
-                            if ui
-                                .add(egui::DragValue::new(&mut min.tier).range(1..=10))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                            ui.label("Level:");
-                            if ui
-                                .add(egui::DragValue::new(&mut min.level).range(1..=99))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                        });
-                        ui.horizontal(|ui| {
-                            ui.label("Max Tier:");
-                            if ui
-                                .add(egui::DragValue::new(&mut max.tier).range(1..=10))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                            ui.label("Level:");
-                            if ui
-                                .add(egui::DragValue::new(&mut max.level).range(1..=99))
-                                .changed()
-                            {
-                                changed = true;
-                            }
-                        });
-                    }
-                }
             });
-            ui.add_space(4.0);
         }
 
-        if let Some(idx) = remove_idx {
-            self.spawn_table_form.entries.remove(idx);
+        ui.add_space(8.0);
+        
+        if ui.button("➕ Add New Tier").clicked() {
+            // Check for highest existing tier logic or just default
+            // Just add a default Min Tier 1 Level 1
+            entries_to_add.push(SpawnEntry {
+                condition: SpawnCondition::Min(Divinity { tier: 1, level: 1 }),
+                spawn_type: SpawnType::Single("goblin_scout".to_string()),
+                weight: 10,
+            });
             changed = true;
-        }
-
-        if ui.button("+ Add Entry").clicked() {
-            self.spawn_table_form.entries.push(SpawnEntry::default());
-            changed = true;
-        }
-
-        if changed {
-            self.update_spawn_table_preview();
         }
 
         ui.add_space(16.0);
         ui.separator();
+        
+        // --- Apply Updates ---
+        
+        // 1. Condition Replacements
+        for (old, new) in condition_replacements {
+            for entry in &mut self.spawn_table_form.entries {
+                if entry.condition == old {
+                    entry.condition = new.clone();
+                }
+            }
+        }
+        
+        // 2. Additions
+        self.spawn_table_form.entries.extend(entries_to_add);
+        
+        // 3. Removals
+        if !entries_to_remove.is_empty() {
+            let mut sorted_indices: Vec<_> = entries_to_remove.into_iter().collect();
+            sorted_indices.sort_unstable_by(|a, b| b.cmp(a)); // Descending
+            for idx in sorted_indices {
+                if idx < self.spawn_table_form.entries.len() {
+                    self.spawn_table_form.entries.remove(idx);
+                    changed = true;
+                }
+            }
+        }
 
-        // Save
+        // --- Save Buttons ---
         ui.horizontal(|ui| {
             ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
                 if ui.button("💾 Save Spawn Table").clicked() {
@@ -2744,6 +2731,10 @@ impl EditorState {
                 self.status = "New spawn table created".to_string();
             }
         });
+
+        if changed {
+            self.update_spawn_table_preview();
+        }
     }
 
     fn update_spawn_table_preview(&mut self) {
@@ -2799,6 +2790,36 @@ impl EditorState {
     fn show_autopsy_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Autopsy Definition");
         ui.add_space(4.0);
+
+        // Load existing autopsies
+        ui.group(|ui| {
+            ui.heading("Load Existing Autopsy");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    "⚠ Select assets directory first (File → Select Assets Directory)",
+                );
+            } else if self.existing_autopsies.is_empty() {
+                ui.label("No autopsy research found in assets/research/autopsy_*.research.ron");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_id = None;
+                    for id in &self.existing_autopsies {
+                        if ui.button(id).clicked() {
+                            load_id = Some(id.clone());
+                        }
+                    }
+                    if let Some(id) = load_id {
+                        self.load_autopsy(&id);
+                    }
+                });
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.add_space(8.0);
 
         ui.group(|ui| {
             ui.label("Define autopsy research for a monster. This will generate:");
@@ -3143,6 +3164,44 @@ impl EditorState {
                     self.status = format!("✗ Failed to save: {}", e);
                 }
             }
+        }
+    }
+    fn load_autopsy(&mut self, monster_id: &str) {
+        if let Some(assets_dir) = &self.assets_dir {
+            // Path: Autopsy research is stored as autopsy_{monster_id}.research.ron
+            let research_filename = format!("autopsy_{}.research.ron", monster_id);
+            let research_path = assets_dir.join("research").join(&research_filename);
+
+            let content = match std::fs::read_to_string(&research_path) {
+                Ok(c) => c,
+                Err(e) => {
+                    self.status = format!("✗ Failed to read autopsy file: {}", e);
+                    return;
+                }
+            };
+
+            // Parse as ResearchDefinition
+            let research_def: ResearchDefinition = match ron::from_str(&content) {
+                Ok(d) => d,
+                Err(e) => {
+                    self.status = format!("✗ Failed to parse autopsy RON: {}", e);
+                    return;
+                }
+            };
+
+            // Populate form
+            self.autopsy_form.monster_id = monster_id.to_string();
+            self.autopsy_form.research_description = research_def.description;
+            self.autopsy_form.research_time = research_def.time_required;
+            self.autopsy_form.research_costs = research_def.cost
+                .into_iter()
+                .map(|(k, v)| ResourceCost {
+                    resource_id: k,
+                    amount: v,
+                })
+                .collect();
+            
+            self.status = format!("✓ Loaded autopsy for: {}", monster_id);
         }
     }
 }
