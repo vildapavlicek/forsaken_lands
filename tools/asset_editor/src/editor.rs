@@ -120,6 +120,10 @@ pub struct EditorState {
     ttk_data_loaded: bool,
     cached_enemies: Vec<CachedEnemy>,
     cached_weapons: Vec<CachedWeapon>,
+    simulation_bonuses: Vec<(String, bonus_stats::StatBonus)>,
+    new_bonus_key: String,
+    new_bonus_value: f32,
+    new_bonus_mode: bonus_stats::StatMode,
 
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
@@ -172,6 +176,10 @@ impl EditorState {
             ttk_data_loaded: false,
             cached_enemies: Vec::new(),
             cached_weapons: Vec::new(),
+            simulation_bonuses: Vec::new(),
+            new_bonus_key: "damage".to_string(),
+            new_bonus_value: 10.0,
+            new_bonus_mode: bonus_stats::StatMode::Additive,
 
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
@@ -1722,6 +1730,72 @@ impl EditorState {
         }
 
         ui.add_space(8.0);
+        ui.separator();
+        ui.heading("Simulation Bonuses");
+        ui.small("Add bonuses to simulate different builds (e.g. 'damage', 'damage:melee').");
+
+        // Bonus list
+        let mut remove_idx = None;
+        for (i, (key, bonus)) in self.simulation_bonuses.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label(format!("{}:", key));
+                match bonus.mode {
+                    bonus_stats::StatMode::Additive => {
+                        ui.label(format!("+{}", bonus.value));
+                    }
+                    bonus_stats::StatMode::Percent => {
+                        ui.label(format!("+{}%", bonus.value * 100.0));
+                    }
+                    bonus_stats::StatMode::Multiplicative => {
+                        ui.label(format!("x{}", bonus.value));
+                    }
+                }
+                if ui.button("🗑").clicked() {
+                    remove_idx = Some(i);
+                }
+            });
+        }
+        if let Some(idx) = remove_idx {
+            self.simulation_bonuses.remove(idx);
+        }
+
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            ui.label("Key:");
+            ui.text_edit_singleline(&mut self.new_bonus_key);
+            ui.label("Value:");
+            ui.add(egui::DragValue::new(&mut self.new_bonus_value).speed(0.1));
+            
+            egui::ComboBox::from_id_salt("new_bonus_mode")
+                .selected_text(format!("{:?}", self.new_bonus_mode))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Additive, "Additive");
+                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Percent, "Percent");
+                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Multiplicative, "Multiplicative");
+                });
+
+            if ui.button("Add Bonus").clicked() {
+                if !self.new_bonus_key.is_empty() {
+                    // Fix percent value if user enters 10 for 10%
+                    let value = if self.new_bonus_mode == bonus_stats::StatMode::Percent && self.new_bonus_value > 1.0 {
+                         self.new_bonus_value / 100.0
+                    } else {
+                        self.new_bonus_value
+                    };
+
+                    self.simulation_bonuses.push((
+                        self.new_bonus_key.clone(),
+                        bonus_stats::StatBonus {
+                            value,
+                            mode: self.new_bonus_mode,
+                        },
+                    ));
+                }
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
 
         egui::ScrollArea::both().show(ui, |ui| {
             egui::Grid::new("ttk_grid").striped(true).show(ui, |ui| {
@@ -1739,6 +1813,13 @@ impl EditorState {
                     for weapon in &self.cached_weapons {
                         // Apply bonuses
                         let mut stats = bonus_stats::BonusStats::default();
+                        
+                        // Apply simulation bonuses first
+                        for (key, bonus) in &self.simulation_bonuses {
+                            stats.add(key, bonus.clone());
+                        }
+
+                        // Apply weapon bonuses
                         for (key, bonus) in &weapon.bonuses {
                             stats.add(key, bonus.clone());
                         }
