@@ -90,19 +90,6 @@ pub fn update_crafting_progress(
         if crafting.timer.is_finished() {
             info!("Crafting complete for: {}", crafting.recipe_id);
 
-            // Process all outcomes
-            for outcome in &crafting.outcomes {
-                match outcome {
-                    crafting_resources::CraftingOutcome::AddResource { id, amount } => {
-                        // TODO: Add to wallet
-                        info!("Would add {} x {} to wallet", amount, id);
-                    }
-                    crafting_resources::CraftingOutcome::UnlockFeature(feature) => {
-                        info!("Would unlock feature: {}", feature);
-                    }
-                }
-            }
-
             // Despawn the crafting entity
             commands.entity(entity).despawn();
             commands.trigger(StatusCompleted {
