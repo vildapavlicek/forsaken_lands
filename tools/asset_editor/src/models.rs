@@ -105,6 +105,8 @@ pub enum LeafCondition {
         level: u32,
         op: CompareOp,
     },
+    /// Craft condition: triggers when player crafts a specific recipe
+    Craft { recipe_id: String },
 }
 
 impl Default for LeafCondition {
@@ -120,11 +122,12 @@ impl LeafCondition {
             LeafCondition::Kills { .. } => "Kills",
             LeafCondition::Resource { .. } => "Resource",
             LeafCondition::Divinity { .. } => "Divinity",
+            LeafCondition::Craft { .. } => "Craft",
         }
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Unlock", "Kills", "Resource", "Divinity"]
+        vec!["Unlock", "Kills", "Resource", "Divinity", "Craft"]
     }
 
     pub fn from_type_name(name: &str) -> Self {
@@ -143,6 +146,9 @@ impl LeafCondition {
                 tier: 1,
                 level: 1,
                 op: CompareOp::Ge,
+            },
+            "Craft" => LeafCondition::Craft {
+                recipe_id: String::new(),
             },
             _ => LeafCondition::default(),
         }
@@ -182,6 +188,9 @@ impl LeafCondition {
                     val
                 )
             }
+            LeafCondition::Craft { recipe_id } => {
+                format!("Completed(topic: \"craft:{}\")", recipe_id)
+            }
         }
     }
 
@@ -217,6 +226,11 @@ impl LeafCondition {
                     errors.push("Level must be 1-99".to_string());
                 }
             }
+            LeafCondition::Craft { recipe_id } => {
+                if recipe_id.trim().is_empty() {
+                    errors.push("Recipe ID is required".to_string());
+                }
+            }
         }
         errors
     }
@@ -247,6 +261,9 @@ impl LeafCondition {
                 topic: "divinity".to_string(),
                 op: (*op).into(),
                 target: (tier * 100 + level) as f32,
+            },
+            LeafCondition::Craft { recipe_id } => ConditionNode::Completed {
+                topic: format!("craft:{}", recipe_id),
             },
         }
     }
@@ -391,6 +408,8 @@ impl From<&ConditionNode> for LeafCondition {
                 } else if let Some(id) = topic.strip_prefix("unlock:") {
                     // Handle older or alternative unlock topics if necessary, or just treat as Unlock
                     LeafCondition::Unlock { id: id.to_string() }
+                } else if let Some(id) = topic.strip_prefix("craft:") {
+                    LeafCondition::Craft { recipe_id: id.to_string() }
                 } else {
                     // Fallback or generic completion
                     LeafCondition::Unlock { id: topic.clone() }

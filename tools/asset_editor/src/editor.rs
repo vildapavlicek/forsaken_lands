@@ -515,6 +515,7 @@ impl EditorState {
             "research",
             &self.existing_research_ids,
             &self.existing_monster_ids,
+            &self.existing_recipe_ids,
             &mut self.research_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -630,6 +631,7 @@ impl EditorState {
             "recipe",
             &self.existing_research_ids,
             &self.existing_monster_ids,
+            &self.existing_recipe_ids,
             &mut self.recipe_unlock_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -1045,6 +1047,7 @@ fn show_condition_editor(
     id_prefix: &str,
     existing_research_ids: &[String],
     existing_monster_ids: &[String],
+    existing_recipe_ids: &[String],
     condition: &mut UnlockCondition,
 ) {
     // Top-level condition type dropdown
@@ -1078,6 +1081,7 @@ fn show_condition_editor(
                 &format!("{}_single", id_prefix),
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaf,
             );
         }
@@ -1087,6 +1091,7 @@ fn show_condition_editor(
                 id_prefix,
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaves,
                 "AND",
             );
@@ -1097,6 +1102,7 @@ fn show_condition_editor(
                 id_prefix,
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaves,
                 "OR",
             );
@@ -1110,6 +1116,7 @@ fn show_gate_editor(
     id_prefix: &str,
     existing_research_ids: &[String],
     existing_monster_ids: &[String],
+    existing_recipe_ids: &[String],
     leaves: &mut Vec<LeafCondition>,
     gate_name: &str,
 ) {
@@ -1135,6 +1142,7 @@ fn show_gate_editor(
                 &format!("{}_{}", id_prefix, i),
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaf,
             );
         });
@@ -1157,6 +1165,7 @@ fn show_leaf_editor(
     id_prefix: &str,
     existing_research_ids: &[String],
     existing_monster_ids: &[String],
+    existing_recipe_ids: &[String],
     leaf: &mut LeafCondition,
 ) {
     // Leaf type dropdown
@@ -1297,6 +1306,35 @@ fn show_leaf_editor(
                     });
             });
             ui.small("Triggers when player reaches this divinity tier/level");
+        }
+        LeafCondition::Craft { recipe_id } => {
+            ui.horizontal(|ui| {
+                ui.label("Recipe ID:");
+                if !existing_recipe_ids.is_empty() {
+                    egui::ComboBox::from_id_salt(format!("{}_recipe_id", id_prefix))
+                        .selected_text(if recipe_id.is_empty() {
+                            "Select..."
+                        } else {
+                            recipe_id.as_str()
+                        })
+                        .show_ui(ui, |ui| {
+                            for id in existing_recipe_ids {
+                                if ui.selectable_label(recipe_id == id, id).clicked() {
+                                    *recipe_id = id.clone();
+                                }
+                            }
+                        });
+                    ui.label("or");
+                }
+                ui.add(egui::TextEdit::singleline(recipe_id).desired_width(120.0));
+            });
+            // Warning if recipe ID not found
+            if !recipe_id.is_empty() && !existing_recipe_ids.contains(recipe_id) {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    format!("⚠ Recipe \"{}\" not found", recipe_id),
+                );
+            }
         }
     }
 }
@@ -3051,6 +3089,7 @@ impl EditorState {
             "divinity",
             &self.existing_research_ids,
             &self.existing_monster_ids,
+            &self.existing_recipe_ids,
             &mut self.divinity_form.unlock_condition,
         );
         ui.add_space(16.0);
