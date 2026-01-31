@@ -3283,6 +3283,7 @@ dependencies = [
  "unlocks_events",
  "unlocks_resources",
  "village_components",
+ "village_resources",
  "wallet",
  "weapon_assets",
 ]
@@ -4590,6 +4591,7 @@ dependencies = [
  "unlocks_resources",
  "village",
  "village_components",
+ "village_resources",
  "wallet",
  "weapon_factory_events",
 ]
@@ -5278,6 +5280,7 @@ dependencies = [
  "states",
  "unlocks_events",
  "village_components",
+ "village_resources",
 ]
 
 [[package]]
@@ -5286,6 +5289,13 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "shared_components",
+]
+
+[[package]]
+name = "village_resources"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

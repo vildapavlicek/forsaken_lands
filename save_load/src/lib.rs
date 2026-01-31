@@ -255,7 +255,7 @@ fn build_save_scene(world: &World, saveable_entities: Vec<Entity>) -> DynamicSce
         // === Resources ===
         .allow_resource::<Wallet>()
         .allow_resource::<research::ResearchState>()
-        .allow_resource::<village::DivinityUnlockState>()
+        .allow_resource::<village_resources::DivinityUnlockState>()
         .allow_resource::<crafting_resources::ConstructedBuildings>()
         // === Entity extraction ===
         // Only include entities marked with IncludeInSave

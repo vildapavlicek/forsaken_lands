@@ -11,6 +11,7 @@ equipment_events.workspace = true
 loading.workspace = true
 states.workspace = true
 village_components.workspace = true
+village_resources.workspace = true
 hero_components.workspace = true
 enemy_components.workspace = true
 hero_events.workspace = true

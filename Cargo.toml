@@ -41,7 +41,7 @@ members = [
   "research",
   "resources/crafting_resources",
   "resources/enemy_resources",
-  "resources/unlocks_resources",
+  "resources/unlocks_resources", "resources/village_resources",
   "save_load",
   "states",
   "system_schedule",
@@ -114,6 +114,7 @@ unlocks_events = { path = "events/unlocks_events" }
 unlocks_resources = { path = "resources/unlocks_resources" }
 village = { path = "village" }
 village_components = { path = "components/village_components" }
+village_resources = { path = "resources/village_resources" }
 village_ui = { path = "ui/village_ui" }
 wallet = { path = "wallet" }
 weapon_assets = { path = "game_assets/weapon_assets" }
@@ -126,5 +127,5 @@ bevy.workspace = true
 core.workspace = true
 states.workspace = true
 
-[target.'cfg(debug_assertions)'.dependencies]
+[dev-dependencies]
 bevy = { workspace = true, features = ["dev"] }

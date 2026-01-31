@@ -1,5 +1,5 @@
 use {
-    bevy::{platform::collections::HashSet, prelude::*},
+    bevy::prelude::*,
     divinity_components::{Divinity, DivinityStats},
     divinity_events::IncreaseDivinity,
     enemy_components::MonsterId,
@@ -8,29 +8,16 @@ use {
     shared_components::DisplayName,
     unlocks_events::UnlockAchieved,
     village_components::{EncyclopediaEntry, EnemyEncyclopedia, Village},
+    village_resources::{DivinityUnlockState, VillageResourcesPlugin},
 };
 
 pub mod equipment;
-
-/// Tracks which divinity unlock IDs have already granted their level-up reward.
-///
-/// This is persisted in save files to prevent duplicate divinity increases when
-/// loading a game. Unlike `UnlockState` which is intentionally not persisted
-/// (to allow re-computation of idempotent rewards), divinity level-ups are
-/// permanent progression that should only be granted once per unlock.
-#[derive(Resource, Reflect, Default, Debug)]
-#[reflect(Resource)]
-pub struct DivinityUnlockState {
-    /// Set of unlock IDs that have already granted divinity level-ups.
-    pub claimed: HashSet<String>,
-}
 
 pub struct VillagePlugin;
 
 impl Plugin for VillagePlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<DivinityUnlockState>()
-            .register_type::<DivinityUnlockState>()
+        app.add_plugins(VillageResourcesPlugin)
             .register_type::<Village>()
             .register_type::<EnemyEncyclopedia>()
             .register_type::<EncyclopediaEntry>();
