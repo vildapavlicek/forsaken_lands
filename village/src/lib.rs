@@ -1,7 +1,7 @@
 use {
     bevy::prelude::*,
-    divinity_components::{Divinity, DivinityStats},
-    divinity_events::IncreaseDivinity,
+    divinity_components::Divinity,
+
     enemy_components::MonsterId,
     enemy_events::EnemyEscaped,
     hero_events::EnemyKilled,
@@ -24,7 +24,7 @@ impl Plugin for VillagePlugin {
 
         app.add_observer(update_encyclopedia);
         app.add_observer(update_encyclopedia_on_escape);
-        app.add_observer(handle_divinity_increase);
+
         app.add_observer(divinity_increase_unlock);
         app.add_observer(equipment::handle_equip_weapon);
         app.add_observer(equipment::handle_unequip_weapon);
@@ -65,6 +65,7 @@ fn update_encyclopedia(
     }
 }
 
+
 fn update_encyclopedia_on_escape(
     trigger: On<EnemyEscaped>,
     mut village_query: Query<&mut EnemyEncyclopedia, With<Village>>,
@@ -99,25 +100,6 @@ fn update_encyclopedia_on_escape(
     }
 }
 
-fn handle_divinity_increase(
-    trigger: On<IncreaseDivinity>,
-    mut query: Query<(&mut Divinity, &mut DivinityStats), With<Village>>,
-) {
-    let event = trigger.event();
-    if let Ok((mut divinity, mut stats)) = query.get_mut(event.entity) {
-        info!(
-            xp_added = event.xp_amount,
-            "increased Village's divinity XP"
-        );
-        if stats.add_xp(event.xp_amount, &mut divinity) {
-            info!(
-                tier = divinity.tier,
-                level = divinity.level,
-                "Village leveled up"
-            );
-        }
-    }
-}
 
 fn divinity_increase_unlock(
     event: On<UnlockAchieved>,

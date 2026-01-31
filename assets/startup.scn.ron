@@ -38,10 +38,7 @@
         ),
         "village_components::Village": (),
         "divinity_components::Divinity": (tier: 1, level: 1),
-        "divinity_components::DivinityStats": (
-            current_xp: 0.0,
-            required_xp: 100.0,
-        ),
+
         "village_components::WeaponInventory": (weapons: ["melee_rock", "throwing_rock"]),
         "bevy_ecs::hierarchy::Children": ([3]),
       },

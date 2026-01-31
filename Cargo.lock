@@ -2119,7 +2119,6 @@ dependencies = [
  "crafting_components",
  "crafting_events",
  "crafting_resources",
- "divinity_events",
  "recipes_assets",
  "shared_components",
  "states",
@@ -2296,13 +2295,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "serde",
-]
-
-[[package]]
-name = "divinity_events"
-version = "0.1.0"
-dependencies = [
- "bevy",
 ]
 
 [[package]]
@@ -4116,7 +4108,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "divinity_components",
- "divinity_events",
  "portal_components",
  "shared_components",
  "states",
@@ -4133,7 +4124,6 @@ dependencies = [
  "blessings",
  "buildings_components",
  "divinity_components",
- "divinity_events",
  "enemy_components",
  "enemy_events",
  "enemy_resources",
@@ -5269,7 +5259,6 @@ dependencies = [
  "bevy",
  "crafting_events",
  "divinity_components",
- "divinity_events",
  "enemy_components",
  "enemy_events",
  "equipment_events",

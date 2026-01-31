@@ -8,7 +8,7 @@ bevy.workspace = true
 crafting_components.workspace = true
 crafting_events.workspace = true
 crafting_resources.workspace = true
-divinity_events.workspace = true
+
 recipes_assets.workspace = true
 weapon_factory_events.workspace = true
 states.workspace = true

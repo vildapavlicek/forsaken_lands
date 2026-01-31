@@ -9,7 +9,7 @@ pub struct DivinityComponentsPlugin;
 impl Plugin for DivinityComponentsPlugin {
     fn build(&self, app: &mut App) {
         app.register_type::<Divinity>();
-        app.register_type::<DivinityStats>();
+
         app.register_type::<CurrentDivinity>();
     }
 }
@@ -23,7 +23,7 @@ pub const MAX_LEVEL: u32 = 99;
 /// - `PortalsPlugin`: To gate enemy spawns based on `SpawnCondition`.
 /// - `VillagePlugin`: To track village growth and unlock recipes/buildings.
 ///
-/// Use `DivinityStats` to track XP progress towards the next level.
+
 #[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[reflect(Component, Default)]
 pub struct Divinity {
@@ -38,18 +38,7 @@ impl Divinity {
         Self { tier, level }
     }
 
-    /// Increments the level. If level reaches MAX_LEVEL + 1, it resets to 1 and increments tier.
-    /// Returns true if tier increased.
-    pub fn level_up(&mut self) -> bool {
-        if self.level >= MAX_LEVEL {
-            self.tier += 1;
-            self.level = 1;
-            true
-        } else {
-            self.level += 1;
-            false
-        }
-    }
+
 
     pub fn from_dashed_str(value: &str) -> Result<Self, String> {
         let Some((tier, level)) = value.split_once('-') else {
@@ -88,22 +77,7 @@ impl Default for Divinity {
     }
 }
 
-/// Tracks the experience progress for a `Divinity` entity.
-///
-/// This component acts as a buffer for raw experience points. When `current_xp` exceeds
-/// `required_xp`, it triggers a level-up in the `Divinity` component.
-///
-/// It is queried by:
-/// - `PortalsPlugin` and `VillagePlugin`: To accumulate XP and handle level-ups.
-/// - UI Systems: To display the progress bar (current / required).
-#[derive(Component, Reflect, Default, Debug, Clone, Copy, PartialEq)]
-#[reflect(Component, Default)]
-pub struct DivinityStats {
-    /// The accumulated raw experience points.
-    pub current_xp: f32,
-    /// The raw experience threshold required to advance to the next `Divinity` level.
-    pub required_xp: f32,
-}
+
 
 /// Represents the current active Divinity level of a Portal.
 #[derive(
@@ -118,26 +92,7 @@ impl Default for CurrentDivinity {
     }
 }
 
-impl DivinityStats {
-    /// Calculate required XP for a given Divinity level
-    pub fn required_xp_for(divinity: &Divinity) -> f32 {
-        // Base formula: 100 * tier * level
-        100.0 * divinity.tier as f32 * divinity.level as f32
-    }
 
-    /// Add XP and return true if a level up occurred
-    pub fn add_xp(&mut self, amount: f32, divinity: &mut Divinity) -> bool {
-        self.current_xp += amount;
-        if self.current_xp >= self.required_xp {
-            self.current_xp -= self.required_xp;
-            divinity.level_up();
-            self.required_xp = Self::required_xp_for(divinity);
-            true
-        } else {
-            false
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -157,30 +112,5 @@ mod tests {
         assert!(high > mid);
     }
 
-    #[test]
-    fn test_level_up_simple() {
-        let mut div = Divinity::new(1, 1);
-        let tier_up = div.level_up();
-        assert!(!tier_up);
-        assert_eq!(div.tier, 1);
-        assert_eq!(div.level, 2);
-    }
 
-    #[test]
-    fn test_level_up_tier() {
-        let mut div = Divinity::new(1, 99);
-        let tier_up = div.level_up();
-        assert!(tier_up);
-        assert_eq!(div.tier, 2);
-        assert_eq!(div.level, 1);
-    }
-
-    #[test]
-    fn test_level_up_tier_high() {
-        let mut div = Divinity::new(10, 99);
-        let tier_up = div.level_up();
-        assert!(tier_up);
-        assert_eq!(div.tier, 11);
-        assert_eq!(div.level, 1);
-    }
 }
