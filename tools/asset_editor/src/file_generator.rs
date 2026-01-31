@@ -186,6 +186,37 @@ pub fn save_autopsy_files(
     })
 }
 
+// ==================== Bonus Stats Generators ====================
+
+/// Generates the .stats.ron file content.
+pub fn generate_bonus_stats_ron(data: &crate::models::BonusStatsFormData) -> String {
+    to_ron(&data.to_definition())
+}
+
+/// Saves bonus stats file to the specified assets directory.
+pub fn save_bonus_stats_file(
+    data: &crate::models::BonusStatsFormData,
+    assets_dir: &Path,
+) -> Result<String, std::io::Error> {
+    // Generate content
+    let content = generate_bonus_stats_ron(data);
+
+    // Build paths
+    // assets/stats/
+    let stats_dir = assets_dir.join("stats");
+
+    // Ensure directory exists
+    std::fs::create_dir_all(&stats_dir)?;
+
+    // Build file path
+    let file_path = stats_dir.join(data.filename());
+
+    // Write file
+    std::fs::write(&file_path, content)?;
+
+    Ok(file_path.display().to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use {

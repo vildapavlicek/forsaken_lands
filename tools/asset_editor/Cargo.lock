@@ -360,6 +360,8 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bonus_stats",
+ "bonus_stats_assets",
+ "bonus_stats_resources",
  "divinity_components",
  "eframe",
  "portal_assets",
@@ -1946,6 +1948,36 @@ dependencies = [
 
 [[package]]
 name = "bonus_stats"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "bonus_stats_assets",
+ "bonus_stats_events",
+ "bonus_stats_resources",
+ "states",
+ "unlocks_events",
+]
+
+[[package]]
+name = "bonus_stats_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bonus_stats_resources",
+ "serde",
+]
+
+[[package]]
+name = "bonus_stats_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bonus_stats_resources",
+]
+
+[[package]]
+name = "bonus_stats_resources"
 version = "0.1.0"
 dependencies = [
  "bevy",
@@ -5360,6 +5392,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "states"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5822,6 +5861,13 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "serde",
+]
+
+[[package]]
+name = "unlocks_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]
