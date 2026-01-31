@@ -13,9 +13,23 @@ pub struct Dead;
 #[reflect(Component)]
 pub struct MovementSpeed(pub f32);
 
+/// Represents the maximum duration an entity remains in the world before escaping.
+///
+/// This component implements a "time pressure" mechanic, requiring players to defeat
+/// enemies within a specific window to gain rewards. If the timer expires, the entity
+/// "escapes" (despawns safely via `EnemyEscaped` event) rather than being killed.
+///
+/// # Usage
+/// - **Lifecycle System**: `manage_enemy_lifecycle` (in `PortalsPlugin`) queries this component
+///   to tick the timer and trigger the escape sequence.
+/// - **Progression**: `apply_blessing_to_lifetime` (in `PortalsPlugin`) extends the duration
+///   based on unlocked blessings (e.g., `IncreaseMonsterLifetime`).
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
-pub struct Lifetime(pub Timer);
+pub struct Lifetime(
+    /// Timer tracking remaining duration until escape.
+    pub Timer,
+);
 
 /// Represents the vitality and durability of an entity (e.g., Enemy, Boss).
 ///
