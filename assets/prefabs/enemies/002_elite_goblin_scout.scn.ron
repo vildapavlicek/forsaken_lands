@@ -7,7 +7,7 @@
         "enemy_components::MonsterId": ("elite_goblin_scout"),
         "enemy_components::EnemyRange": CloseRange,
         "shared_components::DisplayName": ("Elite Goblin Scout"),
-        "enemy_components::Health": (current: 1.25, max: 1.25),
+        "enemy_components::Health": (current: 2.2, max: 2.2),
         "enemy_components::MovementSpeed": (185.0),
         "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 5, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
         "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),

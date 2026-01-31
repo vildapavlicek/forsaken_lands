@@ -1,0 +1,19 @@
+(
+  resources: {},
+  entities: {
+    1: (
+      components: {
+        "enemy_components::Enemy": (),
+        "enemy_components::MonsterId": ("boss_worg_rider"),
+        "enemy_components::EnemyRange": CloseRange,
+        "shared_components::DisplayName": ("Boss Worg Rider"),
+        "enemy_components::Health": (current: 35.0, max: 35.0),
+        "enemy_components::MovementSpeed": (190.0),
+        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 10, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
+        "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.2, green: 0.0, blue: 0.0, alpha: 1.0)), custom_size: Some((32.0, 32.0))),
+        "enemy_components::Drops": ([(id: "bones", value: 20, chance: 1.0), (id: "xykego", value: 10, chance: 1.0), (id: "boss_essence", value: 1, chance: 1.0)]),
+      },
+    ),
+  },
+)

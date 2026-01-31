@@ -63,6 +63,6 @@ Next level unlock: warrior autopsy, bone crafting
 
 # Level 7
 Enemies: Goblin Defender, Goblin Archer
-Research: autopsies, pile of bones (400)
+Research: autopsies, pile of bones (400), vision (research), bone idol (craft)
 
-Next level unlock: research pile of bones
+Next level unlock: entropy (resource)
