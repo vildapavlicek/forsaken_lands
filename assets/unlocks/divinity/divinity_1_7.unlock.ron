@@ -8,7 +8,7 @@
         Value(
             topic: "divinity",
             op: Ge,
-            target: 107.0,
+            target: 106.0,
         ),
         Completed(
             topic: "research:autopsy_goblin_warrior",

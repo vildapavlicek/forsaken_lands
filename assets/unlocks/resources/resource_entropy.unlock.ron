@@ -1,0 +1,7 @@
+(
+    id: "resource_unlock_entropy",
+    display_name: Some("Entropy Resource"),
+    reward_id: "resource:entropy",
+    condition: Completed(topic: "craft:bone_idol"),
+)
+

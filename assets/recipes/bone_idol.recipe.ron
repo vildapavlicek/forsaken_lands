@@ -4,8 +4,7 @@
     category: Construction,
     craft_time: 5.0,
     cost: {
-        "bones": 50,
-        "xykego": 5,
+        "bones": 100,
     },
     outcomes: [],
 )

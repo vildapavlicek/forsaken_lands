@@ -1,8 +1,10 @@
 (
     id: "divinity_1_8",
     display_name: Some("Divinity Tier 1 Level 8"),
-    condition: Completed(
-        topic: "research:bone_pile_ii",
+    condition: Value(
+        topic: "resource:entropy",
+        op: Ge,
+        target: 1.0,
     ),
     reward_id: "divinity:1-8",
 )

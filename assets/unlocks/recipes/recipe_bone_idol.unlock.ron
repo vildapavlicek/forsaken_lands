@@ -1,0 +1,8 @@
+(
+    id: "recipe_bone_idol_unlock",
+    display_name: Some("Bone Idol"),
+    condition: Completed(
+        topic: "research:vision",
+    ),
+    reward_id: "recipe:bone_idol",
+)

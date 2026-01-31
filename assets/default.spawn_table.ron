@@ -132,5 +132,29 @@
             ]),
             weight: 35,
         ),
+        (
+            condition: Specific((
+                tier: 1,
+                level: 7,
+            )),
+            spawn_type: Group([
+                "goblin_defender",
+                "goblin_defender",
+                "goblin_archer",
+            ]),
+            weight: 100,
+        ),
+        (
+            condition: Specific((
+                tier: 1,
+                level: 7,
+            )),
+            spawn_type: Group([
+                "goblin_defender",
+                "goblin_archer",
+                "goblin_archer",
+            ]),
+            weight: 100,
+        ),
     ],
 )
