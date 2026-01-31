@@ -7,3 +7,8 @@ edition = "2024"
 bevy.workspace = true
 bonus_stats_resources.workspace = true
 bonus_stats_events.workspace = true
+bonus_stats_assets.workspace = true
+unlocks_events.workspace = true
+states.workspace = true
+bevy_common_assets = { version = "0.15", features = ["ron"] }
+

@@ -1,0 +1,9 @@
+[package]
+name = "bonus_stats_assets"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+serde = { version = "1", features = ["derive"] }
+bonus_stats_resources.workspace = true

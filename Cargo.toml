@@ -36,6 +36,7 @@ members = [
   "game_assets/research_assets",
   "game_assets/unlocks_assets",
   "game_assets/weapon_assets",
+  "game_assets/bonus_stats_assets",
   "growth",
   "heroes",
   "loading",
@@ -61,7 +62,7 @@ members = [
   "unlocks",
   "village",
   "wallet",
-  "weapon_factory",
+  "weapon_factory", "game_assets/bonus_stats_assets",
 ]
 
 [workspace.dependencies]
@@ -72,6 +73,7 @@ blessings_ui = { path = "ui/blessings_ui" }
 bonus_stats = { path = "bonus_stats" }
 bonus_stats_resources = { path = "resources/bonus_stats_resources" }
 bonus_stats_events = { path = "events/bonus_stats_events" }
+bonus_stats_assets = { path = "game_assets/bonus_stats_assets" }
 buildings = { path = "buildings" }
 buildings_assets = { path = "game_assets/buildings_assets" }
 buildings_components = { path = "components/buildings_components" }
