@@ -8,6 +8,8 @@ resolver = "2"
 members = [
   "blessings",
   "bonus_stats",
+  "resources/bonus_stats_resources",
+  "events/bonus_stats_events",
   "buildings",
   "components/buildings_components",
   "components/crafting_components",
@@ -20,7 +22,7 @@ members = [
   "components/unlocks_components",
   "components/village_components",
   "core",
-  "crafting",
+  "crafting", "events/bonus_stats_events",
   "events/crafting_events",
 
   "events/enemy_events",
@@ -38,7 +40,7 @@ members = [
   "heroes",
   "loading",
   "portals",
-  "research",
+  "research", "resources/bonus_stats_resources",
   "resources/crafting_resources",
   "resources/enemy_resources",
   "resources/unlocks_resources", "resources/village_resources",
@@ -68,6 +70,8 @@ bevy_common_assets = { version = "0.15", features = ["ron"] }
 blessings = { path = "blessings" }
 blessings_ui = { path = "ui/blessings_ui" }
 bonus_stats = { path = "bonus_stats" }
+bonus_stats_resources = { path = "resources/bonus_stats_resources" }
+bonus_stats_events = { path = "events/bonus_stats_events" }
 buildings = { path = "buildings" }
 buildings_assets = { path = "game_assets/buildings_assets" }
 buildings_components = { path = "components/buildings_components" }

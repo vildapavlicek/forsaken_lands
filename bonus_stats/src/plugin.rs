@@ -1,4 +1,5 @@
-use crate::{events::*, BonusStats, StatBonus};
+use bonus_stats_events::*;
+use bonus_stats_resources::{BonusStats, StatBonus};
 use bevy::prelude::*;
 
 pub struct BonusStatsPlugin;

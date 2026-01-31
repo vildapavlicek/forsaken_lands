@@ -1678,6 +1678,23 @@ name = "bonus_stats"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bonus_stats_events",
+ "bonus_stats_resources",
+]
+
+[[package]]
+name = "bonus_stats_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bonus_stats_resources",
+]
+
+[[package]]
+name = "bonus_stats_resources"
+version = "0.1.0"
+dependencies = [
+ "bevy",
  "serde",
 ]
 

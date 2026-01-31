@@ -1,4 +1,4 @@
-use crate::StatMode;
+use bonus_stats_resources::StatMode;
 use bevy::prelude::*;
 
 #[derive(Event, Debug, Clone)]
