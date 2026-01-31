@@ -448,6 +448,8 @@ fn evaluate_unlocks(
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     divinity_query: Query<&Divinity, With<Village>>,
+    claimed_divinity: Res<village_resources::DivinityUnlockState>,
+    unlock_assets: Res<Assets<UnlockDefinition>>,
     research_state: Res<research::ResearchState>,
     research_query: Query<&research::ResearchNode>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
@@ -464,12 +466,16 @@ fn evaluate_unlocks(
         });
     }
 
-    // Trigger ValueChanged for all kill counts from encyclopedia
+    // Trigger ValueChanged for all kill/escape counts from encyclopedia
     if let Ok(encyclopedia) = encyclopedia_query.single() {
         for (monster_id, entry) in encyclopedia.inner.iter() {
             commands.trigger(ValueChanged {
                 topic: format!("kills:{}", monster_id),
                 value: entry.kill_count as f32,
+            });
+            commands.trigger(ValueChanged {
+                topic: format!("escapes:{}", monster_id),
+                value: entry.escape_count as f32,
             });
         }
     }
@@ -478,7 +484,7 @@ fn evaluate_unlocks(
     if let Ok(divinity) = divinity_query.single() {
         // Encode divinity as tier*100 + level for comparison
         commands.trigger(ValueChanged {
-            topic: "divinity:max".to_string(),
+            topic: "divinity".to_string(),
             value: (divinity.tier * 100 + divinity.level) as f32,
         });
     }
@@ -492,6 +498,25 @@ fn evaluate_unlocks(
                     topic: format!("research:{}", node.id),
                 });
             }
+        }
+    }
+
+    // Trigger UnlockAchieved for claimed divinity levels
+    // This allows subsequent divinity levels (which depend on previous ones) to be evaluated correctly
+    for unlock_id in &claimed_divinity.claimed {
+        // Find definitions to get correct display name and reward id
+        // Inefficient lookup but acceptable for loading screen with < 1000 items
+        if let Some(def) = unlock_assets
+            .iter()
+            .map(|(_, def)| def)
+            .find(|d| &d.id == unlock_id)
+        {
+            debug!(unlock_id = %unlock_id, "Restoring claimed divinity unlock status");
+            commands.trigger(unlocks_events::UnlockAchieved {
+                unlock_id: def.id.clone(),
+                display_name: def.display_name.clone(),
+                reward_id: def.reward_id.clone(),
+            });
         }
     }
 

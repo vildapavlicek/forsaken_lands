@@ -23,6 +23,7 @@ unlocks.workspace = true
 unlocks_resources.workspace = true
 village.workspace = true
 village_components.workspace = true
+village_resources.workspace = true
 wallet.workspace = true
 weapon_factory_events.workspace = true
 
