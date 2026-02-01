@@ -1,0 +1,10 @@
+(
+    id: "autopsy_goblin",
+    name: "Autopsy: goblin",
+    description: "They are green. Ugly. Pointy ears. Ugly. Small. And really ugly.",
+    cost: {
+        "bones": 30,
+    },
+    time_required: 40.0,
+    max_repeats: 1,
+)
