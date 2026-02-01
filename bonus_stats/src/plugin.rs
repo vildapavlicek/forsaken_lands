@@ -1,3 +1,4 @@
+use bevy::asset::AssetEvent;
 use bevy::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 use bonus_stats_assets::StatBonusDefinition;
@@ -22,7 +23,7 @@ impl Plugin for BonusStatsPlugin {
             .add_observer(on_status_completed)
             .add_systems(
                 Update,
-                update_bonus_trigger_map.run_if(resource_changed::<Assets<StatBonusDefinition>>),
+                update_bonus_trigger_map,
             )
             .add_systems(OnEnter(states::GameState::Loading), clear_bonus_stats);
     }
@@ -40,18 +41,23 @@ struct BonusTriggerMap {
     triggers: std::collections::HashMap<String, std::collections::HashMap<String, Vec<StatBonus>>>,
 }
 
-/// Updates the trigger map when definition assets are loaded/modified\
-/// Rebuilds the map from scratch to ensure consistency.
+/// Updates the trigger map when definition assets are loaded/modified
+/// Rebuilds the map from scratch only when relevant events occur.
 fn update_bonus_trigger_map(
+    mut events: MessageReader<AssetEvent<StatBonusDefinition>>,
     assets: Res<Assets<StatBonusDefinition>>,
     mut map: ResMut<BonusTriggerMap>,
 ) {
-    if assets.is_empty() {
+    let mut changed = false;
+    for _ in events.read() {
+        changed = true;
+    }
+
+    if !changed {
         return;
     }
 
-    // We ideally want to incremental update, but rebuilding is safer/simpler without events.
-    // If performance becomes an issue, we can revisit AssetEvents.
+    // We ideally want to incremental update, but rebuilding is safer/simpler.
     map.triggers.clear();
 
     for (_, def) in assets.iter() {
