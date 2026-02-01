@@ -83,7 +83,7 @@ fn spawn_blessings_ui(
                 BlessingsUiRoot,
             ))
             .with_children(|container| {
-                spawn_scrollable_container(container, BlessingsItemsContainer);
+                spawn_scrollable_container(container, BlessingsItemsContainer, |_| {});
             });
     });
 }

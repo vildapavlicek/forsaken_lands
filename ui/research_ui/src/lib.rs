@@ -343,7 +343,7 @@ pub fn spawn_research_content(parent: &mut ChildSpawnerCommands, data: ResearchD
             });
 
             // Scrollable container for research items
-            spawn_scrollable_container(content, ResearchItemsContainer);
+            spawn_scrollable_container(content, ResearchItemsContainer, |_| {});
         });
 
     // Populate with initial research (queue command)

@@ -231,7 +231,7 @@ fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingData)
             });
 
             // Scrollable container for recipe items
-            spawn_scrollable_container(content, RecipesItemsContainer);
+            spawn_scrollable_container(content, RecipesItemsContainer, |_| {});
         });
 
     // Populate with initial recipes (queue command)
