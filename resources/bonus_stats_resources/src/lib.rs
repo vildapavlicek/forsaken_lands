@@ -66,6 +66,7 @@ impl BonusStat {
 
 /// Resource to manage global **bonuses**.
 #[derive(Resource, Default, Debug, Reflect)]
+#[reflect(Resource)]
 pub struct BonusStats {
     /// Stores aggregated bonuses for each key.
     /// Key example: "damage", "damage:melee".

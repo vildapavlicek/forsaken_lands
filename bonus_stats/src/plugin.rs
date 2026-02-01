@@ -11,10 +11,9 @@ impl Plugin for BonusStatsPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<BonusStats>()
             .register_type::<BonusStats>()
+            .init_resource::<BonusStats>()
             .init_resource::<BonusTriggerMap>()
-            .add_plugins(RonAssetPlugin::<StatBonusDefinition>::new(&[
-                "stats.ron",
-            ]))
+            .add_plugins(RonAssetPlugin::<StatBonusDefinition>::new(&["stats.ron"]))
             .add_observer(on_add_stat_bonus)
             .add_observer(on_remove_stat_bonus)
             .add_observer(on_increase_stat_bonus)
@@ -35,7 +34,7 @@ fn clear_bonus_stats(mut stats: ResMut<BonusStats>) {
 }
 
 /// Lookup map to quickly find bonuses for a given trigger (topic)
-#[derive(Resource, Default)]
+#[derive(Debug, Resource, Default)]
 struct BonusTriggerMap {
     /// Mapping from Trigger ID (e.g. "research:steel_sword") to map of key -> bonuses
     triggers: std::collections::HashMap<String, std::collections::HashMap<String, Vec<StatBonus>>>,
@@ -50,21 +49,29 @@ fn update_bonus_trigger_map(
     if assets.is_empty() {
         return;
     }
-    
+
     // We ideally want to incremental update, but rebuilding is safer/simpler without events.
     // If performance becomes an issue, we can revisit AssetEvents.
     map.triggers.clear();
-    
+
     for (_, def) in assets.iter() {
         map.triggers.insert(def.id.clone(), def.bonuses.clone());
     }
-    debug!("Rebuilt BonusTriggerMap with {} entries", map.triggers.len());
+    debug!(
+        "Rebuilt BonusTriggerMap with {} entries",
+        map.triggers.len()
+    );
 }
 
 /// Listens for StatusCompleted events (from Research, Quests, etc.)
 /// and applies corresponding bonuses.
-fn on_status_completed(trigger: On<StatusCompleted>, mut stats: ResMut<BonusStats>, map: Res<BonusTriggerMap>) {
+fn on_status_completed(
+    trigger: On<StatusCompleted>,
+    mut stats: ResMut<BonusStats>,
+    map: Res<BonusTriggerMap>,
+) {
     let event = trigger.event();
+    trace!(?map, %event.topic, "observed event for topic");
     if let Some(bonuses_map) = map.triggers.get(&event.topic) {
         info!("Applying bonuses for completed topic: {}", event.topic);
         for (stat_key, bonus_list) in bonuses_map {
@@ -74,9 +81,6 @@ fn on_status_completed(trigger: On<StatusCompleted>, mut stats: ResMut<BonusStat
         }
     }
 }
-
-
-
 
 fn on_add_stat_bonus(trigger: On<AddStatBonus>, mut stats: ResMut<BonusStats>) {
     let event = trigger.event();

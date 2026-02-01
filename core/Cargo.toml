@@ -7,6 +7,7 @@ edition = "2024"
 bevy.workspace = true
 blessings = { path = "../blessings" }
 blessings_ui = { path = "../ui/blessings_ui" }
+bonus_stats.workspace = true
 buildings.workspace = true
 buildings_assets.workspace = true
 buildings_components.workspace = true
