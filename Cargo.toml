@@ -8,6 +8,8 @@ resolver = "2"
 members = [
   "blessings",
   "bonus_stats",
+  "resources/bonus_stats_resources",
+  "events/bonus_stats_events",
   "buildings",
   "components/buildings_components",
   "components/crafting_components",
@@ -20,9 +22,9 @@ members = [
   "components/unlocks_components",
   "components/village_components",
   "core",
-  "crafting",
+  "crafting", "events/bonus_stats_events",
   "events/crafting_events",
-  "events/divinity_events",
+
   "events/enemy_events",
   "events/equipment_events",
   "events/hero_events",
@@ -34,14 +36,15 @@ members = [
   "game_assets/research_assets",
   "game_assets/unlocks_assets",
   "game_assets/weapon_assets",
+  "game_assets/bonus_stats_assets",
   "growth",
   "heroes",
   "loading",
   "portals",
-  "research",
+  "research", "resources/bonus_stats_resources",
   "resources/crafting_resources",
   "resources/enemy_resources",
-  "resources/unlocks_resources",
+  "resources/unlocks_resources", "resources/village_resources",
   "save_load",
   "states",
   "system_schedule",
@@ -59,7 +62,7 @@ members = [
   "unlocks",
   "village",
   "wallet",
-  "weapon_factory",
+  "weapon_factory", "game_assets/bonus_stats_assets",
 ]
 
 [workspace.dependencies]
@@ -68,6 +71,9 @@ bevy_common_assets = { version = "0.15", features = ["ron"] }
 blessings = { path = "blessings" }
 blessings_ui = { path = "ui/blessings_ui" }
 bonus_stats = { path = "bonus_stats" }
+bonus_stats_resources = { path = "resources/bonus_stats_resources" }
+bonus_stats_events = { path = "events/bonus_stats_events" }
+bonus_stats_assets = { path = "game_assets/bonus_stats_assets" }
 buildings = { path = "buildings" }
 buildings_assets = { path = "game_assets/buildings_assets" }
 buildings_components = { path = "components/buildings_components" }
@@ -78,7 +84,7 @@ crafting_events = { path = "events/crafting_events" }
 crafting_resources = { path = "resources/crafting_resources" }
 crafting_ui = { path = "ui/crafting_ui" }
 divinity_components = { path = "components/divinity_components" }
-divinity_events = { path = "events/divinity_events" }
+
 enemy_components = { path = "components/enemy_components" }
 enemy_encyclopedia = { path = "ui/enemy_encyclopedia" }
 enemy_events = { path = "events/enemy_events" }
@@ -114,6 +120,7 @@ unlocks_events = { path = "events/unlocks_events" }
 unlocks_resources = { path = "resources/unlocks_resources" }
 village = { path = "village" }
 village_components = { path = "components/village_components" }
+village_resources = { path = "resources/village_resources" }
 village_ui = { path = "ui/village_ui" }
 wallet = { path = "wallet" }
 weapon_assets = { path = "game_assets/weapon_assets" }
@@ -123,8 +130,9 @@ widgets = { path = "ui/widgets" }
 
 [dependencies]
 bevy.workspace = true
+bevy-inspector-egui = "0.36.0"
 core.workspace = true
 states.workspace = true
 
-[target.'cfg(debug_assertions)'.dependencies]
+[dev-dependencies]
 bevy = { workspace = true, features = ["dev"] }

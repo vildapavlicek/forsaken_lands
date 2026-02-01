@@ -1,0 +1,11 @@
+(
+    id: "autopsy_goblin_defender",
+    name: "Autopsy: goblin_defender",
+    description: "They are armored, with shields. Do we have enough firepower?",
+    cost: {
+        "bones": 30,
+        "xykego": 20,
+    },
+    time_required: 90.0,
+    max_repeats: 1,
+)

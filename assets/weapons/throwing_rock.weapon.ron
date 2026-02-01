@@ -8,6 +8,7 @@
     tags: [
         "damage",
         "damage:ranged",
+        "damage:rocks",
         "damage:throwing_rock",
     ],
 )

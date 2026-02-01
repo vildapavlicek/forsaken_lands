@@ -362,20 +362,27 @@ pub fn spawn_close_button<M: Component>(parent: &mut ChildSpawnerCommands, marke
 // ============================================================================
 
 /// Spawns a scrollable flex column container for list content.
-pub fn spawn_scrollable_container<M: Component>(parent: &mut ChildSpawnerCommands, marker: M) {
-    parent.spawn((
-        Node {
-            flex_direction: FlexDirection::Column,
-            overflow: Overflow::scroll_y(),
-            flex_grow: 1.0,
-            flex_basis: Val::Px(0.0),
-            height: Val::Percent(100.0),
-            ..default()
-        },
-        ScrollPosition::default(),
-        Interaction::default(),
-        marker,
-    ));
+pub fn spawn_scrollable_container<M: Component>(
+    parent: &mut ChildSpawnerCommands,
+    marker: M,
+    spawn_children: impl FnOnce(&mut ChildSpawnerCommands),
+) -> Entity {
+    parent
+        .spawn((
+            Node {
+                flex_direction: FlexDirection::Column,
+                overflow: Overflow::scroll_y(),
+                flex_grow: 1.0,
+                flex_basis: Val::Px(0.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            ScrollPosition::default(),
+            Interaction::default(),
+            marker,
+        ))
+        .with_children(spawn_children)
+        .id()
 }
 
 // ============================================================================

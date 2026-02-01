@@ -18,6 +18,7 @@ unlocks_assets.workspace = true
 unlocks_events.workspace = true
 unlocks_resources.workspace = true
 village_components.workspace = true
+village_resources.workspace = true
 wallet.workspace = true
 research_assets.workspace = true
 weapon_assets.workspace = true

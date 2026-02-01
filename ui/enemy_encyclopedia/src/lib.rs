@@ -79,6 +79,23 @@ pub fn spawn_enemy_encyclopedia_content(
     details_cache: &EnemyDetailsCache,
     wallet: &Wallet,
 ) {
+    // Collect and sort entries
+    let mut entries: Vec<(&String, &village_components::EncyclopediaEntry)> =
+        encyclopedia.inner.iter().collect();
+    entries.sort_by_key(|(_, entry)| entry.encounter_order);
+
+    // Use widgets scrollable container
+    widgets::spawn_scrollable_container(parent, EncyclopediaListContainer, |scroll_content| {
+        populate_encyclopedia_list(scroll_content, &entries, details_cache, wallet);
+    });
+}
+
+fn populate_encyclopedia_list(
+    parent: &mut ChildSpawnerCommands,
+    entries: &[(&String, &village_components::EncyclopediaEntry)],
+    details_cache: &EnemyDetailsCache,
+    wallet: &Wallet,
+) {
     parent
         .spawn((
             Node {
@@ -87,7 +104,6 @@ pub fn spawn_enemy_encyclopedia_content(
                 padding: UiRect::all(Val::Px(10.0)),
                 ..default()
             },
-            EncyclopediaListContainer,
         ))
         .with_children(|list| {
             // Title
@@ -115,11 +131,11 @@ pub fn spawn_enemy_encyclopedia_content(
             })
             .with_children(|grid| {
                 // List of enemies
-                for (enemy_id, entry) in &encyclopedia.inner {
+                for (enemy_id, entry) in entries {
                     spawn_enemy_card(grid, entry, enemy_id, details_cache, wallet);
                 }
 
-                if encyclopedia.inner.is_empty() {
+                if entries.is_empty() {
                     grid.spawn((
                         Text::new("No enemies encountered yet."),
                         TextColor(Color::srgb(0.5, 0.5, 0.5)),
@@ -283,47 +299,13 @@ fn update_encyclopedia_ui(
         commands.entity(child).despawn();
     }
 
+    // Collect and sort entries
+    let mut entries: Vec<(&String, &village_components::EncyclopediaEntry)> =
+        encyclopedia.inner.iter().collect();
+    entries.sort_by_key(|(_, entry)| entry.encounter_order);
+
     // Repopulate
-    commands.entity(container).with_children(|list| {
-        // Title
-        list.spawn((
-            Text::new("Enemy Encyclopedia"),
-            TextFont {
-                font_size: 24.0,
-                ..default()
-            },
-            TextColor(Color::WHITE),
-            Node {
-                margin: UiRect::bottom(Val::Px(10.0)),
-                ..default()
-            },
-        ));
-
-        // Grid Container for cards
-        list.spawn(Node {
-            flex_direction: FlexDirection::Row,
-            flex_wrap: FlexWrap::Wrap,
-            column_gap: Val::Px(10.0),
-            row_gap: Val::Px(10.0),
-            width: Val::Percent(100.0),
-            ..default()
-        })
-        .with_children(|grid| {
-            // List of enemies
-            for (enemy_id, entry) in &encyclopedia.inner {
-                spawn_enemy_card(grid, entry, enemy_id, &details_cache, &wallet);
-            }
-
-            if encyclopedia.inner.is_empty() {
-                grid.spawn((
-                    Text::new("No enemies encountered yet."),
-                    TextColor(Color::srgb(0.5, 0.5, 0.5)),
-                    TextFont {
-                        font_size: 16.0,
-                        ..default()
-                    },
-                ));
-            }
-        });
+    commands.entity(container).with_children(|scroll_content| {
+        populate_encyclopedia_list(scroll_content, &entries, &details_cache, &wallet);
     });
 }

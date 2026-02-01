@@ -1,0 +1,13 @@
+(
+    id: "divinity_1_7",
+    display_name: Some("Divinity Tier 1 Level 7"),
+    condition: Or([
+        Completed(
+            topic: "research:bone_bow",
+        ),
+        Completed(
+            topic: "research:bone_sword",
+        ),
+    ]),
+    reward_id: "divinity:1-7",
+)

@@ -81,7 +81,7 @@ pub fn spawn_research_entities(
     }
 }
 
-/// Listens for UnlockAchieved events with research_ prefix
+/// Listens for UnlockAchieved events with `research:` prefix
 pub fn on_unlock_achieved(
     trigger: On<unlocks_events::UnlockAchieved>,
     mut commands: Commands,

@@ -1,0 +1,8 @@
+(
+    id: "sharp_rocks",
+    name: "Sharpened Rocks",
+    description: "If we sharpen our rocks, they will do more damage.",
+    cost: {},
+    time_required: 90.0,
+    max_repeats: 1,
+)

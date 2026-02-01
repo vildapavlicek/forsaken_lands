@@ -3,6 +3,8 @@ use {
     serde::{Deserialize, Serialize},
     unlocks_assets::{ConditionNode, UnlockDefinition},
     unlocks_components,
+    bonus_stats_assets::StatBonusDefinition,
+    bonus_stats_resources::StatBonus,
 };
 
 /// A single resource cost entry.
@@ -105,6 +107,8 @@ pub enum LeafCondition {
         level: u32,
         op: CompareOp,
     },
+    /// Craft condition: triggers when player crafts a specific recipe
+    Craft { recipe_id: String },
 }
 
 impl Default for LeafCondition {
@@ -120,11 +124,12 @@ impl LeafCondition {
             LeafCondition::Kills { .. } => "Kills",
             LeafCondition::Resource { .. } => "Resource",
             LeafCondition::Divinity { .. } => "Divinity",
+            LeafCondition::Craft { .. } => "Craft",
         }
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Unlock", "Kills", "Resource", "Divinity"]
+        vec!["Unlock", "Kills", "Resource", "Divinity", "Craft"]
     }
 
     pub fn from_type_name(name: &str) -> Self {
@@ -143,6 +148,9 @@ impl LeafCondition {
                 tier: 1,
                 level: 1,
                 op: CompareOp::Ge,
+            },
+            "Craft" => LeafCondition::Craft {
+                recipe_id: String::new(),
             },
             _ => LeafCondition::default(),
         }
@@ -182,6 +190,9 @@ impl LeafCondition {
                     val
                 )
             }
+            LeafCondition::Craft { recipe_id } => {
+                format!("Completed(topic: \"craft:{}\")", recipe_id)
+            }
         }
     }
 
@@ -217,6 +228,11 @@ impl LeafCondition {
                     errors.push("Level must be 1-99".to_string());
                 }
             }
+            LeafCondition::Craft { recipe_id } => {
+                if recipe_id.trim().is_empty() {
+                    errors.push("Recipe ID is required".to_string());
+                }
+            }
         }
         errors
     }
@@ -247,6 +263,9 @@ impl LeafCondition {
                 topic: "divinity".to_string(),
                 op: (*op).into(),
                 target: (tier * 100 + level) as f32,
+            },
+            LeafCondition::Craft { recipe_id } => ConditionNode::Completed {
+                topic: format!("craft:{}", recipe_id),
             },
         }
     }
@@ -391,6 +410,8 @@ impl From<&ConditionNode> for LeafCondition {
                 } else if let Some(id) = topic.strip_prefix("unlock:") {
                     // Handle older or alternative unlock topics if necessary, or just treat as Unlock
                     LeafCondition::Unlock { id: id.to_string() }
+                } else if let Some(id) = topic.strip_prefix("craft:") {
+                    LeafCondition::Craft { recipe_id: id.to_string() }
                 } else {
                     // Fallback or generic completion
                     LeafCondition::Unlock { id: topic.clone() }
@@ -1137,5 +1158,98 @@ impl RecipeFormData {
             costs,
             outcomes: def.outcomes.clone(),
         }
+    }
+}
+
+// ==================== Bonus Stats Form Data ====================
+
+#[derive(Clone, Debug, Default)]
+pub struct BonusEntry {
+    pub key: String,
+    pub bonus: StatBonus,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct BonusStatsFormData {
+    /// The trigger topic (e.g. "research:steel_sword")
+    pub id: String,
+    /// List of bonuses to apply (flattened for UI)
+    pub bonuses: Vec<BonusEntry>,
+    /// Filename (without extension)
+    pub filename: String,
+}
+
+impl BonusStatsFormData {
+    pub fn new() -> Self {
+        Self {
+            id: String::new(),
+            bonuses: Vec::new(),
+            filename: String::new(),
+        }
+    }
+
+    pub fn validate(&self) -> Vec<String> {
+        let mut errors = Vec::new();
+        if self.id.trim().is_empty() {
+             errors.push("Trigger ID is required".to_string());
+        }
+        if self.bonuses.is_empty() {
+             errors.push("At least one bonus is required".to_string());
+        }
+        for (i, entry) in self.bonuses.iter().enumerate() {
+            if entry.key.trim().is_empty() {
+                errors.push(format!("Bonus #{}: Key is required (e.g. 'damage')", i + 1));
+            }
+            if entry.bonus.value == 0.0 {
+                 errors.push(format!("Bonus #{}: Value cannot be 0", i + 1));
+            }
+        }
+        errors
+    }
+
+    pub fn to_definition(&self) -> StatBonusDefinition {
+        let mut map: std::collections::HashMap<String, Vec<StatBonus>> = std::collections::HashMap::new();
+        
+        for entry in &self.bonuses {
+            if !entry.key.is_empty() {
+                map.entry(entry.key.clone())
+                   .or_default()
+                   .push(entry.bonus.clone());
+            }
+        }
+
+        StatBonusDefinition {
+            id: self.id.clone(),
+            bonuses: map,
+        }
+    }
+
+    pub fn from_definition(def: &StatBonusDefinition, filename: String) -> Self {
+        let mut bonuses = Vec::new();
+        // Flatten the map into a list of entries
+        // Sort keys for consistent UI order
+        let mut keys: Vec<&String> = def.bonuses.keys().collect();
+        keys.sort();
+        
+        for key in keys {
+            if let Some(list) = def.bonuses.get(key) {
+                for bonus in list {
+                    bonuses.push(BonusEntry {
+                        key: key.clone(),
+                        bonus: bonus.clone(),
+                    });
+                }
+            }
+        }
+
+        Self {
+            id: def.id.clone(),
+            bonuses,
+            filename,
+        }
+    }
+    
+    pub fn filename(&self) -> String {
+        format!("{}.stats.ron", self.filename)
     }
 }

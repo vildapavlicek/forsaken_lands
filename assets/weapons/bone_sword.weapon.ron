@@ -11,6 +11,7 @@
         "damage",
         "damage:melee",
         "damage:bone_sword",
+        "damage:bones",
     ],
     bonuses: {},
 )

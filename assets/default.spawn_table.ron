@@ -1,136 +1,116 @@
 (
     entries: [
+        // --- LEVEL 1 & 2 (Unchanged): Slimes/Critters ---
         (
-            condition: Specific((
-                tier: 1,
-                level: 1,
-            )),
+            condition: Specific((tier: 1, level: 1)),
             spawn_type: Single("siled"),
             weight: 100,
         ),
         (
-            condition: Specific((
-                tier: 1,
-                level: 2,
-            )),
-            spawn_type: Group([
-                "siled",
-                "siled",
-                "siled_alpha",
-            ]),
+            condition: Specific((tier: 1, level: 2)),
+            spawn_type: Group(["siled", "siled", "siled_alpha"]),
             weight: 100,
         ),
+
+        // --- LEVEL 3: Scouts (Scavengers) ---
         (
-            condition: Specific((
-                tier: 1,
-                level: 3,
-            )),
-            spawn_type: Group([
-                "siled",
-                "siled_alpha",
-                "siled",
-            ]),
+            condition: Specific((tier: 1, level: 3)),
+            spawn_type: Group(["siled", "siled_alpha", "siled"]),
             weight: 50,
         ),
         (
-            condition: Specific((
-                tier: 1,
-                level: 3,
-            )),
+            condition: Specific((tier: 1, level: 3)),
             spawn_type: Single("goblin_scout"),
-            weight: 30,
+            weight: 50, // Increased weight, removed other Lvl 3 scout entry to clean up
         ),
+
+        // --- LEVEL 4: The Regulars ---
+        // CHANGED: Moved "goblin" (standard) here from Lvl 5.
+        // Replaced "elite_goblin_scout" (too strong for lvl 4) with normal scouts.
         (
-            condition: Specific((
-                tier: 1,
-                level: 4,
-            )),
-            spawn_type: Group([
-                "siled_alpha",
-                "siled_alpha",
-                "goblin_scout",
-            ]),
-            weight: 60,
-        ),
-        (
-            condition: Specific((
-                tier: 1,
-                level: 4,
-            )),
-            spawn_type: Single("elite_goblin_scout"),
+            condition: Specific((tier: 1, level: 4)),
+            spawn_type: Single("goblin"),
             weight: 40,
         ),
         (
-            condition: Specific((
-                tier: 1,
-                level: 5,
-            )),
-            spawn_type: Single("goblin"),
-            weight: 80,
+            condition: Specific((tier: 1, level: 4)),
+            spawn_type: Group(["goblin_scout", "goblin_scout", "siled_alpha"]),
+            weight: 60,
+        ),
+
+        // --- LEVEL 5: Experienced Fighters ---
+        // CHANGED: Moved "goblin_warrior" down from Lvl 6.
+        // CHANGED: Moved "elite_goblin_scout" here.
+        (
+            condition: Specific((tier: 1, level: 5)),
+            spawn_type: Single("goblin_warrior"),
+            weight: 60,
         ),
         (
-            condition: Specific((
-                tier: 1,
-                level: 3,
-            )),
-            spawn_type: Group([
-                "goblin_scout",
-                "siled",
-                "siled",
-            ]),
+            condition: Specific((tier: 1, level: 5)),
+            spawn_type: Group(["goblin", "elite_goblin_scout"]),
+            weight: 40,
+        ),
+
+        // --- LEVEL 6: The Cavalry (New!) ---
+        // INTRODUCING: Worgs (Beasts) and Riders.
+        // This tests the player's ability to handle Fast/High DPS enemies.
+        (
+            condition: Specific((tier: 1, level: 6)),
+            spawn_type: Single("worg"), // High attack speed, lowish HP
             weight: 50,
         ),
         (
-            condition: Specific((
-                tier: 1,
-                level: 5,
-            )),
+            condition: Specific((tier: 1, level: 6)),
+            spawn_type: Group(["worg", "goblin_rider"]), // Rider is fast and hits hard
+            weight: 50,
+        ),
+
+        // --- LEVEL 7: The Phalanx (Unchanged) ---
+        // These are defensive enemies. Good contrast to the fast Level 6 enemies.
+        (
+            condition: Specific((tier: 1, level: 7)),
+            spawn_type: Group(["goblin_defender", "goblin_defender", "goblin_archer"]),
+            weight: 50,
+        ),
+        (
+            condition: Specific((tier: 1, level: 7)),
+            spawn_type: Group(["goblin_defender", "goblin_archer", "goblin_archer"]),
+            weight: 50,
+        ),
+
+        // --- LEVEL 8: The Heavy Hitters (New!) ---
+        // INTRODUCING: Hobgoblins.
+        // They bridge the gap to Orcs. High HP, heavy hits, slow speed.
+        (
+            condition: Specific((tier: 1, level: 8)),
+            spawn_type: Single("hobgoblin_mauler"), // Uses a 2H weapon
+            weight: 40,
+        ),
+        (
+            condition: Specific((tier: 1, level: 8)),
             spawn_type: Group([
-                "goblin_scout",
-                "goblin_scout",
-                "goblin",
+                "hobgoblin_mauler", 
+                "goblin_rider", // Mixing fast and slow enemies is dangerous
             ]),
-            weight: 20,
+            weight: 60,
+        ),
+
+        // --- LEVEL 9: The Boss (The Mounted Warlord) ---
+        // Combines the "Rider" theme with the "Boss" status.
+        (
+            condition: Specific((tier: 1, level: 9)),
+            spawn_type: Single("boss_worg_rider"), // "Grolnak the Swift" or similar
+            weight: 30, // 30% chance for a 1v1 duel
         ),
         (
-            condition: Specific((
-                tier: 1,
-                level: 1,
-            )),
-            spawn_type: Single("goblin_scout"),
-            weight: 10,
-        ),
-        (
-            condition: Specific((
-                tier: 1,
-                level: 6,
-            )),
-            spawn_type: Single("goblin_warrior"),
-            weight: 70,
-        ),
-        (
-            condition: Specific((
-                tier: 1,
-                level: 6,
-            )),
+            condition: Specific((tier: 1, level: 9)),
             spawn_type: Group([
-                "elite_goblin_scout",
-                "elite_goblin_scout",
-                "goblin",
+                "boss_worg_rider", 
+                "worg_alpha", 
+                "worg_alpha"
             ]),
-            weight: 35,
-        ),
-        (
-            condition: Specific((
-                tier: 1,
-                level: 6,
-            )),
-            spawn_type: Group([
-                "goblin_warrior",
-                "goblin_scout",
-                "goblin_scout",
-            ]),
-            weight: 35,
+            weight: 70, // 70% chance he has his pet pack
         ),
     ],
 )

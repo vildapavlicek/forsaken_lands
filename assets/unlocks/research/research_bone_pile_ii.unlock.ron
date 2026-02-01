@@ -1,0 +1,20 @@
+(
+    id: "research_bone_pile_ii_unlock",
+    display_name: Some("Pile of Bones Research"),
+    condition: And([
+        Value(
+            topic: "divinity",
+            op: Ge,
+            target: 107.0,
+        ),
+        Value(
+            topic: "resource:bones",
+            op: Ge,
+            target: 250.0,
+        ),
+        Completed(
+            topic: "research:bone_pile",
+        ),
+    ]),
+    reward_id: "research:bone_pile_ii",
+)

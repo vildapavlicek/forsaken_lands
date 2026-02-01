@@ -6,7 +6,7 @@ edition = "2024"
 [dependencies]
 bevy.workspace = true
 divinity_components.workspace = true
-divinity_events.workspace = true
+
 portal_components.workspace = true
 states.workspace = true
 village_components.workspace = true

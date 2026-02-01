@@ -1,0 +1,11 @@
+(
+    id: "vision",
+    name: "A god has spoken",
+    description: "God has spoken to us through the bones. His wish shall be fullfilled",
+    cost: {
+        "bones": 150,
+        "xykego": 300,
+    },
+    time_required: 120.0,
+    max_repeats: 1,
+)

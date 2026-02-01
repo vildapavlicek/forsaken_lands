@@ -2,9 +2,9 @@
     id: "divinity_1_5",
     display_name: Some("Divinity Tier 1 Level 5"),
     condition: Value(
-        topic: "kills:elite_goblin_scout",
+        topic: "kills:goblin",
         op: Ge,
-        target: 10.0,
+        target: 20.0,
     ),
     reward_id: "divinity:1-5",
 )

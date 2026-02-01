@@ -10,10 +10,10 @@ use {
             generate_autopsy_research_unlock_ron, generate_divinity_unlock_ron,
             generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
             save_autopsy_files, save_divinity_unlock_file, save_recipe_unlock_file,
-            save_research_files,
+            save_research_files, save_bonus_stats_file, generate_bonus_stats_ron,
         },
         models::{
-            AutopsyFormData, CachedEnemy, CachedWeapon, CompareOp, CraftingOutcomeExt,
+            AutopsyFormData, BonusEntry, BonusStatsFormData, CachedEnemy, CachedWeapon, CompareOp, CraftingOutcomeExt,
             DivinityFormData, LeafCondition, RecipeCategoryExt, RecipeFormData,
             RecipeUnlockFormData, ResearchFormData, ResourceCost, UnlockCondition,
             WeaponDefinitionExt, WeaponTypeExt,
@@ -24,6 +24,8 @@ use {
         },
     },
     divinity_components::Divinity,
+    bonus_stats_assets::StatBonusDefinition,
+    bonus_stats_resources::{StatBonus, StatMode},
     eframe::egui,
     portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
     recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition},
@@ -47,6 +49,7 @@ pub enum EditorTab {
     TimeToKill,
     Autopsy,
     Divinity,
+    BonusStats,
 }
 
 /// Current state of the editor.
@@ -134,6 +137,10 @@ pub struct EditorState {
 
     // Autopsy Tab State
     existing_autopsies: Vec<String>,
+
+    // Bonus Stats Tab
+    bonus_stats_form: BonusStatsFormData,
+    existing_bonus_filenames: Vec<String>,
 }
 
 impl EditorState {
@@ -185,6 +192,9 @@ impl EditorState {
             divinity_form: DivinityFormData::new(),
             existing_divinity_ids: Vec::new(),
             existing_autopsies: Vec::new(),
+
+            bonus_stats_form: BonusStatsFormData::new(),
+            existing_bonus_filenames: Vec::new(),
         }
     }
 
@@ -343,6 +353,15 @@ impl EditorState {
                                     .desired_width(f32::INFINITY),
                             );
                         }
+                        EditorTab::BonusStats => {
+                            ui.label("Bonus Stats File:");
+                            let stats_ron = generate_bonus_stats_ron(&self.bonus_stats_form);
+                            ui.add(
+                                egui::TextEdit::multiline(&mut stats_ron.as_str())
+                                    .font(egui::TextStyle::Monospace)
+                                    .desired_width(f32::INFINITY),
+                            );
+                        }
                     });
                 });
         }
@@ -373,6 +392,7 @@ impl EditorState {
                 ui.selectable_value(&mut self.active_tab, EditorTab::TimeToKill, "⏱ TTK");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Autopsy, "🧬 Autopsy");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Divinity, "✨ Divinity");
+                ui.selectable_value(&mut self.active_tab, EditorTab::BonusStats, "📈 Bonus Stats");
             });
             ui.separator();
 
@@ -387,6 +407,7 @@ impl EditorState {
                 EditorTab::TimeToKill => self.show_ttk_tab(ui),
                 EditorTab::Autopsy => self.show_autopsy_form(ui),
                 EditorTab::Divinity => self.show_divinity_form(ui),
+                EditorTab::BonusStats => self.show_bonus_stats_form(ui),
             });
         });
     }
@@ -515,6 +536,7 @@ impl EditorState {
             "research",
             &self.existing_research_ids,
             &self.existing_monster_ids,
+            &self.existing_recipe_ids,
             &mut self.research_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -630,6 +652,7 @@ impl EditorState {
             "recipe",
             &self.existing_research_ids,
             &self.existing_monster_ids,
+            &self.existing_recipe_ids,
             &mut self.recipe_unlock_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -1045,6 +1068,7 @@ fn show_condition_editor(
     id_prefix: &str,
     existing_research_ids: &[String],
     existing_monster_ids: &[String],
+    existing_recipe_ids: &[String],
     condition: &mut UnlockCondition,
 ) {
     // Top-level condition type dropdown
@@ -1078,6 +1102,7 @@ fn show_condition_editor(
                 &format!("{}_single", id_prefix),
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaf,
             );
         }
@@ -1087,6 +1112,7 @@ fn show_condition_editor(
                 id_prefix,
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaves,
                 "AND",
             );
@@ -1097,6 +1123,7 @@ fn show_condition_editor(
                 id_prefix,
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaves,
                 "OR",
             );
@@ -1110,6 +1137,7 @@ fn show_gate_editor(
     id_prefix: &str,
     existing_research_ids: &[String],
     existing_monster_ids: &[String],
+    existing_recipe_ids: &[String],
     leaves: &mut Vec<LeafCondition>,
     gate_name: &str,
 ) {
@@ -1135,6 +1163,7 @@ fn show_gate_editor(
                 &format!("{}_{}", id_prefix, i),
                 existing_research_ids,
                 existing_monster_ids,
+                existing_recipe_ids,
                 leaf,
             );
         });
@@ -1157,6 +1186,7 @@ fn show_leaf_editor(
     id_prefix: &str,
     existing_research_ids: &[String],
     existing_monster_ids: &[String],
+    existing_recipe_ids: &[String],
     leaf: &mut LeafCondition,
 ) {
     // Leaf type dropdown
@@ -1298,6 +1328,35 @@ fn show_leaf_editor(
             });
             ui.small("Triggers when player reaches this divinity tier/level");
         }
+        LeafCondition::Craft { recipe_id } => {
+            ui.horizontal(|ui| {
+                ui.label("Recipe ID:");
+                if !existing_recipe_ids.is_empty() {
+                    egui::ComboBox::from_id_salt(format!("{}_recipe_id", id_prefix))
+                        .selected_text(if recipe_id.is_empty() {
+                            "Select..."
+                        } else {
+                            recipe_id.as_str()
+                        })
+                        .show_ui(ui, |ui| {
+                            for id in existing_recipe_ids {
+                                if ui.selectable_label(recipe_id == id, id).clicked() {
+                                    *recipe_id = id.clone();
+                                }
+                            }
+                        });
+                    ui.label("or");
+                }
+                ui.add(egui::TextEdit::singleline(recipe_id).desired_width(120.0));
+            });
+            // Warning if recipe ID not found
+            if !recipe_id.is_empty() && !existing_recipe_ids.contains(recipe_id) {
+                ui.colored_label(
+                    egui::Color32::YELLOW,
+                    format!("⚠ Recipe \"{}\" not found", recipe_id),
+                );
+            }
+        }
     }
 }
 
@@ -1347,6 +1406,10 @@ impl EditorState {
             EditorTab::Divinity => {
                 self.divinity_form = DivinityFormData::new();
                 self.status = "New divinity form created".to_string();
+            }
+            EditorTab::BonusStats => {
+                self.bonus_stats_form = BonusStatsFormData::new();
+                self.status = "New bonus stats form created".to_string();
             }
         }
     }
@@ -1547,6 +1610,24 @@ impl EditorState {
             }
         }
         self.existing_autopsies.sort();
+
+        // Load Bonus Stats
+        self.existing_bonus_filenames.clear();
+        let stats_dir = assets_dir.join("stats");
+        if let Ok(entries) = std::fs::read_dir(stats_dir) {
+             for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name() {
+                    let filename_str = filename.to_string_lossy();
+                    if filename_str.ends_with(".stats.ron") {
+                        if let Some(stem) = filename_str.strip_suffix(".stats.ron") {
+                             self.existing_bonus_filenames.push(stem.to_string());
+                        }
+                    }
+                }
+             }
+        }
+        self.existing_bonus_filenames.sort();
     }
 
     fn save_research(&mut self) {
@@ -1756,8 +1837,22 @@ impl EditorState {
 
                         // Compute effective damage
                         // We check "damage" with weapon's tags
-                        let effective_damage =
-                            stats.compute(weapon.damage, "damage", &weapon.tags.iter().map(|s| s.as_str()).collect::<Vec<_>>());
+                        let mut total_additive = 0.0;
+                        let mut total_percent = 0.0;
+                        let mut total_mult = 1.0;
+
+                        let keys = std::iter::once("damage".to_string())
+                            .chain(weapon.tags.iter().map(|t| format!("damage:{}", t)));
+
+                        for key in keys {
+                            if let Some(stat) = stats.get(&key) {
+                                total_additive += stat.additive;
+                                total_percent += stat.percent;
+                                total_mult *= stat.multiplicative;
+                            }
+                        }
+
+                        let effective_damage = (weapon.damage + total_additive) * (1.0 + total_percent) * total_mult;
 
                         let hits = (enemy.max_health / effective_damage).ceil();
                         let time_ms = hits * weapon.attack_speed_ms as f32;
@@ -3051,6 +3146,7 @@ impl EditorState {
             "divinity",
             &self.existing_research_ids,
             &self.existing_monster_ids,
+            &self.existing_recipe_ids,
             &mut self.divinity_form.unlock_condition,
         );
         ui.add_space(16.0);
@@ -3198,6 +3294,169 @@ impl EditorState {
                 .collect();
             
             self.status = format!("✓ Loaded autopsy for: {}", monster_id);
+        }
+    }
+    fn show_bonus_stats_form(&mut self, ui: &mut egui::Ui) {
+        ui.heading("Bonus Stats Definition");
+        ui.add_space(4.0);
+
+        // Load existing
+        ui.group(|ui| {
+            ui.heading("Load Existing Bonus Config");
+            ui.separator();
+            if self.assets_dir.is_none() {
+                ui.colored_label(egui::Color32::YELLOW, "⚠ Select assets directory first");
+            } else if self.existing_bonus_filenames.is_empty() {
+                ui.label("No .stats.ron files found in assets/stats/.");
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    let mut load_filename = None;
+                    for filename in &self.existing_bonus_filenames {
+                        if ui.button(filename).clicked() {
+                            load_filename = Some(filename.clone());
+                        }
+                    }
+                    if let Some(filename) = load_filename {
+                        self.load_bonus_stats(&filename);
+                    }
+                });
+            }
+        });
+        
+        ui.add_space(8.0);
+        ui.separator();
+        
+        // Form Fields
+        ui.horizontal(|ui| {
+            ui.label("Filename:");
+            ui.text_edit_singleline(&mut self.bonus_stats_form.filename);
+            ui.label(".stats.ron");
+        });
+        
+        ui.horizontal(|ui| {
+            ui.label("Trigger Topic (ID):");
+            ui.text_edit_singleline(&mut self.bonus_stats_form.id);
+            
+            ui.menu_button("Select...", |ui| {
+                egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
+                    ui.label("Research");
+                    for id in &self.existing_research_ids {
+                        let topic = format!("research:{}", id);
+                        if ui.button(&topic).clicked() {
+                            self.bonus_stats_form.id = topic;
+                            ui.close_menu();
+                        }
+                    }
+                    
+                    ui.separator();
+                    ui.label("Crafting");
+                    for id in &self.existing_recipe_ids {
+                        let topic = format!("craft:{}", id);
+                         if ui.button(&topic).clicked() {
+                            self.bonus_stats_form.id = topic;
+                            ui.close_menu();
+                        }
+                    }
+                });
+            });
+        });
+        ui.small("Event ID to listen for (e.g., 'research:steel_sword', 'quest:intro')");
+        
+        ui.separator();
+        ui.heading("Bonuses");
+        
+        let mut remove_idx: Option<usize> = None;
+        for (i, entry) in self.bonus_stats_form.bonuses.iter_mut().enumerate() {
+            ui.group(|ui| {
+                 ui.horizontal(|ui| {
+                     ui.label("Key:");
+                     ui.text_edit_singleline(&mut entry.key);
+                     
+                     ui.label("Value:");
+                     ui.add(egui::DragValue::new(&mut entry.bonus.value).speed(0.1));
+                     
+                     ui.label("Mode:");
+                     egui::ComboBox::from_id_salt(format!("mode_{}", i))
+                        .selected_text(format!("{:?}", entry.bonus.mode))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut entry.bonus.mode, StatMode::Additive, "Additive");
+                            ui.selectable_value(&mut entry.bonus.mode, StatMode::Percent, "Percent");
+                            ui.selectable_value(&mut entry.bonus.mode, StatMode::Multiplicative, "Multiplicative");
+                        });
+                        
+                     if ui.button("🗑").clicked() {
+                         remove_idx = Some(i);
+                     }
+                 });
+                 ui.small("e.g. 'damage', 'hp', 'speed', 'damage:melee'");
+            });
+        }
+        
+        if let Some(i) = remove_idx {
+            self.bonus_stats_form.bonuses.remove(i);
+        }
+        
+        if ui.button("+ Add Bonus").clicked() {
+            self.bonus_stats_form.bonuses.push(BonusEntry {
+                key: "damage".to_string(),
+                bonus: StatBonus {
+                    value: 10.0,
+                    mode: StatMode::Additive,
+                },
+            });
+        }
+        
+        ui.separator();
+        
+        // Save
+        let errors = self.bonus_stats_form.validate();
+        if !errors.is_empty() {
+             for err in errors {
+                 ui.colored_label(egui::Color32::RED, format!("• {}", err));
+             }
+        } else {
+             ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
+                 if ui.button("💾 Save Bonus Stats").clicked() {
+                     self.save_bonus_stats();
+                 }
+             });
+        }
+    }
+
+    fn load_bonus_stats(&mut self, filename: &str) {
+         if let Some(assets_dir) = &self.assets_dir {
+             let path = assets_dir.join("stats").join(format!("{}.stats.ron", filename));
+             match std::fs::read_to_string(&path) {
+                 Ok(content) => {
+                     match ron::from_str::<StatBonusDefinition>(&content) {
+                         Ok(def) => {
+                             self.bonus_stats_form = BonusStatsFormData::from_definition(&def, filename.to_string());
+                             self.status = format!("✓ Loaded {}", filename);
+                         } 
+                         Err(e) => {
+                             self.status = format!("✗ Failed to parse {}: {}", filename, e);
+                         }
+                     }
+                 }
+                 Err(e) => {
+                     self.status = format!("✗ Failed to read {}: {}", filename, e);
+                 }
+             }
+         }
+    }
+    
+    fn save_bonus_stats(&mut self) {
+        if let Some(assets_dir) = &self.assets_dir {
+            match save_bonus_stats_file(&self.bonus_stats_form, assets_dir) {
+                Ok(path) => {
+                     self.status = format!("✓ Saved: {}", path);
+                     let assets_dir = assets_dir.clone();
+                     self.load_existing_ids(&assets_dir);
+                }
+                Err(e) => {
+                     self.status = format!("✗ Failed to save: {}", e);
+                }
+            }
         }
     }
 }

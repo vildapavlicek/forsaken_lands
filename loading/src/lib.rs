@@ -2,8 +2,8 @@ mod resources;
 
 use {
     crate::resources::{
-        BlessingsFolderHandle, EnemyPrefabsFolderHandle, RecipesFolderHandle, ResearchFolderHandle,
-        UnlocksFolderHandle, WeaponsFolderHandle,
+        BlessingsFolderHandle, BonusStatsFolderHandle, EnemyPrefabsFolderHandle, RecipesFolderHandle,
+        ResearchFolderHandle, UnlocksFolderHandle, WeaponsFolderHandle,
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
     crafting_resources::RecipeMap,
@@ -43,6 +43,7 @@ impl Plugin for LoadingManagerPlugin {
                     load_recipes_assets,
                     load_weapons_assets,
                     load_blessings_assets,
+                    load_bonus_stats_assets,
                 ),
             )
             .add_systems(OnEnter(LoadingPhase::Assets), update_scene_handle)
@@ -168,6 +169,11 @@ fn load_blessings_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(BlessingsFolderHandle(handle));
 }
 
+fn load_bonus_stats_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("stats");
+    cmd.insert_resource(BonusStatsFolderHandle(handle));
+}
+
 #[allow(clippy::too_many_arguments)]
 
 fn check_assets_loaded(
@@ -182,6 +188,7 @@ fn check_assets_loaded(
     recipes: Res<RecipesFolderHandle>,
     weapons: Res<WeaponsFolderHandle>,
     blessings: Res<BlessingsFolderHandle>,
+    bonus_stats: Res<BonusStatsFolderHandle>,
     folder: Res<Assets<LoadedFolder>>,
     weapon_assets: Res<Assets<WeaponDefinition>>,
     scenes: Res<Assets<DynamicScene>>,
@@ -206,6 +213,7 @@ fn check_assets_loaded(
         && asset_server.is_loaded_with_dependencies(recipes.0.id())
         && asset_server.is_loaded_with_dependencies(weapons.0.id())
         && asset_server.is_loaded_with_dependencies(blessings.0.id())
+        && asset_server.is_loaded_with_dependencies(bonus_stats.0.id())
     {
         info!("assets loaded");
 
@@ -448,6 +456,8 @@ fn evaluate_unlocks(
     wallet: Res<Wallet>,
     encyclopedia_query: Query<&EnemyEncyclopedia, With<Village>>,
     divinity_query: Query<&Divinity, With<Village>>,
+    claimed_divinity: Res<village_resources::DivinityUnlockState>,
+    unlock_assets: Res<Assets<UnlockDefinition>>,
     research_state: Res<research::ResearchState>,
     research_query: Query<&research::ResearchNode>,
     mut next_phase: ResMut<NextState<LoadingPhase>>,
@@ -464,12 +474,16 @@ fn evaluate_unlocks(
         });
     }
 
-    // Trigger ValueChanged for all kill counts from encyclopedia
+    // Trigger ValueChanged for all kill/escape counts from encyclopedia
     if let Ok(encyclopedia) = encyclopedia_query.single() {
         for (monster_id, entry) in encyclopedia.inner.iter() {
             commands.trigger(ValueChanged {
                 topic: format!("kills:{}", monster_id),
                 value: entry.kill_count as f32,
+            });
+            commands.trigger(ValueChanged {
+                topic: format!("escapes:{}", monster_id),
+                value: entry.escape_count as f32,
             });
         }
     }
@@ -478,7 +492,7 @@ fn evaluate_unlocks(
     if let Ok(divinity) = divinity_query.single() {
         // Encode divinity as tier*100 + level for comparison
         commands.trigger(ValueChanged {
-            topic: "divinity:max".to_string(),
+            topic: "divinity".to_string(),
             value: (divinity.tier * 100 + divinity.level) as f32,
         });
     }
@@ -492,6 +506,25 @@ fn evaluate_unlocks(
                     topic: format!("research:{}", node.id),
                 });
             }
+        }
+    }
+
+    // Trigger UnlockAchieved for claimed divinity levels
+    // This allows subsequent divinity levels (which depend on previous ones) to be evaluated correctly
+    for unlock_id in &claimed_divinity.claimed {
+        // Find definitions to get correct display name and reward id
+        // Inefficient lookup but acceptable for loading screen with < 1000 items
+        if let Some(def) = unlock_assets
+            .iter()
+            .map(|(_, def)| def)
+            .find(|d| &d.id == unlock_id)
+        {
+            debug!(unlock_id = %unlock_id, "Restoring claimed divinity unlock status");
+            commands.trigger(unlocks_events::UnlockAchieved {
+                unlock_id: def.id.clone(),
+                display_name: def.display_name.clone(),
+                reward_id: def.reward_id.clone(),
+            });
         }
     }
 

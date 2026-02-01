@@ -9,6 +9,8 @@ pub struct EncyclopediaEntry {
     pub display_name: String,
     pub kill_count: u64,
     pub escape_count: u64,
+    /// The order in which this enemy was encountered.
+    pub encounter_order: usize,
 }
 
 /// Stores the history of defeated enemies and their statistics.
@@ -53,24 +55,36 @@ pub struct Village;
 
 impl EnemyEncyclopedia {
     pub fn increment_kill_count(&mut self, enemy_id: &str, display_name: &str) {
-        self.inner
-            .entry(enemy_id.to_string())
-            .and_modify(|e| e.kill_count += 1)
-            .or_insert(EncyclopediaEntry {
-                display_name: display_name.to_string(),
-                kill_count: 1,
-                escape_count: 0,
-            });
+        if let Some(entry) = self.inner.get_mut(enemy_id) {
+            entry.kill_count += 1;
+        } else {
+            let order = self.inner.len();
+            self.inner.insert(
+                enemy_id.to_string(),
+                EncyclopediaEntry {
+                    display_name: display_name.to_string(),
+                    kill_count: 1,
+                    escape_count: 0,
+                    encounter_order: order,
+                },
+            );
+        }
     }
 
     pub fn increment_escape_count(&mut self, enemy_id: &str, display_name: &str) {
-        self.inner
-            .entry(enemy_id.to_string())
-            .and_modify(|e| e.escape_count += 1)
-            .or_insert(EncyclopediaEntry {
-                display_name: display_name.to_string(),
-                kill_count: 0,
-                escape_count: 1,
-            });
+        if let Some(entry) = self.inner.get_mut(enemy_id) {
+            entry.escape_count += 1;
+        } else {
+            let order = self.inner.len();
+            self.inner.insert(
+                enemy_id.to_string(),
+                EncyclopediaEntry {
+                    display_name: display_name.to_string(),
+                    kill_count: 0,
+                    escape_count: 1,
+                    encounter_order: order,
+                },
+            );
+        }
     }
 }
