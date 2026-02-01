@@ -22,7 +22,7 @@ pub struct WeaponId(pub String);
 
 /// Collection of tags assigned to a weapon (e.g., "melee", "bone_sword").
 /// Used by the `bonus_stats` crate to apply conditional bonuses.
-#[derive(Component, Reflect, Default, Clone, Debug)]
+#[derive(Component, Reflect, Default, Clone, Debug, Deref)]
 #[reflect(Component)]
 pub struct WeaponTags(pub Vec<String>);
 

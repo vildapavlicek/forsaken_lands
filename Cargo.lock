@@ -3223,6 +3223,7 @@ name = "heroes"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bonus_stats",
  "enemy_components",
  "hero_components",
  "hero_events",

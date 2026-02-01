@@ -3,7 +3,7 @@ use {
     enemy_components::{Enemy, Health},
     hero_components::{
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
-        ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon,
+        ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
     },
     hero_events::{AttackIntent, MeleeHit, ProjectileHit},
     shared_components::HitIndicator,
@@ -104,8 +104,9 @@ fn hero_attack_intent_system(
 fn hero_projectile_spawn_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<&Damage, (With<RangedWeapon>, Without<MeleeWeapon>)>,
+    weapons: Query<(&Damage, Option<&WeaponTags>), (With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
+    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {
@@ -124,7 +125,10 @@ fn hero_projectile_spawn_system(
     // Double check the attacker is still a valid weapon.
     // The intent system already filters this, but if a weapon was unequipped
     // between intent and action, this would catch it.
-    if let Ok(damage) = weapons.get(intent.attacker) {
+    if let Ok((damage, tags)) = weapons.get(intent.attacker) {
+        let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
+        let final_damage = bonus_stats::calculate_damage(damage.0, &raw_tags, &bonus_stats);
+
         commands.spawn((
             Sprite {
                 color: Color::srgb(1.0, 1.0, 0.0),
@@ -135,7 +139,7 @@ fn hero_projectile_spawn_system(
             Projectile,
             ProjectileTarget(intent.target),
             ProjectileSpeed(400.0),
-            ProjectileDamage(damage.0),
+            ProjectileDamage(final_damage),
         ));
     }
 }
@@ -143,9 +147,13 @@ fn hero_projectile_spawn_system(
 fn hero_melee_attack_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<(&Damage, &AttackRange, &MeleeArc), (With<MeleeWeapon>, Without<RangedWeapon>)>,
+    weapons: Query<
+        (&Damage, &AttackRange, &MeleeArc, &WeaponTags),
+        (With<MeleeWeapon>, Without<RangedWeapon>),
+    >,
     villages: Query<&Transform, With<Village>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
+    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {
@@ -161,7 +169,7 @@ fn hero_melee_attack_system(
 
     let intent = trigger.event();
 
-    if let Ok((damage, range, arc)) = weapons.get(intent.attacker) {
+    if let Ok((damage, range, arc, tags)) = weapons.get(intent.attacker) {
         let Ok((_, target_transform)) = enemies.get(intent.target) else {
             return;
         };
@@ -196,10 +204,14 @@ fn hero_melee_attack_system(
             return;
         }
 
+        // Calculate final damage
+        // let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
+        let final_damage = bonus_stats::calculate_damage(damage.0, tags, &bonus_stats);
+
         commands.trigger(MeleeHit {
             attacker: intent.attacker,
             targets,
-            damage: damage.0,
+            damage: final_damage,
         });
     }
 }

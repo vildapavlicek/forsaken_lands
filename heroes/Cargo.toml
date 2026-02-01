@@ -12,3 +12,4 @@ hero_events.workspace = true
 village_components.workspace = true
 states.workspace = true
 shared_components.workspace = true
+bonus_stats.workspace = true
