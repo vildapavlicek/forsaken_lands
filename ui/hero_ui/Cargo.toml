@@ -10,3 +10,4 @@ hero_components.workspace = true
 shared_components.workspace = true
 states.workspace = true
 widgets.workspace = true
+bonus_stats.workspace = true

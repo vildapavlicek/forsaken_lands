@@ -2427,6 +2427,31 @@ impl EditorState {
                     changed = true;
                 }
             }
+            EnemyComponent::MonsterTags(tags) => {
+                let mut remove_idx: Option<usize> = None;
+
+                for (i, tag) in tags.iter_mut().enumerate() {
+                    ui.horizontal(|ui| {
+                        ui.label("Tag:");
+                        if ui.text_edit_singleline(tag).changed() {
+                            changed = true;
+                        }
+                        if ui.button("🗑").clicked() {
+                            remove_idx = Some(i);
+                        }
+                    });
+                }
+
+                if let Some(idx) = remove_idx {
+                    tags.remove(idx);
+                    changed = true;
+                }
+
+                if ui.button("+ Add Tag").clicked() {
+                    tags.push("new_tag".to_string());
+                    changed = true;
+                }
+            }
         }
 
         changed

@@ -140,10 +140,12 @@ fn on_hero_ui_refresh(
             &AttackRange,
             &AttackSpeed,
             Option<&MeleeArc>,
+            Option<&hero_components::WeaponTags>,
         ),
         With<Weapon>,
     >,
     melee_query: Query<(), With<MeleeWeapon>>,
+    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     // Get the content container
     let Ok((container_entity, container_children)) = content_container_query.single() else {
@@ -162,8 +164,13 @@ fn on_hero_ui_refresh(
     let mut heroes_data: Vec<(Entity, HeroDisplayData)> = Vec::new();
 
     for hero_entity in &hero_entities {
-        let data =
-            build_hero_display_data(*hero_entity, &children_query, &weapon_query, &melee_query);
+        let data = build_hero_display_data(
+            *hero_entity,
+            &children_query,
+            &weapon_query,
+            &melee_query,
+            &bonus_stats,
+        );
         heroes_data.push((*hero_entity, data));
     }
 
@@ -183,6 +190,7 @@ pub struct WeaponDisplayData {
     pub entity: Entity,
     pub name: String,
     pub damage: f32,
+    pub effective_damage: f32,
     pub range: f32,
     pub speed_secs: f32,
     pub melee_arc: Option<f32>, // In degrees, only for melee weapons
@@ -329,7 +337,13 @@ fn spawn_weapon_section(
         spawn_stat_row(card, "Name", &weapon.name);
 
         // Damage
-        spawn_stat_row(card, "Damage", &format!("{:.2}", weapon.damage));
+        let damage_text = if (weapon.effective_damage - weapon.damage).abs() > 0.01 {
+            let bonus = weapon.effective_damage - weapon.damage;
+            format!("{:.2} ({:.2} + {:.2})", weapon.effective_damage, weapon.damage, bonus)
+        } else {
+            format!("{:.2}", weapon.damage)
+        };
+        spawn_stat_row(card, "Damage", &damage_text);
 
         // Range
         spawn_stat_row(card, "Range", &format!("{:.1}", weapon.range));
@@ -567,8 +581,6 @@ fn spawn_popup_weapon_card(
     let weapon_card = spawn_item_card(parent, ());
     let weapon_entity = weapon.entity;
     let weapon_name = weapon.name.clone();
-    let weapon_damage = weapon.damage;
-    let weapon_range = weapon.range;
 
     parent.commands().entity(weapon_card).with_children(|card| {
         // Weapon info row
@@ -598,7 +610,7 @@ fn spawn_popup_weapon_card(
                 info.spawn((
                     Text::new(format!(
                         "DMG: {:.2} | RNG: {:.1}",
-                        weapon_damage, weapon_range
+                        weapon.effective_damage, weapon.range
                     )),
                     TextFont {
                         font_size: 12.0,
@@ -687,6 +699,7 @@ fn handle_change_equipment_button(
             &AttackRange,
             &AttackSpeed,
             Option<&MeleeArc>,
+            Option<&hero_components::WeaponTags>,
         ),
         (With<Weapon>, Without<ChildOf>),
     >,
@@ -698,10 +711,12 @@ fn handle_change_equipment_button(
             &AttackRange,
             &AttackSpeed,
             Option<&MeleeArc>,
+            Option<&hero_components::WeaponTags>,
         ),
         With<Weapon>,
     >,
     melee_query: Query<(), With<MeleeWeapon>>,
+    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     // Log all button interactions for debugging
     for (interaction, btn) in interaction_query.iter() {
@@ -721,7 +736,7 @@ fn handle_change_equipment_button(
                 .and_then(|children| {
                     children.iter().find_map(|child| {
                         equipped_weapon_query.get(child).ok().map(
-                            |(entity, display_name, damage, range, speed, melee_arc)| {
+                            |(entity, display_name, damage, range, speed, melee_arc, tags)| {
                                 let name = display_name
                                     .map(|d| d.0.clone())
                                     .unwrap_or_else(|| "Unknown Weapon".to_string());
@@ -731,10 +746,14 @@ fn handle_change_equipment_button(
                                 } else {
                                     None
                                 };
+                                let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
+                                let effective_damage =
+                                    bonus_stats::calculate_damage(damage.0, &raw_tags, &[], &bonus_stats);
                                 WeaponDisplayData {
                                     entity,
                                     name,
                                     damage: damage.0,
+                                    effective_damage,
                                     range: range.0,
                                     speed_secs,
                                     melee_arc: arc,
@@ -748,25 +767,31 @@ fn handle_change_equipment_button(
 
             let unequipped_weapons: Vec<WeaponDisplayData> = unequipped_weapons_query
                 .iter()
-                .map(|(entity, display_name, damage, range, speed, melee_arc)| {
-                    let name = display_name
-                        .map(|d| d.0.clone())
-                        .unwrap_or_else(|| "Unknown Weapon".to_string());
-                    let speed_secs = speed.timer.duration().as_secs_f32();
-                    let arc = if melee_query.get(entity).is_ok() {
-                        melee_arc.map(|a| a.width.to_degrees())
-                    } else {
-                        None
-                    };
-                    WeaponDisplayData {
-                        entity,
-                        name,
-                        damage: damage.0,
-                        range: range.0,
-                        speed_secs,
-                        melee_arc: arc,
-                    }
-                })
+                .map(
+                    |(entity, display_name, damage, range, speed, melee_arc, tags)| {
+                        let name = display_name
+                            .map(|d| d.0.clone())
+                            .unwrap_or_else(|| "Unknown Weapon".to_string());
+                        let speed_secs = speed.timer.duration().as_secs_f32();
+                        let arc = if melee_query.get(entity).is_ok() {
+                            melee_arc.map(|a| a.width.to_degrees())
+                        } else {
+                            None
+                        };
+                        let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
+                        let effective_damage =
+                            bonus_stats::calculate_damage(damage.0, &raw_tags, &[], &bonus_stats);
+                        WeaponDisplayData {
+                            entity,
+                            name,
+                            damage: damage.0,
+                            effective_damage,
+                            range: range.0,
+                            speed_secs,
+                            melee_arc: arc,
+                        }
+                    },
+                )
                 .collect();
 
             // Spawn popup (weapons are spawned directly inside the popup)
@@ -860,10 +885,12 @@ pub fn build_hero_display_data(
             &AttackRange,
             &AttackSpeed,
             Option<&MeleeArc>,
+            Option<&hero_components::WeaponTags>,
         ),
         With<Weapon>,
     >,
     is_melee_query: &Query<(), With<MeleeWeapon>>,
+    bonus_stats: &bonus_stats::BonusStats,
 ) -> HeroDisplayData {
     // Placeholder hero name (heroes don't have names yet)
     let name = "Hero".to_string();
@@ -872,7 +899,7 @@ pub fn build_hero_display_data(
     let weapon = children_query.get(hero_entity).ok().and_then(|children| {
         children.iter().find_map(|child| {
             weapon_query.get(child).ok().map(
-                |(entity, display_name, damage, range, speed, melee_arc)| {
+                |(entity, display_name, damage, range, speed, melee_arc, tags)| {
                     let weapon_name = display_name
                         .map(|d| d.0.clone())
                         .unwrap_or_else(|| "Unknown Weapon".to_string());
@@ -887,10 +914,16 @@ pub fn build_hero_display_data(
                         None
                     };
 
+                    // Calculate effective damage
+                    let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
+                    let effective_damage =
+                        bonus_stats::calculate_damage(damage.0, &raw_tags, &[], bonus_stats);
+
                     WeaponDisplayData {
                         entity,
                         name: weapon_name,
                         damage: damage.0,
+                        effective_damage,
                         range: range.0,
                         speed_secs,
                         melee_arc: arc_degrees,

@@ -97,3 +97,7 @@ pub const MELEE_ENGAGEMENT_RADIUS: f32 = 150.0;
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component, Default)]
 pub struct TargetDestination(pub Vec2);
+
+#[derive(Component, Reflect, Default, Debug, Clone)]
+#[reflect(Component, Default)]
+pub struct MonsterTags(pub Vec<String>);

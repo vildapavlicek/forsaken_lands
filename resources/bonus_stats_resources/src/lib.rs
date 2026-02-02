@@ -96,16 +96,22 @@ impl BonusStats {
     }
 }
 
-/// Calculates the final damage considering base damage, weapon tags, and active bonuses.
+/// Calculates the final damage considering base damage, source tags, target tags, and active bonuses.
 ///
 /// # Arguments
 /// * `base_damage` - The base damage of the weapon or source.
-/// * `tags` - Tags associated with the damage source (e.g., "melee", "bone_sword").
+/// * `source_tags` - Tags associated with the damage source (e.g., "melee", "bone_sword").
+/// * `target_tags` - Tags associated with the target entity (e.g., "siled", "boss").
 /// * `bonus_stats` - The global bonus stats resource.
 ///
 /// # Returns
 /// The calculated final damage.
-pub fn calculate_damage(base_damage: f32, tags: &[String], bonus_stats: &BonusStats) -> f32 {
+pub fn calculate_damage(
+    base_damage: f32,
+    source_tags: &[String],
+    target_tags: &[String],
+    bonus_stats: &BonusStats,
+) -> f32 {
     let mut total_additive = 0.0;
     let mut total_percent = 0.0;
     let mut total_multiplicative = 1.0;
@@ -122,9 +128,18 @@ pub fn calculate_damage(base_damage: f32, tags: &[String], bonus_stats: &BonusSt
     // 1. Base "damage" key
     accumulate_for_key("damage");
 
-    // 2. Tag-specific keys: "damage:{tag}"
-    for tag in tags {
-        accumulate_for_key(&format!("damage:{}", tag));
+    // 2. Source-specific keys: Use source_tags directly as keys
+    for tag in source_tags {
+        // Skip "damage" to avoid applying the global bonus twice
+        if tag == "damage" {
+            continue;
+        }
+        accumulate_for_key(tag);
+    }
+
+    // 3. Target-specific keys: Use "enemy:<tag>" as keys
+    for tag in target_tags {
+        accumulate_for_key(&format!("enemy:{}", tag));
     }
 
     // Calculation:
@@ -198,7 +213,7 @@ mod tests {
         let mut stats = BonusStats::default();
 
         // Base cases
-        assert_eq!(calculate_damage(10.0, &[], &stats), 10.0);
+        assert_eq!(calculate_damage(10.0, &[], &[], &stats), 10.0);
 
         // Global damage bonus
         stats.add(
@@ -208,11 +223,11 @@ mod tests {
                 mode: StatMode::Additive,
             },
         );
-        assert_eq!(calculate_damage(10.0, &[], &stats), 15.0); // 10 + 5
+        assert_eq!(calculate_damage(10.0, &[], &[], &stats), 15.0); // 10 + 5
 
-        // Tag specific bonus
+        // Source specific bonus (tag)
         stats.add(
-            "damage:melee",
+            "melee",
             StatBonus {
                 value: 0.5, // +50%
                 mode: StatMode::Percent,
@@ -220,11 +235,11 @@ mod tests {
         );
         let tags = vec!["melee".to_string()];
         // (10 + 5) * (1 + 0.5) = 15 * 1.5 = 22.5
-        assert_eq!(calculate_damage(10.0, &tags, &stats), 22.5);
+        assert_eq!(calculate_damage(10.0, &tags, &[], &stats), 22.5);
 
-        // Multiple tags
+        // Multiple source tags
         stats.add(
-            "damage:fire",
+            "fire",
             StatBonus {
                 value: 2.0, // x2
                 mode: StatMode::Multiplicative,
@@ -232,6 +247,28 @@ mod tests {
         );
         let tags_fire = vec!["melee".to_string(), "fire".to_string()];
         // ((10 + 5) * (1 + 0.5)) * 2 = 22.5 * 2 = 45.0
-        assert_eq!(calculate_damage(10.0, &tags_fire, &stats), 45.0);
+        assert_eq!(calculate_damage(10.0, &tags_fire, &[], &stats), 45.0);
+
+        // Target specific bonus (enemy:<tag>)
+        stats.add(
+            "enemy:siled",
+            StatBonus {
+                value: 0.5, // +50%
+                mode: StatMode::Percent,
+            },
+        );
+        let target_tags = vec!["siled".to_string()];
+        // Base damage 10, no source tags, global +5, siled +50%
+        // (10 + 5) * (1 + 0.5) = 15 * 1.5 = 22.5
+        assert_eq!(calculate_damage(10.0, &[], &target_tags, &stats), 22.5);
+
+        // Combined source and target bonuses
+        // Source: "melee" (+50%), Target: "siled" (+50%), Global: +5
+        // (10 + 5) * (1 + 0.5 + 0.5) = 15 * 2.0 = 30.0
+        assert_eq!(calculate_damage(10.0, &vec!["melee".to_string()], &target_tags, &stats), 30.0);
+
+        // Test redundant "damage" tag (should not double count)
+        let tags_redundant = vec!["damage".to_string()];
+        assert_eq!(calculate_damage(10.0, &tags_redundant, &[], &stats), 15.0); // Should be same as global only (15.0)
     }
 }

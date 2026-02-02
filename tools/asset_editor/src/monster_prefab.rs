@@ -57,6 +57,7 @@ pub enum EnemyComponent {
 
     // Optional components
     Drops(Vec<Drop>),
+    MonsterTags(Vec<String>),
 }
 
 impl EnemyComponent {
@@ -73,6 +74,7 @@ impl EnemyComponent {
             EnemyComponent::Transform { .. } => "Transform",
             EnemyComponent::Sprite { .. } => "Sprite",
             EnemyComponent::Drops(_) => "Drops",
+            EnemyComponent::MonsterTags(_) => "Monster Tags",
         }
     }
 
@@ -105,6 +107,7 @@ pub struct Drop {
 pub fn optional_components() -> Vec<(&'static str, EnemyComponent)> {
     vec![
         ("Drops", EnemyComponent::Drops(vec![])),
+        ("Monster Tags", EnemyComponent::MonsterTags(vec![])),
     ]
 }
 
@@ -240,6 +243,21 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
                 ))
             }
         }
+        EnemyComponent::MonsterTags(tags) => {
+            if tags.is_empty() {
+                Some(r#""enemy_components::MonsterTags": ([])"#.to_string())
+            } else {
+                let tags_str = tags
+                    .iter()
+                    .map(|t| format!(r#""{}""#, escape_ron_string(t)))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                Some(format!(
+                    r#""enemy_components::MonsterTags": ([{}])"#,
+                    tags_str
+                ))
+            }
+        }
     }
 }
 
@@ -366,6 +384,23 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
             }
         }
         components.push(EnemyComponent::Drops(drops));
+    }
+
+    // MonsterTags
+    if content.contains("\"enemy_components::MonsterTags\"") {
+        let tags_re = Regex::new(r#""([^"]+)""#).ok()?;
+        // We need to find the array content first to avoid matching other strings
+        let array_re = Regex::new(r#""enemy_components::MonsterTags":\s*\(\[([^\]]*)\]\)"#).ok()?;
+        if let Some(caps) = array_re.captures(content) {
+            let array_content = caps.get(1)?.as_str();
+            let mut tags = Vec::new();
+            for caps in tags_re.captures_iter(array_content) {
+                if let Some(tag) = caps.get(1) {
+                    tags.push(tag.as_str().to_string());
+                }
+            }
+            components.push(EnemyComponent::MonsterTags(tags));
+        }
     }
 
 

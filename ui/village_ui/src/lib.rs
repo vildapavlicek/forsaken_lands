@@ -280,6 +280,18 @@ impl Command for SpawnHeroesContentCommand {
                     let damage_val = damage.0;
                     let range_val = range.0;
                     let arc_radians = melee_arc.map(|arc| arc.width);
+                    let raw_tags = world
+                        .get::<hero_components::WeaponTags>(child)
+                        .map(|t| t.0.clone())
+                        .unwrap_or_default();
+
+                    let effective_damage = if let Some(bonus_stats) =
+                        world.get_resource::<bonus_stats::BonusStats>()
+                    {
+                        bonus_stats::calculate_damage(damage_val, &raw_tags, &[], bonus_stats)
+                    } else {
+                        damage_val
+                    };
 
                     // Check if it's a melee weapon for arc display
                     let mut melee_check = world.query_filtered::<(), With<MeleeWeapon>>();
@@ -293,6 +305,7 @@ impl Command for SpawnHeroesContentCommand {
                         entity: child,
                         name: weapon_name,
                         damage: damage_val,
+                        effective_damage,
                         range: range_val,
                         speed_secs,
                         melee_arc: arc_degrees,

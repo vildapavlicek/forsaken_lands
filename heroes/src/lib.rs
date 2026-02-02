@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Enemy, Health},
+    enemy_components::{Enemy, Health, MonsterTags},
     hero_components::{
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
@@ -106,6 +106,7 @@ fn hero_projectile_spawn_system(
     mut commands: Commands,
     weapons: Query<(&Damage, Option<&WeaponTags>), (With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
+    enemies: Query<&MonsterTags, With<Enemy>>,
     bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
@@ -127,7 +128,8 @@ fn hero_projectile_spawn_system(
     // between intent and action, this would catch it.
     if let Ok((damage, tags)) = weapons.get(intent.attacker) {
         let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
-        let final_damage = bonus_stats::calculate_damage(damage.0, &raw_tags, &bonus_stats);
+        let target_tags = enemies.get(intent.target).map(|t| t.0.clone()).unwrap_or_default();
+        let final_damage = bonus_stats::calculate_damage(damage.0, &raw_tags, &target_tags, &bonus_stats);
 
         commands.spawn((
             Sprite {
@@ -152,7 +154,7 @@ fn hero_melee_attack_system(
         (With<MeleeWeapon>, Without<RangedWeapon>),
     >,
     villages: Query<&Transform, With<Village>>,
-    enemies: Query<(Entity, &Transform), With<Enemy>>,
+    enemies: Query<(Entity, &Transform, Option<&MonsterTags>), With<Enemy>>,
     bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
@@ -170,7 +172,7 @@ fn hero_melee_attack_system(
     let intent = trigger.event();
 
     if let Ok((damage, range, arc, tags)) = weapons.get(intent.attacker) {
-        let Ok((_, target_transform)) = enemies.get(intent.target) else {
+        let Ok((_, target_transform, _)) = enemies.get(intent.target) else {
             return;
         };
 
@@ -181,7 +183,7 @@ fn hero_melee_attack_system(
 
         let targets = enemies
             .iter()
-            .filter_map(|(enemy_entity, enemy_transform)| {
+            .filter_map(|(enemy_entity, enemy_transform, _)| {
                 let to_enemy = enemy_transform.translation - village_transform.translation;
                 let distance = to_enemy.length();
 
@@ -204,9 +206,9 @@ fn hero_melee_attack_system(
             return;
         }
 
-        // Calculate final damage
-        // let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
-        let final_damage = bonus_stats::calculate_damage(damage.0, tags, &bonus_stats);
+        // Calculate final damage (based on primary target tags)
+        let target_tags = enemies.get(intent.target).ok().and_then(|(_, _, t)| t.map(|tags| tags.0.clone())).unwrap_or_default();
+        let final_damage = bonus_stats::calculate_damage(damage.0, tags, &target_tags, &bonus_stats);
 
         commands.trigger(MeleeHit {
             attacker: intent.attacker,

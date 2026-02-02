@@ -20,3 +20,4 @@ widgets.workspace = true
 research_assets.workspace = true
 blessings.workspace = true
 growth.workspace = true
+bonus_stats.workspace = true
