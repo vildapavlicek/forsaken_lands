@@ -104,7 +104,7 @@ fn hero_attack_intent_system(
 fn hero_projectile_spawn_system(
     trigger: On<AttackIntent>,
     mut commands: Commands,
-    weapons: Query<(&Damage, Option<&WeaponTags>), (With<RangedWeapon>, Without<MeleeWeapon>)>,
+    weapons: Query<(&Damage, &WeaponTags), (With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
     enemies: Query<&MonsterTags, With<Enemy>>,
     bonus_stats: Res<bonus_stats::BonusStats>,
@@ -126,10 +126,11 @@ fn hero_projectile_spawn_system(
     // Double check the attacker is still a valid weapon.
     // The intent system already filters this, but if a weapon was unequipped
     // between intent and action, this would catch it.
-    if let Ok((damage, tags)) = weapons.get(intent.attacker) {
-        let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
-        let target_tags = enemies.get(intent.target).map(|t| t.0.clone()).unwrap_or_default();
-        let final_damage = bonus_stats::calculate_damage(damage.0, &raw_tags, &target_tags, &bonus_stats);
+    if let Ok((damage, tags)) = weapons.get(intent.attacker)
+        && let Ok(target_tags) = enemies.get(intent.target).map(|t| &t.0)
+    {
+        let final_damage =
+            bonus_stats::calculate_damage(damage.0, &tags, &target_tags, &bonus_stats);
 
         commands.spawn((
             Sprite {
@@ -154,7 +155,7 @@ fn hero_melee_attack_system(
         (With<MeleeWeapon>, Without<RangedWeapon>),
     >,
     villages: Query<&Transform, With<Village>>,
-    enemies: Query<(Entity, &Transform, Option<&MonsterTags>), With<Enemy>>,
+    enemies: Query<(Entity, &Transform, &MonsterTags), With<Enemy>>,
     bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
@@ -206,9 +207,13 @@ fn hero_melee_attack_system(
             return;
         }
 
-        // Calculate final damage (based on primary target tags)
-        let target_tags = enemies.get(intent.target).ok().and_then(|(_, _, t)| t.map(|tags| tags.0.clone())).unwrap_or_default();
-        let final_damage = bonus_stats::calculate_damage(damage.0, tags, &target_tags, &bonus_stats);
+        let Ok((_, _, target_tags)) = enemies.get(intent.target) else {
+            warn!("intent's target does not exist");
+            return;
+        };
+
+        let final_damage =
+            bonus_stats::calculate_damage(damage.0, tags, &target_tags.0, &bonus_stats);
 
         commands.trigger(MeleeHit {
             attacker: intent.attacker,
