@@ -19,6 +19,18 @@ use {bevy::prelude::*, shared_components::IncludeInSave};
 #[require(Pickable, IncludeInSave)]
 pub struct Portal;
 
+/// Controls the frequency of enemy generation from a Portal.
+///
+/// This component acts as the "metronome" for the spawning loop, governing how often
+/// the system attempts to spawn enemies based on the associated `SpawnTableId`.
+///
+/// # Usage
+/// - **Game Loop**: The `enemy_spawn_system` (in `PortalsPlugin`) ticks this timer every frame.
+///   When finished, it triggers a spawn attempt and resets.
+/// - **Modifiers**: The effective speed of this timer can be altered by gameplay effects,
+///   such as `BlessingEffect::DecreaseSpawnTimer`, which are applied dynamically in the system.
+/// - **Dependencies**: It functions in tandem with `CurrentDivinity` (to filter spawn tables)
+///   and `SpawnTableId` (to define *what* spawns).
 #[derive(Component, Reflect, Debug, Clone)]
 #[reflect(Component)]
 pub struct SpawnTimer(pub Timer);
