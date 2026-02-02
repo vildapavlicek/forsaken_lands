@@ -1,9 +1,9 @@
 (
-    id: "research:sharp_rocks",
+    id: "research:bone_weapons_upgrade",
     bonuses: {
-        "damage:rocks": [
+        "damage:bones": [
             (
-                value: 0.25,
+                value: 0.5,
                 mode: Additive,
             ),
         ],

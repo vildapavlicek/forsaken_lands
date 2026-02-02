@@ -1,0 +1,11 @@
+(
+    id: "research:autopsy_goblin_scout",
+    bonuses: {
+        "race:goblin": [
+            (
+                value: 0.1,
+                mode: Percent,
+            ),
+        ],
+    },
+)
