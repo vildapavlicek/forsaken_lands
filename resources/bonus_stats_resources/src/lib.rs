@@ -19,7 +19,7 @@ pub struct StatBonus {
 }
 
 /// Aggregated bonuses for a specific key (e.g., "damage:melee").
-#[derive(Debug, Clone, Serialize, Deserialize, Reflect)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Reflect)]
 pub struct BonusStat {
     pub additive: f32,
     pub percent: f32,        // Sum of percentages (e.g., 0.1 + 0.2 = 0.3)
@@ -31,7 +31,7 @@ impl Default for BonusStat {
         Self {
             additive: 0.0,
             percent: 0.0,
-            multiplicative: 1.0,
+            multiplicative: 0.0,
         }
     }
 }
@@ -41,7 +41,7 @@ impl BonusStat {
         match bonus.mode {
             StatMode::Additive => self.additive += bonus.value,
             StatMode::Percent => self.percent += bonus.value,
-            StatMode::Multiplicative => self.multiplicative *= bonus.value,
+            StatMode::Multiplicative => self.multiplicative += bonus.value,
         }
     }
 
@@ -51,7 +51,7 @@ impl BonusStat {
             StatMode::Percent => self.percent -= bonus.value,
             StatMode::Multiplicative => {
                 if bonus.value != 0.0 {
-                    self.multiplicative /= bonus.value;
+                    self.multiplicative -= bonus.value;
                 }
             }
         }
@@ -61,6 +61,18 @@ impl BonusStat {
         self.additive = 0.0;
         self.percent = 0.0;
         self.multiplicative = 1.0;
+    }
+}
+
+impl std::ops::Add for BonusStat {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        BonusStat {
+            additive: self.additive + rhs.additive,
+            percent: self.percent + rhs.percent,
+            multiplicative: self.multiplicative + rhs.multiplicative,
+        }
     }
 }
 
@@ -112,39 +124,23 @@ pub fn calculate_damage(
     target_tags: &[String],
     bonus_stats: &BonusStats,
 ) -> f32 {
-    let mut total_additive = 0.0;
-    let mut total_percent = 0.0;
-    let mut total_multiplicative = 1.0;
+    // TODO!: perf?
+    let total_bonus_stats = target_tags
+        .into_iter()
+        .map(|v| format!("damage:{v}"))
+        .chain(source_tags.into_iter().map(ToOwned::to_owned))
+        .filter_map(|key| {
+            dbg!(&key);
+            dbg!(bonus_stats.get(&key))
+        })
+        .fold(BonusStat::default(), |acc, stat| acc + *stat);
 
-    // Helper to accumulate bonuses for a specific key
-    let mut accumulate_for_key = |key: &str| {
-        if let Some(stat) = bonus_stats.get(key) {
-            total_additive += stat.additive;
-            total_percent += stat.percent;
-            total_multiplicative *= stat.multiplicative;
-        }
-    };
-
-    // 1. Base "damage" key
-    accumulate_for_key("damage");
-
-    // 2. Source-specific keys: Use source_tags directly as keys
-    for tag in source_tags {
-        // Skip "damage" to avoid applying the global bonus twice
-        if tag == "damage" {
-            continue;
-        }
-        accumulate_for_key(tag);
-    }
-
-    // 3. Target-specific keys: Use "enemy:<tag>" as keys
-    for tag in target_tags {
-        accumulate_for_key(&format!("enemy:{}", tag));
-    }
-
+    dbg!(total_bonus_stats, base_damage);
     // Calculation:
     // (Base + Additive) * (1 + Percent) * Multiplicative
-    let final_damage = (base_damage + total_additive) * (1.0 + total_percent) * total_multiplicative;
+    let final_damage = (base_damage + total_bonus_stats.additive)
+        * (1.0 + total_bonus_stats.percent)
+        * total_bonus_stats.multiplicative.max(1.0);
 
     // Ensure damage doesn't go below 0 (unless we want healing attacks?)
     final_damage.max(0.0)
@@ -206,8 +202,9 @@ mod tests {
         let raw = stats.get("hp").unwrap();
         assert_eq!(raw.additive, 15.0);
         assert_eq!(raw.percent, 0.1);
-        assert_eq!(raw.multiplicative, 1.0);
+        assert_eq!(raw.multiplicative, 0.0);
     }
+
     #[test]
     fn test_calculate_damage() {
         let mut stats = BonusStats::default();
@@ -216,6 +213,7 @@ mod tests {
         assert_eq!(calculate_damage(10.0, &[], &[], &stats), 10.0);
 
         // Global damage bonus
+        // NOTE: Requires "damage" tag in source_tags to apply!
         stats.add(
             "damage",
             StatBonus {
@@ -223,7 +221,13 @@ mod tests {
                 mode: StatMode::Additive,
             },
         );
-        assert_eq!(calculate_damage(10.0, &[], &[], &stats), 15.0); // 10 + 5
+        // Without tag -> no bonus
+        assert_eq!(calculate_damage(10.0, &[], &[], &stats), 10.0);
+        // With tag -> bonus applies
+        assert_eq!(
+            calculate_damage(10.0, &["damage".to_string()], &[], &stats),
+            15.0
+        );
 
         // Source specific bonus (tag)
         stats.add(
@@ -233,7 +237,7 @@ mod tests {
                 mode: StatMode::Percent,
             },
         );
-        let tags = vec!["melee".to_string()];
+        let tags = vec!["damage".to_string(), "melee".to_string()];
         // (10 + 5) * (1 + 0.5) = 15 * 1.5 = 22.5
         assert_eq!(calculate_damage(10.0, &tags, &[], &stats), 22.5);
 
@@ -245,30 +249,70 @@ mod tests {
                 mode: StatMode::Multiplicative,
             },
         );
-        let tags_fire = vec!["melee".to_string(), "fire".to_string()];
+        let tags_fire = vec![
+            "damage".to_string(),
+            "melee".to_string(),
+            "fire".to_string(),
+        ];
         // ((10 + 5) * (1 + 0.5)) * 2 = 22.5 * 2 = 45.0
         assert_eq!(calculate_damage(10.0, &tags_fire, &[], &stats), 45.0);
 
-        // Target specific bonus (enemy:<tag>)
+        // Target specific bonus (NEW "damage:<tag>")
         stats.add(
-            "enemy:siled",
+            "damage:siled",
             StatBonus {
                 value: 0.5, // +50%
                 mode: StatMode::Percent,
             },
         );
         let target_tags = vec!["siled".to_string()];
-        // Base damage 10, no source tags, global +5, siled +50%
-        // (10 + 5) * (1 + 0.5) = 15 * 1.5 = 22.5
-        assert_eq!(calculate_damage(10.0, &[], &target_tags, &stats), 22.5);
+        // Base damage 10, global +5 (if we include damage tag)
+        // With "damage" tag: (10 + 5) * (1 + 0.5) = 22.5
+        assert_eq!(
+            calculate_damage(10.0, &["damage".to_string()], &target_tags, &stats),
+            22.5
+        );
+
+        // Without global damage deduction but with target bonus?
+        // Let's test just target bonus on clean stats.
+        let mut clean_stats = BonusStats::default();
+        clean_stats.add(
+            "damage:siled",
+            StatBonus {
+                value: 5.0,
+                mode: StatMode::Additive,
+            },
+        );
+        // 10 + 5 = 15
+        assert_eq!(
+            calculate_damage(10.0, &[], &target_tags, &clean_stats),
+            15.0
+        );
 
         // Combined source and target bonuses
         // Source: "melee" (+50%), Target: "siled" (+50%), Global: +5
         // (10 + 5) * (1 + 0.5 + 0.5) = 15 * 2.0 = 30.0
-        assert_eq!(calculate_damage(10.0, &vec!["melee".to_string()], &target_tags, &stats), 30.0);
+        assert_eq!(
+            calculate_damage(
+                10.0,
+                &vec!["damage".to_string(), "melee".to_string()],
+                &target_tags,
+                &stats
+            ),
+            30.0
+        );
 
-        // Test redundant "damage" tag (should not double count)
-        let tags_redundant = vec!["damage".to_string()];
-        assert_eq!(calculate_damage(10.0, &tags_redundant, &[], &stats), 15.0); // Should be same as global only (15.0)
+        // Name spaced tag test: race:goblin -> damage:race:goblin
+        stats.add(
+            "damage:race:goblin",
+            StatBonus {
+                value: 10.0,
+                mode: StatMode::Additive,
+            },
+        );
+        let goblin_tags = vec!["race:goblin".to_string()];
+        // using just local clean calc for clarity
+        // Base 10 + 10 = 20
+        assert_eq!(calculate_damage(10.0, &[], &goblin_tags, &stats), 20.0);
     }
 }
