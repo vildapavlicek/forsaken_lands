@@ -1,0 +1,10 @@
+(
+    id: "research_autopsy_goblin_rider_unlock",
+    display_name: Some("Autopsy: goblin_rider"),
+    condition: Value(
+        topic: "kills:goblin_rider",
+        op: Ge,
+        target: 1.0,
+    ),
+    reward_id: "research:autopsy_goblin_rider",
+)

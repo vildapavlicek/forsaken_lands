@@ -1,0 +1,10 @@
+(
+    id: "autopsy_worg",
+    name: "Autopsy: worg",
+    description: "Filthy ugly beast. We shall turn it to bones.",
+    cost: {
+        "bones": 30,
+    },
+    time_required: 45.0,
+    max_repeats: 1,
+)

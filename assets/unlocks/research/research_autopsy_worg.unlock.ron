@@ -1,0 +1,10 @@
+(
+    id: "research_autopsy_worg_unlock",
+    display_name: Some("Autopsy: worg"),
+    condition: Value(
+        topic: "kills:worg",
+        op: Ge,
+        target: 1.0,
+    ),
+    reward_id: "research:autopsy_worg",
+)

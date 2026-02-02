@@ -1,0 +1,10 @@
+(
+    id: "autopsy_goblin_rider",
+    name: "Autopsy: goblin_rider",
+    description: "Riding on a beast. Fast. So fast they become fuzzy as they run. Which makes them super ugly.",
+    cost: {
+        "bones": 50,
+    },
+    time_required: 80.0,
+    max_repeats: 1,
+)
