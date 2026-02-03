@@ -10,27 +10,26 @@ use {
             generate_autopsy_research_unlock_ron, generate_divinity_unlock_ron,
             generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
             save_autopsy_files, save_divinity_unlock_file, save_recipe_unlock_file,
-            save_research_files, save_bonus_stats_file, generate_bonus_stats_ron,
+            generate_bonus_stats_ron, save_bonus_stats_file,
         },
         models::{
-            AutopsyFormData, BonusEntry, BonusStatsFormData, CachedEnemy, CachedWeapon, CompareOp, CraftingOutcomeExt,
-            DivinityFormData, LeafCondition, RecipeCategoryExt, RecipeFormData,
-            RecipeUnlockFormData, ResearchFormData, ResourceCost, UnlockCondition,
+            AutopsyFormData, BonusEntry, BonusStatsFormData, CraftingOutcomeExt,
+            DivinityFormData, RecipeCategoryExt, RecipeFormData,
+            RecipeUnlockFormData, ResourceCost, UnlockCondition,
             WeaponDefinitionExt, WeaponTypeExt,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
             optional_components, parse_components_from_ron,
         },
+        tabs::{ttk::TtkTabState, spawn_table::SpawnTableTabState, research::ResearchTabState, common::show_condition_editor},
     },
-    divinity_components::Divinity,
     bonus_stats_assets::StatBonusDefinition,
     bonus_stats_resources::{StatBonus, StatMode},
     eframe::egui,
-    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
     recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition},
     research_assets::ResearchDefinition,
-    std::{collections::{HashMap, HashSet}, path::PathBuf},
+    std::{collections::HashMap, path::PathBuf},
     unlocks_assets::UnlockDefinition,
     weapon_assets::{WeaponDefinition, WeaponType},
 };
@@ -56,8 +55,8 @@ pub enum EditorTab {
 pub struct EditorState {
     /// Current active tab.
     active_tab: EditorTab,
-    /// Form data for the current research.
-    research_form: ResearchFormData,
+    /// Research Tab
+    research: ResearchTabState,
     /// Form data for the current recipe unlock.
     recipe_unlock_form: RecipeUnlockFormData,
     /// Form data for the current weapon.
@@ -105,40 +104,15 @@ pub struct EditorState {
     /// Live RON preview for monster prefab.
     monster_ron_preview: String,
 
-    // Spawn table editor state
-    /// Form data for the spawn table
-    spawn_table_form: SpawnTable,
-    /// Editable filename for the spawn table (without extension)
-    spawn_table_filename: String,
-    /// List of existing spawn table filenames (without extension)
-    existing_spawn_tables: Vec<String>,
-    /// Live RON preview for spawn table
-    spawn_table_preview: String,
+    // Spawn Table Tab
+    spawn_table: SpawnTableTabState,
 
-    // Research Graph
     // Research Graph
     graph_state: ResearchGraphState,
 
     // TTK Tab
-    ttk_data_loaded: bool,
-    cached_enemies: Vec<CachedEnemy>,
-    cached_weapons: Vec<CachedWeapon>,
-    simulation_bonuses: Vec<(String, bonus_stats::StatBonus)>,
-    new_bonus_key: String,
-    new_bonus_value: f32,
-    new_bonus_mode: bonus_stats::StatMode,
-    
-    // Simulation Tags
-    simulated_weapon_tags: Vec<String>,
-    new_weapon_tag: String,
+    ttk: TtkTabState,
 
-    // TTK Filter State
-    ttk_filter_weapons: bool,
-    ttk_filter_enemies: bool,
-    ttk_selected_weapons: HashSet<String>,
-    ttk_selected_enemies: HashSet<String>,
-    ttk_search_weapon: String,
-    ttk_search_enemy: String,
 
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
@@ -161,7 +135,7 @@ impl EditorState {
         let monster_ron_preview = build_scene_ron(&monster_components);
         Self {
             active_tab: EditorTab::Research,
-            research_form: ResearchFormData::new(),
+            research: ResearchTabState::new(),
             recipe_unlock_form: RecipeUnlockFormData::new(),
             weapon_form: WeaponDefinition::new_default(),
             recipe_data_form: RecipeFormData::new(),
@@ -185,30 +159,12 @@ impl EditorState {
             selected_prefab_index: None,
 
             monster_ron_preview,
-            spawn_table_form: SpawnTable::default(),
-            spawn_table_filename: "new_spawn_table".to_string(),
-            existing_spawn_tables: Vec::new(),
-            spawn_table_preview: String::new(),
+            spawn_table: SpawnTableTabState::new(),
 
             graph_state: ResearchGraphState::new(),
 
-            ttk_data_loaded: false,
-            cached_enemies: Vec::new(),
-            cached_weapons: Vec::new(),
-            simulation_bonuses: Vec::new(),
-            new_bonus_key: "damage".to_string(),
-            new_bonus_value: 10.0,
-            new_bonus_mode: bonus_stats::StatMode::Additive,
-            
-            simulated_weapon_tags: Vec::new(),
-            new_weapon_tag: String::new(),
+            ttk: TtkTabState::new(),
 
-            ttk_filter_weapons: false,
-            ttk_filter_enemies: false,
-            ttk_selected_weapons: HashSet::new(),
-            ttk_selected_enemies: HashSet::new(),
-            ttk_search_weapon: String::new(),
-            ttk_search_enemy: String::new(),
 
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
@@ -268,7 +224,7 @@ impl EditorState {
                     egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
                         EditorTab::Research => {
                             ui.label("Research File:");
-                            let research_ron = generate_research_ron(&self.research_form);
+                            let research_ron = generate_research_ron(&self.research.research_form);
                             ui.add(
                                 egui::TextEdit::multiline(&mut research_ron.as_str())
                                     .font(egui::TextStyle::Monospace)
@@ -277,7 +233,7 @@ impl EditorState {
 
                             ui.add_space(10.0);
                             ui.label("Unlock File:");
-                            let unlock_ron = generate_unlock_ron(&self.research_form);
+                            let unlock_ron = generate_unlock_ron(&self.research.research_form);
                             ui.add(
                                 egui::TextEdit::multiline(&mut unlock_ron.as_str())
                                     .font(egui::TextStyle::Monospace)
@@ -331,7 +287,7 @@ impl EditorState {
                         EditorTab::SpawnTable => {
                             ui.label("Spawn Table:");
                             ui.add(
-                                egui::TextEdit::multiline(&mut self.spawn_table_preview.as_str())
+                                egui::TextEdit::multiline(&mut self.spawn_table.spawn_table_preview.as_str())
                                     .font(egui::TextStyle::Monospace)
                                     .desired_width(f32::INFINITY),
                             );
@@ -419,14 +375,27 @@ impl EditorState {
             ui.separator();
 
             egui::ScrollArea::vertical().show(ui, |ui| match self.active_tab {
-                EditorTab::Research => self.show_research_form(ui),
+                EditorTab::Research => self.research.show(
+                    ui,
+                    self.assets_dir.as_deref(),
+                    &mut self.status,
+                    &self.existing_research_ids,
+                    &self.existing_research_filenames,
+                    &self.existing_monster_ids,
+                    &self.existing_recipe_ids,
+                ),
                 EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
                 EditorTab::Weapon => self.show_weapon_form(ui),
                 EditorTab::Recipe => self.show_recipe_form(ui),
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
-                EditorTab::SpawnTable => self.show_spawn_table_form(ui),
+                EditorTab::SpawnTable => self.spawn_table.show(
+                    ui,
+                    self.assets_dir.as_deref(),
+                    &mut self.status,
+                    &self.existing_monster_ids,
+                ),
                 EditorTab::Graph => self.graph_state.show(ui, self.assets_dir.as_deref()),
-                EditorTab::TimeToKill => self.show_ttk_tab(ui),
+                EditorTab::TimeToKill => self.ttk.show(ui, self.assets_dir.as_deref()),
                 EditorTab::Autopsy => self.show_autopsy_form(ui),
                 EditorTab::Divinity => self.show_divinity_form(ui),
                 EditorTab::BonusStats => self.show_bonus_stats_form(ui),
@@ -434,182 +403,6 @@ impl EditorState {
         });
     }
 
-    fn show_research_form(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Research Definition");
-        ui.add_space(4.0);
-
-        // Load existing research
-        ui.group(|ui| {
-            ui.heading("Load Existing Research");
-            ui.separator();
-            if self.assets_dir.is_none() {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    "⚠ Select assets directory first (File → Select Assets Directory)",
-                );
-            } else if self.existing_research_ids.is_empty() {
-                ui.label("No research assets found in assets/research/.");
-            } else {
-                ui.horizontal_wrapped(|ui| {
-                    let mut load_filename = None;
-                    for filename in &self.existing_research_filenames {
-                        if ui.button(filename).clicked() {
-                            load_filename = Some(filename.clone());
-                        }
-                    }
-                    if let Some(filename) = load_filename {
-                        self.load_research(&filename);
-                    }
-                });
-            }
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-        ui.add_space(8.0);
-
-        // Research ID
-        ui.horizontal(|ui| {
-            ui.label("Research ID:");
-            ui.text_edit_singleline(&mut self.research_form.id);
-        });
-        ui.small("The internal ID used for logic (e.g., \"bone_weaponry\")");
-        ui.add_space(8.0);
-
-        // Filename
-        ui.horizontal(|ui| {
-            ui.label("Filename:");
-            ui.text_edit_singleline(&mut self.research_form.filename);
-            ui.label(".research.ron");
-        });
-        ui.small("The file name on disk. Useful for ordering (e.g., \"01_basic_research\")");
-        ui.add_space(8.0);
-
-        // Display Name
-        ui.horizontal(|ui| {
-            ui.label("Display Name:");
-            ui.text_edit_singleline(&mut self.research_form.name);
-        });
-        ui.add_space(8.0);
-
-        // Description
-        ui.label("Description:");
-        ui.add(
-            egui::TextEdit::multiline(&mut self.research_form.description)
-                .desired_rows(2)
-                .desired_width(f32::INFINITY),
-        );
-        ui.add_space(8.0);
-
-        // Cost section
-        ui.separator();
-        ui.heading("Resource Costs");
-
-        let mut remove_idx: Option<usize> = None;
-        for (i, cost) in self.research_form.costs.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                ui.label("Resource:");
-                ui.add(egui::TextEdit::singleline(&mut cost.resource_id).desired_width(120.0));
-                ui.label("Amount:");
-                ui.add(egui::DragValue::new(&mut cost.amount).range(1..=10000));
-                if ui.button("🗑").clicked() {
-                    remove_idx = Some(i);
-                }
-            });
-        }
-
-        if let Some(idx) = remove_idx {
-            self.research_form.costs.remove(idx);
-        }
-
-        if ui.button("+ Add Resource").clicked() {
-            self.research_form.costs.push(ResourceCost::default());
-        }
-        ui.add_space(8.0);
-
-        // Time required
-        ui.separator();
-        ui.horizontal(|ui| {
-            ui.label("Time Required:");
-            ui.add(
-                egui::DragValue::new(&mut self.research_form.time_required)
-                    .range(0.1..=3600.0)
-                    .speed(1.0),
-            );
-            ui.label("seconds");
-
-            ui.add_space(20.0);
-
-            ui.label("Max Repeats:");
-            ui.add(
-                egui::DragValue::new(&mut self.research_form.max_repeats)
-                    .range(1..=1000)
-                    .speed(1.0),
-            );
-            ui.small("(1 = one-time)");
-        });
-        ui.add_space(8.0);
-
-        // Unlock condition section
-        ui.separator();
-        ui.heading("Unlock Condition");
-        show_condition_editor(
-            ui,
-            "research",
-            &self.existing_research_ids,
-            &self.existing_monster_ids,
-            &self.existing_recipe_ids,
-            &mut self.research_form.unlock_condition,
-        );
-        ui.add_space(16.0);
-
-        // ID Preview section
-        ui.separator();
-        ui.heading("Generated IDs (Preview)");
-        ui.add_enabled_ui(false, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Research file:");
-                ui.monospace(self.research_form.research_filename());
-            });
-            ui.horizontal(|ui| {
-                ui.label("Unlock file:");
-                ui.monospace(self.research_form.unlock_filename());
-            });
-            ui.horizontal(|ui| {
-                ui.label("Unlock ID:");
-                ui.monospace(self.research_form.unlock_id());
-            });
-            ui.horizontal(|ui| {
-                ui.label("Reward ID:");
-                ui.monospace(self.research_form.reward_id());
-            });
-        });
-        ui.add_space(16.0);
-
-        // Validation and Save
-        ui.separator();
-        let errors = self.research_form.validate();
-        if !errors.is_empty() {
-            ui.colored_label(egui::Color32::RED, "Validation Errors:");
-            for error in &errors {
-                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
-            }
-            ui.add_space(8.0);
-        }
-
-        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
-            if ui.button("💾 Save Research").clicked() {
-                self.save_research();
-            }
-        });
-
-        if self.assets_dir.is_none() {
-            ui.colored_label(
-                egui::Color32::YELLOW,
-                "⚠ Select assets directory first (File → Select Assets Directory)",
-            );
-        }
-    }
 
     fn show_recipe_unlock_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Recipe Unlock Definition");
@@ -1085,308 +878,12 @@ impl EditorState {
     }
 }
 /// Show the structured condition editor UI.
-fn show_condition_editor(
-    ui: &mut egui::Ui,
-    id_prefix: &str,
-    existing_research_ids: &[String],
-    existing_monster_ids: &[String],
-    existing_recipe_ids: &[String],
-    condition: &mut UnlockCondition,
-) {
-    // Top-level condition type dropdown
-    let current_type = condition.display_name();
-    ui.horizontal(|ui| {
-        ui.label("Type:");
-        egui::ComboBox::from_id_salt(format!("{}_condition_type", id_prefix))
-            .selected_text(current_type)
-            .show_ui(ui, |ui| {
-                for type_name in UnlockCondition::all_types() {
-                    if ui
-                        .selectable_label(current_type == type_name, type_name)
-                        .clicked()
-                    {
-                        *condition = UnlockCondition::from_type_name(type_name);
-                    }
-                }
-            });
-    });
-
-    ui.add_space(4.0);
-
-    // Show condition-specific UI
-    match condition {
-        UnlockCondition::True => {
-            ui.small("Always available from the start.");
-        }
-        UnlockCondition::Single(leaf) => {
-            show_leaf_editor(
-                ui,
-                &format!("{}_single", id_prefix),
-                existing_research_ids,
-                existing_monster_ids,
-                existing_recipe_ids,
-                leaf,
-            );
-        }
-        UnlockCondition::And(leaves) => {
-            show_gate_editor(
-                ui,
-                id_prefix,
-                existing_research_ids,
-                existing_monster_ids,
-                existing_recipe_ids,
-                leaves,
-                "AND",
-            );
-        }
-        UnlockCondition::Or(leaves) => {
-            show_gate_editor(
-                ui,
-                id_prefix,
-                existing_research_ids,
-                existing_monster_ids,
-                existing_recipe_ids,
-                leaves,
-                "OR",
-            );
-        }
-    }
-}
-
-/// Show editor for And/Or gate with multiple leaf conditions.
-fn show_gate_editor(
-    ui: &mut egui::Ui,
-    id_prefix: &str,
-    existing_research_ids: &[String],
-    existing_monster_ids: &[String],
-    existing_recipe_ids: &[String],
-    leaves: &mut Vec<LeafCondition>,
-    gate_name: &str,
-) {
-    ui.small(format!(
-        "{} gate: {} conditions must be met.",
-        gate_name,
-        if gate_name == "AND" { "All" } else { "Any" }
-    ));
-
-    ui.add_space(4.0);
-
-    let mut remove_idx: Option<usize> = None;
-    for (i, leaf) in leaves.iter_mut().enumerate() {
-        ui.group(|ui| {
-            ui.horizontal(|ui| {
-                ui.label(format!("Condition #{}:", i + 1));
-                if ui.button("🗑").clicked() {
-                    remove_idx = Some(i);
-                }
-            });
-            show_leaf_editor(
-                ui,
-                &format!("{}_{}", id_prefix, i),
-                existing_research_ids,
-                existing_monster_ids,
-                existing_recipe_ids,
-                leaf,
-            );
-        });
-    }
-
-    if let Some(idx) = remove_idx {
-        if leaves.len() > 1 {
-            leaves.remove(idx);
-        }
-    }
-
-    if ui.button("+ Add Condition").clicked() {
-        leaves.push(LeafCondition::default());
-    }
-}
-
-/// Show editor for a single leaf condition.
-fn show_leaf_editor(
-    ui: &mut egui::Ui,
-    id_prefix: &str,
-    existing_research_ids: &[String],
-    existing_monster_ids: &[String],
-    existing_recipe_ids: &[String],
-    leaf: &mut LeafCondition,
-) {
-    // Leaf type dropdown
-    let current_type = leaf.display_name();
-    ui.horizontal(|ui| {
-        ui.label("Condition:");
-        egui::ComboBox::from_id_salt(format!("{}_leaf_type", id_prefix))
-            .selected_text(current_type)
-            .show_ui(ui, |ui| {
-                for type_name in LeafCondition::all_types() {
-                    if ui
-                        .selectable_label(current_type == type_name, type_name)
-                        .clicked()
-                    {
-                        *leaf = LeafCondition::from_type_name(type_name);
-                    }
-                }
-            });
-    });
-
-    // Condition-specific fields
-    match leaf {
-        LeafCondition::Unlock { id } => {
-            ui.horizontal(|ui| {
-                ui.label("Research ID:");
-                if !existing_research_ids.is_empty() {
-                    egui::ComboBox::from_id_salt(format!("{}_unlock_id", id_prefix))
-                        .selected_text(if id.is_empty() {
-                            "Select..."
-                        } else {
-                            id.as_str()
-                        })
-                        .show_ui(ui, |ui| {
-                            for research_id in existing_research_ids {
-                                if ui
-                                    .selectable_label(id == research_id, research_id)
-                                    .clicked()
-                                {
-                                    *id = research_id.clone();
-                                }
-                            }
-                        });
-                    ui.label("or");
-                }
-                ui.text_edit_singleline(id);
-            });
-            // Warning if research ID not found
-            if !id.is_empty() && !existing_research_ids.contains(id) {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    format!("⚠ Research \"{}\" not found", id),
-                );
-            }
-        }
-        LeafCondition::Kills {
-            monster_id,
-            value,
-            op,
-        } => {
-            ui.horizontal(|ui| {
-                ui.label("Monster ID:");
-                if !existing_monster_ids.is_empty() {
-                    egui::ComboBox::from_id_salt(format!("{}_monster_id", id_prefix))
-                        .selected_text(if monster_id.is_empty() {
-                            "Select..."
-                        } else {
-                            monster_id.as_str()
-                        })
-                        .show_ui(ui, |ui| {
-                            for id in existing_monster_ids {
-                                if ui.selectable_label(monster_id == id, id).clicked() {
-                                    *monster_id = id.clone();
-                                }
-                            }
-                        });
-                    ui.label("or");
-                }
-                ui.add(egui::TextEdit::singleline(monster_id).desired_width(100.0));
-                // Warning if monster ID not found
-                if !monster_id.is_empty() && !existing_monster_ids.contains(monster_id) {
-                    ui.colored_label(
-                        egui::Color32::YELLOW,
-                        format!("⚠ Monster \"{}\" not found", monster_id),
-                    );
-                }
-
-                ui.label("Op:");
-                egui::ComboBox::from_id_salt(format!("{}_kills_op", id_prefix))
-                    .selected_text(op.display_name())
-                    .width(50.0)
-                    .show_ui(ui, |ui| {
-                        for op_name in CompareOp::all() {
-                            if ui
-                                .selectable_label(op.display_name() == op_name, op_name)
-                                .clicked()
-                            {
-                                *op = CompareOp::from_display(op_name);
-                            }
-                        }
-                    });
-                ui.label("Value:");
-                ui.add(egui::DragValue::new(value).speed(1.0).range(1.0..=10000.0));
-            });
-            ui.small("e.g., monster_id: \"goblin\", op: >=, value: 10 (kills 10 goblins)");
-        }
-        LeafCondition::Resource {
-            resource_id,
-            amount,
-        } => {
-            ui.horizontal(|ui| {
-                ui.label("Resource ID:");
-                ui.add(egui::TextEdit::singleline(resource_id).desired_width(100.0));
-                ui.label("Amount:");
-                ui.add(egui::DragValue::new(amount).range(1..=10000));
-            });
-            ui.small("Triggers when player has at least this amount");
-        }
-        LeafCondition::Divinity { tier, level, op } => {
-            ui.horizontal(|ui| {
-                ui.label("Tier:");
-                ui.add(egui::DragValue::new(tier).range(1..=9));
-                ui.label("Level:");
-                ui.add(egui::DragValue::new(level).range(1..=99));
-
-                ui.label("Op:");
-                egui::ComboBox::from_id_salt(format!("{}_div_op", id_prefix))
-                    .selected_text(op.display_name())
-                    .width(50.0)
-                    .show_ui(ui, |ui| {
-                        for op_name in CompareOp::all() {
-                            if ui
-                                .selectable_label(op.display_name() == op_name, op_name)
-                                .clicked()
-                            {
-                                *op = CompareOp::from_display(op_name);
-                            }
-                        }
-                    });
-            });
-            ui.small("Triggers when player reaches this divinity tier/level");
-        }
-        LeafCondition::Craft { recipe_id } => {
-            ui.horizontal(|ui| {
-                ui.label("Recipe ID:");
-                if !existing_recipe_ids.is_empty() {
-                    egui::ComboBox::from_id_salt(format!("{}_recipe_id", id_prefix))
-                        .selected_text(if recipe_id.is_empty() {
-                            "Select..."
-                        } else {
-                            recipe_id.as_str()
-                        })
-                        .show_ui(ui, |ui| {
-                            for id in existing_recipe_ids {
-                                if ui.selectable_label(recipe_id == id, id).clicked() {
-                                    *recipe_id = id.clone();
-                                }
-                            }
-                        });
-                    ui.label("or");
-                }
-                ui.add(egui::TextEdit::singleline(recipe_id).desired_width(120.0));
-            });
-            // Warning if recipe ID not found
-            if !recipe_id.is_empty() && !existing_recipe_ids.contains(recipe_id) {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    format!("⚠ Recipe \"{}\" not found", recipe_id),
-                );
-            }
-        }
-    }
-}
 
 impl EditorState {
     fn new_form(&mut self) {
         match self.active_tab {
             EditorTab::Research => {
-                self.research_form = ResearchFormData::new();
+                self.research.reset();
                 self.status = "New research form created".to_string();
             }
             EditorTab::RecipeUnlock => {
@@ -1409,9 +906,7 @@ impl EditorState {
                 self.status = "New monster prefab created".to_string();
             }
             EditorTab::SpawnTable => {
-                self.spawn_table_form = SpawnTable::default();
-                self.spawn_table_filename = "new_spawn_table".to_string();
-                self.update_spawn_table_preview();
+                self.spawn_table.reset();
                 self.status = "New spawn table form created".to_string();
             }
             EditorTab::Graph => {
@@ -1543,21 +1038,7 @@ impl EditorState {
         self.existing_monster_ids.sort();
 
         // Load spawn tables (.spawn_table.ron)
-        self.existing_spawn_tables.clear();
-        if let Ok(entries) = std::fs::read_dir(assets_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".spawn_table.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".spawn_table.ron") {
-                            self.existing_spawn_tables.push(stem.to_string());
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_spawn_tables.sort();
+        self.spawn_table.reload_existing_tables(assets_dir);
 
         // Load weapon IDs
         self.existing_weapon_ids.clear();
@@ -1652,455 +1133,8 @@ impl EditorState {
         self.existing_bonus_filenames.sort();
     }
 
-    fn save_research(&mut self) {
-        if let Some(assets_dir) = &self.assets_dir {
-            match save_research_files(&self.research_form, assets_dir) {
-                Ok(result) => {
-                    self.status = format!(
-                        "✓ Saved: {} and {}",
-                        result.research_path, result.unlock_path
-                    );
-                    let assets_dir = assets_dir.clone();
-                    self.load_existing_ids(&assets_dir);
-                }
-                Err(e) => {
-                    self.status = format!("✗ Failed to save: {}", e);
-                }
-            }
-        }
-    }
 
-    fn load_research(&mut self, filename_stem: &str) {
-        if let Some(assets_dir) = &self.assets_dir {
-            // Construct research path
-            let research_path = assets_dir
-                .join("research")
-                .join(format!("{}.research.ron", filename_stem));
 
-            // Read research file
-            let research_content = match std::fs::read_to_string(&research_path) {
-                Ok(c) => c,
-                Err(e) => {
-                    self.status = format!("✗ Failed to read research file: {}", e);
-                    return;
-                }
-            };
-
-            // Parse research RON to get the internal ID
-            let research_def: ResearchDefinition = match ron::from_str(&research_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    self.status = format!("✗ Failed to parse research RON: {}", e);
-                    return;
-                }
-            };
-
-            // Construct unlock path using the actual internal ID
-            let internal_id = &research_def.id;
-            let unlock_path = assets_dir
-                .join("unlocks")
-                .join("research")
-                .join(format!("research_{}.unlock.ron", internal_id));
-
-            // Read unlock file
-            let unlock_content = match std::fs::read_to_string(&unlock_path) {
-                Ok(c) => c,
-                Err(e) => {
-                    self.status =
-                        format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
-                    return;
-                }
-            };
-
-            // Parse RON
-            let research_def: ResearchDefinition = match ron::from_str(&research_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    self.status = format!("✗ Failed to parse research RON: {}", e);
-                    return;
-                }
-            };
-            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
-                    return;
-                }
-            };
-
-            // Convert and populate form
-            self.research_form = ResearchFormData::from_assets(
-                &research_def,
-                &unlock_def,
-                filename_stem.to_string(),
-            );
-            self.status = format!(
-                "✓ Loaded research: {} (Internal ID: {})",
-                filename_stem, internal_id
-            );
-        }
-    }
-
-    fn show_ttk_tab(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Time To Kill (TTK) Calculator");
-        ui.add_space(4.0);
-
-        if self.assets_dir.is_none() {
-            ui.colored_label(
-                egui::Color32::YELLOW,
-                "⚠ Select assets directory first (File → Select Assets Directory)",
-            );
-            return;
-        }
-
-        if ui.button("🔄 Reload Data").clicked() || !self.ttk_data_loaded {
-            self.load_ttk_data();
-        }
-
-        if self.cached_enemies.is_empty() || self.cached_weapons.is_empty() {
-            ui.label("No enemies or weapons found.");
-            return;
-        }
-
-        ui.add_space(8.0);
-        ui.separator();
-        ui.heading("Simulation Bonuses");
-        ui.small("Add bonuses to simulate different builds (e.g. 'damage', 'damage:melee').");
-
-        // Bonus list
-        let mut remove_idx = None;
-        for (i, (key, bonus)) in self.simulation_bonuses.iter_mut().enumerate() {
-            ui.horizontal(|ui| {
-                ui.label(format!("{}:", key));
-                match bonus.mode {
-                    bonus_stats::StatMode::Additive => {
-                        ui.label(format!("+{}", bonus.value));
-                    }
-                    bonus_stats::StatMode::Percent => {
-                        ui.label(format!("+{}%", bonus.value * 100.0));
-                    }
-                    bonus_stats::StatMode::Multiplicative => {
-                        ui.label(format!("x{}", bonus.value));
-                    }
-                }
-                if ui.button("🗑").clicked() {
-                    remove_idx = Some(i);
-                }
-            });
-        }
-        if let Some(idx) = remove_idx {
-            self.simulation_bonuses.remove(idx);
-        }
-
-        ui.add_space(4.0);
-        ui.horizontal(|ui| {
-            ui.label("Key:");
-            ui.text_edit_singleline(&mut self.new_bonus_key);
-            ui.label("Value:");
-            ui.add(egui::DragValue::new(&mut self.new_bonus_value).speed(0.1));
-
-            egui::ComboBox::from_id_salt("new_bonus_mode")
-                .selected_text(format!("{:?}", self.new_bonus_mode))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Additive, "Additive");
-                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Percent, "Percent");
-                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Multiplicative, "Multiplicative");
-                });
-
-            if ui.button("Add Bonus").clicked() {
-                if !self.new_bonus_key.is_empty() {
-                    // Fix percent value if user enters 10 for 10%
-                    let value = if self.new_bonus_mode == bonus_stats::StatMode::Percent && self.new_bonus_value > 1.0 {
-                         self.new_bonus_value / 100.0
-                    } else {
-                        self.new_bonus_value
-                    };
-
-                    self.simulation_bonuses.push((
-                        self.new_bonus_key.clone(),
-                        bonus_stats::StatBonus {
-                            value,
-                            mode: self.new_bonus_mode,
-                        },
-                    ));
-
-                }
-            }
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-        ui.heading("Simulation Weapon Tags");
-        ui.small("Add tags to simulate weapon properties (e.g. 'melee', 'fire').");
-
-        // Tag list
-        let mut remove_tag_idx = None;
-        for (i, tag) in self.simulated_weapon_tags.iter().enumerate() {
-            ui.horizontal(|ui| {
-                ui.label(tag);
-                if ui.button("🗑").clicked() {
-                    remove_tag_idx = Some(i);
-                }
-            });
-        }
-        if let Some(idx) = remove_tag_idx {
-            self.simulated_weapon_tags.remove(idx);
-        }
-
-        ui.horizontal(|ui| {
-            ui.label("Tag:");
-            ui.text_edit_singleline(&mut self.new_weapon_tag);
-            if ui.button("Add Tag").clicked() {
-                if !self.new_weapon_tag.is_empty() {
-                    self.simulated_weapon_tags.push(self.new_weapon_tag.clone());
-                    self.new_weapon_tag.clear();
-                }
-            }
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-
-        ui.add_space(8.0);
-        
-        // --- Filter Options ---
-        ui.separator();
-        ui.heading("Filters");
-
-        ui.columns(2, |cols| {
-            // Weapon Filter Column
-            cols[0].group(|ui| {
-                ui.checkbox(&mut self.ttk_filter_weapons, "Enable Weapon Filter");
-                if self.ttk_filter_weapons {
-                    ui.horizontal(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut self.ttk_search_weapon).desired_width(100.0));
-                        if ui.button("All").clicked() {
-                            self.ttk_selected_weapons = self.cached_weapons.iter().map(|w| w.id.clone()).collect();
-                        }
-                        if ui.button("None").clicked() {
-                            self.ttk_selected_weapons.clear();
-                        }
-                    });
-                    
-                    ui.separator();
-                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                        for weapon in &self.cached_weapons {
-                            if !self.ttk_search_weapon.is_empty() && !weapon.display_name.to_lowercase().contains(&self.ttk_search_weapon.to_lowercase()) {
-                                continue;
-                            }
-                            let mut selected = self.ttk_selected_weapons.contains(&weapon.id);
-                            if ui.checkbox(&mut selected, &weapon.display_name).changed() {
-                                if selected {
-                                    self.ttk_selected_weapons.insert(weapon.id.clone());
-                                } else {
-                                    self.ttk_selected_weapons.remove(&weapon.id);
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-
-            // Enemy Filter Column
-            cols[1].group(|ui| {
-                ui.checkbox(&mut self.ttk_filter_enemies, "Enable Enemy Filter");
-                if self.ttk_filter_enemies {
-                    ui.horizontal(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut self.ttk_search_enemy).desired_width(100.0));
-                        if ui.button("All").clicked() {
-                            self.ttk_selected_enemies = self.cached_enemies.iter().map(|e| e.id.clone()).collect();
-                        }
-                        if ui.button("None").clicked() {
-                            self.ttk_selected_enemies.clear();
-                        }
-                    });
-                    
-                    ui.separator();
-                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                        for enemy in &self.cached_enemies {
-                            if !self.ttk_search_enemy.is_empty() && !enemy.display_name.to_lowercase().contains(&self.ttk_search_enemy.to_lowercase()) {
-                                continue;
-                            }
-                            let mut selected = self.ttk_selected_enemies.contains(&enemy.id);
-                            if ui.checkbox(&mut selected, &enemy.display_name).changed() {
-                                if selected {
-                                    self.ttk_selected_enemies.insert(enemy.id.clone());
-                                } else {
-                                    self.ttk_selected_enemies.remove(&enemy.id);
-                                }
-                            }
-                        }
-                    });
-                }
-            });
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-        
-        let visible_weapons: Vec<&CachedWeapon> = self.cached_weapons.iter().filter(|w| {
-            if !self.ttk_filter_weapons { return true; }
-            self.ttk_selected_weapons.contains(&w.id)
-        }).collect();
-
-        let visible_enemies: Vec<&CachedEnemy> = self.cached_enemies.iter().filter(|e| {
-            if !self.ttk_filter_enemies { return true; }
-            self.ttk_selected_enemies.contains(&e.id)
-        }).collect();
-
-        egui::ScrollArea::both().show(ui, |ui| {
-            egui::Grid::new("ttk_grid").striped(true).show(ui, |ui| {
-                // Header row
-                ui.label("Enemy \\ Weapon");
-                for weapon in &visible_weapons {
-                    ui.label(&weapon.display_name).on_hover_text(&weapon.id);
-                }
-                ui.end_row();
-
-                // Rows
-                for enemy in &visible_enemies {
-                    ui.label(&enemy.display_name).on_hover_text(&enemy.id);
-
-                    for weapon in &visible_weapons {
-                        // Prepare BonusStats
-                        let mut stats = bonus_stats::BonusStats::default();
-
-                        // Apply weapon bonuses first (intrinsic stats)
-                        for (key, bonus) in &weapon.bonuses {
-                           stats.add(key, bonus.clone());
-                        }
-                        
-                        // Apply simulation bonuses on top (simulating player stats/buffs)
-                        for (key, bonus) in &self.simulation_bonuses {
-                            stats.add(key, bonus.clone());
-                        }
-
-                        // Collect tags
-                        // Source tags: Weapon tags (as-is) + simulated tags
-                        let mut source_tags = weapon.tags.clone();
-                        source_tags.extend(self.simulated_weapon_tags.clone());
-                        
-                        // Target tags: Enemy tags
-                        let target_tags = &enemy.tags;
-
-                        // Calculate effective damage
-                        let effective_damage = bonus_stats::calculate_damage(
-                            weapon.damage,
-                            &source_tags,
-                            target_tags,
-                            &stats
-                        );
-
-                        let hits = (enemy.max_health / effective_damage).ceil();
-                        let time_ms = hits * weapon.attack_speed_ms as f32;
-                        let time_sec = time_ms / 1000.0;
-
-                        ui.label(format!("{:.2}s ({} hits)", time_sec, hits))
-                            .on_hover_text(format!("Damage: {:.1} (Base: {:.1})", effective_damage, weapon.damage));
-                    }
-                    ui.end_row();
-                }
-            });
-        });
-    }
-
-    fn load_ttk_data(&mut self) {
-        if let Some(assets_dir) = &self.assets_dir {
-            // Load Enemies
-            self.cached_enemies.clear();
-            let enemies_dir = assets_dir.join("prefabs").join("enemies");
-            if let Ok(entries) = std::fs::read_dir(&enemies_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if let Ok(content) = std::fs::read_to_string(&path) {
-                        if let Some(components) =
-                            crate::monster_prefab::parse_components_from_ron(&content)
-                        {
-                            let mut id = "unknown".to_string();
-                            let mut name = "Unknown".to_string();
-                            let mut max_health = 1.0;
-                            let mut tags = Vec::new();
-
-                            for comp in components {
-                                match comp {
-                                    crate::monster_prefab::EnemyComponent::MonsterId(val) => {
-                                        id = val
-                                    }
-                                    crate::monster_prefab::EnemyComponent::DisplayName(val) => {
-                                        name = val
-                                    }
-                                    crate::monster_prefab::EnemyComponent::Health {
-                                        max, ..
-                                    } => max_health = max,
-                                    crate::monster_prefab::EnemyComponent::MonsterTags(val) => {
-                                        tags = val
-                                    }
-                                    _ => {}
-                                }
-                            }
-
-                            if id != "unknown" {
-                                self.cached_enemies.push(CachedEnemy {
-                                    id,
-                                    display_name: name,
-                                    max_health,
-                                    filename: path
-                                        .file_name()
-                                        .unwrap_or_default()
-                                        .to_string_lossy()
-                                        .to_string(),
-                                    tags,
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            self.cached_enemies.sort_by(|a, b| {
-                a.max_health
-                    .partial_cmp(&b.max_health)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
-
-            // Load Weapons
-            self.cached_weapons.clear();
-            let weapons_dir = assets_dir.join("weapons");
-            if let Ok(entries) = std::fs::read_dir(&weapons_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if let Ok(content) = std::fs::read_to_string(&path) {
-                        match ron::from_str::<WeaponDefinition>(&content) {
-                            Ok(weapon_def) => {
-                                self.cached_weapons.push(CachedWeapon {
-                                    id: weapon_def.id,
-                                    display_name: weapon_def.display_name,
-                                    damage: weapon_def.damage,
-                                    attack_speed_ms: weapon_def.attack_speed_ms,
-                                    filename: path
-                                        .file_name()
-                                        .unwrap_or_default()
-                                        .to_string_lossy()
-                                        .to_string(),
-                                    bonuses: weapon_def.bonuses.into_iter().collect(), // convert HashMap types if needed, but they should match
-                                    tags: weapon_def.tags,
-                                });
-                            }
-                            Err(e) => {
-                                self.status = format!("✗ Failed to parse weapon for TTK: {}", e);
-                            }
-                        }
-                    }
-                }
-            }
-            self.cached_weapons.sort_by(|a, b| {
-                a.damage
-                    .partial_cmp(&b.damage)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
-
-            self.ttk_data_loaded = true;
-        }
-    }
 
     fn load_recipe_unlock(&mut self, id: &str) {
         if let Some(assets_dir) = &self.assets_dir {
@@ -2684,381 +1718,7 @@ fn extract_id_from_ron(content: &str) -> Option<String> {
 }
 
 impl EditorState {
-    fn show_spawn_table_form(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Spawn Table Editor");
-        ui.add_space(4.0);
 
-        // Load existing spawn table
-        ui.group(|ui| {
-            ui.heading("Load Existing Table");
-            ui.separator();
-            if self.assets_dir.is_none() {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    "⚠ Select assets directory first (File → Select Assets Directory)",
-                );
-            } else if self.existing_spawn_tables.is_empty() {
-                ui.label("No spawn tables found in assets/ directory.");
-            } else {
-                ui.horizontal_wrapped(|ui| {
-                    let mut load_name = None;
-                    for table_name in &self.existing_spawn_tables {
-                        if ui.button(table_name).clicked() {
-                            load_name = Some(table_name.clone());
-                        }
-                    }
-                    if let Some(name) = load_name {
-                        self.load_spawn_table(&name);
-                    }
-                });
-            }
-        });
-
-        ui.add_space(8.0);
-
-        // Filename input
-        ui.horizontal(|ui| {
-            ui.label("Filename:");
-            ui.text_edit_singleline(&mut self.spawn_table_filename);
-            ui.label(".spawn_table.ron");
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-
-        ui.heading("Entries Grouped by Tier");
-        ui.add_space(4.0);
-
-        // Group entries by unique SpawnCondition
-        let mut groups: Vec<SpawnCondition> = Vec::new();
-        for entry in &self.spawn_table_form.entries {
-            if !groups.contains(&entry.condition) {
-                groups.push(entry.condition.clone());
-            }
-        }
-        
-        // Sort groups: Specific/Min/Range order, then by divinity logic
-        groups.sort_by(|a, b| {
-            // Helper to extract a sort key (tier, level)
-            let key = |c: &SpawnCondition| match c {
-                SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => *d,
-            };
-            key(a).cmp(&key(b))
-        });
-
-        let mut changed = false;
-        let mut entries_to_add = Vec::new();
-        let mut entries_to_remove = std::collections::HashSet::new();
-        let mut condition_replacements = Vec::new();
-
-        for group_condition in groups {
-            let header_text = match &group_condition {
-                SpawnCondition::Specific(d) => format!("Specific: Tier {} Level {}", d.tier, d.level),
-                SpawnCondition::Min(d) => format!("Min: Tier {} Level {}", d.tier, d.level),
-                SpawnCondition::Range { min, max } => format!("Range: {}-{} to {}-{}", min.tier, min.level, max.tier, max.level),
-            };
-
-            // Unique ID for the collapsing header
-            ui.push_id(format!("group_{:?}", group_condition), |ui| {
-                ui.collapsing(header_text, |ui| {
-                    ui.add_space(4.0);
-                    
-                    // --- Group Condition Editor ---
-                    ui.group(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.label("Condition:");
-                            
-                            let mut edited_condition = group_condition.clone();
-                            
-                            // Condition Type Selector
-                            let type_name = match edited_condition {
-                                SpawnCondition::Specific(_) => "Specific",
-                                SpawnCondition::Range { .. } => "Range",
-                                SpawnCondition::Min(_) => "Min",
-                            };
-
-                            egui::ComboBox::from_id_salt("cond_type")
-                                .selected_text(type_name)
-                                .show_ui(ui, |ui| {
-                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Min(_)), "Min").clicked() {
-                                        edited_condition = SpawnCondition::Min(match group_condition {
-                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
-                                        });
-                                    }
-                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Range{..}), "Range").clicked() {
-                                        let current_d = match group_condition {
-                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
-                                        };
-                                        edited_condition = SpawnCondition::Range { min: current_d, max: current_d };
-                                    }
-                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Specific(_)), "Specific").clicked() {
-                                        edited_condition = SpawnCondition::Specific(match group_condition {
-                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
-                                        });
-                                    }
-                                });
-
-                            // Condition Values
-                             match &mut edited_condition {
-                                SpawnCondition::Min(div) | SpawnCondition::Specific(div) => {
-                                    ui.label("Tier:");
-                                    ui.add(egui::DragValue::new(&mut div.tier).range(1..=10));
-                                    ui.label("Level:");
-                                    ui.add(egui::DragValue::new(&mut div.level).range(1..=99));
-                                }
-                                SpawnCondition::Range { min, max } => {
-                                    ui.label("Min Tier:");
-                                    ui.add(egui::DragValue::new(&mut min.tier).range(1..=10));
-                                    ui.label("Lvl:");
-                                    ui.add(egui::DragValue::new(&mut min.level).range(1..=99));
-                                    
-                                    ui.label("Max Tier:");
-                                    ui.add(egui::DragValue::new(&mut max.tier).range(1..=10));
-                                    ui.label("Lvl:");
-                                    ui.add(egui::DragValue::new(&mut max.level).range(1..=99));
-                                }
-                            }
-                            
-                            if edited_condition != group_condition {
-                                condition_replacements.push((group_condition.clone(), edited_condition));
-                                changed = true;
-                            }
-                            
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.button("🗑 Delete Group").clicked() {
-                                    // Mark all entries in this group for removal
-                                    for (idx, entry) in self.spawn_table_form.entries.iter().enumerate() {
-                                        if entry.condition == group_condition {
-                                            entries_to_remove.insert(idx);
-                                        }
-                                    }
-                                    changed = true;
-                                }
-                            });
-                        });
-                    });
-
-                    ui.add_space(4.0);
-                    ui.label("Enemies:");
-
-                    // --- Enemies List ---
-                    let mut local_remove_indices = Vec::new();
-                    
-                    // We need to match entries that have the ORIGINAL group_condition
-                    for (idx, entry) in self.spawn_table_form.entries.iter_mut().enumerate() {
-                        if entry.condition == group_condition {
-                            ui.horizontal(|ui| {
-                                // Spawn Type
-                                let spawn_type = &mut entry.spawn_type;
-                                let type_name = match spawn_type {
-                                    SpawnType::Single(_) => "Single",
-                                    SpawnType::Group(_) => "Group",
-                                };
-                                
-                                egui::ComboBox::from_id_salt(format!("type_{}", idx))
-                                    .selected_text(type_name)
-                                    .show_ui(ui, |ui| {
-                                        if ui.selectable_label(matches!(spawn_type, SpawnType::Single(_)), "Single").clicked() {
-                                            *spawn_type = SpawnType::Single("goblin_scout".to_string());
-                                            changed = true;
-                                        }
-                                        if ui.selectable_label(matches!(spawn_type, SpawnType::Group(_)), "Group").clicked() {
-                                            *spawn_type = SpawnType::Group(vec!["goblin_scout".to_string()]);
-                                            changed = true;
-                                        }
-                                    });
-
-                                match spawn_type {
-                                    SpawnType::Single(monster_id) => {
-                                        ui.label("ID:");
-                                        if !self.existing_monster_ids.is_empty() {
-                                            egui::ComboBox::from_id_salt(format!("mon_{}", idx))
-                                                .selected_text(monster_id.as_str())
-                                                .show_ui(ui, |ui| {
-                                                    for id in &self.existing_monster_ids {
-                                                        if ui.selectable_label(monster_id == id, id).clicked() {
-                                                            *monster_id = id.clone();
-                                                            changed = true;
-                                                        }
-                                                    }
-                                                });
-                                        } else {
-                                            if ui.text_edit_singleline(monster_id).changed() {
-                                                changed = true;
-                                            }
-                                        }
-                                    }
-                                    SpawnType::Group(ids) => {
-                                        ui.label("Group:");
-                                        // Simplified group editor for space
-                                        for (j, id) in ids.iter_mut().enumerate() {
-                                            if !self.existing_monster_ids.is_empty() {
-                                                egui::ComboBox::from_id_salt(format!("grp_{}_{}", idx, j))
-                                                    .selected_text(id.as_str())
-                                                    .show_ui(ui, |ui| {
-                                                         for valid_id in &self.existing_monster_ids {
-                                                             if ui.selectable_label(id == valid_id, valid_id).clicked() {
-                                                                 *id = valid_id.clone();
-                                                                 changed = true;
-                                                             }
-                                                         }
-                                                    });
-                                            } else {
-                                                if ui.text_edit_singleline(id).changed() { changed = true; }
-                                            }
-                                        }
-                                        if ui.button("+").clicked() {
-                                            ids.push("goblin_scout".to_string());
-                                            changed = true;
-                                        }
-                                        if ids.len() > 1 && ui.button("-").clicked() {
-                                            ids.pop();
-                                            changed = true;
-                                        }
-                                    }
-                                }
-                                
-                                ui.label("Weight:");
-                                if ui.add(egui::DragValue::new(&mut entry.weight).range(1..=10000)).changed() {
-                                    changed = true;
-                                }
-                                
-                                if ui.button("🗑").clicked() {
-                                    local_remove_indices.push(idx);
-                                }
-                            });
-                        }
-                    }
-                    
-                    for idx in local_remove_indices {
-                        entries_to_remove.insert(idx);
-                        changed = true;
-                    }
-
-                    if ui.button("+ Add Enemy to Tier").clicked() {
-                        entries_to_add.push(SpawnEntry {
-                            condition: group_condition.clone(),
-                            spawn_type: SpawnType::Single("goblin_scout".to_string()),
-                            weight: 10,
-                        });
-                        changed = true;
-                    }
-                });
-            });
-        }
-
-        ui.add_space(8.0);
-        
-        if ui.button("➕ Add New Tier").clicked() {
-            // Check for highest existing tier logic or just default
-            // Just add a default Min Tier 1 Level 1
-            entries_to_add.push(SpawnEntry {
-                condition: SpawnCondition::Min(Divinity { tier: 1, level: 1 }),
-                spawn_type: SpawnType::Single("goblin_scout".to_string()),
-                weight: 10,
-            });
-            changed = true;
-        }
-
-        ui.add_space(16.0);
-        ui.separator();
-        
-        // --- Apply Updates ---
-        
-        // 1. Condition Replacements
-        for (old, new) in condition_replacements {
-            for entry in &mut self.spawn_table_form.entries {
-                if entry.condition == old {
-                    entry.condition = new.clone();
-                }
-            }
-        }
-        
-        // 2. Additions
-        self.spawn_table_form.entries.extend(entries_to_add);
-        
-        // 3. Removals
-        if !entries_to_remove.is_empty() {
-            let mut sorted_indices: Vec<_> = entries_to_remove.into_iter().collect();
-            sorted_indices.sort_unstable_by(|a, b| b.cmp(a)); // Descending
-            for idx in sorted_indices {
-                if idx < self.spawn_table_form.entries.len() {
-                    self.spawn_table_form.entries.remove(idx);
-                    changed = true;
-                }
-            }
-        }
-
-        // --- Save Buttons ---
-        ui.horizontal(|ui| {
-            ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
-                if ui.button("💾 Save Spawn Table").clicked() {
-                    self.save_spawn_table();
-                }
-            });
-
-            if ui.button("🆕 New Table").clicked() {
-                self.spawn_table_form = SpawnTable::default();
-                self.spawn_table_filename = "new_spawn_table".to_string();
-                self.update_spawn_table_preview();
-                self.status = "New spawn table created".to_string();
-            }
-        });
-
-        if changed {
-            self.update_spawn_table_preview();
-        }
-    }
-
-    fn update_spawn_table_preview(&mut self) {
-        if let Ok(ron_str) =
-            ron::ser::to_string_pretty(&self.spawn_table_form, ron::ser::PrettyConfig::default())
-        {
-            self.spawn_table_preview = ron_str;
-        } else {
-            self.spawn_table_preview = "Error serializing Spawn Table".to_string();
-        }
-    }
-
-    fn load_spawn_table(&mut self, filename: &str) {
-        if let Some(assets_dir) = &self.assets_dir.clone() {
-            let file_path = assets_dir.join(format!("{}.spawn_table.ron", filename));
-            match std::fs::read_to_string(&file_path) {
-                Ok(content) => match ron::from_str::<SpawnTable>(&content) {
-                    Ok(table) => {
-                        self.spawn_table_form = table;
-                        self.spawn_table_filename = filename.to_string();
-                        self.update_spawn_table_preview();
-                        self.status = format!("✓ Loaded: {}", file_path.display());
-                    }
-                    Err(e) => {
-                        self.status = format!("✗ Failed to parse: {}", e);
-                    }
-                },
-                Err(e) => {
-                    self.status = format!("✗ Failed to read: {}", e);
-                }
-            }
-        }
-    }
-
-    fn save_spawn_table(&mut self) {
-        if let Some(assets_dir) = &self.assets_dir {
-            let file_path =
-                assets_dir.join(format!("{}.spawn_table.ron", self.spawn_table_filename));
-            match std::fs::write(&file_path, &self.spawn_table_preview) {
-                Ok(()) => {
-                    self.status = format!("✓ Saved to {}", file_path.display());
-                    // Reload list
-                    let assets_dir = assets_dir.clone();
-                    self.load_existing_ids(&assets_dir);
-                }
-                Err(e) => {
-                    self.status = format!("✗ Failed to save: {}", e);
-                }
-            }
-        }
-    }
 
     fn show_autopsy_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Autopsy Definition");
