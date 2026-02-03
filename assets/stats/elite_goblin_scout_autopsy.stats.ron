@@ -1,9 +1,9 @@
 (
     id: "research:autopsy_elite_goblin_scout",
     bonuses: {
-        "race:goblin": [
+        "damage:race:goblin": [
             (
-                value: 10.0,
+                value: 0.1,
                 mode: Percent,
             ),
         ],

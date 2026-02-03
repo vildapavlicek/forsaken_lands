@@ -1,7 +1,7 @@
 (
     id: "research:sharp_rocks",
     bonuses: {
-        "damage:rocks": [
+        "damage:weapon:rocks": [
             (
                 value: 0.25,
                 mode: Additive,

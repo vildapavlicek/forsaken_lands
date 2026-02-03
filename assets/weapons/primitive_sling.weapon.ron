@@ -5,5 +5,11 @@
     damage: 0.75,
     attack_range: 350.0,
     attack_speed_ms: 900,
-    tags: ["damage", "damage:ranged", "damage:primitive_sling", "damage:rocks"],
+    tags: [
+        "damage",
+        "damage:ranged",
+        "damage:weapon:primitive_sling",
+        "damage:weapon:rocks",
+    ],
+    bonuses: {},
 )

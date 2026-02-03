@@ -1,7 +1,7 @@
 (
     id: "research:autopsy_goblin_archer",
     bonuses: {
-        "race:goblin": [
+        "damage:race:goblin": [
             (
                 value: 0.1,
                 mode: Percent,

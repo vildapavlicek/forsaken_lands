@@ -10,8 +10,8 @@
     tags: [
         "damage",
         "damage:melee",
-        "damage:bone_sword",
-        "damage:bones",
+        "damage:weapon:bone_sword",
+        "damage:weapon:bones",
     ],
     bonuses: {},
 )

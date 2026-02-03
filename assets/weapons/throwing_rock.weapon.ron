@@ -8,7 +8,8 @@
     tags: [
         "damage",
         "damage:ranged",
-        "damage:rocks",
-        "damage:throwing_rock",
+        "damage:weapon:rocks",
+        "damage:weapon:throwing_rock",
     ],
+    bonuses: {},
 )

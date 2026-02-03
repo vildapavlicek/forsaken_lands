@@ -10,7 +10,8 @@
     tags: [
         "damage",
         "damage:melee",
-        "damage:rocks",
-        "damage:melee_rock",
+        "damage:weapon:rocks",
+        "damage:weapon:melee_rock",
     ],
+    bonuses: {},
 )
