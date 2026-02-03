@@ -58,6 +58,7 @@ members = [
   "ui/research_ui",
   "ui/resources_ui",
   "ui/village_ui",
+  "ui/hud",
   "ui/widgets",
   "unlocks",
   "village",
@@ -94,6 +95,7 @@ growth = { path = "growth" }
 hero_components = { path = "components/hero_components" }
 hero_events = { path = "events/hero_events" }
 hero_ui = { path = "ui/hero_ui" }
+hud = { path = "ui/hud" }
 heroes = { path = "heroes" }
 loading = { path = "loading" }
 notification_ui = { path = "ui/notification_ui" }

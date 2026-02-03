@@ -41,6 +41,7 @@ unlocks.workspace = true
 unlocks_assets.workspace = true
 progress_bars.workspace = true
 hero_ui.workspace = true
+hud.workspace = true
 save_load.workspace = true
 weapon_assets.workspace = true
 weapon_factory.workspace = true
