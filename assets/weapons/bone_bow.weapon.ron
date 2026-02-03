@@ -7,7 +7,7 @@
     attack_speed_ms: 750,
     tags: [
         "damage",
-        "damage:melee",
+        "damage:ranged",
         "damage:weapon:bone_bow",
         "damage:weapon:bones",
     ],
