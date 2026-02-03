@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_hobgoblin_mauler_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_hobgoblin_mauler",
+    ),
+    reward_id: "encyclopedia_data:hobgoblin_mauler",
+)

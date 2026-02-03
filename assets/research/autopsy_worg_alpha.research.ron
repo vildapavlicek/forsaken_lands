@@ -1,0 +1,11 @@
+(
+    id: "autopsy_worg_alpha",
+    name: "Autopsy: worg_alpha",
+    description: "Their fur is as hard as stell and black as a night. Are they demons?",
+    cost: {
+        "bones": 75,
+        "xykego": 50,
+    },
+    time_required: 120.0,
+    max_repeats: 1,
+)

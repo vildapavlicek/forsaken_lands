@@ -1,7 +1,7 @@
 (
     id: "research:autopsy_goblin_rider",
     bonuses: {
-        "damage:race:goblin": [
+        "damage:race:goblins": [
             (
                 value: 0.1,
                 mode: Percent,

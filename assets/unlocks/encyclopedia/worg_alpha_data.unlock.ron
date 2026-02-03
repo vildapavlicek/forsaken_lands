@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_worg_alpha_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_worg_alpha",
+    ),
+    reward_id: "encyclopedia_data:worg_alpha",
+)

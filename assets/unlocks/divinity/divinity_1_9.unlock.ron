@@ -1,0 +1,10 @@
+(
+    id: "divinity_1_9",
+    display_name: Some("Divinity Tier 1 Level 9"),
+    condition: Value(
+        topic: "kills:hobgoblin_mauler",
+        op: Ge,
+        target: 10.0,
+    ),
+    reward_id: "divinity:1-9",
+)

@@ -1,0 +1,11 @@
+(
+    id: "autopsy_hobgoblin_mauler",
+    name: "Autopsy: hobgoblin_mauler",
+    description: "They are bigger. And muscular?",
+    cost: {
+        "bones": 75,
+        "xykego": 50,
+    },
+    time_required: 90.0,
+    max_repeats: 1,
+)
