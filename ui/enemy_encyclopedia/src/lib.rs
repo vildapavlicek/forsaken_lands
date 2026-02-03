@@ -5,6 +5,7 @@ use {
     village_components::EnemyEncyclopedia,
     wallet::Wallet,
     widgets::{ContentContainer, spawn_menu_button},
+    bonus_stats_resources::{BonusStats, BonusStat},
 };
 
 pub struct EnemyEncyclopediaUiPlugin;
@@ -36,6 +37,7 @@ fn spawn_encyclopedia_ui(
     encyclopedia_query: Query<&EnemyEncyclopedia>,
     details_cache: Res<EnemyDetailsCache>,
     wallet: Res<Wallet>,
+    bonus_stats: Res<BonusStats>,
 ) {
     let Some((container, children)) = query.iter_mut().next() else {
         return;
@@ -57,7 +59,7 @@ fn spawn_encyclopedia_ui(
         spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
         // Spawn encyclopedia content
-        spawn_enemy_encyclopedia_content(parent, encyclopedia, &details_cache, &wallet);
+        spawn_enemy_encyclopedia_content(parent, encyclopedia, &details_cache, &wallet, &bonus_stats);
     });
 }
 
@@ -78,6 +80,7 @@ pub fn spawn_enemy_encyclopedia_content(
     encyclopedia: &EnemyEncyclopedia,
     details_cache: &EnemyDetailsCache,
     wallet: &Wallet,
+    bonus_stats: &BonusStats,
 ) {
     // Collect and sort entries
     let mut entries: Vec<(&String, &village_components::EncyclopediaEntry)> =
@@ -86,7 +89,7 @@ pub fn spawn_enemy_encyclopedia_content(
 
     // Use widgets scrollable container
     widgets::spawn_scrollable_container(parent, EncyclopediaListContainer, |scroll_content| {
-        populate_encyclopedia_list(scroll_content, &entries, details_cache, wallet);
+        populate_encyclopedia_list(scroll_content, &entries, details_cache, wallet, bonus_stats);
     });
 }
 
@@ -95,6 +98,7 @@ fn populate_encyclopedia_list(
     entries: &[(&String, &village_components::EncyclopediaEntry)],
     details_cache: &EnemyDetailsCache,
     wallet: &Wallet,
+    bonus_stats: &BonusStats,
 ) {
     parent
         .spawn((
@@ -132,7 +136,7 @@ fn populate_encyclopedia_list(
             .with_children(|grid| {
                 // List of enemies
                 for (enemy_id, entry) in entries {
-                    spawn_enemy_card(grid, entry, enemy_id, details_cache, wallet);
+                    spawn_enemy_card(grid, entry, enemy_id, details_cache, wallet, bonus_stats);
                 }
 
                 if entries.is_empty() {
@@ -155,6 +159,7 @@ fn spawn_enemy_card(
     enemy_id: &str,
     details_cache: &EnemyDetailsCache,
     wallet: &Wallet,
+    bonus_stats: &BonusStats,
 ) {
     parent
         .spawn(Node {
@@ -260,6 +265,38 @@ fn spawn_enemy_card(
                             ));
                         }
                     }
+
+                    // Bonus Stats
+                    let mut total = BonusStat::default();
+                    for tag in &details.tags {
+                        let key = format!("damage:{}", tag);
+                        if let Some(stat) = bonus_stats.get(&key) {
+                            total = total + *stat;
+                        }
+                    }
+
+                    // Only display if there's any bonus
+                    if total.additive != 0.0 || total.percent != 0.0 || total.multiplicative > 0.0 {
+                         let mult_val = total.multiplicative.max(1.0);
+                         let text = format!("Bonus: +{}/{:.0}%/*{}", 
+                            total.additive, 
+                            total.percent * 100.0, 
+                            mult_val
+                        );
+
+                        details_node.spawn((
+                            Text::new(text),
+                            TextColor(Color::srgb(1.0, 0.5, 0.5)), // Red-ish for damage?
+                            TextFont {
+                                font_size: 14.0,
+                                ..default()
+                            },
+                             Node {
+                                margin: UiRect::top(Val::Px(5.0)),
+                                ..default()
+                            },
+                        ));
+                    }
                 });
             } else {
                 // Locked info
@@ -284,6 +321,7 @@ fn update_encyclopedia_ui(
     encyclopedia_query: Query<&EnemyEncyclopedia, Changed<EnemyEncyclopedia>>,
     details_cache: Res<EnemyDetailsCache>,
     wallet: Res<Wallet>,
+    bonus_stats: Res<BonusStats>,
     container_query: Query<(Entity, &Children), With<EncyclopediaListContainer>>,
 ) {
     let Some(encyclopedia) = encyclopedia_query.iter().next() else {
@@ -306,6 +344,6 @@ fn update_encyclopedia_ui(
 
     // Repopulate
     commands.entity(container).with_children(|scroll_content| {
-        populate_encyclopedia_list(scroll_content, &entries, &details_cache, &wallet);
+        populate_encyclopedia_list(scroll_content, &entries, &details_cache, &wallet, &bonus_stats);
     });
 }

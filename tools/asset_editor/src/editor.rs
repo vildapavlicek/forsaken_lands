@@ -127,6 +127,10 @@ pub struct EditorState {
     new_bonus_key: String,
     new_bonus_value: f32,
     new_bonus_mode: bonus_stats::StatMode,
+    
+    // Simulation Tags
+    simulated_weapon_tags: Vec<String>,
+    new_weapon_tag: String,
 
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
@@ -187,6 +191,9 @@ impl EditorState {
             new_bonus_key: "damage".to_string(),
             new_bonus_value: 10.0,
             new_bonus_mode: bonus_stats::StatMode::Additive,
+            
+            simulated_weapon_tags: Vec::new(),
+            new_weapon_tag: String::new(),
 
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
@@ -1801,6 +1808,37 @@ impl EditorState {
                             mode: self.new_bonus_mode,
                         },
                     ));
+
+                }
+            }
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        ui.heading("Simulation Weapon Tags");
+        ui.small("Add tags to simulate weapon properties (e.g. 'melee', 'fire').");
+
+        // Tag list
+        let mut remove_tag_idx = None;
+        for (i, tag) in self.simulated_weapon_tags.iter().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label(tag);
+                if ui.button("🗑").clicked() {
+                    remove_tag_idx = Some(i);
+                }
+            });
+        }
+        if let Some(idx) = remove_tag_idx {
+            self.simulated_weapon_tags.remove(idx);
+        }
+
+        ui.horizontal(|ui| {
+            ui.label("Tag:");
+            ui.text_edit_singleline(&mut self.new_weapon_tag);
+            if ui.button("Add Tag").clicked() {
+                if !self.new_weapon_tag.is_empty() {
+                    self.simulated_weapon_tags.push(self.new_weapon_tag.clone());
+                    self.new_weapon_tag.clear();
                 }
             }
         });
@@ -1822,37 +1860,34 @@ impl EditorState {
                     ui.label(&enemy.display_name).on_hover_text(&enemy.id);
 
                     for weapon in &self.cached_weapons {
-                        // Apply bonuses
+                        // Prepare BonusStats
                         let mut stats = bonus_stats::BonusStats::default();
 
-                        // Apply simulation bonuses first
+                        // Apply weapon bonuses first (intrinsic stats)
+                        for (key, bonus) in &weapon.bonuses {
+                           stats.add(key, bonus.clone());
+                        }
+                        
+                        // Apply simulation bonuses on top (simulating player stats/buffs)
                         for (key, bonus) in &self.simulation_bonuses {
                             stats.add(key, bonus.clone());
                         }
 
-                        // Apply weapon bonuses
-                        for (key, bonus) in &weapon.bonuses {
-                            stats.add(key, bonus.clone());
-                        }
+                        // Collect tags
+                        // Source tags: Weapon tags (as-is) + simulated tags
+                        let mut source_tags = weapon.tags.clone();
+                        source_tags.extend(self.simulated_weapon_tags.clone());
+                        
+                        // Target tags: Enemy tags
+                        let target_tags = &enemy.tags;
 
-                        // Compute effective damage
-                        // We check "damage" with weapon's tags
-                        let mut total_additive = 0.0;
-                        let mut total_percent = 0.0;
-                        let mut total_mult = 1.0;
-
-                        let keys = std::iter::once("damage".to_string())
-                            .chain(weapon.tags.iter().map(|t| format!("damage:{}", t)));
-
-                        for key in keys {
-                            if let Some(stat) = stats.get(&key) {
-                                total_additive += stat.additive;
-                                total_percent += stat.percent;
-                                total_mult *= stat.multiplicative;
-                            }
-                        }
-
-                        let effective_damage = (weapon.damage + total_additive) * (1.0 + total_percent) * total_mult;
+                        // Calculate effective damage
+                        let effective_damage = bonus_stats::calculate_damage(
+                            weapon.damage,
+                            &source_tags,
+                            target_tags,
+                            &stats
+                        );
 
                         let hits = (enemy.max_health / effective_damage).ceil();
                         let time_ms = hits * weapon.attack_speed_ms as f32;
@@ -1882,6 +1917,7 @@ impl EditorState {
                             let mut id = "unknown".to_string();
                             let mut name = "Unknown".to_string();
                             let mut max_health = 1.0;
+                            let mut tags = Vec::new();
 
                             for comp in components {
                                 match comp {
@@ -1894,6 +1930,9 @@ impl EditorState {
                                     crate::monster_prefab::EnemyComponent::Health {
                                         max, ..
                                     } => max_health = max,
+                                    crate::monster_prefab::EnemyComponent::MonsterTags(val) => {
+                                        tags = val
+                                    }
                                     _ => {}
                                 }
                             }
@@ -1908,6 +1947,7 @@ impl EditorState {
                                         .unwrap_or_default()
                                         .to_string_lossy()
                                         .to_string(),
+                                    tags,
                                 });
                             }
                         }

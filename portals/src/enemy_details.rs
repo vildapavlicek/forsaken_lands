@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Drops, Health, MovementSpeed},
+    enemy_components::{Drops, Health, MovementSpeed, MonsterTags},
     enemy_resources::{EnemyDetailsCache, EnemyStatBlock},
     loading::GameAssets,
     unlocks::UnlockAchieved,
@@ -40,6 +40,7 @@ fn extract_enemy_details(
     let mut health_val = 0.0;
     let mut speed_val = 0.0;
     let mut drops_vec = Vec::new();
+    let mut tags_vec = Vec::new();
 
     for entity in &scene.entities {
         for component in &entity.components {
@@ -57,6 +58,11 @@ fn extract_enemy_details(
                 drops_vec = d.0.iter().map(|drop| drop.id.clone()).collect();
                 continue;
             };
+
+            if let Some(t) = component.try_downcast_ref::<MonsterTags>() {
+                tags_vec = t.0.clone();
+                continue;
+            };
         }
     }
 
@@ -64,5 +70,6 @@ fn extract_enemy_details(
         health: health_val,
         speed: speed_val,
         drops: drops_vec,
+        tags: tags_vec,
     })
 }

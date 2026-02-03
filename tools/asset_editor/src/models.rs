@@ -986,6 +986,7 @@ pub struct CachedEnemy {
     pub display_name: String,
     pub max_health: f32,
     pub filename: String,
+    pub tags: Vec<String>,
 }
 
 #[derive(Clone, Debug)]

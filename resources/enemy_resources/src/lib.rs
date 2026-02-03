@@ -5,6 +5,7 @@ pub struct EnemyStatBlock {
     pub health: f32,
     pub speed: f32,
     pub drops: Vec<String>,
+    pub tags: Vec<String>,
 }
 
 #[derive(Resource, Default, Debug)]

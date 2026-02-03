@@ -10,3 +10,4 @@ village_components.workspace = true
 widgets.workspace = true
 enemy_resources.workspace = true
 wallet.workspace = true
+bonus_stats_resources.workspace = true

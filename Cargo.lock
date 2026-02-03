@@ -2585,6 +2585,7 @@ name = "enemy_encyclopedia"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bonus_stats_resources",
  "enemy_resources",
  "states",
  "village_components",
