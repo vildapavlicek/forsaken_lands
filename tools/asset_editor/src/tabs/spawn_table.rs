@@ -1,7 +1,9 @@
-use portal_assets::{SpawnTable, SpawnCondition, SpawnEntry, SpawnType};
-use divinity_components::Divinity;
-use eframe::egui;
-use std::path::Path;
+use {
+    divinity_components::Divinity,
+    eframe::egui,
+    portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
+    std::path::Path,
+};
 
 pub struct SpawnTableTabState {
     pub spawn_table_form: SpawnTable,
@@ -90,40 +92,48 @@ impl SpawnTableTabState {
                 groups.push(entry.condition.clone());
             }
         }
-        
+
         // Sort groups: Specific/Min/Range order, then by divinity logic
         groups.sort_by(|a, b| {
             // Helper to extract a sort key (tier, level)
             let key = |c: &SpawnCondition| match c {
-                SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => *d,
+                SpawnCondition::Specific(d)
+                | SpawnCondition::Min(d)
+                | SpawnCondition::Range { min: d, .. } => *d,
             };
             key(a).cmp(&key(b))
         });
 
         let mut changed = false;
         let mut entries_to_add = Vec::new();
-        let mut entries_to_remove: std::collections::HashSet<usize> = std::collections::HashSet::new();
+        let mut entries_to_remove: std::collections::HashSet<usize> =
+            std::collections::HashSet::new();
         let mut condition_replacements = Vec::new();
 
         for group_condition in groups {
             let header_text = match &group_condition {
-                SpawnCondition::Specific(d) => format!("Specific: Tier {} Level {}", d.tier, d.level),
+                SpawnCondition::Specific(d) => {
+                    format!("Specific: Tier {} Level {}", d.tier, d.level)
+                }
                 SpawnCondition::Min(d) => format!("Min: Tier {} Level {}", d.tier, d.level),
-                SpawnCondition::Range { min, max } => format!("Range: {}-{} to {}-{}", min.tier, min.level, max.tier, max.level),
+                SpawnCondition::Range { min, max } => format!(
+                    "Range: {}-{} to {}-{}",
+                    min.tier, min.level, max.tier, max.level
+                ),
             };
 
             // Unique ID for the collapsing header
             ui.push_id(format!("group_{:?}", group_condition), |ui| {
                 ui.collapsing(header_text, |ui| {
                     ui.add_space(4.0);
-                    
+
                     // --- Group Condition Editor ---
                     ui.group(|ui| {
                         ui.horizontal(|ui| {
                             ui.label("Condition:");
-                            
+
                             let mut edited_condition = group_condition.clone();
-                            
+
                             // Condition Type Selector
                             let type_name = match edited_condition {
                                 SpawnCondition::Specific(_) => "Specific",
@@ -134,26 +144,58 @@ impl SpawnTableTabState {
                             egui::ComboBox::from_id_salt("cond_type")
                                 .selected_text(type_name)
                                 .show_ui(ui, |ui| {
-                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Min(_)), "Min").clicked() {
-                                        edited_condition = SpawnCondition::Min(match group_condition {
-                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
-                                        });
+                                    if ui
+                                        .selectable_label(
+                                            matches!(edited_condition, SpawnCondition::Min(_)),
+                                            "Min",
+                                        )
+                                        .clicked()
+                                    {
+                                        edited_condition =
+                                            SpawnCondition::Min(match group_condition {
+                                                SpawnCondition::Specific(d)
+                                                | SpawnCondition::Min(d)
+                                                | SpawnCondition::Range { min: d, .. } => d,
+                                            });
                                     }
-                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Range{..}), "Range").clicked() {
+                                    if ui
+                                        .selectable_label(
+                                            matches!(
+                                                edited_condition,
+                                                SpawnCondition::Range { .. }
+                                            ),
+                                            "Range",
+                                        )
+                                        .clicked()
+                                    {
                                         let current_d = match group_condition {
-                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
+                                            SpawnCondition::Specific(d)
+                                            | SpawnCondition::Min(d)
+                                            | SpawnCondition::Range { min: d, .. } => d,
                                         };
-                                        edited_condition = SpawnCondition::Range { min: current_d, max: current_d };
+                                        edited_condition = SpawnCondition::Range {
+                                            min: current_d,
+                                            max: current_d,
+                                        };
                                     }
-                                    if ui.selectable_label(matches!(edited_condition, SpawnCondition::Specific(_)), "Specific").clicked() {
-                                        edited_condition = SpawnCondition::Specific(match group_condition {
-                                            SpawnCondition::Specific(d) | SpawnCondition::Min(d) | SpawnCondition::Range { min: d, .. } => d,
-                                        });
+                                    if ui
+                                        .selectable_label(
+                                            matches!(edited_condition, SpawnCondition::Specific(_)),
+                                            "Specific",
+                                        )
+                                        .clicked()
+                                    {
+                                        edited_condition =
+                                            SpawnCondition::Specific(match group_condition {
+                                                SpawnCondition::Specific(d)
+                                                | SpawnCondition::Min(d)
+                                                | SpawnCondition::Range { min: d, .. } => d,
+                                            });
                                     }
                                 });
 
                             // Condition Values
-                             match &mut edited_condition {
+                            match &mut edited_condition {
                                 SpawnCondition::Min(div) | SpawnCondition::Specific(div) => {
                                     ui.label("Tier:");
                                     ui.add(egui::DragValue::new(&mut div.tier).range(1..=10));
@@ -165,30 +207,36 @@ impl SpawnTableTabState {
                                     ui.add(egui::DragValue::new(&mut min.tier).range(1..=10));
                                     ui.label("Lvl:");
                                     ui.add(egui::DragValue::new(&mut min.level).range(1..=99));
-                                    
+
                                     ui.label("Max Tier:");
                                     ui.add(egui::DragValue::new(&mut max.tier).range(1..=10));
                                     ui.label("Lvl:");
                                     ui.add(egui::DragValue::new(&mut max.level).range(1..=99));
                                 }
                             }
-                            
+
                             if edited_condition != group_condition {
-                                condition_replacements.push((group_condition.clone(), edited_condition));
+                                condition_replacements
+                                    .push((group_condition.clone(), edited_condition));
                                 changed = true;
                             }
-                            
-                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                if ui.button("🗑 Delete Group").clicked() {
-                                    // Mark all entries in this group for removal
-                                    for (idx, entry) in self.spawn_table_form.entries.iter().enumerate() {
-                                        if entry.condition == group_condition {
-                                            entries_to_remove.insert(idx);
+
+                            ui.with_layout(
+                                egui::Layout::right_to_left(egui::Align::Center),
+                                |ui| {
+                                    if ui.button("🗑 Delete Group").clicked() {
+                                        // Mark all entries in this group for removal
+                                        for (idx, entry) in
+                                            self.spawn_table_form.entries.iter().enumerate()
+                                        {
+                                            if entry.condition == group_condition {
+                                                entries_to_remove.insert(idx);
+                                            }
                                         }
+                                        changed = true;
                                     }
-                                    changed = true;
-                                }
-                            });
+                                },
+                            );
                         });
                     });
 
@@ -197,7 +245,7 @@ impl SpawnTableTabState {
 
                     // --- Enemies List ---
                     let mut local_remove_indices = Vec::new();
-                    
+
                     // We need to match entries that have the ORIGINAL group_condition
                     for (idx, entry) in self.spawn_table_form.entries.iter_mut().enumerate() {
                         if entry.condition == group_condition {
@@ -208,16 +256,30 @@ impl SpawnTableTabState {
                                     SpawnType::Single(_) => "Single",
                                     SpawnType::Group(_) => "Group",
                                 };
-                                
+
                                 egui::ComboBox::from_id_salt(format!("type_{}", idx))
                                     .selected_text(type_name)
                                     .show_ui(ui, |ui| {
-                                        if ui.selectable_label(matches!(spawn_type, SpawnType::Single(_)), "Single").clicked() {
-                                            *spawn_type = SpawnType::Single("goblin_scout".to_string());
+                                        if ui
+                                            .selectable_label(
+                                                matches!(spawn_type, SpawnType::Single(_)),
+                                                "Single",
+                                            )
+                                            .clicked()
+                                        {
+                                            *spawn_type =
+                                                SpawnType::Single("goblin_scout".to_string());
                                             changed = true;
                                         }
-                                        if ui.selectable_label(matches!(spawn_type, SpawnType::Group(_)), "Group").clicked() {
-                                            *spawn_type = SpawnType::Group(vec!["goblin_scout".to_string()]);
+                                        if ui
+                                            .selectable_label(
+                                                matches!(spawn_type, SpawnType::Group(_)),
+                                                "Group",
+                                            )
+                                            .clicked()
+                                        {
+                                            *spawn_type =
+                                                SpawnType::Group(vec!["goblin_scout".to_string()]);
                                             changed = true;
                                         }
                                     });
@@ -230,7 +292,10 @@ impl SpawnTableTabState {
                                                 .selected_text(monster_id.as_str())
                                                 .show_ui(ui, |ui| {
                                                     for id in existing_monster_ids {
-                                                        if ui.selectable_label(monster_id == id, id).clicked() {
+                                                        if ui
+                                                            .selectable_label(monster_id == id, id)
+                                                            .clicked()
+                                                        {
                                                             *monster_id = id.clone();
                                                             changed = true;
                                                         }
@@ -247,18 +312,29 @@ impl SpawnTableTabState {
                                         // Simplified group editor for space
                                         for (j, id) in ids.iter_mut().enumerate() {
                                             if !existing_monster_ids.is_empty() {
-                                                egui::ComboBox::from_id_salt(format!("grp_{}_{}", idx, j))
-                                                    .selected_text(id.as_str())
-                                                    .show_ui(ui, |ui| {
-                                                         for valid_id in existing_monster_ids {
-                                                             if ui.selectable_label(id == valid_id, valid_id).clicked() {
-                                                                 *id = valid_id.clone();
-                                                                 changed = true;
-                                                             }
-                                                         }
-                                                    });
+                                                egui::ComboBox::from_id_salt(format!(
+                                                    "grp_{}_{}",
+                                                    idx, j
+                                                ))
+                                                .selected_text(id.as_str())
+                                                .show_ui(ui, |ui| {
+                                                    for valid_id in existing_monster_ids {
+                                                        if ui
+                                                            .selectable_label(
+                                                                id == valid_id,
+                                                                valid_id,
+                                                            )
+                                                            .clicked()
+                                                        {
+                                                            *id = valid_id.clone();
+                                                            changed = true;
+                                                        }
+                                                    }
+                                                });
                                             } else {
-                                                if ui.text_edit_singleline(id).changed() { changed = true; }
+                                                if ui.text_edit_singleline(id).changed() {
+                                                    changed = true;
+                                                }
                                             }
                                         }
                                         if ui.button("+").clicked() {
@@ -271,19 +347,22 @@ impl SpawnTableTabState {
                                         }
                                     }
                                 }
-                                
+
                                 ui.label("Weight:");
-                                if ui.add(egui::DragValue::new(&mut entry.weight).range(1..=10000)).changed() {
+                                if ui
+                                    .add(egui::DragValue::new(&mut entry.weight).range(1..=10000))
+                                    .changed()
+                                {
                                     changed = true;
                                 }
-                                
+
                                 if ui.button("🗑").clicked() {
                                     local_remove_indices.push(idx);
                                 }
                             });
                         }
                     }
-                    
+
                     for idx in local_remove_indices {
                         entries_to_remove.insert(idx);
                         changed = true;
@@ -302,7 +381,7 @@ impl SpawnTableTabState {
         }
 
         ui.add_space(8.0);
-        
+
         if ui.button("➕ Add New Tier").clicked() {
             // Check for highest existing tier logic or just default
             // Just add a default Min Tier 1 Level 1
@@ -316,9 +395,9 @@ impl SpawnTableTabState {
 
         ui.add_space(16.0);
         ui.separator();
-        
+
         // --- Apply Updates ---
-        
+
         // 1. Condition Replacements
         for (old, new) in condition_replacements {
             for entry in &mut self.spawn_table_form.entries {
@@ -327,10 +406,10 @@ impl SpawnTableTabState {
                 }
             }
         }
-        
+
         // 2. Additions
         self.spawn_table_form.entries.extend(entries_to_add);
-        
+
         // 3. Removals
         if !entries_to_remove.is_empty() {
             let mut sorted_indices: Vec<_> = entries_to_remove.into_iter().collect();
@@ -399,8 +478,7 @@ impl SpawnTableTabState {
     }
 
     pub fn save_spawn_table(&mut self, assets_dir: &Path, status: &mut String) {
-        let file_path =
-            assets_dir.join(format!("{}.spawn_table.ron", self.spawn_table_filename));
+        let file_path = assets_dir.join(format!("{}.spawn_table.ron", self.spawn_table_filename));
         match std::fs::write(&file_path, &self.spawn_table_preview) {
             Ok(()) => {
                 *status = format!("✓ Saved to {}", file_path.display());

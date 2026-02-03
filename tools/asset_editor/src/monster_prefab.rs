@@ -237,10 +237,7 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
-                Some(format!(
-                    r#""enemy_components::Drops": ([{}])"#,
-                    drops_str
-                ))
+                Some(format!(r#""enemy_components::Drops": ([{}])"#, drops_str))
             }
         }
         EnemyComponent::MonsterTags(tags) => {
@@ -372,7 +369,8 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
 
     // Drops
     if content.contains("\"enemy_components::Drops\"") {
-        let drops_re = Regex::new(r#"\(id:\s*"([^"]+)",\s*value:\s*(\d+),\s*chance:\s*([\d.]+)\)"#).ok()?;
+        let drops_re =
+            Regex::new(r#"\(id:\s*"([^"]+)",\s*value:\s*(\d+),\s*chance:\s*([\d.]+)\)"#).ok()?;
         let mut drops = Vec::new();
         for caps in drops_re.captures_iter(content) {
             if let (Some(id), Some(value), Some(chance)) = (caps.get(1), caps.get(2), caps.get(3)) {
@@ -402,8 +400,6 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
             components.push(EnemyComponent::MonsterTags(tags));
         }
     }
-
-
 
     if components.is_empty() {
         None

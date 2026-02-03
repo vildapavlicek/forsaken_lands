@@ -1,5 +1,7 @@
-use crate::models::{CompareOp, LeafCondition, UnlockCondition};
-use eframe::egui;
+use {
+    crate::models::{CompareOp, LeafCondition, UnlockCondition},
+    eframe::egui,
+};
 
 /// Show the structured condition editor UI.
 pub fn show_condition_editor(

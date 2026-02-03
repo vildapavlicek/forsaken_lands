@@ -3,12 +3,9 @@ use {
         models::{CachedEnemy, CachedWeapon},
         monster_prefab::{self, EnemyComponent},
     },
-    weapon_assets::WeaponDefinition,
-    std::{
-        collections::HashSet,
-        path::Path,
-    },
     eframe::egui,
+    std::{collections::HashSet, path::Path},
+    weapon_assets::WeaponDefinition,
 };
 
 /// State for the Time To Kill calculator tab.
@@ -16,13 +13,13 @@ pub struct TtkTabState {
     pub data_loaded: bool,
     pub cached_enemies: Vec<CachedEnemy>,
     pub cached_weapons: Vec<CachedWeapon>,
-    
+
     // Simulation
     pub simulation_bonuses: Vec<(String, bonus_stats::StatBonus)>,
     pub new_bonus_key: String,
     pub new_bonus_value: f32,
     pub new_bonus_mode: bonus_stats::StatMode,
-    
+
     pub simulated_weapon_tags: Vec<String>,
     pub new_weapon_tag: String,
 
@@ -73,7 +70,7 @@ impl TtkTabState {
             );
             return;
         }
-        
+
         let assets_dir = assets_dir.unwrap();
 
         if ui.button("🔄 Reload Data").clicked() || !self.data_loaded {
@@ -125,16 +122,30 @@ impl TtkTabState {
             egui::ComboBox::from_id_salt("new_bonus_mode")
                 .selected_text(format!("{:?}", self.new_bonus_mode))
                 .show_ui(ui, |ui| {
-                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Additive, "Additive");
-                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Percent, "Percent");
-                    ui.selectable_value(&mut self.new_bonus_mode, bonus_stats::StatMode::Multiplicative, "Multiplicative");
+                    ui.selectable_value(
+                        &mut self.new_bonus_mode,
+                        bonus_stats::StatMode::Additive,
+                        "Additive",
+                    );
+                    ui.selectable_value(
+                        &mut self.new_bonus_mode,
+                        bonus_stats::StatMode::Percent,
+                        "Percent",
+                    );
+                    ui.selectable_value(
+                        &mut self.new_bonus_mode,
+                        bonus_stats::StatMode::Multiplicative,
+                        "Multiplicative",
+                    );
                 });
 
             if ui.button("Add Bonus").clicked() {
                 if !self.new_bonus_key.is_empty() {
                     // Fix percent value if user enters 10 for 10%
-                    let value = if self.new_bonus_mode == bonus_stats::StatMode::Percent && self.new_bonus_value > 1.0 {
-                         self.new_bonus_value / 100.0
+                    let value = if self.new_bonus_mode == bonus_stats::StatMode::Percent
+                        && self.new_bonus_value > 1.0
+                    {
+                        self.new_bonus_value / 100.0
                     } else {
                         self.new_bonus_value
                     };
@@ -146,7 +157,6 @@ impl TtkTabState {
                             mode: self.new_bonus_mode,
                         },
                     ));
-
                 }
             }
         });
@@ -185,7 +195,7 @@ impl TtkTabState {
         ui.separator();
 
         ui.add_space(8.0);
-        
+
         // --- Filter Options ---
         ui.separator();
         ui.heading("Filters");
@@ -196,31 +206,42 @@ impl TtkTabState {
                 ui.checkbox(&mut self.filter_weapons, "Enable Weapon Filter");
                 if self.filter_weapons {
                     ui.horizontal(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut self.search_weapon).desired_width(100.0));
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.search_weapon)
+                                .desired_width(100.0),
+                        );
                         if ui.button("All").clicked() {
-                            self.selected_weapons = self.cached_weapons.iter().map(|w| w.id.clone()).collect();
+                            self.selected_weapons =
+                                self.cached_weapons.iter().map(|w| w.id.clone()).collect();
                         }
                         if ui.button("None").clicked() {
                             self.selected_weapons.clear();
                         }
                     });
-                    
+
                     ui.separator();
-                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                        for weapon in &self.cached_weapons {
-                            if !self.search_weapon.is_empty() && !weapon.display_name.to_lowercase().contains(&self.search_weapon.to_lowercase()) {
-                                continue;
-                            }
-                            let mut selected = self.selected_weapons.contains(&weapon.id);
-                            if ui.checkbox(&mut selected, &weapon.display_name).changed() {
-                                if selected {
-                                    self.selected_weapons.insert(weapon.id.clone());
-                                } else {
-                                    self.selected_weapons.remove(&weapon.id);
+                    egui::ScrollArea::vertical()
+                        .max_height(200.0)
+                        .show(ui, |ui| {
+                            for weapon in &self.cached_weapons {
+                                if !self.search_weapon.is_empty()
+                                    && !weapon
+                                        .display_name
+                                        .to_lowercase()
+                                        .contains(&self.search_weapon.to_lowercase())
+                                {
+                                    continue;
+                                }
+                                let mut selected = self.selected_weapons.contains(&weapon.id);
+                                if ui.checkbox(&mut selected, &weapon.display_name).changed() {
+                                    if selected {
+                                        self.selected_weapons.insert(weapon.id.clone());
+                                    } else {
+                                        self.selected_weapons.remove(&weapon.id);
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
                 }
             });
 
@@ -229,47 +250,69 @@ impl TtkTabState {
                 ui.checkbox(&mut self.filter_enemies, "Enable Enemy Filter");
                 if self.filter_enemies {
                     ui.horizontal(|ui| {
-                        ui.add(egui::TextEdit::singleline(&mut self.search_enemy).desired_width(100.0));
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.search_enemy).desired_width(100.0),
+                        );
                         if ui.button("All").clicked() {
-                            self.selected_enemies = self.cached_enemies.iter().map(|e| e.id.clone()).collect();
+                            self.selected_enemies =
+                                self.cached_enemies.iter().map(|e| e.id.clone()).collect();
                         }
                         if ui.button("None").clicked() {
                             self.selected_enemies.clear();
                         }
                     });
-                    
+
                     ui.separator();
-                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-                        for enemy in &self.cached_enemies {
-                            if !self.search_enemy.is_empty() && !enemy.display_name.to_lowercase().contains(&self.search_enemy.to_lowercase()) {
-                                continue;
-                            }
-                            let mut selected = self.selected_enemies.contains(&enemy.id);
-                            if ui.checkbox(&mut selected, &enemy.display_name).changed() {
-                                if selected {
-                                    self.selected_enemies.insert(enemy.id.clone());
-                                } else {
-                                    self.selected_enemies.remove(&enemy.id);
+                    egui::ScrollArea::vertical()
+                        .max_height(200.0)
+                        .show(ui, |ui| {
+                            for enemy in &self.cached_enemies {
+                                if !self.search_enemy.is_empty()
+                                    && !enemy
+                                        .display_name
+                                        .to_lowercase()
+                                        .contains(&self.search_enemy.to_lowercase())
+                                {
+                                    continue;
+                                }
+                                let mut selected = self.selected_enemies.contains(&enemy.id);
+                                if ui.checkbox(&mut selected, &enemy.display_name).changed() {
+                                    if selected {
+                                        self.selected_enemies.insert(enemy.id.clone());
+                                    } else {
+                                        self.selected_enemies.remove(&enemy.id);
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
                 }
             });
         });
 
         ui.add_space(8.0);
         ui.separator();
-        
-        let visible_weapons: Vec<&CachedWeapon> = self.cached_weapons.iter().filter(|w| {
-            if !self.filter_weapons { return true; }
-            self.selected_weapons.contains(&w.id)
-        }).collect();
 
-        let visible_enemies: Vec<&CachedEnemy> = self.cached_enemies.iter().filter(|e| {
-            if !self.filter_enemies { return true; }
-            self.selected_enemies.contains(&e.id)
-        }).collect();
+        let visible_weapons: Vec<&CachedWeapon> = self
+            .cached_weapons
+            .iter()
+            .filter(|w| {
+                if !self.filter_weapons {
+                    return true;
+                }
+                self.selected_weapons.contains(&w.id)
+            })
+            .collect();
+
+        let visible_enemies: Vec<&CachedEnemy> = self
+            .cached_enemies
+            .iter()
+            .filter(|e| {
+                if !self.filter_enemies {
+                    return true;
+                }
+                self.selected_enemies.contains(&e.id)
+            })
+            .collect();
 
         egui::ScrollArea::both().show(ui, |ui| {
             egui::Grid::new("ttk_grid").striped(true).show(ui, |ui| {
@@ -290,9 +333,9 @@ impl TtkTabState {
 
                         // Apply weapon bonuses first (intrinsic stats)
                         for (key, bonus) in &weapon.bonuses {
-                           stats.add(key, bonus.clone());
+                            stats.add(key, bonus.clone());
                         }
-                        
+
                         // Apply simulation bonuses on top (simulating player stats/buffs)
                         for (key, bonus) in &self.simulation_bonuses {
                             stats.add(key, bonus.clone());
@@ -302,7 +345,7 @@ impl TtkTabState {
                         // Source tags: Weapon tags (as-is) + simulated tags
                         let mut source_tags = weapon.tags.clone();
                         source_tags.extend(self.simulated_weapon_tags.clone());
-                        
+
                         // Target tags: Enemy tags
                         let target_tags = &enemy.tags;
 
@@ -311,7 +354,7 @@ impl TtkTabState {
                             weapon.damage,
                             &source_tags,
                             target_tags,
-                            &stats
+                            &stats,
                         );
 
                         let hits = (enemy.max_health / effective_damage).ceil();
@@ -319,7 +362,10 @@ impl TtkTabState {
                         let time_sec = time_ms / 1000.0;
 
                         ui.label(format!("{:.2}s ({} hits)", time_sec, hits))
-                            .on_hover_text(format!("Damage: {:.1} (Base: {:.1})", effective_damage, weapon.damage));
+                            .on_hover_text(format!(
+                                "Damage: {:.1} (Base: {:.1})",
+                                effective_damage, weapon.damage
+                            ));
                     }
                     ui.end_row();
                 }
@@ -335,9 +381,7 @@ impl TtkTabState {
             for entry in entries.flatten() {
                 let path = entry.path();
                 if let Ok(content) = std::fs::read_to_string(&path) {
-                    if let Some(components) =
-                        monster_prefab::parse_components_from_ron(&content)
-                    {
+                    if let Some(components) = monster_prefab::parse_components_from_ron(&content) {
                         let mut id = "unknown".to_string();
                         let mut name = "Unknown".to_string();
                         let mut max_health = 1.0;
@@ -345,18 +389,10 @@ impl TtkTabState {
 
                         for comp in components {
                             match comp {
-                                EnemyComponent::MonsterId(val) => {
-                                    id = val
-                                }
-                                EnemyComponent::DisplayName(val) => {
-                                    name = val
-                                }
-                                EnemyComponent::Health {
-                                    max, ..
-                                } => max_health = max,
-                                EnemyComponent::MonsterTags(val) => {
-                                    tags = val
-                                }
+                                EnemyComponent::MonsterId(val) => id = val,
+                                EnemyComponent::DisplayName(val) => name = val,
+                                EnemyComponent::Health { max, .. } => max_health = max,
+                                EnemyComponent::MonsterTags(val) => tags = val,
                                 _ => {}
                             }
                         }
@@ -403,7 +439,7 @@ impl TtkTabState {
                                     .unwrap_or_default()
                                     .to_string_lossy()
                                     .to_string(),
-                                bonuses: weapon_def.bonuses.into_iter().collect(), 
+                                bonuses: weapon_def.bonuses.into_iter().collect(),
                                 tags: weapon_def.tags,
                             });
                         }
@@ -421,7 +457,7 @@ impl TtkTabState {
                 .partial_cmp(&b.damage)
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
-        
+
         self.data_loaded = true;
     }
 }

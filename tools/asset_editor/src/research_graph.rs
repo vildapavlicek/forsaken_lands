@@ -82,15 +82,19 @@ impl ResearchGraphState {
                                         .strip_prefix("research_")
                                         .unwrap_or(&def.reward_id)
                                         .to_string();
-                                    
-                                    let name = def.display_name.clone().unwrap_or(research_id.clone());
+
+                                    let name =
+                                        def.display_name.clone().unwrap_or(research_id.clone());
                                     println!("Graph: Found node {} ({})", research_id, name);
                                     node_data.insert(research_id.clone(), name);
 
                                     // Analyze condition tree for dependencies
                                     let deps = extract_dependencies(&def.condition);
                                     if !deps.is_empty() {
-                                         println!("Graph: Node {} depends on {:?}", research_id, deps);
+                                        println!(
+                                            "Graph: Node {} depends on {:?}",
+                                            research_id, deps
+                                        );
                                     }
                                     dependencies.insert(research_id, deps);
                                 }
@@ -113,7 +117,7 @@ impl ResearchGraphState {
         // 2. Build edges
         for (target, sources) in &dependencies {
             for source in sources {
-                // Only add if source exists (ignore unknown dependencies like specific kills for now if unwanted, 
+                // Only add if source exists (ignore unknown dependencies like specific kills for now if unwanted,
                 // but extract_dependencies should filter for research-only if we want research DAG)
                 if node_data.contains_key(source) {
                     self.edges.push((source.clone(), target.clone()));
@@ -125,7 +129,7 @@ impl ResearchGraphState {
         // Simple approach: Layer 0 = no deps. Layer N = max(dep_layers) + 1
         let mut node_layers: HashMap<String, usize> = HashMap::new();
         let mut processed = HashSet::new();
-        
+
         // Loop until all processed or stuck (cycles)
         let mut changed = true;
         while changed {
@@ -136,7 +140,8 @@ impl ResearchGraphState {
                 }
 
                 // Filter deps to only those in our node set (research dependencies)
-                let relevant_deps: Vec<&String> = deps.iter().filter(|d| node_data.contains_key(*d)).collect();
+                let relevant_deps: Vec<&String> =
+                    deps.iter().filter(|d| node_data.contains_key(*d)).collect();
 
                 if relevant_deps.is_empty() {
                     node_layers.insert(id.clone(), 0);
@@ -145,7 +150,7 @@ impl ResearchGraphState {
                 } else {
                     // Check if all needed deps are processed
                     let all_ready = relevant_deps.iter().all(|d| processed.contains(*d));
-                    
+
                     if all_ready {
                         let max_layer = relevant_deps
                             .iter()
@@ -158,7 +163,7 @@ impl ResearchGraphState {
                     }
                 }
             }
-            
+
             // Safety break for cycles (or if we just did a pass effectively)
             if !changed && processed.len() < node_data.len() {
                 // Remaining nodes have cycles or missing deps. Force them to a high layer?
@@ -194,19 +199,26 @@ impl ResearchGraphState {
             for (i, id) in ids.iter().enumerate() {
                 let x = start_x + (layer_idx as f32) * x_spacing;
                 let y = start_y + (i as f32) * y_spacing;
-                
-                self.nodes.insert(id.clone(), GraphNode {
-                    id: id.clone(),
-                    label: node_data.get(id).cloned().unwrap_or_default(),
-                    layer: layer_idx,
-                    pos: Pos2::new(x, y),
-                    width: node_w,
-                    height: node_h,
-                });
+
+                self.nodes.insert(
+                    id.clone(),
+                    GraphNode {
+                        id: id.clone(),
+                        label: node_data.get(id).cloned().unwrap_or_default(),
+                        layer: layer_idx,
+                        pos: Pos2::new(x, y),
+                        width: node_w,
+                        height: node_h,
+                    },
+                );
             }
         }
 
-        println!("Graph: Built {} nodes, {} edges", self.nodes.len(), self.edges.len());
+        println!(
+            "Graph: Built {} nodes, {} edges",
+            self.nodes.len(),
+            self.edges.len()
+        );
         self.is_built = true;
     }
 
@@ -239,10 +251,8 @@ impl ResearchGraphState {
         egui::ScrollArea::both()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                let (response, painter) = ui.allocate_painter(
-                    ui.available_size(),
-                    egui::Sense::drag(),
-                );
+                let (response, painter) =
+                    ui.allocate_painter(ui.available_size(), egui::Sense::drag());
 
                 // Pan interaction (simple drag)
                 if response.dragged() {
@@ -253,7 +263,7 @@ impl ResearchGraphState {
                 for (src, dst) in &self.edges {
                     if let (Some(n1), Some(n2)) = (self.nodes.get(src), self.nodes.get(dst)) {
                         let p1 = n1.pos + self.pan_offset + Vec2::new(n1.width, n1.height / 2.0); // Right side of source
-                        let p2 = n2.pos + self.pan_offset + Vec2::new(0.0, n2.height / 2.0);      // Left side of target
+                        let p2 = n2.pos + self.pan_offset + Vec2::new(0.0, n2.height / 2.0); // Left side of target
 
                         let color = Color32::GRAY;
                         let stroke = Stroke::new(1.0, color);
@@ -281,12 +291,8 @@ impl ResearchGraphState {
                     );
 
                     // Background
-                    painter.rect_filled(
-                        rect,
-                        4.0,
-                        Color32::from_rgb(40, 40, 40),
-                    );
-                    
+                    painter.rect_filled(rect, 4.0, Color32::from_rgb(40, 40, 40));
+
                     // Border
                     painter.rect_stroke(
                         rect,
@@ -327,8 +333,8 @@ fn extract_dependencies(condition: &unlocks_assets::ConditionNode) -> Vec<String
             if let Some(id) = topic.strip_prefix("research:") {
                 deps.push(id.to_string());
             } else if let Some(id) = topic.strip_prefix("unlock:research_") {
-                 // Fallback if older naming convention used
-                 deps.push(id.to_string());
+                // Fallback if older naming convention used
+                deps.push(id.to_string());
             }
         }
         _ => {}

@@ -1,5 +1,7 @@
-use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::{
+    collections::HashMap,
+    path::{Path, PathBuf},
+};
 
 /// Result of loading assets from a directory.
 /// Contains sorted lists of IDs and filenames, and a mapping between them.
@@ -14,14 +16,14 @@ pub struct LoadedAssets {
 pub trait AssetLoader {
     /// The subdirectory under the main assets directory (e.g., "research", "weapons")
     fn sub_path(&self) -> PathBuf;
-    
+
     /// The file extension to look for (e.g., ".research.ron")
     fn extension(&self) -> &str;
-    
+
     /// Extract the ID from the file stem and/or content.
     /// Returns None if the ID cannot be extracted (skips the file).
     fn extract_id(&self, stem: &str, content: &str) -> Option<String>;
-    
+
     /// Optional filter to determine if a file should be processed based on its name.
     /// Default implementation accepts all files matching the extension.
     fn accept_filename(&self, _filename: &str) -> bool {
@@ -39,12 +41,12 @@ pub fn load_assets<T: AssetLoader>(assets_dir: &Path, loader: &T) -> LoadedAsset
             let path = entry.path();
             if let Some(filename) = path.file_name() {
                 let filename_str = filename.to_string_lossy();
-                
+
                 // Check extension
                 if !filename_str.ends_with(loader.extension()) {
                     continue;
                 }
-                
+
                 // Check custom filter
                 if !loader.accept_filename(&filename_str) {
                     continue;
@@ -53,7 +55,7 @@ pub fn load_assets<T: AssetLoader>(assets_dir: &Path, loader: &T) -> LoadedAsset
                 // Get stem
                 if let Some(stem) = filename_str.strip_suffix(loader.extension()) {
                     result.filenames.push(stem.to_string());
-                    
+
                     // Read content and extract ID
                     if let Ok(content) = std::fs::read_to_string(&path) {
                         if let Some(id) = loader.extract_id(stem, &content) {

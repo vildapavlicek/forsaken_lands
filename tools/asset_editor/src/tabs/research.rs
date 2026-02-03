@@ -1,10 +1,14 @@
-use crate::file_generator::save_research_files;
-use crate::models::{ResearchFormData, ResourceCost};
-use crate::tabs::common::show_condition_editor;
-use research_assets::ResearchDefinition;
-use unlocks_assets::UnlockDefinition;
-use eframe::egui;
-use std::path::Path;
+use {
+    crate::{
+        file_generator::save_research_files,
+        models::{ResearchFormData, ResourceCost},
+        tabs::common::show_condition_editor,
+    },
+    eframe::egui,
+    research_assets::ResearchDefinition,
+    std::path::Path,
+    unlocks_assets::UnlockDefinition,
+};
 
 pub struct ResearchTabState {
     pub research_form: ResearchFormData,
@@ -229,7 +233,12 @@ impl ResearchTabState {
         }
     }
 
-    pub fn load_research(&mut self, assets_dir: Option<&Path>, status: &mut String, filename_stem: &str) {
+    pub fn load_research(
+        &mut self,
+        assets_dir: Option<&Path>,
+        status: &mut String,
+        filename_stem: &str,
+    ) {
         if let Some(assets_dir) = assets_dir {
             // Construct research path
             let research_path = assets_dir
@@ -265,8 +274,7 @@ impl ResearchTabState {
             let unlock_content = match std::fs::read_to_string(&unlock_path) {
                 Ok(c) => c,
                 Err(e) => {
-                    *status =
-                        format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
+                    *status = format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
                     return;
                 }
             };

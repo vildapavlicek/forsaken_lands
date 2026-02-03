@@ -2,34 +2,36 @@
 //!
 //! Main egui-based editor interface with tabbed forms for research, recipe unlocks, and monster prefabs.
 
-use crate::research_graph::ResearchGraphState;
 use {
     crate::{
         file_generator::{
             generate_autopsy_encyclopedia_unlock_ron, generate_autopsy_research_ron,
-            generate_autopsy_research_unlock_ron, generate_divinity_unlock_ron,
-            generate_recipe_unlock_ron, generate_research_ron, generate_unlock_ron,
-            save_autopsy_files, save_divinity_unlock_file, save_recipe_unlock_file,
-            generate_bonus_stats_ron, save_bonus_stats_file,
+            generate_autopsy_research_unlock_ron, generate_bonus_stats_ron,
+            generate_divinity_unlock_ron, generate_recipe_unlock_ron, generate_research_ron,
+            generate_unlock_ron, save_autopsy_files, save_bonus_stats_file,
+            save_divinity_unlock_file, save_recipe_unlock_file,
         },
         models::{
-            AutopsyFormData, BonusEntry, BonusStatsFormData, CraftingOutcomeExt,
-            DivinityFormData, RecipeCategoryExt, RecipeFormData,
-            RecipeUnlockFormData, ResourceCost, UnlockCondition,
+            AutopsyFormData, BonusEntry, BonusStatsFormData, CraftingOutcomeExt, DivinityFormData,
+            RecipeCategoryExt, RecipeFormData, RecipeUnlockFormData, ResourceCost, UnlockCondition,
             WeaponDefinitionExt, WeaponTypeExt,
         },
         monster_prefab::{
             Drop, EnemyComponent, build_scene_ron, default_required_components,
             optional_components, parse_components_from_ron,
         },
-        tabs::{ttk::TtkTabState, spawn_table::SpawnTableTabState, research::ResearchTabState, common::show_condition_editor},
+        research_graph::ResearchGraphState,
+        tabs::{
+            common::show_condition_editor, research::ResearchTabState,
+            spawn_table::SpawnTableTabState, ttk::TtkTabState,
+        },
     },
     bonus_stats_assets::StatBonusDefinition,
     bonus_stats_resources::{StatBonus, StatMode},
     eframe::egui,
     recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition},
     research_assets::ResearchDefinition,
-    std::{collections::HashMap, path::PathBuf},
+    std::{collections::HashMap, f32::consts::TAU, path::PathBuf},
     unlocks_assets::UnlockDefinition,
     weapon_assets::{WeaponDefinition, WeaponType},
 };
@@ -113,7 +115,6 @@ pub struct EditorState {
     // TTK Tab
     ttk: TtkTabState,
 
-
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
 
@@ -164,7 +165,6 @@ impl EditorState {
             graph_state: ResearchGraphState::new(),
 
             ttk: TtkTabState::new(),
-
 
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
@@ -287,9 +287,11 @@ impl EditorState {
                         EditorTab::SpawnTable => {
                             ui.label("Spawn Table:");
                             ui.add(
-                                egui::TextEdit::multiline(&mut self.spawn_table.spawn_table_preview.as_str())
-                                    .font(egui::TextStyle::Monospace)
-                                    .desired_width(f32::INFINITY),
+                                egui::TextEdit::multiline(
+                                    &mut self.spawn_table.spawn_table_preview.as_str(),
+                                )
+                                .font(egui::TextStyle::Monospace)
+                                .desired_width(f32::INFINITY),
                             );
                         }
                         EditorTab::Graph | EditorTab::TimeToKill => {
@@ -370,7 +372,11 @@ impl EditorState {
                 ui.selectable_value(&mut self.active_tab, EditorTab::TimeToKill, "⏱ TTK");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Autopsy, "🧬 Autopsy");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Divinity, "✨ Divinity");
-                ui.selectable_value(&mut self.active_tab, EditorTab::BonusStats, "📈 Bonus Stats");
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::BonusStats,
+                    "📈 Bonus Stats",
+                );
             });
             ui.separator();
 
@@ -402,7 +408,6 @@ impl EditorState {
             });
         });
     }
-
 
     fn show_recipe_unlock_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Recipe Unlock Definition");
@@ -589,11 +594,7 @@ impl EditorState {
         if let WeaponType::Melee { arc_width } = &mut self.weapon_form.weapon_type {
             ui.horizontal(|ui| {
                 ui.label("Arc Width (radians):");
-                ui.add(
-                    egui::DragValue::new(arc_width)
-                        .speed(0.01)
-                        .range(0.1..=6.28),
-                );
+                ui.add(egui::DragValue::new(arc_width).speed(0.01).range(0.1..=TAU));
             });
             ui.small("Melee attack arc width (1.047 = 60 degrees)");
         }
@@ -650,7 +651,6 @@ impl EditorState {
             self.weapon_form.tags.push(String::new());
         }
         ui.add_space(8.0);
-
 
         // Preview
         ui.separator();
@@ -834,10 +834,12 @@ impl EditorState {
             self.recipe_data_form.outcomes.remove(idx);
         }
         if ui.button("+ Add Outcome").clicked() {
-            self.recipe_data_form.outcomes.push(CraftingOutcome::AddResource {
-                id: String::new(),
-                amount: 1,
-            });
+            self.recipe_data_form
+                .outcomes
+                .push(CraftingOutcome::AddResource {
+                    id: String::new(),
+                    amount: 1,
+                });
         }
         ui.add_space(16.0);
 
@@ -943,10 +945,12 @@ impl EditorState {
     }
 
     fn load_existing_ids(&mut self, assets_dir: &PathBuf) {
-        use crate::traits::load_assets;
-        use crate::models::{
-            ResearchLoader, RecipeUnlockLoader, DivinityLoader, MonsterLoader, 
-            WeaponLoader, RecipeLoader, AutopsyLoader, BonusStatsLoader
+        use crate::{
+            models::{
+                AutopsyLoader, BonusStatsLoader, DivinityLoader, MonsterLoader, RecipeLoader,
+                RecipeUnlockLoader, ResearchLoader, WeaponLoader,
+            },
+            traits::load_assets,
         };
 
         // Load research IDs
@@ -991,9 +995,6 @@ impl EditorState {
         let bonus_stats_assets = load_assets(assets_dir, &BonusStatsLoader);
         self.existing_bonus_filenames = bonus_stats_assets.ids;
     }
-
-
-
 
     fn load_recipe_unlock(&mut self, id: &str) {
         if let Some(assets_dir) = &self.assets_dir {
@@ -1102,13 +1103,14 @@ impl EditorState {
 
             // Write file
             let definition = self.recipe_data_form.to_recipe_definition();
-            let ron_content = match ron::ser::to_string_pretty(&definition, ron::ser::PrettyConfig::default()) {
-                Ok(s) => s,
-                Err(e) => {
-                    self.status = format!("✗ Failed to serialize recipe: {}", e);
-                    return;
-                }
-            };
+            let ron_content =
+                match ron::ser::to_string_pretty(&definition, ron::ser::PrettyConfig::default()) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        self.status = format!("✗ Failed to serialize recipe: {}", e);
+                        return;
+                    }
+                };
 
             match std::fs::write(&file_path, ron_content) {
                 Ok(()) => {
@@ -1563,7 +1565,6 @@ impl EditorState {
         }
     }
 
-
     fn show_autopsy_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Autopsy Definition");
         ui.add_space(4.0);
@@ -1954,14 +1955,15 @@ impl EditorState {
             self.autopsy_form.monster_id = monster_id.to_string();
             self.autopsy_form.research_description = research_def.description;
             self.autopsy_form.research_time = research_def.time_required;
-            self.autopsy_form.research_costs = research_def.cost
+            self.autopsy_form.research_costs = research_def
+                .cost
                 .into_iter()
                 .map(|(k, v)| ResourceCost {
                     resource_id: k,
                     amount: v,
                 })
                 .collect();
-            
+
             self.status = format!("✓ Loaded autopsy for: {}", monster_id);
         }
     }
@@ -1991,80 +1993,94 @@ impl EditorState {
                 });
             }
         });
-        
+
         ui.add_space(8.0);
         ui.separator();
-        
+
         // Form Fields
         ui.horizontal(|ui| {
             ui.label("Filename:");
             ui.text_edit_singleline(&mut self.bonus_stats_form.filename);
             ui.label(".stats.ron");
         });
-        
+
         ui.horizontal(|ui| {
             ui.label("Trigger Topic (ID):");
             ui.text_edit_singleline(&mut self.bonus_stats_form.id);
-            
+
             ui.menu_button("Select...", |ui| {
-                egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
-                    ui.label("Research");
-                    for id in &self.existing_research_ids {
-                        let topic = format!("research:{}", id);
-                        if ui.button(&topic).clicked() {
-                            self.bonus_stats_form.id = topic;
-                            ui.close_menu();
+                egui::ScrollArea::vertical()
+                    .max_height(300.0)
+                    .show(ui, |ui| {
+                        ui.label("Research");
+                        for id in &self.existing_research_ids {
+                            let topic = format!("research:{}", id);
+                            if ui.button(&topic).clicked() {
+                                self.bonus_stats_form.id = topic;
+                                ui.close_menu();
+                            }
                         }
-                    }
-                    
-                    ui.separator();
-                    ui.label("Crafting");
-                    for id in &self.existing_recipe_ids {
-                        let topic = format!("craft:{}", id);
-                         if ui.button(&topic).clicked() {
-                            self.bonus_stats_form.id = topic;
-                            ui.close_menu();
+
+                        ui.separator();
+                        ui.label("Crafting");
+                        for id in &self.existing_recipe_ids {
+                            let topic = format!("craft:{}", id);
+                            if ui.button(&topic).clicked() {
+                                self.bonus_stats_form.id = topic;
+                                ui.close_menu();
+                            }
                         }
-                    }
-                });
+                    });
             });
         });
         ui.small("Event ID to listen for (e.g., 'research:steel_sword', 'quest:intro')");
-        
+
         ui.separator();
         ui.heading("Bonuses");
-        
+
         let mut remove_idx: Option<usize> = None;
         for (i, entry) in self.bonus_stats_form.bonuses.iter_mut().enumerate() {
             ui.group(|ui| {
-                 ui.horizontal(|ui| {
-                     ui.label("Key:");
-                     ui.text_edit_singleline(&mut entry.key);
-                     
-                     ui.label("Value:");
-                     ui.add(egui::DragValue::new(&mut entry.bonus.value).speed(0.1));
-                     
-                     ui.label("Mode:");
-                     egui::ComboBox::from_id_salt(format!("mode_{}", i))
+                ui.horizontal(|ui| {
+                    ui.label("Key:");
+                    ui.text_edit_singleline(&mut entry.key);
+
+                    ui.label("Value:");
+                    ui.add(egui::DragValue::new(&mut entry.bonus.value).speed(0.1));
+
+                    ui.label("Mode:");
+                    egui::ComboBox::from_id_salt(format!("mode_{}", i))
                         .selected_text(format!("{:?}", entry.bonus.mode))
                         .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut entry.bonus.mode, StatMode::Additive, "Additive");
-                            ui.selectable_value(&mut entry.bonus.mode, StatMode::Percent, "Percent");
-                            ui.selectable_value(&mut entry.bonus.mode, StatMode::Multiplicative, "Multiplicative");
+                            ui.selectable_value(
+                                &mut entry.bonus.mode,
+                                StatMode::Additive,
+                                "Additive",
+                            );
+                            ui.selectable_value(
+                                &mut entry.bonus.mode,
+                                StatMode::Percent,
+                                "Percent",
+                            );
+                            ui.selectable_value(
+                                &mut entry.bonus.mode,
+                                StatMode::Multiplicative,
+                                "Multiplicative",
+                            );
                         });
-                        
-                     if ui.button("🗑").clicked() {
-                         remove_idx = Some(i);
-                     }
-                 });
-                 ui.small("e.g. 'damage', 'hp', 'speed', 'damage:melee'");
+
+                    if ui.button("🗑").clicked() {
+                        remove_idx = Some(i);
+                    }
+                });
+                ui.small("e.g. 'damage', 'hp', 'speed', 'damage:melee'");
             });
         }
-        
+
         if let Some(i) = remove_idx {
             self.bonus_stats_form.bonuses.remove(i);
         }
-        
+
         if ui.button("+ Add Bonus").clicked() {
             self.bonus_stats_form.bonuses.push(BonusEntry {
                 key: "damage".to_string(),
@@ -2074,56 +2090,57 @@ impl EditorState {
                 },
             });
         }
-        
+
         ui.separator();
-        
+
         // Save
         let errors = self.bonus_stats_form.validate();
         if !errors.is_empty() {
-             for err in errors {
-                 ui.colored_label(egui::Color32::RED, format!("• {}", err));
-             }
+            for err in errors {
+                ui.colored_label(egui::Color32::RED, format!("• {}", err));
+            }
         } else {
-             ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
-                 if ui.button("💾 Save Bonus Stats").clicked() {
-                     self.save_bonus_stats();
-                 }
-             });
+            ui.add_enabled_ui(self.assets_dir.is_some(), |ui| {
+                if ui.button("💾 Save Bonus Stats").clicked() {
+                    self.save_bonus_stats();
+                }
+            });
         }
     }
 
     fn load_bonus_stats(&mut self, filename: &str) {
-         if let Some(assets_dir) = &self.assets_dir {
-             let path = assets_dir.join("stats").join(format!("{}.stats.ron", filename));
-             match std::fs::read_to_string(&path) {
-                 Ok(content) => {
-                     match ron::from_str::<StatBonusDefinition>(&content) {
-                         Ok(def) => {
-                             self.bonus_stats_form = BonusStatsFormData::from_definition(&def, filename.to_string());
-                             self.status = format!("✓ Loaded {}", filename);
-                         } 
-                         Err(e) => {
-                             self.status = format!("✗ Failed to parse {}: {}", filename, e);
-                         }
-                     }
-                 }
-                 Err(e) => {
-                     self.status = format!("✗ Failed to read {}: {}", filename, e);
-                 }
-             }
-         }
+        if let Some(assets_dir) = &self.assets_dir {
+            let path = assets_dir
+                .join("stats")
+                .join(format!("{}.stats.ron", filename));
+            match std::fs::read_to_string(&path) {
+                Ok(content) => match ron::from_str::<StatBonusDefinition>(&content) {
+                    Ok(def) => {
+                        self.bonus_stats_form =
+                            BonusStatsFormData::from_definition(&def, filename.to_string());
+                        self.status = format!("✓ Loaded {}", filename);
+                    }
+                    Err(e) => {
+                        self.status = format!("✗ Failed to parse {}: {}", filename, e);
+                    }
+                },
+                Err(e) => {
+                    self.status = format!("✗ Failed to read {}: {}", filename, e);
+                }
+            }
+        }
     }
-    
+
     fn save_bonus_stats(&mut self) {
         if let Some(assets_dir) = &self.assets_dir {
             match save_bonus_stats_file(&self.bonus_stats_form, assets_dir) {
                 Ok(path) => {
-                     self.status = format!("✓ Saved: {}", path);
-                     let assets_dir = assets_dir.clone();
-                     self.load_existing_ids(&assets_dir);
+                    self.status = format!("✓ Saved: {}", path);
+                    let assets_dir = assets_dir.clone();
+                    self.load_existing_ids(&assets_dir);
                 }
                 Err(e) => {
-                     self.status = format!("✗ Failed to save: {}", e);
+                    self.status = format!("✗ Failed to save: {}", e);
                 }
             }
         }

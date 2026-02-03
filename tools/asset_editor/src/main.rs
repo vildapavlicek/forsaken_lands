@@ -4,11 +4,11 @@
 //! and monster prefab files. Uses egui for the UI and generates RON output.
 
 mod editor;
-mod tabs;
 mod file_generator;
 mod models;
 mod monster_prefab;
 mod research_graph;
+mod tabs;
 mod traits;
 
 use {editor::EditorState, eframe::egui};

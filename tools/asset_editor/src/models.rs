@@ -1,10 +1,10 @@
 use {
+    bonus_stats_assets::StatBonusDefinition,
+    bonus_stats_resources::StatBonus,
     research_assets::ResearchDefinition,
     serde::{Deserialize, Serialize},
     unlocks_assets::{ConditionNode, UnlockDefinition},
     unlocks_components,
-    bonus_stats_assets::StatBonusDefinition,
-    bonus_stats_resources::StatBonus,
 };
 
 /// A single resource cost entry.
@@ -411,7 +411,9 @@ impl From<&ConditionNode> for LeafCondition {
                     // Handle older or alternative unlock topics if necessary, or just treat as Unlock
                     LeafCondition::Unlock { id: id.to_string() }
                 } else if let Some(id) = topic.strip_prefix("craft:") {
-                    LeafCondition::Craft { recipe_id: id.to_string() }
+                    LeafCondition::Craft {
+                        recipe_id: id.to_string(),
+                    }
                 } else {
                     // Fallback or generic completion
                     LeafCondition::Unlock { id: topic.clone() }
@@ -967,16 +969,12 @@ impl WeaponDefinitionExt for WeaponDefinition {
     }
 }
 
-
-
-
 // ==================== Recipe Form Data ====================
 
 /// Category for organizing recipes.
 use recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition};
 
 // Removing EditorRecipeCategory and EditorCraftingOutcome in favor of recipes_assets types
-
 
 // ==================== TTK Cache Models ====================
 
@@ -1056,7 +1054,10 @@ impl CraftingOutcomeExt for CraftingOutcome {
                 amount: 1,
             },
             "Unlock Feature" => CraftingOutcome::UnlockFeature(String::new()),
-            _ => CraftingOutcome::AddResource { id: String::new(), amount: 1 },
+            _ => CraftingOutcome::AddResource {
+                id: String::new(),
+                amount: 1,
+            },
         }
     }
 }
@@ -1192,30 +1193,31 @@ impl BonusStatsFormData {
     pub fn validate(&self) -> Vec<String> {
         let mut errors = Vec::new();
         if self.id.trim().is_empty() {
-             errors.push("Trigger ID is required".to_string());
+            errors.push("Trigger ID is required".to_string());
         }
         if self.bonuses.is_empty() {
-             errors.push("At least one bonus is required".to_string());
+            errors.push("At least one bonus is required".to_string());
         }
         for (i, entry) in self.bonuses.iter().enumerate() {
             if entry.key.trim().is_empty() {
                 errors.push(format!("Bonus #{}: Key is required (e.g. 'damage')", i + 1));
             }
             if entry.bonus.value == 0.0 {
-                 errors.push(format!("Bonus #{}: Value cannot be 0", i + 1));
+                errors.push(format!("Bonus #{}: Value cannot be 0", i + 1));
             }
         }
         errors
     }
 
     pub fn to_definition(&self) -> StatBonusDefinition {
-        let mut map: std::collections::HashMap<String, Vec<StatBonus>> = std::collections::HashMap::new();
-        
+        let mut map: std::collections::HashMap<String, Vec<StatBonus>> =
+            std::collections::HashMap::new();
+
         for entry in &self.bonuses {
             if !entry.key.is_empty() {
                 map.entry(entry.key.clone())
-                   .or_default()
-                   .push(entry.bonus.clone());
+                    .or_default()
+                    .push(entry.bonus.clone());
             }
         }
 
@@ -1231,7 +1233,7 @@ impl BonusStatsFormData {
         // Sort keys for consistent UI order
         let mut keys: Vec<&String> = def.bonuses.keys().collect();
         keys.sort();
-        
+
         for key in keys {
             if let Some(list) = def.bonuses.get(key) {
                 for bonus in list {
@@ -1249,7 +1251,7 @@ impl BonusStatsFormData {
             filename,
         }
     }
-    
+
     pub fn filename(&self) -> String {
         format!("{}.stats.ron", self.filename)
     }
@@ -1257,8 +1259,7 @@ impl BonusStatsFormData {
 
 // ==================== Asset Loaders ====================
 
-use std::path::PathBuf;
-use crate::traits::AssetLoader;
+use {crate::traits::AssetLoader, std::path::PathBuf};
 
 /// Helper to simplify regex extraction.
 pub fn extract_id_from_ron(content: &str) -> Option<String> {
@@ -1276,8 +1277,12 @@ pub fn extract_monster_id_from_ron(content: &str) -> Option<String> {
 
 pub struct ResearchLoader;
 impl AssetLoader for ResearchLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("research") }
-    fn extension(&self) -> &str { ".research.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("research")
+    }
+    fn extension(&self) -> &str {
+        ".research.ron"
+    }
     fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
         extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
     }
@@ -1285,8 +1290,12 @@ impl AssetLoader for ResearchLoader {
 
 pub struct RecipeUnlockLoader;
 impl AssetLoader for RecipeUnlockLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("unlocks").join("recipes") }
-    fn extension(&self) -> &str { ".unlock.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("unlocks").join("recipes")
+    }
+    fn extension(&self) -> &str {
+        ".unlock.ron"
+    }
     fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
         stem.strip_prefix("recipe_").map(|s| s.to_string())
     }
@@ -1294,8 +1303,12 @@ impl AssetLoader for RecipeUnlockLoader {
 
 pub struct DivinityLoader;
 impl AssetLoader for DivinityLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("unlocks").join("divinity") }
-    fn extension(&self) -> &str { ".unlock.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("unlocks").join("divinity")
+    }
+    fn extension(&self) -> &str {
+        ".unlock.ron"
+    }
     fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
         Some(stem.to_string())
     }
@@ -1303,8 +1316,12 @@ impl AssetLoader for DivinityLoader {
 
 pub struct MonsterLoader;
 impl AssetLoader for MonsterLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("prefabs").join("enemies") }
-    fn extension(&self) -> &str { ".scn.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("prefabs").join("enemies")
+    }
+    fn extension(&self) -> &str {
+        ".scn.ron"
+    }
     fn extract_id(&self, _stem: &str, content: &str) -> Option<String> {
         extract_monster_id_from_ron(content)
     }
@@ -1312,8 +1329,12 @@ impl AssetLoader for MonsterLoader {
 
 pub struct WeaponLoader;
 impl AssetLoader for WeaponLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("weapons") }
-    fn extension(&self) -> &str { ".weapon.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("weapons")
+    }
+    fn extension(&self) -> &str {
+        ".weapon.ron"
+    }
     fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
         extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
     }
@@ -1321,8 +1342,12 @@ impl AssetLoader for WeaponLoader {
 
 pub struct RecipeLoader;
 impl AssetLoader for RecipeLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("recipes") }
-    fn extension(&self) -> &str { ".recipe.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("recipes")
+    }
+    fn extension(&self) -> &str {
+        ".recipe.ron"
+    }
     fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
         extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
     }
@@ -1330,8 +1355,12 @@ impl AssetLoader for RecipeLoader {
 
 pub struct AutopsyLoader;
 impl AssetLoader for AutopsyLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("research") }
-    fn extension(&self) -> &str { ".research.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("research")
+    }
+    fn extension(&self) -> &str {
+        ".research.ron"
+    }
     fn accept_filename(&self, filename: &str) -> bool {
         filename.starts_with("autopsy_")
     }
@@ -1342,8 +1371,12 @@ impl AssetLoader for AutopsyLoader {
 
 pub struct BonusStatsLoader;
 impl AssetLoader for BonusStatsLoader {
-    fn sub_path(&self) -> PathBuf { PathBuf::from("stats") }
-    fn extension(&self) -> &str { ".stats.ron" }
+    fn sub_path(&self) -> PathBuf {
+        PathBuf::from("stats")
+    }
+    fn extension(&self) -> &str {
+        ".stats.ron"
+    }
     fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
         Some(stem.to_string())
     }
