@@ -30,7 +30,7 @@ use {
     portal_assets::{SpawnCondition, SpawnEntry, SpawnTable, SpawnType},
     recipes_assets::{CraftingOutcome, RecipeCategory, RecipeDefinition},
     research_assets::ResearchDefinition,
-    std::{collections::HashMap, path::PathBuf},
+    std::{collections::{HashMap, HashSet}, path::PathBuf},
     unlocks_assets::UnlockDefinition,
     weapon_assets::{WeaponDefinition, WeaponType},
 };
@@ -132,6 +132,14 @@ pub struct EditorState {
     simulated_weapon_tags: Vec<String>,
     new_weapon_tag: String,
 
+    // TTK Filter State
+    ttk_filter_weapons: bool,
+    ttk_filter_enemies: bool,
+    ttk_selected_weapons: HashSet<String>,
+    ttk_selected_enemies: HashSet<String>,
+    ttk_search_weapon: String,
+    ttk_search_enemy: String,
+
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
 
@@ -194,6 +202,13 @@ impl EditorState {
             
             simulated_weapon_tags: Vec::new(),
             new_weapon_tag: String::new(),
+
+            ttk_filter_weapons: false,
+            ttk_filter_enemies: false,
+            ttk_selected_weapons: HashSet::new(),
+            ttk_selected_enemies: HashSet::new(),
+            ttk_search_weapon: String::new(),
+            ttk_search_enemy: String::new(),
 
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
@@ -1846,20 +1861,107 @@ impl EditorState {
         ui.add_space(8.0);
         ui.separator();
 
+        ui.add_space(8.0);
+        
+        // --- Filter Options ---
+        ui.separator();
+        ui.heading("Filters");
+
+        ui.columns(2, |cols| {
+            // Weapon Filter Column
+            cols[0].group(|ui| {
+                ui.checkbox(&mut self.ttk_filter_weapons, "Enable Weapon Filter");
+                if self.ttk_filter_weapons {
+                    ui.horizontal(|ui| {
+                        ui.add(egui::TextEdit::singleline(&mut self.ttk_search_weapon).desired_width(100.0));
+                        if ui.button("All").clicked() {
+                            self.ttk_selected_weapons = self.cached_weapons.iter().map(|w| w.id.clone()).collect();
+                        }
+                        if ui.button("None").clicked() {
+                            self.ttk_selected_weapons.clear();
+                        }
+                    });
+                    
+                    ui.separator();
+                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                        for weapon in &self.cached_weapons {
+                            if !self.ttk_search_weapon.is_empty() && !weapon.display_name.to_lowercase().contains(&self.ttk_search_weapon.to_lowercase()) {
+                                continue;
+                            }
+                            let mut selected = self.ttk_selected_weapons.contains(&weapon.id);
+                            if ui.checkbox(&mut selected, &weapon.display_name).changed() {
+                                if selected {
+                                    self.ttk_selected_weapons.insert(weapon.id.clone());
+                                } else {
+                                    self.ttk_selected_weapons.remove(&weapon.id);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Enemy Filter Column
+            cols[1].group(|ui| {
+                ui.checkbox(&mut self.ttk_filter_enemies, "Enable Enemy Filter");
+                if self.ttk_filter_enemies {
+                    ui.horizontal(|ui| {
+                        ui.add(egui::TextEdit::singleline(&mut self.ttk_search_enemy).desired_width(100.0));
+                        if ui.button("All").clicked() {
+                            self.ttk_selected_enemies = self.cached_enemies.iter().map(|e| e.id.clone()).collect();
+                        }
+                        if ui.button("None").clicked() {
+                            self.ttk_selected_enemies.clear();
+                        }
+                    });
+                    
+                    ui.separator();
+                    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
+                        for enemy in &self.cached_enemies {
+                            if !self.ttk_search_enemy.is_empty() && !enemy.display_name.to_lowercase().contains(&self.ttk_search_enemy.to_lowercase()) {
+                                continue;
+                            }
+                            let mut selected = self.ttk_selected_enemies.contains(&enemy.id);
+                            if ui.checkbox(&mut selected, &enemy.display_name).changed() {
+                                if selected {
+                                    self.ttk_selected_enemies.insert(enemy.id.clone());
+                                } else {
+                                    self.ttk_selected_enemies.remove(&enemy.id);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        });
+
+        ui.add_space(8.0);
+        ui.separator();
+        
+        let visible_weapons: Vec<&CachedWeapon> = self.cached_weapons.iter().filter(|w| {
+            if !self.ttk_filter_weapons { return true; }
+            self.ttk_selected_weapons.contains(&w.id)
+        }).collect();
+
+        let visible_enemies: Vec<&CachedEnemy> = self.cached_enemies.iter().filter(|e| {
+            if !self.ttk_filter_enemies { return true; }
+            self.ttk_selected_enemies.contains(&e.id)
+        }).collect();
+
         egui::ScrollArea::both().show(ui, |ui| {
             egui::Grid::new("ttk_grid").striped(true).show(ui, |ui| {
                 // Header row
                 ui.label("Enemy \\ Weapon");
-                for weapon in &self.cached_weapons {
+                for weapon in &visible_weapons {
                     ui.label(&weapon.display_name).on_hover_text(&weapon.id);
                 }
                 ui.end_row();
 
                 // Rows
-                for enemy in &self.cached_enemies {
+                for enemy in &visible_enemies {
                     ui.label(&enemy.display_name).on_hover_text(&enemy.id);
 
-                    for weapon in &self.cached_weapons {
+                    for weapon in &visible_weapons {
                         // Prepare BonusStats
                         let mut stats = bonus_stats::BonusStats::default();
 
