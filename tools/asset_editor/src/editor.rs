@@ -1562,10 +1562,6 @@ impl EditorState {
             }
         }
     }
-}
-
-
-impl EditorState {
 
 
     fn show_autopsy_form(&mut self, ui: &mut egui::Ui) {
@@ -1757,9 +1753,7 @@ impl EditorState {
             }
         }
     }
-}
 
-impl EditorState {
     fn show_divinity_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Divinity Unlock Definition");
         ui.add_space(4.0);
