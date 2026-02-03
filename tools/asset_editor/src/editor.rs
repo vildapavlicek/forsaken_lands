@@ -943,194 +943,53 @@ impl EditorState {
     }
 
     fn load_existing_ids(&mut self, assets_dir: &PathBuf) {
-        // Load research IDs
-        self.existing_research_ids.clear();
-        self.existing_research_filenames.clear();
-        self.research_id_to_file.clear();
-        let research_dir = assets_dir.join("research");
-        if let Ok(entries) = std::fs::read_dir(research_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".research.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".research.ron") {
-                            self.existing_research_filenames.push(stem.to_string());
-                            // Extract actual internal ID
-                            if let Ok(content) = std::fs::read_to_string(&path) {
-                                let id = extract_id_from_ron(&content)
-                                    .unwrap_or_else(|| stem.to_string());
-                                self.existing_research_ids.push(id.clone());
-                                self.research_id_to_file.insert(id, stem.to_string());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_research_ids.sort();
-        self.existing_research_filenames.sort();
+        use crate::traits::load_assets;
+        use crate::models::{
+            ResearchLoader, RecipeUnlockLoader, DivinityLoader, MonsterLoader, 
+            WeaponLoader, RecipeLoader, AutopsyLoader, BonusStatsLoader
+        };
 
-        // Load recipe unlock IDs (these are a bit special as they have "recipe_" prefix in file but not in ID?)
-        self.existing_recipe_unlock_ids.clear();
-        let recipes_unlock_dir = assets_dir.join("unlocks").join("recipes");
-        if let Ok(entries) = std::fs::read_dir(recipes_unlock_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".unlock.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".unlock.ron") {
-                            // filename is recipe_{id}.unlock.ron
-                            if let Some(pure_id) = stem.strip_prefix("recipe_") {
-                                self.existing_recipe_unlock_ids.push(pure_id.to_string());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_recipe_unlock_ids.sort();
+        // Load research IDs
+        let research_assets = load_assets(assets_dir, &ResearchLoader);
+        self.existing_research_ids = research_assets.ids;
+        self.existing_research_filenames = research_assets.filenames;
+        self.research_id_to_file = research_assets.id_to_filename;
+
+        // Load recipe unlock IDs
+        let recipe_unlock_assets = load_assets(assets_dir, &RecipeUnlockLoader);
+        self.existing_recipe_unlock_ids = recipe_unlock_assets.ids;
 
         // Load divinity unlock IDs
-        self.existing_divinity_ids.clear();
-        let divinity_unlock_dir = assets_dir.join("unlocks").join("divinity");
-        if let Ok(entries) = std::fs::read_dir(divinity_unlock_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".unlock.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".unlock.ron") {
-                            // filename is divinity_{tier}_{level}.unlock.ron
-                            // ID is divinity_{tier}_{level}
-                            self.existing_divinity_ids.push(stem.to_string());
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_divinity_ids.sort();
+        let divinity_assets = load_assets(assets_dir, &DivinityLoader);
+        self.existing_divinity_ids = divinity_assets.ids;
 
-        // Load monster IDs from prefabs/enemies
-        self.existing_monster_ids.clear();
-        self.existing_prefabs.clear();
-        let enemies_dir = assets_dir.join("prefabs").join("enemies");
-        if let Ok(entries) = std::fs::read_dir(&enemies_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".scn.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".scn.ron") {
-                            self.existing_prefabs.push(stem.to_string());
-                            if let Ok(content) = std::fs::read_to_string(&path) {
-                                if let Some(monster_id) = extract_monster_id_from_ron(&content) {
-                                    self.existing_monster_ids.push(monster_id);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_prefabs.sort();
-        self.existing_monster_ids.sort();
+        // Load monster IDs
+        let monster_assets = load_assets(assets_dir, &MonsterLoader);
+        self.existing_monster_ids = monster_assets.ids;
+        self.existing_prefabs = monster_assets.filenames;
 
-        // Load spawn tables (.spawn_table.ron)
+        // Load spawn tables (.spawn_table.ron) - handled by its own module
         self.spawn_table.reload_existing_tables(assets_dir);
 
         // Load weapon IDs
-        self.existing_weapon_ids.clear();
-        self.existing_weapon_filenames.clear();
-        self.weapon_id_to_file.clear();
-        let weapons_dir = assets_dir.join("weapons");
-        if let Ok(entries) = std::fs::read_dir(weapons_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".weapon.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".weapon.ron") {
-                            self.existing_weapon_filenames.push(stem.to_string());
-                            if let Ok(content) = std::fs::read_to_string(&path) {
-                                let id = extract_id_from_ron(&content)
-                                    .unwrap_or_else(|| stem.to_string());
-                                self.existing_weapon_ids.push(id.clone());
-                                self.weapon_id_to_file.insert(id, stem.to_string());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_weapon_ids.sort();
-        self.existing_weapon_filenames.sort();
+        let weapon_assets = load_assets(assets_dir, &WeaponLoader);
+        self.existing_weapon_ids = weapon_assets.ids;
+        self.existing_weapon_filenames = weapon_assets.filenames;
+        self.weapon_id_to_file = weapon_assets.id_to_filename;
 
         // Load recipe IDs
-        self.existing_recipe_ids.clear();
-        self.existing_recipe_filenames.clear();
-        self.recipe_id_to_file.clear();
-        let recipes_dir = assets_dir.join("recipes");
-        if let Ok(entries) = std::fs::read_dir(recipes_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".recipe.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".recipe.ron") {
-                            self.existing_recipe_filenames.push(stem.to_string());
-                            if let Ok(content) = std::fs::read_to_string(&path) {
-                                let id = extract_id_from_ron(&content)
-                                    .unwrap_or_else(|| stem.to_string());
-                                self.existing_recipe_ids.push(id.clone());
-                                self.recipe_id_to_file.insert(id, stem.to_string());
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_recipe_ids.sort();
-        self.existing_recipe_filenames.sort();
+        let recipe_assets = load_assets(assets_dir, &RecipeLoader);
+        self.existing_recipe_ids = recipe_assets.ids;
+        self.existing_recipe_filenames = recipe_assets.filenames;
+        self.recipe_id_to_file = recipe_assets.id_to_filename;
 
         // Load existing autopsies
-        self.existing_autopsies.clear();
-        // search in research folder for autopsy_*.research.ron
-        let research_dir = assets_dir.join("research");
-        if let Ok(entries) = std::fs::read_dir(&research_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.starts_with("autopsy_") && filename_str.ends_with(".research.ron") {
-                        // Extract monster_id from autopsy_{monster_id}.research.ron
-                        if let Some(stem) = filename_str.strip_prefix("autopsy_").and_then(|s| s.strip_suffix(".research.ron")) {
-                            self.existing_autopsies.push(stem.to_string());
-                        }
-                    }
-                }
-            }
-        }
-        self.existing_autopsies.sort();
+        let autopsy_assets = load_assets(assets_dir, &AutopsyLoader);
+        self.existing_autopsies = autopsy_assets.ids;
 
         // Load Bonus Stats
-        self.existing_bonus_filenames.clear();
-        let stats_dir = assets_dir.join("stats");
-        if let Ok(entries) = std::fs::read_dir(stats_dir) {
-             for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(filename) = path.file_name() {
-                    let filename_str = filename.to_string_lossy();
-                    if filename_str.ends_with(".stats.ron") {
-                        if let Some(stem) = filename_str.strip_suffix(".stats.ron") {
-                             self.existing_bonus_filenames.push(stem.to_string());
-                        }
-                    }
-                }
-             }
-        }
-        self.existing_bonus_filenames.sort();
+        let bonus_stats_assets = load_assets(assets_dir, &BonusStatsLoader);
+        self.existing_bonus_filenames = bonus_stats_assets.ids;
     }
 
 
@@ -1705,17 +1564,6 @@ impl EditorState {
     }
 }
 
-fn extract_monster_id_from_ron(content: &str) -> Option<String> {
-    let pattern = r#""enemy_components::MonsterId":\s*\("([^"]+)"\)"#;
-    let re = regex::Regex::new(pattern).ok()?;
-    re.captures(content)?.get(1).map(|m| m.as_str().to_string())
-}
-
-fn extract_id_from_ron(content: &str) -> Option<String> {
-    let pattern = r#"id:\s*"([^"]+)""#;
-    let re = regex::Regex::new(pattern).ok()?;
-    re.captures(content)?.get(1).map(|m| m.as_str().to_string())
-}
 
 impl EditorState {
 

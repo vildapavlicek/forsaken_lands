@@ -9,6 +9,7 @@ mod file_generator;
 mod models;
 mod monster_prefab;
 mod research_graph;
+mod traits;
 
 use {editor::EditorState, eframe::egui};
 

@@ -1254,3 +1254,97 @@ impl BonusStatsFormData {
         format!("{}.stats.ron", self.filename)
     }
 }
+
+// ==================== Asset Loaders ====================
+
+use std::path::PathBuf;
+use crate::traits::AssetLoader;
+
+/// Helper to simplify regex extraction.
+pub fn extract_id_from_ron(content: &str) -> Option<String> {
+    let pattern = r#"id:\s*"([^"]+)""#;
+    let re = regex::Regex::new(pattern).ok()?;
+    re.captures(content)?.get(1).map(|m| m.as_str().to_string())
+}
+
+/// Helper to simplify monster ID extraction.
+pub fn extract_monster_id_from_ron(content: &str) -> Option<String> {
+    let pattern = r#""enemy_components::MonsterId":\s*\("([^"]+)"\)"#;
+    let re = regex::Regex::new(pattern).ok()?;
+    re.captures(content)?.get(1).map(|m| m.as_str().to_string())
+}
+
+pub struct ResearchLoader;
+impl AssetLoader for ResearchLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("research") }
+    fn extension(&self) -> &str { ".research.ron" }
+    fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
+        extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
+    }
+}
+
+pub struct RecipeUnlockLoader;
+impl AssetLoader for RecipeUnlockLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("unlocks").join("recipes") }
+    fn extension(&self) -> &str { ".unlock.ron" }
+    fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
+        stem.strip_prefix("recipe_").map(|s| s.to_string())
+    }
+}
+
+pub struct DivinityLoader;
+impl AssetLoader for DivinityLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("unlocks").join("divinity") }
+    fn extension(&self) -> &str { ".unlock.ron" }
+    fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
+        Some(stem.to_string())
+    }
+}
+
+pub struct MonsterLoader;
+impl AssetLoader for MonsterLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("prefabs").join("enemies") }
+    fn extension(&self) -> &str { ".scn.ron" }
+    fn extract_id(&self, _stem: &str, content: &str) -> Option<String> {
+        extract_monster_id_from_ron(content)
+    }
+}
+
+pub struct WeaponLoader;
+impl AssetLoader for WeaponLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("weapons") }
+    fn extension(&self) -> &str { ".weapon.ron" }
+    fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
+        extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
+    }
+}
+
+pub struct RecipeLoader;
+impl AssetLoader for RecipeLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("recipes") }
+    fn extension(&self) -> &str { ".recipe.ron" }
+    fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
+        extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
+    }
+}
+
+pub struct AutopsyLoader;
+impl AssetLoader for AutopsyLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("research") }
+    fn extension(&self) -> &str { ".research.ron" }
+    fn accept_filename(&self, filename: &str) -> bool {
+        filename.starts_with("autopsy_")
+    }
+    fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
+        stem.strip_prefix("autopsy_").map(|s| s.to_string())
+    }
+}
+
+pub struct BonusStatsLoader;
+impl AssetLoader for BonusStatsLoader {
+    fn sub_path(&self) -> PathBuf { PathBuf::from("stats") }
+    fn extension(&self) -> &str { ".stats.ron" }
+    fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
+        Some(stem.to_string())
+    }
+}
