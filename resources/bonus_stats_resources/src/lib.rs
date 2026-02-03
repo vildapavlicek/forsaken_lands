@@ -20,7 +20,6 @@ pub struct StatBonus {
 
 /// Aggregated bonuses for a specific key (e.g., "damage:melee").
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Reflect)]
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, Reflect)]
 pub struct BonusStat {
     pub additive: f32,
     pub percent: f32,        // Sum of percentages (e.g., 0.1 + 0.2 = 0.3)
@@ -33,7 +32,6 @@ impl Default for BonusStat {
             additive: 0.0,
             percent: 0.0,
             multiplicative: 0.0,
-            multiplicative: 0.0,
         }
     }
 }
@@ -43,7 +41,6 @@ impl BonusStat {
         match bonus.mode {
             StatMode::Additive => self.additive += bonus.value,
             StatMode::Percent => self.percent += bonus.value,
-            StatMode::Multiplicative => self.multiplicative += bonus.value,
             StatMode::Multiplicative => self.multiplicative += bonus.value,
         }
     }
@@ -55,7 +52,6 @@ impl BonusStat {
             StatMode::Multiplicative => {
                 if bonus.value != 0.0 {
                     self.multiplicative -= bonus.value;
-                    self.multiplicative -= bonus.value;
                 }
             }
         }
@@ -65,18 +61,6 @@ impl BonusStat {
         self.additive = 0.0;
         self.percent = 0.0;
         self.multiplicative = 1.0;
-    }
-}
-
-impl std::ops::Add for BonusStat {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        BonusStat {
-            additive: self.additive + rhs.additive,
-            percent: self.percent + rhs.percent,
-            multiplicative: self.multiplicative + rhs.multiplicative,
-        }
     }
 }
 
@@ -179,9 +163,6 @@ pub fn calculate_damage(
 
     // Calculation:
     // (Base + Additive) * (1 + Percent) * Multiplicative
-    let final_damage = (base_damage + total_bonus_stats.additive)
-        * (1.0 + total_bonus_stats.percent)
-        * total_bonus_stats.multiplicative.max(1.0);
     let final_damage = (base_damage + total_bonus_stats.additive)
         * (1.0 + total_bonus_stats.percent)
         * total_bonus_stats.multiplicative.max(1.0);
