@@ -6,6 +6,12 @@ description: Bevy 0.17 API reference and common migration issues
 
 This document captures API changes and common issues when working with Bevy 0.17.
 
+## Hierarchy Changes: Parent vs ChildOf
+
+The `Parent` component has been renamed/replaced by `ChildOf`.
+- **Old:** `Parent` component with `.get()` to retrieve parent entity.
+- **New:** `ChildOf` component with `.parent()` method to retrieve parent entity.
+
 ## Event vs Message Bifurcation
 
 In Bevy 0.17, events and messages have been split into two distinct systems:
