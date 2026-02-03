@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Drops, Health, MovementSpeed, MonsterTags},
+    enemy_components::{Drops, Health, MonsterTags, MovementSpeed},
     enemy_resources::{EnemyDetailsCache, EnemyStatBlock},
     loading::GameAssets,
     unlocks::UnlockAchieved,

@@ -1,5 +1,4 @@
-use bonus_stats_resources::StatMode;
-use bevy::prelude::*;
+use {bevy::prelude::*, bonus_stats_resources::StatMode};
 
 #[derive(Event, Debug, Clone)]
 pub struct AddStatBonus {

@@ -339,7 +339,10 @@ fn spawn_weapon_section(
         // Damage
         let damage_text = if (weapon.effective_damage - weapon.damage).abs() > 0.01 {
             let bonus = weapon.effective_damage - weapon.damage;
-            format!("{:.2} ({:.2} + {:.2})", weapon.effective_damage, weapon.damage, bonus)
+            format!(
+                "{:.2} ({:.2} + {:.2})",
+                weapon.effective_damage, weapon.damage, bonus
+            )
         } else {
             format!("{:.2}", weapon.damage)
         };
@@ -747,8 +750,12 @@ fn handle_change_equipment_button(
                                     None
                                 };
                                 let raw_tags = tags.map(|t| t.0.clone()).unwrap_or_default();
-                                let effective_damage =
-                                    bonus_stats::calculate_damage(damage.0, &raw_tags, &[], &bonus_stats);
+                                let effective_damage = bonus_stats::calculate_damage(
+                                    damage.0,
+                                    &raw_tags,
+                                    &[],
+                                    &bonus_stats,
+                                );
                                 WeaponDisplayData {
                                     entity,
                                     name,

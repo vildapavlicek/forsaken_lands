@@ -1,10 +1,11 @@
-use bevy::asset::AssetEvent;
-use bevy::prelude::*;
-use bevy_common_assets::ron::RonAssetPlugin;
-use bonus_stats_assets::StatBonusDefinition;
-use bonus_stats_events::*;
-use bonus_stats_resources::{BonusStats, StatBonus};
-use unlocks_events::StatusCompleted;
+use {
+    bevy::{asset::AssetEvent, prelude::*},
+    bevy_common_assets::ron::RonAssetPlugin,
+    bonus_stats_assets::StatBonusDefinition,
+    bonus_stats_events::*,
+    bonus_stats_resources::{BonusStats, StatBonus},
+    unlocks_events::StatusCompleted,
+};
 
 pub struct BonusStatsPlugin;
 
@@ -21,10 +22,7 @@ impl Plugin for BonusStatsPlugin {
             .add_observer(on_decrease_stat_bonus)
             // Integration Support
             .add_observer(on_status_completed)
-            .add_systems(
-                Update,
-                update_bonus_trigger_map,
-            )
+            .add_systems(Update, update_bonus_trigger_map)
             .add_systems(OnEnter(states::GameState::Loading), clear_bonus_stats);
     }
 }

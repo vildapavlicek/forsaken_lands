@@ -22,7 +22,6 @@ pub const MAX_LEVEL: u32 = 99;
 /// It is used by:
 /// - `PortalsPlugin`: To gate enemy spawns based on `SpawnCondition`.
 /// - `VillagePlugin`: To track village growth and unlock recipes/buildings.
-///
 
 #[derive(Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[reflect(Component, Default)]
@@ -37,8 +36,6 @@ impl Divinity {
     pub fn new(tier: u32, level: u32) -> Self {
         Self { tier, level }
     }
-
-
 
     pub fn from_dashed_str(value: &str) -> Result<Self, String> {
         let Some((tier, level)) = value.split_once('-') else {
@@ -77,8 +74,6 @@ impl Default for Divinity {
     }
 }
 
-
-
 /// Represents the current active Divinity level of a Portal.
 #[derive(
     Component, Reflect, Debug, Clone, Copy, PartialEq, Eq, Deref, DerefMut, Serialize, Deserialize,
@@ -91,8 +86,6 @@ impl Default for CurrentDivinity {
         Self(Divinity::default())
     }
 }
-
-
 
 #[cfg(test)]
 mod tests {
@@ -111,6 +104,4 @@ mod tests {
         assert!(mid == same_mid);
         assert!(high > mid);
     }
-
-
 }

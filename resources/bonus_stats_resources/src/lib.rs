@@ -231,7 +231,6 @@ mod tests {
         assert_eq!(raw.multiplicative, 0.0);
     }
 
-
     #[test]
     fn test_calculate_damage() {
         let mut stats = BonusStats::default();

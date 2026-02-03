@@ -1,7 +1,6 @@
 use {
     bevy::prelude::*,
     divinity_components::Divinity,
-
     enemy_components::MonsterId,
     enemy_events::EnemyEscaped,
     hero_events::EnemyKilled,
@@ -65,7 +64,6 @@ fn update_encyclopedia(
     }
 }
 
-
 fn update_encyclopedia_on_escape(
     trigger: On<EnemyEscaped>,
     mut village_query: Query<&mut EnemyEncyclopedia, With<Village>>,
@@ -99,7 +97,6 @@ fn update_encyclopedia_on_escape(
         });
     }
 }
-
 
 fn divinity_increase_unlock(
     event: On<UnlockAchieved>,

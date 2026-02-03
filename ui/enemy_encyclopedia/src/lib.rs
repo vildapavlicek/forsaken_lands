@@ -1,11 +1,11 @@
 use {
     bevy::prelude::*,
+    bonus_stats_resources::{BonusStat, BonusStats},
     enemy_resources::EnemyDetailsCache,
     states::{GameState, VillageView},
     village_components::EnemyEncyclopedia,
     wallet::Wallet,
     widgets::{ContentContainer, spawn_menu_button},
-    bonus_stats_resources::{BonusStats, BonusStat},
 };
 
 pub struct EnemyEncyclopediaUiPlugin;
@@ -59,7 +59,13 @@ fn spawn_encyclopedia_ui(
         spawn_menu_button(parent, "← Back", VillageBackButton, true);
 
         // Spawn encyclopedia content
-        spawn_enemy_encyclopedia_content(parent, encyclopedia, &details_cache, &wallet, &bonus_stats);
+        spawn_enemy_encyclopedia_content(
+            parent,
+            encyclopedia,
+            &details_cache,
+            &wallet,
+            &bonus_stats,
+        );
     });
 }
 
@@ -101,14 +107,12 @@ fn populate_encyclopedia_list(
     bonus_stats: &BonusStats,
 ) {
     parent
-        .spawn((
-            Node {
-                flex_direction: FlexDirection::Column,
-                width: Val::Percent(100.0),
-                padding: UiRect::all(Val::Px(10.0)),
-                ..default()
-            },
-        ))
+        .spawn((Node {
+            flex_direction: FlexDirection::Column,
+            width: Val::Percent(100.0),
+            padding: UiRect::all(Val::Px(10.0)),
+            ..default()
+        },))
         .with_children(|list| {
             // Title
             list.spawn((
@@ -277,10 +281,11 @@ fn spawn_enemy_card(
 
                     // Only display if there's any bonus
                     if total.additive != 0.0 || total.percent != 0.0 || total.multiplicative > 0.0 {
-                         let mult_val = total.multiplicative.max(1.0);
-                         let text = format!("Bonus: +{}/{:.0}%/*{}", 
-                            total.additive, 
-                            total.percent * 100.0, 
+                        let mult_val = total.multiplicative.max(1.0);
+                        let text = format!(
+                            "Bonus: +{}/{:.0}%/*{}",
+                            total.additive,
+                            total.percent * 100.0,
                             mult_val
                         );
 
@@ -291,7 +296,7 @@ fn spawn_enemy_card(
                                 font_size: 14.0,
                                 ..default()
                             },
-                             Node {
+                            Node {
                                 margin: UiRect::top(Val::Px(5.0)),
                                 ..default()
                             },
@@ -344,6 +349,12 @@ fn update_encyclopedia_ui(
 
     // Repopulate
     commands.entity(container).with_children(|scroll_content| {
-        populate_encyclopedia_list(scroll_content, &entries, &details_cache, &wallet, &bonus_stats);
+        populate_encyclopedia_list(
+            scroll_content,
+            &entries,
+            &details_cache,
+            &wallet,
+            &bonus_stats,
+        );
     });
 }

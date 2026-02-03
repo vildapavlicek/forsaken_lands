@@ -1,7 +1,4 @@
-use {
-    bevy::prelude::*,
-    std::collections::HashSet,
-};
+use {bevy::prelude::*, std::collections::HashSet};
 
 pub struct VillageResourcesPlugin;
 
