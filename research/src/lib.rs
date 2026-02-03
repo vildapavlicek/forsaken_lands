@@ -79,8 +79,20 @@ pub struct ResearchCompleted {
     pub research_id: String,
 }
 
+/// Represents a request to begin a research project.
+///
+/// This **Observer** event (triggered via `commands.trigger`) serves as the bridge between
+/// user input (UI) and the research logic system.
+///
+/// # Observers
+/// - `start_research`: Validates that the requested research is `Available`, ensures the
+///   player can afford the resource cost (in `Wallet`), deducts the cost, and transitions
+///   the entity state to `InProgress`.
 #[derive(Event)]
-pub struct StartResearchRequest(pub String);
+pub struct StartResearchRequest(
+    /// The unique identifier of the research definition (matches `ResearchDefinition.id`).
+    pub String,
+);
 
 // --- Plugin ---
 
