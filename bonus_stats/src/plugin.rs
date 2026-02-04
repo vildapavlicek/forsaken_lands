@@ -93,11 +93,12 @@ fn on_unlock_achieved(
     map: Res<BonusTriggerMap>,
 ) {
     let event = trigger.event();
-    trace!(?map, %event.reward_id, "observed UnlockAchieved event for reward");
 
     let Some(bonuses_map) = map.triggers.get(&event.reward_id) else {
         return;
     };
+
+    debug!(?map, %event.reward_id, "observed relevant UnlockAchieved event for bonus stat");
 
     info!("Applying bonuses for completed unlock: {}", event.reward_id);
     for (stat_key, bonus_list) in bonuses_map {
