@@ -7,4 +7,5 @@
         base: 10.0,
         increment: 5.0,
     )),
+    limit: MaxLevel(5),
 )

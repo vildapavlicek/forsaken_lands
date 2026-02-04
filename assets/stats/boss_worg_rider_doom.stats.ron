@@ -1,0 +1,11 @@
+(
+    id: "blessing:boss_worg_rider_doom",
+    bonuses: {
+        "damage:enemy:boss_worg_rider": [
+            (
+                value: 10.0,
+                mode: Additive,
+            ),
+        ],
+    },
+)

@@ -1,0 +1,8 @@
+(
+    id: "boss_worg_rider_doom",
+    display_name: Some("Worg Rider Boss's Doom"),
+    condition: And([
+        Completed(topic: "research:we_cant_kill_him")
+    ]),
+    reward_id: "blessing:boss_worg_rider_doom",
+)

@@ -1,0 +1,11 @@
+(
+    id: "research:autopsy_boss_worg_rider",
+    bonuses: {
+        "damage:race:goblins": [
+            (
+                value: 0.1,
+                mode: Percent,
+            ),
+        ],
+    },
+)

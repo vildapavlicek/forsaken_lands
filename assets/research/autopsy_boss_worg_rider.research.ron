@@ -1,0 +1,8 @@
+(
+    id: "autopsy_boss_worg_rider",
+    name: "Autopsy: boss_worg_rider",
+    description: "We killed their boss. Time to celebrate.",
+    cost: {},
+    time_required: 180.0,
+    max_repeats: 1,
+)

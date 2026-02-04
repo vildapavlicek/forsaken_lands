@@ -1,0 +1,8 @@
+(
+    id: "boss_worg_rider_doom",
+    name: "Worg Rider Boss's Doom",
+    description: "He shall die!",
+    reward_id: "blessing:worg_rider_boss_doom",
+    cost: Static((base: 100.0)),
+    limit: MaxLevel(1),
+)
