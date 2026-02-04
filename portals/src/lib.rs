@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    blessings::{BlessingDefinition, BlessingEffect, BlessingState, Blessings},
+    blessings::{BlessingDefinition, BlessingState, Blessings},
     buildings_components::TheMaw,
     divinity_components::CurrentDivinity,
     enemy_components::{
@@ -71,7 +71,7 @@ fn enemy_spawn_system(
         for (id, level) in &blessings.unlocked {
             if let Some(handle) = blessing_state.blessings.get(id) {
                 if let Some(def) = blessing_definitions.get(handle) {
-                    if def.effect == BlessingEffect::DecreaseSpawnTimer {
+                    if def.reward_id == "blessing:spawn_timer:decrease" {
                         // Example: 10% faster per level (compounding? or linear?)
                         // Let's assume linear for now or use the base_stats logic if defined,
                         // but for prototype, hardcode effect logic:
@@ -363,7 +363,7 @@ fn apply_blessing_to_lifetime(
             for (id, level) in &blessings.unlocked {
                 if let Some(handle) = blessing_state.blessings.get(id) {
                     if let Some(def) = blessing_definitions.get(handle) {
-                        if def.effect == BlessingEffect::IncreaseMonsterLifetime {
+                        if def.reward_id == "blessing:monster:lifetime_increase" {
                             // Example: +1s per level
                             extra_seconds += 1.0 * (*level as f32);
                         }

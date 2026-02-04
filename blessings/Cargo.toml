@@ -9,4 +9,5 @@ bevy_common_assets = { workspace = true }
 growth = { path = "../growth" }
 serde.workspace = true
 shared_components = { path = "../components/shared_components" }
+unlocks_events.workspace = true
 wallet = { path = "../wallet" }

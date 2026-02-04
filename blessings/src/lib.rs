@@ -2,8 +2,9 @@ use {
     bevy::prelude::*,
     bevy_common_assets::ron::RonAssetPlugin,
     growth::GrowthStrategy,
-    serde::{Deserialize, Serialize},
-    std::collections::HashMap,
+    serde::Deserialize,
+    std::collections::{HashMap, HashSet},
+    unlocks_events::UnlockAchieved,
     wallet::Wallet,
 };
 
@@ -15,6 +16,7 @@ impl Plugin for BlessingsPlugin {
         app.register_type::<Blessings>();
         app.init_resource::<BlessingState>();
         app.add_observer(purchase_blessing);
+        app.add_observer(handle_unlock_achieved);
     }
 }
 
@@ -24,24 +26,23 @@ pub struct BuyBlessing {
     pub blessing_id: String,
 }
 
-/// Event when a blessing is successfully purchased
-#[derive(Debug, Clone, Event)]
-pub struct BlessingPurchased {
-    pub blessing_id: String,
-    pub new_level: u32,
-    pub buyer: Entity,
-}
-
 fn purchase_blessing(
     trigger: On<BuyBlessing>,
     mut commands: Commands,
-    mut blessings_query: Query<(Entity, &mut Blessings)>,
+    mut blessings_query: Query<&mut Blessings>,
     mut wallet: ResMut<Wallet>,
-    _blessing_state: Res<BlessingState>,
+    blessing_state: Res<BlessingState>,
     blessing_definitions: Res<Assets<BlessingDefinition>>,
 ) {
     let event = trigger.event();
-    if let Ok((entity, mut blessings)) = blessings_query.single_mut() {
+
+    // Check if blessing is unlocked/available
+    if !blessing_state.available.contains(&event.blessing_id) {
+        warn!("Blessing {} is locked or not available", event.blessing_id);
+        return;
+    }
+
+    if let Ok(mut blessings) = blessings_query.single_mut() {
         if let Some((_, def)) = blessing_definitions
             .iter()
             .find(|(_, d)| d.id == event.blessing_id)
@@ -70,10 +71,11 @@ fn purchase_blessing(
                     event.blessing_id, new_level
                 );
 
-                commands.trigger(BlessingPurchased {
-                    blessing_id: event.blessing_id.clone(),
-                    new_level,
-                    buyer: entity,
+                // Trigger generic unlock event for downstream systems
+                commands.trigger(UnlockAchieved {
+                    unlock_id: format!("blessing:{}:{}", event.blessing_id, new_level),
+                    display_name: Some(def.name.clone()),
+                    reward_id: def.reward_id.clone(),
                 });
             } else {
                 warn!(
@@ -85,28 +87,30 @@ fn purchase_blessing(
     }
 }
 
+/// Observes UnlockAchieved to detect when a blessing becomes available
+fn handle_unlock_achieved(trigger: On<UnlockAchieved>, mut blessing_state: ResMut<BlessingState>) {
+    let event = trigger.event();
+
+    // Check if this unlock rewards a blessing availability
+    // Format: "blessing_available:{blessing_id}"
+    if let Some(blessing_id) = event.reward_id.strip_prefix("blessing_available:") {
+        if !blessing_state.available.contains(blessing_id) {
+            info!("Blessing unlocked: {}", blessing_id);
+            blessing_state.available.insert(blessing_id.to_string());
+        }
+    }
+}
+
 /// Asset definition for a Blessing.
 #[derive(Debug, Clone, Deserialize, TypePath, Asset)]
 pub struct BlessingDefinition {
     pub id: String,
     pub name: String,
     pub description: String,
-    /// The specific effect this blessing applies
-    pub effect: BlessingEffect,
+    /// The reward ID triggers when this blessing is purchased/upgraded
+    pub reward_id: String,
     /// Cost calculation strategy
     pub cost: growth::Growth,
-}
-
-/// Defines the gameplay impact of a blessing.
-///
-/// This enum is used by gameplay systems (e.g., `PortalsPlugin`) to apply
-/// statistical modifiers based on the blessing's type and level.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Reflect)]
-pub enum BlessingEffect {
-    /// Reduces the interval between enemy spawns (increases spawn rate).
-    DecreaseSpawnTimer,
-    /// Extends the duration enemies remain on the field before escaping.
-    IncreaseMonsterLifetime,
 }
 
 /// Component attached to "The Maw" to track unlocked blessings.
@@ -117,8 +121,11 @@ pub struct Blessings {
     pub unlocked: HashMap<String, u32>,
 }
 
-/// Resource to map Blessing IDs to Asset Handles for easy lookup
-#[derive(Resource, Default)]
+/// Resource to map Blessing IDs to Asset Handles and track availability
+#[derive(Resource, Default, Reflect)]
+#[reflect(Resource)]
 pub struct BlessingState {
     pub blessings: HashMap<String, Handle<BlessingDefinition>>,
+    /// Set of blessing IDs that are currently available to buy
+    pub available: HashSet<String>,
 }

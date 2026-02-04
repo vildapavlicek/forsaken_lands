@@ -1,0 +1,6 @@
+(
+    id: "unlock_blessing_spawn_rate",
+    display_name: Some("Unlock Hastened Doom"),
+    condition: True,
+    reward_id: "blessing_available:reduce_spawn_time",
+)

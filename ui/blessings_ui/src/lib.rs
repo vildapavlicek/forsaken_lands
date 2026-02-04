@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    blessings::{BlessingDefinition, Blessings, BuyBlessing},
+    blessings::{BlessingDefinition, BlessingState, Blessings, BuyBlessing},
     growth::GrowthStrategy,
     states::{GameState, VillageView},
     wallet::Wallet,
@@ -50,6 +50,7 @@ pub struct BlessingDisplayData {
     pub current_level: u32,
     pub cost: u32,
     pub can_afford: bool,
+    pub is_locked: bool,
 }
 
 fn spawn_blessings_ui(
@@ -127,37 +128,53 @@ impl Command for PopulateBlessingsCommand {
                 for item in self.data {
                     let card = widgets::spawn_item_card(parent, ());
                     parent.commands().entity(card).with_children(|c| {
-                        spawn_card_title(c, &format!("{} (Lvl {})", item.name, item.current_level));
+                        let title = if item.is_locked {
+                            format!("{} (LOCKED)", item.name)
+                        } else {
+                            format!("{} (Lvl {})", item.name, item.current_level)
+                        };
+                        spawn_card_title(c, &title);
                         spawn_description_text(c, &item.description);
 
-                        c.spawn((
-                            Text::new(format!("Cost: {} Entropy", item.cost)),
-                            TextFont {
-                                font_size: 12.0,
-                                ..default()
-                            },
-                            TextColor(if item.can_afford {
-                                UiTheme::AFFORDABLE
-                            } else {
-                                UiTheme::NOT_AFFORDABLE
-                            }),
-                        ));
+                        if item.is_locked {
+                            c.spawn((
+                                Text::new("LOCKED"),
+                                TextFont {
+                                    font_size: 14.0,
+                                    ..default()
+                                },
+                                TextColor(UiTheme::NOT_AFFORDABLE),
+                            ));
+                        } else {
+                            c.spawn((
+                                Text::new(format!("Cost: {} Entropy", item.cost)),
+                                TextFont {
+                                    font_size: 12.0,
+                                    ..default()
+                                },
+                                TextColor(if item.can_afford {
+                                    UiTheme::AFFORDABLE
+                                } else {
+                                    UiTheme::NOT_AFFORDABLE
+                                }),
+                            ));
 
-                        spawn_action_button(
-                            c,
-                            "Upgrade",
-                            if item.can_afford {
-                                UiTheme::AFFORDABLE
-                            } else {
-                                UiTheme::BORDER_DISABLED
-                            },
-                            if item.can_afford {
-                                UiTheme::BORDER_SUCCESS
-                            } else {
-                                UiTheme::BORDER_DISABLED
-                            },
-                            BlessingButton { id: item.id },
-                        );
+                            spawn_action_button(
+                                c,
+                                "Upgrade",
+                                if item.can_afford {
+                                    UiTheme::AFFORDABLE
+                                } else {
+                                    UiTheme::BORDER_DISABLED
+                                },
+                                if item.can_afford {
+                                    UiTheme::BORDER_SUCCESS
+                                } else {
+                                    UiTheme::BORDER_DISABLED
+                                },
+                                BlessingButton { id: item.id },
+                            );
+                        }
                     });
                 }
             });
@@ -184,6 +201,7 @@ fn update_blessings_ui(
     blessings_query: Query<&Blessings>,
     ui_query: Query<Entity, With<BlessingsUiRoot>>,
     mut last_data: Local<Option<Vec<BlessingDisplayData>>>,
+    blessing_state: Res<BlessingState>,
 ) {
     if ui_query.is_empty() {
         return;
@@ -200,8 +218,9 @@ fn update_blessings_ui(
         let id_str = def.id.clone();
         let current_level = blessings.unlocked.get(&id_str).copied().unwrap_or(0);
         let cost = def.cost.calculate(current_level) as u32;
+        let is_locked = !blessing_state.available.contains(&id_str);
 
-        let can_afford = current_entropy >= cost;
+        let can_afford = current_entropy >= cost && !is_locked;
 
         // Ensure we are using valid asset handle logic if we need to filter?
         // Currently iterating all assets seems fine as there are no complicated conditions yet.
@@ -214,6 +233,7 @@ fn update_blessings_ui(
             current_level,
             cost,
             can_afford,
+            is_locked,
         });
     }
 
