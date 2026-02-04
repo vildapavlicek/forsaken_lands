@@ -20,7 +20,7 @@ use {
             Drop, EnemyComponent, build_scene_ron, default_required_components,
             optional_components, parse_components_from_ron,
         },
-        research_graph::ResearchGraphState,
+
         tabs::{
             common::show_condition_editor, research::ResearchTabState,
             spawn_table::SpawnTableTabState, ttk::TtkTabState,
@@ -46,7 +46,7 @@ pub enum EditorTab {
     Recipe,
     MonsterPrefab,
     SpawnTable,
-    Graph,
+
     TimeToKill,
     Autopsy,
     Divinity,
@@ -109,8 +109,7 @@ pub struct EditorState {
     // Spawn Table Tab
     spawn_table: SpawnTableTabState,
 
-    // Research Graph
-    graph_state: ResearchGraphState,
+
 
     // TTK Tab
     ttk: TtkTabState,
@@ -162,7 +161,7 @@ impl EditorState {
             monster_ron_preview,
             spawn_table: SpawnTableTabState::new(),
 
-            graph_state: ResearchGraphState::new(),
+
 
             ttk: TtkTabState::new(),
 
@@ -294,7 +293,7 @@ impl EditorState {
                                 .desired_width(f32::INFINITY),
                             );
                         }
-                        EditorTab::Graph | EditorTab::TimeToKill => {
+                        EditorTab::TimeToKill => {
                             ui.label("No RON preview for this tab");
                         }
                         EditorTab::Autopsy => {
@@ -368,7 +367,7 @@ impl EditorState {
                     EditorTab::SpawnTable,
                     "💀 Spawn Tables",
                 );
-                ui.selectable_value(&mut self.active_tab, EditorTab::Graph, "📊 Graph");
+
                 ui.selectable_value(&mut self.active_tab, EditorTab::TimeToKill, "⏱ TTK");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Autopsy, "🧬 Autopsy");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Divinity, "✨ Divinity");
@@ -400,7 +399,7 @@ impl EditorState {
                     &mut self.status,
                     &self.existing_monster_ids,
                 ),
-                EditorTab::Graph => self.graph_state.show(ui, self.assets_dir.as_deref()),
+
                 EditorTab::TimeToKill => self.ttk.show(ui, self.assets_dir.as_deref()),
                 EditorTab::Autopsy => self.show_autopsy_form(ui),
                 EditorTab::Divinity => self.show_divinity_form(ui),
@@ -911,10 +910,7 @@ impl EditorState {
                 self.spawn_table.reset();
                 self.status = "New spawn table form created".to_string();
             }
-            EditorTab::Graph => {
-                // No form to create for graph
-                self.status = "Graph view active".to_string();
-            }
+
             EditorTab::TimeToKill => {
                 // No form to create for TTK
             }
