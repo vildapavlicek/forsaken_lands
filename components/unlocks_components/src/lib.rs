@@ -1,6 +1,18 @@
 use bevy::prelude::*;
 
-/// Tag for the root entity of an unlock definition.
+/// The root anchor of an active unlock logic graph in the ECS.
+///
+/// This component sits at the top of the logic hierarchy (`ConditionSensor` -> `LogicGate` -> `UnlockRoot`).
+/// It represents an in-progress unlock requirement (e.g., "Kill 10 Goblins").
+///
+/// # Usage
+/// - **Signal Termination**: The `propagate_logic_signal` observer bubbles `LogicSignalEvent` up the
+///   `ChildOf` hierarchy. When the signal reaches this component and is High, the unlock is achieved.
+/// - **Event Trigger**: Upon receiving a positive signal, this component's data is used to fire the
+///   `UnlockAchieved` event (Observer).
+/// - **Lifecycle**: The `cleanup_finished_unlock` system queries this component to identify and
+///   recursively despawn the entire condition tree once the unlock is completed.
+/// - **Instantiation**: Spawned by `loading::compile_unlocks` from an `UnlockDefinition` asset.
 #[derive(Component)]
 pub struct UnlockRoot {
     pub id: String,
