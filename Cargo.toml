@@ -111,6 +111,7 @@ research_assets = { path = "game_assets/research_assets" }
 research_ui = { path = "ui/research_ui" }
 resources_ui = { path = "ui/resources_ui" }
 save_load = { path = "save_load" }
+serde = { version = "1", features = ["derive"] }
 shared_components = { path = "components/shared_components" }
 states = { path = "states" }
 system_schedule = { path = "system_schedule" }

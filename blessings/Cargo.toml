@@ -7,6 +7,6 @@ edition = "2024"
 bevy = { workspace = true }
 bevy_common_assets = { workspace = true }
 growth = { path = "../growth" }
-serde = { version = "1.0", features = ["derive"] }
+serde.workspace = true
 shared_components = { path = "../components/shared_components" }
 wallet = { path = "../wallet" }

@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-serde = { version = "1", features = ["derive"] }
+serde.workspace = true
 unlocks_assets.workspace = true
 unlocks_components.workspace = true
 unlocks_events.workspace = true

@@ -5,5 +5,5 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
-serde = { version = "1", features = ["derive"] }
+serde.workspace = true
 bonus_stats_resources.workspace = true

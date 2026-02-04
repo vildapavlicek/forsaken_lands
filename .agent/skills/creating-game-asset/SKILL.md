@@ -25,7 +25,7 @@ Ensure `Cargo.toml` has the necessary dependencies:
 [dependencies]
 bevy.workspace = true
 bevy_common_assets = { version = "0.15", features = ["ron"] }
-serde = { version = "1.0", features = ["derive"] }
+serde.workspace = true
 ```
 
 ### 3. Define Asset Structure

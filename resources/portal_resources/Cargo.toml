@@ -6,5 +6,5 @@ edition = "2024"
 [dependencies]
 bevy.workspace = true
 divinity_components.workspace = true
-serde = { version = "1.0", features = ["derive"] }
+serde.workspace = true
 bevy_common_assets.workspace = true
