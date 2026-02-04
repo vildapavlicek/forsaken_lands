@@ -39,6 +39,18 @@ fn purchase_blessing(
         {
             let current_level = *blessings.unlocked.get(&event.blessing_id).unwrap_or(&0);
 
+            // Check limits
+            match def.limit {
+                BlessingLimit::MaxLevel(max) if current_level >= max => {
+                    info!(
+                        "Blessing {} is already at max level {}",
+                        event.blessing_id, max
+                    );
+                    return;
+                }
+                _ => {}
+            }
+
             // Increment level
             let new_level = current_level + 1;
             blessings
@@ -74,6 +86,18 @@ fn handle_unlock_achieved(trigger: On<UnlockAchieved>, mut blessing_state: ResMu
     }
 }
 
+#[derive(Debug, Clone, Deserialize, Reflect, PartialEq)]
+pub enum BlessingLimit {
+    Unlimited,
+    MaxLevel(u32),
+}
+
+impl Default for BlessingLimit {
+    fn default() -> Self {
+        Self::Unlimited
+    }
+}
+
 /// Asset definition for a Blessing.
 #[derive(Debug, Clone, Deserialize, TypePath, Asset)]
 pub struct BlessingDefinition {
@@ -84,6 +108,8 @@ pub struct BlessingDefinition {
     pub reward_id: String,
     /// Cost calculation strategy
     pub cost: growth::Growth,
+    #[serde(default)]
+    pub limit: BlessingLimit,
 }
 
 /// Component attached to "The Maw" to track unlocked blessings.

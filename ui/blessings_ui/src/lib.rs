@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    blessings::{BlessingDefinition, BlessingState, Blessings, BuyBlessing},
+    blessings::{BlessingDefinition, BlessingLimit, BlessingState, Blessings, BuyBlessing},
     growth::GrowthStrategy,
     states::{GameState, VillageView},
     wallet::Wallet,
@@ -51,6 +51,7 @@ pub struct BlessingDisplayData {
     pub cost: u32,
     pub can_afford: bool,
     pub is_locked: bool,
+    pub limit: BlessingLimit, 
 }
 
 fn spawn_blessings_ui(
@@ -159,21 +160,37 @@ impl Command for PopulateBlessingsCommand {
                                 }),
                             ));
 
-                            spawn_action_button(
-                                c,
-                                "Upgrade",
-                                if item.can_afford {
-                                    UiTheme::AFFORDABLE
-                                } else {
-                                    UiTheme::BORDER_DISABLED
-                                },
-                                if item.can_afford {
-                                    UiTheme::BORDER_SUCCESS
-                                } else {
-                                    UiTheme::BORDER_DISABLED
-                                },
-                                BlessingButton { id: item.id },
-                            );
+                            let is_maxed = match item.limit {
+                                BlessingLimit::MaxLevel(max) => item.current_level >= max,
+                                BlessingLimit::Unlimited => false,
+                            };
+
+                            if is_maxed {
+                                c.spawn((
+                                    Text::new("MAX LEVEL"),
+                                    TextFont {
+                                        font_size: 14.0,
+                                        ..default()
+                                    },
+                                    TextColor(UiTheme::TEXT_DISABLED),
+                                ));
+                            } else {
+                                spawn_action_button(
+                                    c,
+                                    "Upgrade",
+                                    if item.can_afford {
+                                        UiTheme::AFFORDABLE
+                                    } else {
+                                        UiTheme::BORDER_DISABLED
+                                    },
+                                    if item.can_afford {
+                                        UiTheme::BORDER_SUCCESS
+                                    } else {
+                                        UiTheme::BORDER_DISABLED
+                                    },
+                                    BlessingButton { id: item.id },
+                                );
+                            }
                         }
                     });
                 }
@@ -200,6 +217,7 @@ fn update_blessings_ui(
     wallet: Res<Wallet>,
     blessings_query: Query<&Blessings>,
     ui_query: Query<Entity, With<BlessingsUiRoot>>,
+    container_query: Query<Option<&Children>, With<BlessingsItemsContainer>>,
     mut last_data: Local<Option<Vec<BlessingDisplayData>>>,
     blessing_state: Res<BlessingState>,
 ) {
@@ -234,12 +252,21 @@ fn update_blessings_ui(
             cost,
             can_afford,
             is_locked,
+            limit: def.limit.clone(),
         });
     }
 
     data.sort_by(|a, b| a.name.cmp(&b.name));
 
-    if let Some(last) = last_data.as_ref() {
+    let container_empty = container_query
+        .iter()
+        .next()
+        .map(|c| c.map(|children| children.is_empty()).unwrap_or(true))
+        .unwrap_or(true);
+
+    if !data.is_empty() && container_empty {
+        // Force update if we have data but UI is empty
+    } else if let Some(last) = last_data.as_ref() {
         if *last == data {
             return;
         }

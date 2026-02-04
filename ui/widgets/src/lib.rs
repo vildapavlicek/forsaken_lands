@@ -118,6 +118,7 @@ impl UiTheme {
     pub const TEXT_SECONDARY: Color = Color::srgba(0.8, 0.8, 0.8, 1.0);
     pub const TEXT_HEADER: Color = Color::srgba(0.8, 0.8, 1.0, 1.0);
     pub const TEXT_INFO: Color = Color::srgba(0.7, 0.7, 1.0, 1.0);
+    pub const TEXT_DISABLED: Color = Color::srgba(0.5, 0.5, 0.5, 1.0);
 
     pub const BUTTON_NORMAL: Color = Color::srgba(0.2, 0.2, 0.2, 1.0);
     pub const BUTTON_HOVER: Color = Color::srgba(0.3, 0.3, 0.3, 1.0);
