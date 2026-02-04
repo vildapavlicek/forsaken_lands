@@ -65,8 +65,8 @@ fn handle_unlock_achieved(trigger: On<UnlockAchieved>, mut blessing_state: ResMu
     let event = trigger.event();
 
     // Check if this unlock rewards a blessing availability
-    // Format: "blessing_available:{blessing_id}"
-    if let Some(blessing_id) = event.reward_id.strip_prefix("blessing_available:") {
+    // Format: "blessing:{blessing_id}"
+    if let Some(blessing_id) = event.reward_id.strip_prefix("blessing:") {
         if !blessing_state.available.contains(blessing_id) {
             info!("Blessing unlocked: {}", blessing_id);
             blessing_state.available.insert(blessing_id.to_string());
