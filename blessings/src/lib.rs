@@ -1,11 +1,9 @@
 use {
     bevy::prelude::*,
     bevy_common_assets::ron::RonAssetPlugin,
-    growth::GrowthStrategy,
     serde::Deserialize,
     std::collections::{HashMap, HashSet},
     unlocks_events::UnlockAchieved,
-    wallet::Wallet,
 };
 
 pub struct BlessingsPlugin;
@@ -30,17 +28,9 @@ fn purchase_blessing(
     trigger: On<BuyBlessing>,
     mut commands: Commands,
     mut blessings_query: Query<&mut Blessings>,
-    mut wallet: ResMut<Wallet>,
-    blessing_state: Res<BlessingState>,
     blessing_definitions: Res<Assets<BlessingDefinition>>,
 ) {
     let event = trigger.event();
-
-    // Check if blessing is unlocked/available
-    if !blessing_state.available.contains(&event.blessing_id) {
-        warn!("Blessing {} is locked or not available", event.blessing_id);
-        return;
-    }
 
     if let Ok(mut blessings) = blessings_query.single_mut() {
         if let Some((_, def)) = blessing_definitions
@@ -48,41 +38,24 @@ fn purchase_blessing(
             .find(|(_, d)| d.id == event.blessing_id)
         {
             let current_level = *blessings.unlocked.get(&event.blessing_id).unwrap_or(&0);
-            let cost = def.cost.calculate(current_level);
 
-            // Check affordability
-            let entropy_key = "entropy".to_string();
-            let current_entropy = *wallet.resources.get(&entropy_key).unwrap_or(&0);
+            // Increment level
+            let new_level = current_level + 1;
+            blessings
+                .unlocked
+                .insert(event.blessing_id.clone(), new_level);
 
-            if current_entropy >= cost as u32 {
-                // Deduct cost
-                if let Some(val) = wallet.resources.get_mut(&entropy_key) {
-                    *val -= cost as u32;
-                }
+            info!(
+                "Purchased blessing {}. New Level: {}",
+                event.blessing_id, new_level
+            );
 
-                // Increment level
-                let new_level = current_level + 1;
-                blessings
-                    .unlocked
-                    .insert(event.blessing_id.clone(), new_level);
-
-                info!(
-                    "Purchased blessing {}. New Level: {}",
-                    event.blessing_id, new_level
-                );
-
-                // Trigger generic unlock event for downstream systems
-                commands.trigger(UnlockAchieved {
-                    unlock_id: format!("blessing:{}:{}", event.blessing_id, new_level),
-                    display_name: Some(def.name.clone()),
-                    reward_id: def.reward_id.clone(),
-                });
-            } else {
-                warn!(
-                    "Not enough Entropy. Cost: {}, Current: {}",
-                    cost, current_entropy
-                );
-            }
+            // Trigger generic unlock event for downstream systems
+            commands.trigger(UnlockAchieved {
+                unlock_id: format!("blessing:{}", event.blessing_id),
+                display_name: Some(def.name.clone()),
+                reward_id: def.reward_id.clone(),
+            });
         }
     }
 }
