@@ -21,7 +21,7 @@ impl Plugin for BonusStatsPlugin {
             .add_observer(on_increase_stat_bonus)
             .add_observer(on_decrease_stat_bonus)
             // Integration Support
-            .add_observer(on_status_completed)
+            // .add_observer(on_status_completed)
             .add_observer(on_unlock_achieved)
             .add_systems(Update, update_bonus_trigger_map)
             .add_systems(OnEnter(states::GameState::Loading), clear_bonus_stats);
