@@ -1,0 +1,8 @@
+(
+    id: "we_cant_kill_him",
+    name: "We can\'t kill him",
+    description: "He\'s too strong. Maybe god can help?",
+    cost: {},
+    time_required: 120.0,
+    max_repeats: 1,
+)
