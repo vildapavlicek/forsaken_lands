@@ -4,7 +4,7 @@ use {
     bonus_stats_assets::StatBonusDefinition,
     bonus_stats_events::*,
     bonus_stats_resources::{BonusStats, StatBonus},
-    unlocks_events::StatusCompleted,
+    unlocks_events::{StatusCompleted, UnlockAchieved},
 };
 
 pub struct BonusStatsPlugin;
@@ -22,6 +22,7 @@ impl Plugin for BonusStatsPlugin {
             .add_observer(on_decrease_stat_bonus)
             // Integration Support
             .add_observer(on_status_completed)
+            .add_observer(on_unlock_achieved)
             .add_systems(Update, update_bonus_trigger_map)
             .add_systems(OnEnter(states::GameState::Loading), clear_bonus_stats);
     }
@@ -82,6 +83,26 @@ fn on_status_completed(
             for bonus in bonus_list {
                 stats.add(stat_key, bonus.clone());
             }
+        }
+    }
+}
+
+fn on_unlock_achieved(
+    trigger: On<UnlockAchieved>,
+    mut stats: ResMut<BonusStats>,
+    map: Res<BonusTriggerMap>,
+) {
+    let event = trigger.event();
+    trace!(?map, %event.reward_id, "observed UnlockAchieved event for reward");
+
+    let Some(bonuses_map) = map.triggers.get(&event.reward_id) else {
+        return;
+    };
+
+    info!("Applying bonuses for completed unlock: {}", event.reward_id);
+    for (stat_key, bonus_list) in bonuses_map {
+        for bonus in bonus_list {
+            stats.add(stat_key, bonus.clone());
         }
     }
 }
