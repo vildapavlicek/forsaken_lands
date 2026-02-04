@@ -22,7 +22,7 @@ use {
         },
 
         tabs::{
-            common::show_condition_editor, research::ResearchTabState,
+            common::show_condition_editor, overview::OverviewState, research::ResearchTabState,
             spawn_table::SpawnTableTabState, ttk::TtkTabState,
         },
     },
@@ -51,6 +51,7 @@ pub enum EditorTab {
     Autopsy,
     Divinity,
     BonusStats,
+    Overview,
 }
 
 /// Current state of the editor.
@@ -127,6 +128,9 @@ pub struct EditorState {
     // Bonus Stats Tab
     bonus_stats_form: BonusStatsFormData,
     existing_bonus_filenames: Vec<String>,
+
+    // Overview Tab
+    overview: OverviewState,
 }
 
 impl EditorState {
@@ -172,6 +176,8 @@ impl EditorState {
 
             bonus_stats_form: BonusStatsFormData::new(),
             existing_bonus_filenames: Vec::new(),
+
+            overview: OverviewState::new(),
         }
     }
 
@@ -296,6 +302,9 @@ impl EditorState {
                         EditorTab::TimeToKill => {
                             ui.label("No RON preview for this tab");
                         }
+                        EditorTab::Overview => {
+                            ui.label("No RON preview for this tab");
+                        }
                         EditorTab::Autopsy => {
                             ui.label("Research Unlock:");
                             let ru = generate_autopsy_research_unlock_ron(&self.autopsy_form);
@@ -376,6 +385,7 @@ impl EditorState {
                     EditorTab::BonusStats,
                     "📈 Bonus Stats",
                 );
+                ui.selectable_value(&mut self.active_tab, EditorTab::Overview, "🔍 Overview");
             });
             ui.separator();
 
@@ -404,6 +414,7 @@ impl EditorState {
                 EditorTab::Autopsy => self.show_autopsy_form(ui),
                 EditorTab::Divinity => self.show_divinity_form(ui),
                 EditorTab::BonusStats => self.show_bonus_stats_form(ui),
+                EditorTab::Overview => self.overview.show(ui, self.assets_dir.as_deref()),
             });
         });
     }
@@ -926,6 +937,10 @@ impl EditorState {
                 self.bonus_stats_form = BonusStatsFormData::new();
                 self.status = "New bonus stats form created".to_string();
             }
+            EditorTab::Overview => {
+                // Overview is view-only, but we can reset sort/filter if we had them
+                self.status = "Overview refreshed".to_string();
+            }
         }
     }
 
@@ -936,6 +951,7 @@ impl EditorState {
         {
             self.assets_dir = Some(path.clone());
             self.load_existing_ids(&path);
+            self.overview.reload_data(&path);
             self.status = format!("Assets directory set: {}", path.display());
         }
     }
