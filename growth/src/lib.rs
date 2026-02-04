@@ -70,10 +70,22 @@ impl GrowthStrategy for StepGrowth {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct StaticGrowth {
+    pub base: f64,
+}
+
+impl GrowthStrategy for StaticGrowth {
+    fn calculate(&self, _: u32) -> f64 {
+        self.base
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Growth {
     Linear(LinearGrowth),
     Exponential(ExponentialGrowth),
     Step(StepGrowth),
+    Static(StaticGrowth),
 }
 
 impl GrowthStrategy for Growth {
@@ -82,6 +94,7 @@ impl GrowthStrategy for Growth {
             Growth::Linear(g) => g.calculate(level),
             Growth::Exponential(g) => g.calculate(level),
             Growth::Step(g) => g.calculate(level),
+            Growth::Static(g) => g.calculate(level),
         }
     }
 }
