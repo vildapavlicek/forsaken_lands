@@ -4,7 +4,7 @@
     condition: Value(
         topic: "kills:goblin",
         op: Ge,
-        target: 15.0,
+        target: 10.0,
     ),
     reward_id: "divinity:1-5",
 )
