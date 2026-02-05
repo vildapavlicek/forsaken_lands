@@ -1,6 +1,0 @@
-(
-    id: "unlock_blessing_monster_life",
-    display_name: Some("Unlock Enduring Evil"),
-    condition: True,
-    reward_id: "blessing_available:increase_lifetime",
-)
