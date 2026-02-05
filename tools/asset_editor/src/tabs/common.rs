@@ -150,7 +150,7 @@ fn show_leaf_editor(
 
     // Condition-specific fields
     match leaf {
-        LeafCondition::Unlock { id } => {
+        LeafCondition::Research { id } => {
             ui.horizontal(|ui| {
                 ui.label("Research ID:");
                 if !existing_research_ids.is_empty() {

@@ -91,8 +91,8 @@ impl CompareOp {
 /// A leaf condition (sensor) that can be used inside And/Or gates.
 #[derive(Clone, Debug, PartialEq)]
 pub enum LeafCondition {
-    /// Unlock condition: triggers when a research/unlock completes
-    Unlock { id: String },
+    /// Research condition: triggers when a research completes
+    Research { id: String },
     /// Kills condition: triggers when player kills enough of a monster type
     Kills {
         monster_id: String,
@@ -120,14 +120,14 @@ pub enum LeafCondition {
 
 impl Default for LeafCondition {
     fn default() -> Self {
-        LeafCondition::Unlock { id: String::new() }
+        LeafCondition::Research { id: String::new() }
     }
 }
 
 impl LeafCondition {
     pub fn display_name(&self) -> &'static str {
         match self {
-            LeafCondition::Unlock { .. } => "Unlock",
+            LeafCondition::Research { .. } => "Research",
             LeafCondition::Kills { .. } => "Kills",
             LeafCondition::Resource { .. } => "Resource",
             LeafCondition::Divinity { .. } => "Divinity",
@@ -137,12 +137,12 @@ impl LeafCondition {
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Unlock", "Kills", "Resource", "Divinity", "Craft", "Custom"]
+        vec!["Research", "Kills", "Resource", "Divinity", "Craft", "Custom"]
     }
 
     pub fn from_type_name(name: &str) -> Self {
         match name {
-            "Unlock" => LeafCondition::Unlock { id: String::new() },
+            "Research" => LeafCondition::Research { id: String::new() },
             "Kills" => LeafCondition::Kills {
                 monster_id: String::new(),
                 value: 1.0,
@@ -172,7 +172,7 @@ impl LeafCondition {
 
     pub fn to_ron(&self) -> String {
         match self {
-            LeafCondition::Unlock { id } => {
+            LeafCondition::Research { id } => {
                 format!("Completed(topic: \"research:{}\")", id)
             }
             LeafCondition::Kills {
@@ -227,9 +227,9 @@ impl LeafCondition {
     pub fn validate(&self) -> Vec<String> {
         let mut errors = Vec::new();
         match self {
-            LeafCondition::Unlock { id } => {
+            LeafCondition::Research { id } => {
                 if id.trim().is_empty() {
-                    errors.push("Unlock ID is required".to_string());
+                    errors.push("Research ID is required".to_string());
                 }
             }
             LeafCondition::Kills { monster_id, .. } => {
@@ -275,7 +275,7 @@ impl LeafCondition {
 
     pub fn to_condition_node(&self) -> ConditionNode {
         match self {
-            LeafCondition::Unlock { id } => ConditionNode::Completed {
+            LeafCondition::Research { id } => ConditionNode::Completed {
                 topic: format!("research:{}", id),
             },
             LeafCondition::Kills {
@@ -452,10 +452,10 @@ impl From<&ConditionNode> for LeafCondition {
             ConditionNode::Completed { topic } => {
                 // Heuristic to detect type based on topic prefix
                 if let Some(id) = topic.strip_prefix("research:") {
-                    LeafCondition::Unlock { id: id.to_string() }
+                    LeafCondition::Research { id: id.to_string() }
                 } else if let Some(id) = topic.strip_prefix("unlock:") {
-                    // Handle older or alternative unlock topics if necessary, or just treat as Unlock
-                    LeafCondition::Unlock { id: id.to_string() }
+                    // Handle older or alternative unlock topics if necessary, or just treat as Research
+                    LeafCondition::Research { id: id.to_string() }
                 } else if let Some(id) = topic.strip_prefix("craft:") {
                     LeafCondition::Craft {
                         recipe_id: id.to_string(),
@@ -465,9 +465,9 @@ impl From<&ConditionNode> for LeafCondition {
                     // We stick with Unlock for generic completed events for now, 
                     // unless they have a clear custom pattern we want to force into Custom.
                     // But Custom uses Value(), so Completed() usually maps to Unlock or Craft.
-                    // If it's unknown, let's keep it as Unlock for legacy reasons or change it if requested.
+                    // If it's unknown, let's keep it as Research for legacy reasons or change it if requested.
                     // The prompt didn't specify changing Completed(..) parsing, only adding capability for Custom value triggers.
-                    LeafCondition::Unlock { id: topic.clone() }
+                    LeafCondition::Research { id: topic.clone() }
                 }
             }
             ConditionNode::Value { topic, op, target } => {
