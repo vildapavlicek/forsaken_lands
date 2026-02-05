@@ -61,7 +61,6 @@ impl Plugin for LoadingManagerPlugin {
                 (
                     compile_unlocks,
                     compile_research_unlocks,
-                    compile_research_unlocks,
                     compile_recipe_unlocks,
                     compile_blessing_unlocks,
                 ),
