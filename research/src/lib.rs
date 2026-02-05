@@ -32,12 +32,23 @@ pub struct ResearchNode {
 #[reflect(Component)]
 pub struct ResearchCompletionCount(pub u32);
 
-/// Currently being researched
+/// Represents the active state of a research project currently being processed.
+///
+/// This component acts as the "working" state in the research state machine (`Locked` -> `Available` -> `InProgress` -> `Completed`/`Available`).
+/// It handles the time-based progression of research.
+///
+/// # Usage
+/// - **Progression**: The `update_research_progress` system ticks the `timer` field every frame.
+/// - **Completion**: When the timer finishes, the system triggers `ResearchCompleted`, increments completion count, and transitions the entity to `Completed` (if max repeats reached) or back to `Available`.
+/// - **Persistence**: The `IncludeInSave` requirement ensures that ongoing research progress is saved and restored.
+/// - **UI**: The UI system queries this component to display progress bars or "Time Remaining" indicators.
 #[derive(Component, Reflect)]
 #[reflect(Component)]
 #[require(IncludeInSave)]
 pub struct InProgress {
+    /// The unique identifier of the research being processed (redundant but useful for O(1) access).
     pub research_id: String,
+    /// The progress timer. The research finishes when this timer completes its duration (in seconds).
     pub timer: Timer,
 }
 
