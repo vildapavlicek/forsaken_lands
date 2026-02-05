@@ -1736,6 +1736,7 @@ dependencies = [
  "growth",
  "serde",
  "shared_components",
+ "unlocks_assets",
  "unlocks_events",
  "wallet",
 ]
@@ -3539,6 +3540,7 @@ name = "loading"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "blessings",
  "crafting",
  "crafting_resources",
  "divinity_components",

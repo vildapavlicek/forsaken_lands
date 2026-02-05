@@ -6,6 +6,7 @@ use {
         RecipesFolderHandle, ResearchFolderHandle, UnlocksFolderHandle, WeaponsFolderHandle,
     },
     bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
+    blessings::BlessingDefinition,
     crafting_resources::RecipeMap,
     divinity_components::Divinity,
     enemy_components::MonsterId,
@@ -16,7 +17,7 @@ use {
     serde::de::DeserializeSeed,
     states::{GameState, LoadingPhase},
     std::{fs, path::Path},
-    unlocks::{CompiledUnlock, TopicMap, UnlockRoot, UnlockState, compiler::build_condition_node},
+    unlocks::{CompiledUnlock, TopicMap, UnlockState},
     unlocks_assets::UnlockDefinition,
     unlocks_events::{StatusCompleted, ValueChanged},
     village_components::{EnemyEncyclopedia, Village},
@@ -60,7 +61,9 @@ impl Plugin for LoadingManagerPlugin {
                 (
                     compile_unlocks,
                     compile_research_unlocks,
+                    compile_research_unlocks,
                     compile_recipe_unlocks,
+                    compile_blessing_unlocks,
                 ),
             )
             .add_systems(
@@ -474,6 +477,29 @@ fn compile_recipe_unlocks(
 
     for (_, recipe) in recipe_assets.iter() {
         if let Some(unlock) = &recipe.unlock {
+            unlocks::compile_unlock_definition(
+                &mut commands,
+                &mut topic_map,
+                unlock,
+                &compiled_ids,
+                &unlock_state,
+            );
+        }
+    }
+}
+
+fn compile_blessing_unlocks(
+    mut commands: Commands,
+    blessing_assets: Res<Assets<BlessingDefinition>>,
+    mut topic_map: ResMut<TopicMap>,
+    unlock_state: Res<UnlockState>,
+    compiled: Query<&CompiledUnlock>,
+) {
+    let compiled_ids: std::collections::HashSet<_> =
+        compiled.iter().map(|c| c.definition_id.as_str()).collect();
+
+    for (_, blessing) in blessing_assets.iter() {
+        if let Some(unlock) = &blessing.unlock {
             unlocks::compile_unlock_definition(
                 &mut commands,
                 &mut topic_map,

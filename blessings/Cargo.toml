@@ -10,4 +10,5 @@ growth = { path = "../growth" }
 serde.workspace = true
 shared_components = { path = "../components/shared_components" }
 unlocks_events.workspace = true
+unlocks_assets = { path = "../game_assets/unlocks_assets" }
 wallet = { path = "../wallet" }

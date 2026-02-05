@@ -3,6 +3,7 @@ use {
     bevy_common_assets::ron::RonAssetPlugin,
     serde::Deserialize,
     std::collections::{HashMap, HashSet},
+    unlocks_assets::UnlockDefinition,
     unlocks_events::UnlockAchieved,
 };
 
@@ -110,6 +111,10 @@ pub struct BlessingDefinition {
     pub cost: growth::Growth,
     #[serde(default)]
     pub limit: BlessingLimit,
+
+    /// Optional inline unlock definition for when this blessing becomes available to purchase
+    #[serde(default)]
+    pub unlock: Option<UnlockDefinition>,
 }
 
 /// Component attached to "The Maw" to track unlocked blessings.

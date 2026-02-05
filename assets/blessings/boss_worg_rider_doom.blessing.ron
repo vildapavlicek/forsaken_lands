@@ -5,4 +5,12 @@
     reward_id: "blessing:worg_rider_boss_doom",
     cost: Static((base: 100.0)),
     limit: MaxLevel(1),
+    unlock: Some((
+        id: "boss_worg_rider_doom_unlock",
+        display_name: Some("Worg Rider Boss's Doom"),
+        condition: And([
+            Completed(topic: "research:we_cant_kill_him")
+        ]),
+        reward_id: "blessing:boss_worg_rider_doom",
+    )),
 )
