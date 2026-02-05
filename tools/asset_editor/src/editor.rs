@@ -7,9 +7,9 @@ use {
         file_generator::{
             generate_autopsy_encyclopedia_unlock_ron, generate_autopsy_research_ron,
             generate_autopsy_research_unlock_ron, generate_bonus_stats_ron,
-            generate_divinity_unlock_ron, generate_recipe_unlock_ron, generate_research_ron,
-            generate_unlock_ron, save_autopsy_files, save_bonus_stats_file,
-            save_divinity_unlock_file, save_recipe_unlock_file,
+            generate_divinity_unlock_ron, generate_research_ron,
+            save_autopsy_files, save_bonus_stats_file,
+            save_divinity_unlock_file, save_recipe_file, save_research_files,
         },
         models::{
             AutopsyFormData, BonusEntry, BonusStatsFormData, CraftingOutcomeExt, DivinityFormData,
@@ -237,22 +237,12 @@ impl EditorState {
                             );
 
                             ui.add_space(10.0);
-                            ui.label("Unlock File:");
-                            let unlock_ron = generate_unlock_ron(&self.research.research_form);
-                            ui.add(
-                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
-                                    .font(egui::TextStyle::Monospace)
-                                    .desired_width(f32::INFINITY),
-                            );
+                            ui.label("Unlock File (Deprecated/Embedded):");
+                            ui.label("Unlock definition is now embedded in the research file.");
                         }
                         EditorTab::RecipeUnlock => {
-                            ui.label("Recipe Unlock File:");
-                            let unlock_ron = generate_recipe_unlock_ron(&self.recipe_unlock_form);
-                            ui.add(
-                                egui::TextEdit::multiline(&mut unlock_ron.as_str())
-                                    .font(egui::TextStyle::Monospace)
-                                    .desired_width(f32::INFINITY),
-                            );
+                            ui.label("Recipe Unlock File (Deprecated):");
+                            ui.label("Recipe unlocks are now managed in the Recipe tab.");
                         }
                         EditorTab::Weapon => {
                             ui.label("Weapon File:");
@@ -517,11 +507,13 @@ impl EditorState {
             ui.add_space(8.0);
         }
 
-        ui.add_enabled_ui(self.assets_dir.is_some() && errors.is_empty(), |ui| {
-            if ui.button("💾 Save Recipe Unlock").clicked() {
-                self.save_recipe_unlock();
-            }
-        });
+            ui.colored_label(
+                egui::Color32::YELLOW,
+                "⚠ This tab is deprecated. Use the Recipe tab to manage unlocks.",
+            );
+            ui.add_enabled_ui(false, |ui| {
+                let _ = ui.button("💾 Save (Deprecated)");
+            });
 
         if self.assets_dir.is_none() {
             ui.colored_label(
@@ -1163,20 +1155,7 @@ impl EditorState {
             }
         }
     }
-    fn save_recipe_unlock(&mut self) {
-        if let Some(assets_dir) = &self.assets_dir {
-            match save_recipe_unlock_file(&self.recipe_unlock_form, assets_dir) {
-                Ok(result) => {
-                    self.status = format!("✓ Saved: {}", result.unlock_path);
-                    let assets_dir = assets_dir.clone();
-                    self.load_existing_ids(&assets_dir);
-                }
-                Err(e) => {
-                    self.status = format!("✗ Failed to save: {}", e);
-                }
-            }
-        }
-    }
+
 
     fn show_monster_prefab_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Monster Prefab Editor");

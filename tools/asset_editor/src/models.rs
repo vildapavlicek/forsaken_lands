@@ -560,7 +560,6 @@ impl ResearchFormData {
 
     pub fn from_assets(
         research: &ResearchDefinition,
-        unlock: &UnlockDefinition,
         filename: String,
     ) -> Self {
         let costs = research
@@ -572,6 +571,13 @@ impl ResearchFormData {
             })
             .collect();
 
+        // Use the inline unlock if present, otherwise default to True
+        let unlock_condition = if let Some(unlock) = &research.unlock {
+             UnlockCondition::from(&unlock.condition)
+        } else {
+             UnlockCondition::True
+        };
+
         Self {
             id: research.id.clone(),
             name: research.name.clone(),
@@ -580,7 +586,7 @@ impl ResearchFormData {
             time_required: research.time_required,
             max_repeats: research.max_repeats,
             filename,
-            unlock_condition: UnlockCondition::from(&unlock.condition),
+            unlock_condition,
         }
     }
 
@@ -590,6 +596,18 @@ impl ResearchFormData {
             cost.insert(c.resource_id.clone(), c.amount);
         }
 
+        // Create the inline unlock definition
+        let unlock = if let UnlockCondition::True = self.unlock_condition {
+            None
+        } else {
+             Some(UnlockDefinition {
+                id: self.unlock_id(), // We still use this ID for the unlock definition itself
+                display_name: Some(format!("{} Research", self.name)),
+                reward_id: self.reward_id(),
+                condition: self.unlock_condition.to_condition_node(),
+            })
+        };
+
         ResearchDefinition {
             id: self.id.clone(),
             name: self.name.clone(),
@@ -597,98 +615,147 @@ impl ResearchFormData {
             cost,
             time_required: self.time_required,
             max_repeats: self.max_repeats,
-        }
-    }
-
-    pub fn to_unlock_definition(&self) -> UnlockDefinition {
-        UnlockDefinition {
-            id: self.unlock_id(),
-            display_name: Some(format!("{} Research", self.name)),
-            reward_id: self.reward_id(),
-            condition: self.unlock_condition.to_condition_node(),
+            unlock,
         }
     }
 }
 
-/// The form data for a recipe unlock.
+// RecipeUnlockFormData is effectively deprecated for editing recipes, but we keep the struct definition 
+// if needed elsewhere, although we are moving towards inline `RecipeFormData`.
+
+/// The form data for a recipe.
 #[derive(Clone, Debug, Default)]
-pub struct RecipeUnlockFormData {
-    /// The base recipe ID (e.g., "bone_sword")
-    pub id: String,
-    /// Display name (e.g., "Bone Sword Recipe")
+pub struct RecipeFormData {
+    pub id: String, // Internal ID (e.g. "bone_sword")
     pub display_name: String,
-    /// Unlock condition
+    pub category: RecipeCategory,
+    pub craft_time: f32,
+    pub costs: Vec<ResourceCost>,
+    pub outcomes: Vec<CraftingOutcome>,
+    
+    /// Optional inline unlock condition
     pub unlock_condition: UnlockCondition,
 }
 
-impl RecipeUnlockFormData {
-    /// Creates a new form with default values.
+impl RecipeFormData {
     pub fn new() -> Self {
         Self {
             id: String::new(),
             display_name: String::new(),
-            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock { id: String::new() }),
+            category: RecipeCategory::Weapons,
+            craft_time: 5.0,
+            costs: vec![ResourceCost {
+                resource_id: "bones".to_string(),
+                amount: 5,
+            }],
+            outcomes: vec![CraftingOutcome::AddResource {
+                id: "bone_sword_item".to_string(),
+                amount: 1,
+            }],
+            unlock_condition: UnlockCondition::True,
         }
     }
 
-    /// Derives the unlock file ID from the base recipe ID.
-    /// Pattern: recipe_{id}_unlock
+    pub fn recipe_filename(&self) -> String {
+        format!("{}.recipe.ron", self.id)
+    }
+
+    /// Derives the unlock file ID for internal consistency if needed
     pub fn unlock_id(&self) -> String {
         format!("recipe_{}_unlock", self.id)
     }
 
-    /// Derives the reward ID from the base recipe ID.
-    /// Pattern: recipe:{id}
+    /// Derives the reward ID for internal consistency
     pub fn reward_id(&self) -> String {
-        format!("recipe:{}", self.id)
+         format!("recipe:{}", self.id)
     }
 
-    /// Derives the unlock file name.
-    /// Pattern: recipe_{id}.unlock.ron
-    pub fn unlock_filename(&self) -> String {
-        format!("recipe_{}.unlock.ron", self.id)
-    }
-
-    /// Validates the form data and returns a list of errors.
     pub fn validate(&self) -> Vec<String> {
         let mut errors = Vec::new();
-
         if self.id.trim().is_empty() {
             errors.push("Recipe ID is required".to_string());
         }
         if self.display_name.trim().is_empty() {
             errors.push("Display name is required".to_string());
         }
-
-        // Validate unlock condition
+        if self.craft_time < 0.0 {
+            errors.push("Craft time must be >= 0".to_string());
+        }
+        for cost in &self.costs {
+            if cost.resource_id.trim().is_empty() {
+                errors.push("Resource ID required in cost".to_string());
+            }
+        }
+        for outcome in &self.outcomes {
+            if let CraftingOutcome::AddResource { id, .. } = outcome {
+                if id.trim().is_empty() {
+                    errors.push("Outcome resource ID required".to_string());
+                }
+            }
+            if let CraftingOutcome::UnlockFeature(id) = outcome {
+                if id.trim().is_empty() {
+                    errors.push("Outcome unlock ID required".to_string());
+                }
+            }
+        }
+        
         errors.extend(self.unlock_condition.validate());
 
         errors
     }
 
-    pub fn from_assets(unlock: &UnlockDefinition) -> Self {
-        // Extract recipe ID from reward_id (recipe:{id} or recipe_{id})
-        let id = if let Some(stripped) = unlock.reward_id.strip_prefix("recipe:") {
-            stripped.to_string()
-        } else if let Some(stripped) = unlock.reward_id.strip_prefix("recipe_") {
-            stripped.to_string()
+    pub fn to_recipe_definition(&self) -> RecipeDefinition {
+        let mut cost = bevy::platform::collections::HashMap::new();
+        for c in &self.costs {
+            cost.insert(c.resource_id.clone(), c.amount);
+        }
+
+        let unlock = if let UnlockCondition::True = self.unlock_condition {
+            None
         } else {
-            unlock.reward_id.clone()
+             Some(UnlockDefinition {
+                id: self.unlock_id(),
+                display_name: Some(self.display_name.clone()),
+                reward_id: self.reward_id(),
+                condition: self.unlock_condition.to_condition_node(),
+            })
         };
 
-        Self {
-            id,
-            display_name: unlock.display_name.clone().unwrap_or_default(),
-            unlock_condition: UnlockCondition::from(&unlock.condition),
+        RecipeDefinition {
+            id: self.id.clone(),
+            display_name: self.display_name.clone(),
+            category: self.category.clone(),
+            craft_time: self.craft_time,
+            cost,
+            outcomes: self.outcomes.clone(),
+            unlock,
         }
     }
 
-    pub fn to_unlock_definition(&self) -> UnlockDefinition {
-        UnlockDefinition {
-            id: self.unlock_id(),
-            display_name: Some(self.display_name.clone()),
-            reward_id: self.reward_id(),
-            condition: self.unlock_condition.to_condition_node(),
+    pub fn from_recipe_definition(def: &RecipeDefinition) -> Self {
+        let costs = def
+            .cost
+            .iter()
+            .map(|(k, v)| ResourceCost {
+                resource_id: k.clone(),
+                amount: *v,
+            })
+            .collect();
+            
+        let unlock_condition = if let Some(unlock) = &def.unlock {
+             UnlockCondition::from(&unlock.condition)
+        } else {
+             UnlockCondition::True
+        };
+
+        Self {
+            id: def.id.clone(),
+            display_name: def.display_name.clone(),
+            category: def.category.clone(),
+            craft_time: def.craft_time,
+            costs,
+            outcomes: def.outcomes.clone(),
+            unlock_condition,
         }
     }
 }
@@ -757,11 +824,6 @@ impl AutopsyFormData {
 
     /// Generates the encyclopedia unlock ID: `encyclopedia_{monster_id}_unlock`
     pub fn generate_encyclopedia_unlock_id(&self) -> String {
-        // According to user request: "unlocks/encyclopedia/{monster_id}_data.unlock.ron"
-        // And inside the file, the ID usually matches the filename or is unique.
-        // Let's use `encyclopedia_{monster_id}_data` or just `encyclopedia_{monster_id}`.
-        // The user mentioned "monster data in encyclopedia".
-        // Let's assume the ID is `encyclopedia_{monster_id}_data`
         format!("encyclopedia_{}_data", self.monster_id)
     }
 
@@ -793,6 +855,15 @@ impl AutopsyFormData {
             cost,
             time_required: self.research_time,
             max_repeats: 1,
+            unlock: None, // Autopsy research itself doesn't have an unlock condition embedded usually? 
+                          // Wait, the plan was to embedded it. 
+                          // But Autopsy logic in file_generator uses explicit separate files for unlocks?
+                          // Lines 146 in file_generator save separate files.
+                          // So Autopsy is largely unchanged regarding inline unlocks for now?
+                          // The task was Research/Recipes/Blessings.
+                          // Autopsy generates Research, so it should probably use inline unlock too maybe?
+                          // But file_generator still saves separate unlock file for Autopsy in lines 146.
+                          // Let's keep it compatible with file_generator for now.
         }
     }
 
@@ -1062,103 +1133,79 @@ impl CraftingOutcomeExt for CraftingOutcome {
     }
 }
 
-/// The form data for a recipe.
+/// The form data for a recipe unlock (deprecated but kept for compatibility).
 #[derive(Clone, Debug, Default)]
-pub struct RecipeFormData {
-    pub id: String, // Internal ID (e.g. "bone_sword")
+pub struct RecipeUnlockFormData {
+    /// The base recipe ID (e.g., "bone_sword")
+    pub id: String,
+    /// Display name (e.g., "Bone Sword Recipe")
     pub display_name: String,
-    pub category: RecipeCategory,
-    pub craft_time: f32,
-    pub costs: Vec<ResourceCost>,
-    pub outcomes: Vec<CraftingOutcome>,
+    /// Unlock condition
+    pub unlock_condition: UnlockCondition,
 }
 
-impl RecipeFormData {
+impl RecipeUnlockFormData {
+    /// Creates a new form with default values.
     pub fn new() -> Self {
         Self {
             id: String::new(),
             display_name: String::new(),
-            category: RecipeCategory::Weapons,
-            craft_time: 5.0,
-            costs: vec![ResourceCost {
-                resource_id: "bones".to_string(),
-                amount: 5,
-            }],
-            outcomes: vec![CraftingOutcome::AddResource {
-                id: "bone_sword_item".to_string(),
-                amount: 1,
-            }],
+            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock { id: String::new() }),
         }
     }
 
-    pub fn recipe_filename(&self) -> String {
-        format!("{}.recipe.ron", self.id)
+    /// Derives the unlock file ID from the base recipe ID.
+    pub fn unlock_id(&self) -> String {
+        format!("recipe_{}_unlock", self.id)
     }
 
+    /// Derives the reward ID from the base recipe ID.
+    pub fn reward_id(&self) -> String {
+        format!("recipe:{}", self.id)
+    }
+
+    /// Derives the unlock file name.
+    pub fn unlock_filename(&self) -> String {
+        format!("recipe_{}.unlock.ron", self.id)
+    }
+
+    /// Validates the form data and returns a list of errors.
     pub fn validate(&self) -> Vec<String> {
         let mut errors = Vec::new();
+
         if self.id.trim().is_empty() {
             errors.push("Recipe ID is required".to_string());
         }
         if self.display_name.trim().is_empty() {
             errors.push("Display name is required".to_string());
         }
-        if self.craft_time < 0.0 {
-            errors.push("Craft time must be >= 0".to_string());
-        }
-        for cost in &self.costs {
-            if cost.resource_id.trim().is_empty() {
-                errors.push("Resource ID required in cost".to_string());
-            }
-        }
-        for outcome in &self.outcomes {
-            if let CraftingOutcome::AddResource { id, .. } = outcome {
-                if id.trim().is_empty() {
-                    errors.push("Outcome resource ID required".to_string());
-                }
-            }
-            if let CraftingOutcome::UnlockFeature(id) = outcome {
-                if id.trim().is_empty() {
-                    errors.push("Outcome unlock ID required".to_string());
-                }
-            }
-        }
+
+        errors.extend(self.unlock_condition.validate());
         errors
     }
 
-    pub fn to_recipe_definition(&self) -> RecipeDefinition {
-        let mut cost = bevy::platform::collections::HashMap::new();
-        for c in &self.costs {
-            cost.insert(c.resource_id.clone(), c.amount);
-        }
+    pub fn from_assets(unlock: &UnlockDefinition) -> Self {
+        let id = if let Some(stripped) = unlock.reward_id.strip_prefix("recipe:") {
+            stripped.to_string()
+        } else if let Some(stripped) = unlock.reward_id.strip_prefix("recipe_") {
+            stripped.to_string()
+        } else {
+            unlock.reward_id.clone()
+        };
 
-        RecipeDefinition {
-            id: self.id.clone(),
-            display_name: self.display_name.clone(),
-            category: self.category.clone(),
-            craft_time: self.craft_time,
-            cost,
-            outcomes: self.outcomes.clone(),
+        Self {
+            id,
+            display_name: unlock.display_name.clone().unwrap_or_default(),
+            unlock_condition: UnlockCondition::from(&unlock.condition),
         }
     }
 
-    pub fn from_recipe_definition(def: &RecipeDefinition) -> Self {
-        let costs = def
-            .cost
-            .iter()
-            .map(|(k, v)| ResourceCost {
-                resource_id: k.clone(),
-                amount: *v,
-            })
-            .collect();
-
-        Self {
-            id: def.id.clone(),
-            display_name: def.display_name.clone(),
-            category: def.category.clone(),
-            craft_time: def.craft_time,
-            costs,
-            outcomes: def.outcomes.clone(),
+    pub fn to_unlock_definition(&self) -> UnlockDefinition {
+        UnlockDefinition {
+            id: self.unlock_id(),
+            display_name: Some(self.display_name.clone()),
+            reward_id: self.reward_id(),
+            condition: self.unlock_condition.to_condition_node(),
         }
     }
 }

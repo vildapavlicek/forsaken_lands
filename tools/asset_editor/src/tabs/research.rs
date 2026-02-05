@@ -217,15 +217,10 @@ impl ResearchTabState {
         match save_research_files(&self.research_form, assets_dir) {
             Ok(result) => {
                 *status = format!(
-                    "✓ Saved: {} and {}",
-                    result.research_path, result.unlock_path
+                    "✓ Saved: {}",
+                    result.research_path
                 );
                 // Note: Reloading existing IDs is handled by the parent EditorState
-                // because it manages the central list of existing IDs.
-                // We should probably return a Result or boolean to indicate success,
-                // so the parent can reload.
-                // Or we can accept a callback?
-                // For now, let's rely on EditorState to reload periodically or we can make this return true.
             }
             Err(e) => {
                 *status = format!("✗ Failed to save: {}", e);
@@ -254,43 +249,11 @@ impl ResearchTabState {
                 }
             };
 
-            // Parse research RON to get the internal ID
+            // Parse research RON
             let research_def: ResearchDefinition = match ron::from_str(&research_content) {
                 Ok(d) => d,
                 Err(e) => {
                     *status = format!("✗ Failed to parse research RON: {}", e);
-                    return;
-                }
-            };
-
-            // Construct unlock path using the actual internal ID
-            let internal_id = &research_def.id;
-            let unlock_path = assets_dir
-                .join("unlocks")
-                .join("research")
-                .join(format!("research_{}.unlock.ron", internal_id));
-
-            // Read unlock file
-            let unlock_content = match std::fs::read_to_string(&unlock_path) {
-                Ok(c) => c,
-                Err(e) => {
-                    *status = format!("✗ Failed to read unlock file for ID {}: {}", internal_id, e);
-                    return;
-                }
-            };
-
-            // Parse RON
-            let research_def: ResearchDefinition = match ron::from_str(&research_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    *status = format!("✗ Failed to parse research RON: {}", e);
-                    return;
-                }
-            };
-            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    *status = format!("✗ Failed to parse unlock RON: {}", e);
                     return;
                 }
             };
@@ -298,12 +261,11 @@ impl ResearchTabState {
             // Convert and populate form
             self.research_form = ResearchFormData::from_assets(
                 &research_def,
-                &unlock_def,
                 filename_stem.to_string(),
             );
             *status = format!(
                 "✓ Loaded research: {} (Internal ID: {})",
-                filename_stem, internal_id
+                filename_stem, research_def.id
             );
         }
     }

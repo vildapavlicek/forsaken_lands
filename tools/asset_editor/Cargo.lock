@@ -4989,6 +4989,7 @@ dependencies = [
  "bevy",
  "bevy_common_assets",
  "serde",
+ "unlocks_assets",
 ]
 
 [[package]]
@@ -5066,6 +5067,7 @@ dependencies = [
  "bevy",
  "bevy_common_assets",
  "serde",
+ "unlocks_assets",
 ]
 
 [[package]]
