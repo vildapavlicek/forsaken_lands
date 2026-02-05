@@ -1,6 +1,6 @@
 (
     id: "autopsy_goblin_defender",
-    name: "Autopsy: goblin_defender",
+    name: "Autopsy: Goblin Defender",
     description: "They are armored, with shields. Do we have enough firepower?",
     cost: {
         "bones": 30,
@@ -10,7 +10,7 @@
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_goblin_defender_unlock",
-        display_name: Some("Autopsy: goblin_defender"),
+        display_name: Some("Autopsy: Goblin Defender Research"),
         condition: Value(
             topic: "kills:goblin_defender",
             op: Ge,

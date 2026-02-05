@@ -1,13 +1,13 @@
 (
     id: "autopsy_boss_worg_rider",
-    name: "Autopsy: boss_worg_rider",
+    name: "Autopsy: Boss Worg Rider",
     description: "We killed their boss. Time to celebrate.",
     cost: {},
     time_required: 180.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_boss_worg_rider_unlock",
-        display_name: Some("Autopsy: boss_worg_rider"),
+        display_name: Some("Autopsy: Boss Worg Rider Research"),
         condition: Value(
             topic: "kills:boss_worg_rider",
             op: Ge,

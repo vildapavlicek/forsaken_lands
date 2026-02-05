@@ -1,6 +1,6 @@
 (
     id: "autopsy_worg_alpha",
-    name: "Autopsy: worg_alpha",
+    name: "Autopsy: Worg Alpha",
     description: "Their fur is as hard as stell and black as a night. Are they demons?",
     cost: {
         "bones": 75,
@@ -10,7 +10,7 @@
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_worg_alpha_unlock",
-        display_name: Some("Autopsy: worg_alpha"),
+        display_name: Some("Autopsy: Worg Alpha Research"),
         condition: Value(
             topic: "kills:worg_alpha",
             op: Ge,

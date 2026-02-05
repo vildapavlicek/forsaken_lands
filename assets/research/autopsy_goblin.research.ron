@@ -1,6 +1,6 @@
 (
     id: "autopsy_goblin",
-    name: "Autopsy: goblin",
+    name: "Autopsy: Goblin",
     description: "They are green. Ugly. Pointy ears. Ugly. Small. And really ugly.",
     cost: {
         "bones": 30,
@@ -9,7 +9,7 @@
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_goblin_unlock",
-        display_name: Some("Autopsy: goblin"),
+        display_name: Some("Autopsy: Goblin Research"),
         condition: Value(
             topic: "kills:goblin",
             op: Ge,

@@ -1,6 +1,6 @@
 (
     id: "autopsy_goblin_warrior",
-    name: "Autopsy: goblin_warrior",
+    name: "Autopsy: Goblin Warrior",
     description: "This one has weapons of bones and some scars. Still green and even more uglier.",
     cost: {
         "bones": 30,
@@ -10,7 +10,7 @@
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_goblin_warrior_unlock",
-        display_name: Some("Autopsy: goblin_warrior"),
+        display_name: Some("Autopsy: Goblin Warrior Research"),
         condition: Value(
             topic: "kills:goblin_warrior",
             op: Ge,
