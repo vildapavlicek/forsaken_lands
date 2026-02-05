@@ -1,0 +1,11 @@
+(
+    id: "research:autopsy_siled_alpha",
+    bonuses: {
+        "damage:race:monsters": [
+            (
+                value: 0.1,
+                mode: Percent,
+            ),
+        ],
+    },
+)
