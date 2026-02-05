@@ -8,4 +8,12 @@
         "sinew": 5,
     },
     outcomes: [],
+    unlock: Some((
+        id: "recipe_bone_bow_unlock",
+        display_name: Some("Bone Bow"),
+        condition: Completed(
+            topic: "research:bone_bow",
+        ),
+        reward_id: "recipe:bone_bow",
+    )),
 )
