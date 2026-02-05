@@ -7,4 +7,19 @@
     },
     time_required: 45.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_bone_crafting_unlock",
+        display_name: Some("Bone Crafting Research"),
+        condition: And([
+            Value(
+                topic: "divinity",
+                op: Ge,
+                target: 106.0,
+            ),
+            Completed(
+                topic: "research:bone_pile",
+            ),
+        ]),
+        reward_id: "research:bone_crafting",
+    )),
 )

@@ -6,6 +6,7 @@ use {
     bevy::{platform::collections::HashMap, prelude::*},
     bevy_common_assets::ron::RonAssetPlugin,
     serde::{Deserialize, Serialize},
+    unlocks_assets::UnlockDefinition,
 };
 
 pub struct RecipesAssetsPlugin;
@@ -33,6 +34,10 @@ pub struct RecipeDefinition {
     pub cost: HashMap<String, u32>,
     /// Results when crafting completes
     pub outcomes: Vec<CraftingOutcome>,
+
+    /// Optional inline unlock definition for when this recipe becomes available
+    #[serde(default)]
+    pub unlock: Option<UnlockDefinition>,
 }
 
 /// Category for organizing recipes into tabs.

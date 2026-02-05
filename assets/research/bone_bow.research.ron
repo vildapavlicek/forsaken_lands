@@ -8,4 +8,12 @@
     },
     time_required: 60.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_bone_bow_unlock",
+        display_name: Some("Bone Bow Research"),
+        condition: Completed(
+            topic: "research:bone_crafting",
+        ),
+        reward_id: "research:bone_bow",
+    )),
 )

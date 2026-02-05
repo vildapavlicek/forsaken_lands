@@ -10,12 +10,13 @@ fn main() {
             DefaultPlugins.set(LogPlugin {
                 filter: "error,loading=trace,\
                     portals=debug,\
+                    blessings=trace,\
                     village=debug,\
                     wallet=debug,\
                     heroes=debug,\
                     unlocks=info,\
                     save_load=trace,\
-                    bonus_stats=trace,\
+                    bonus_stats=debug,\
                     village_ui=debug"
                     .into(),
                 level: bevy::log::Level::TRACE,

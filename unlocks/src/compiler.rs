@@ -1,9 +1,54 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
 use {
-    bevy::prelude::*, unlocks_assets::ConditionNode, unlocks_components::*, unlocks_events::*,
-    unlocks_resources::*,
+    bevy::prelude::*, unlocks_assets::ConditionNode, unlocks_assets::UnlockDefinition,
+    unlocks_components::*, unlocks_events::*, unlocks_resources::*,
 };
+
+// ============================================================================
+// Unlock Compilation Helper
+// ============================================================================
+
+/// Compiles a single unlock definition into an ECS logic graph.
+/// Returns the root entity, or None if already compiled/unlocked.
+pub fn compile_unlock_definition(
+    commands: &mut Commands,
+    topic_map: &mut TopicMap,
+    definition: &UnlockDefinition,
+    compiled_ids: &std::collections::HashSet<&str>,
+    unlock_state: &UnlockState,
+) -> Option<Entity> {
+    // Skip if already compiled
+    if compiled_ids.contains(definition.id.as_str()) {
+        return None;
+    }
+
+    // Skip if already unlocked
+    if unlock_state.is_unlocked(&definition.id) {
+        return None;
+    }
+
+    debug!(unlock_id = %definition.id, "Compiling unlock definition");
+
+    // Spawn root entity
+    let root = commands
+        .spawn((
+            UnlockRoot {
+                id: definition.id.clone(),
+                display_name: definition.display_name.clone(),
+                reward_id: definition.reward_id.clone(),
+            },
+            CompiledUnlock {
+                definition_id: definition.id.clone(),
+            },
+        ))
+        .id();
+
+    // Build the condition tree
+    build_condition_node(commands, topic_map, &definition.condition, root);
+
+    Some(root)
+}
 
 /// Compares values using the specified operator.
 pub fn compare_op(current: f32, target: f32, op: ComparisonOp) -> bool {

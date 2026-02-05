@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-bevy.workspace = true
-serde.workspace = true
+bevy = { workspace = true }
+serde = { workspace = true }
+unlocks_assets = { path = "../unlocks_assets" }
 bevy_common_assets.workspace = true

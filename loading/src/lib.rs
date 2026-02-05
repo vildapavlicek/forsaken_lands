@@ -55,7 +55,18 @@ impl Plugin for LoadingManagerPlugin {
             // Phase: SpawnEntities - spawn research and recipe entities
             .add_systems(OnEnter(LoadingPhase::SpawnEntities), spawn_all_entities)
             // Phase: CompileUnlocks - build unlock logic graphs
-            .add_systems(OnEnter(LoadingPhase::CompileUnlocks), compile_unlocks)
+            .add_systems(
+                OnEnter(LoadingPhase::CompileUnlocks),
+                (
+                    compile_unlocks,
+                    compile_research_unlocks,
+                    compile_recipe_unlocks,
+                ),
+            )
+            .add_systems(
+                Update,
+                finish_compilation.run_if(in_state(LoadingPhase::CompileUnlocks)),
+            )
             // Phase: EvaluateUnlocks - re-fire signals for satisfied conditions
             .add_systems(OnEnter(LoadingPhase::EvaluateUnlocks), evaluate_unlocks)
             // Phase: SpawnScene - spawn scene (startup or save)
@@ -409,7 +420,6 @@ fn compile_unlocks(
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
     compiled: Query<&CompiledUnlock>,
-    mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut status: ResMut<LoadingStatus>,
 ) {
     status.current_phase = "Compiling Unlocks".into();
@@ -418,32 +428,65 @@ fn compile_unlocks(
     let compiled_ids: std::collections::HashSet<_> =
         compiled.iter().map(|c| c.definition_id.as_str()).collect();
 
-    let pending_definitions = unlock_assets
-        .iter()
-        .map(|(_, def)| def)
-        .filter(|def| !compiled_ids.contains(def.id.as_str()))
-        .filter(|def| !unlock_state.is_unlocked(&def.id));
-
-    for definition in pending_definitions {
-        debug!(unlock_id = %definition.id, "Compiling unlock definition");
-
-        let root = commands
-            .spawn((
-                UnlockRoot {
-                    id: definition.id.clone(),
-                    display_name: definition.display_name.clone(),
-                    reward_id: definition.reward_id.clone(),
-                },
-                CompiledUnlock {
-                    definition_id: definition.id.clone(),
-                },
-            ))
-            .id();
-
-        // Build condition tree - no context needed, hydration happens via events
-        build_condition_node(&mut commands, &mut topic_map, &definition.condition, root);
+    for (_, definition) in unlock_assets.iter() {
+        unlocks::compile_unlock_definition(
+            &mut commands,
+            &mut topic_map,
+            definition,
+            &compiled_ids,
+            &unlock_state,
+        );
     }
+}
 
+fn compile_research_unlocks(
+    mut commands: Commands,
+    research_assets: Res<Assets<ResearchDefinition>>,
+    mut topic_map: ResMut<TopicMap>,
+    unlock_state: Res<UnlockState>,
+    compiled: Query<&CompiledUnlock>,
+) {
+    let compiled_ids: std::collections::HashSet<_> =
+        compiled.iter().map(|c| c.definition_id.as_str()).collect();
+
+    for (_, research) in research_assets.iter() {
+        if let Some(unlock) = &research.unlock {
+            unlocks::compile_unlock_definition(
+                &mut commands,
+                &mut topic_map,
+                unlock,
+                &compiled_ids,
+                &unlock_state,
+            );
+        }
+    }
+}
+
+fn compile_recipe_unlocks(
+    mut commands: Commands,
+    recipe_assets: Res<Assets<RecipeDefinition>>,
+    mut topic_map: ResMut<TopicMap>,
+    unlock_state: Res<UnlockState>,
+    compiled: Query<&CompiledUnlock>,
+) {
+    let compiled_ids: std::collections::HashSet<_> =
+        compiled.iter().map(|c| c.definition_id.as_str()).collect();
+
+    for (_, recipe) in recipe_assets.iter() {
+        if let Some(unlock) = &recipe.unlock {
+            unlocks::compile_unlock_definition(
+                &mut commands,
+                &mut topic_map,
+                unlock,
+                &compiled_ids,
+                &unlock_state,
+            );
+        }
+    }
+}
+
+/// Transition phase after all compilation systems have run
+fn finish_compilation(mut next_phase: ResMut<NextState<LoadingPhase>>) {
     next_phase.set(LoadingPhase::EvaluateUnlocks);
 }
 
