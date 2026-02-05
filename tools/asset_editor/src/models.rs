@@ -109,6 +109,13 @@ pub enum LeafCondition {
     },
     /// Craft condition: triggers when player crafts a specific recipe
     Craft { recipe_id: String },
+    /// Custom condition: generic value trigger with prefix:id
+    Custom {
+        prefix: String,
+        id: String,
+        value: f32,
+        op: CompareOp,
+    },
 }
 
 impl Default for LeafCondition {
@@ -125,11 +132,12 @@ impl LeafCondition {
             LeafCondition::Resource { .. } => "Resource",
             LeafCondition::Divinity { .. } => "Divinity",
             LeafCondition::Craft { .. } => "Craft",
+            LeafCondition::Custom { .. } => "Custom",
         }
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Unlock", "Kills", "Resource", "Divinity", "Craft"]
+        vec!["Unlock", "Kills", "Resource", "Divinity", "Craft", "Custom"]
     }
 
     pub fn from_type_name(name: &str) -> Self {
@@ -151,6 +159,12 @@ impl LeafCondition {
             },
             "Craft" => LeafCondition::Craft {
                 recipe_id: String::new(),
+            },
+            "Custom" => LeafCondition::Custom {
+                prefix: String::new(),
+                id: String::new(),
+                value: 1.0,
+                op: CompareOp::Ge,
             },
             _ => LeafCondition::default(),
         }
@@ -193,6 +207,20 @@ impl LeafCondition {
             LeafCondition::Craft { recipe_id } => {
                 format!("Completed(topic: \"craft:{}\")", recipe_id)
             }
+            LeafCondition::Custom {
+                prefix,
+                id,
+                value,
+                op,
+            } => {
+                format!(
+                    "Value(topic: \"{}:{}\", op: {}, target: {})",
+                    prefix,
+                    id,
+                    op.to_ron(),
+                    value
+                )
+            }
         }
     }
 
@@ -233,6 +261,14 @@ impl LeafCondition {
                     errors.push("Recipe ID is required".to_string());
                 }
             }
+            LeafCondition::Custom { prefix, id, .. } => {
+                if prefix.trim().is_empty() {
+                    errors.push("Prefix is required".to_string());
+                }
+                if id.trim().is_empty() {
+                    errors.push("ID is required".to_string());
+                }
+            }
         }
         errors
     }
@@ -266,6 +302,16 @@ impl LeafCondition {
             },
             LeafCondition::Craft { recipe_id } => ConditionNode::Completed {
                 topic: format!("craft:{}", recipe_id),
+            },
+            LeafCondition::Custom {
+                prefix,
+                id,
+                value,
+                op,
+            } => ConditionNode::Value {
+                topic: format!("{}:{}", prefix, id),
+                op: (*op).into(),
+                target: *value,
             },
         }
     }
@@ -416,6 +462,11 @@ impl From<&ConditionNode> for LeafCondition {
                     }
                 } else {
                     // Fallback or generic completion
+                    // We stick with Unlock for generic completed events for now, 
+                    // unless they have a clear custom pattern we want to force into Custom.
+                    // But Custom uses Value(), so Completed() usually maps to Unlock or Craft.
+                    // If it's unknown, let's keep it as Unlock for legacy reasons or change it if requested.
+                    // The prompt didn't specify changing Completed(..) parsing, only adding capability for Custom value triggers.
                     LeafCondition::Unlock { id: topic.clone() }
                 }
             }
@@ -441,7 +492,24 @@ impl From<&ConditionNode> for LeafCondition {
                         op: CompareOp::from(*op),
                     }
                 } else {
-                    LeafCondition::default()
+                    // Try to parse prefix:id for Custom
+                    let parts: Vec<&str> = topic.splitn(2, ':').collect();
+                    if parts.len() == 2 {
+                        LeafCondition::Custom {
+                            prefix: parts[0].to_string(),
+                            id: parts[1].to_string(),
+                            value: *target,
+                            op: CompareOp::from(*op),
+                        }
+                    } else {
+                        // Fallback
+                        LeafCondition::Custom {
+                            prefix: "custom".to_string(), // Default prefix? or empty?
+                            id: topic.clone(),
+                            value: *target,
+                            op: CompareOp::from(*op),
+                        }
+                    }
                 }
             }
 
@@ -1133,82 +1201,7 @@ impl CraftingOutcomeExt for CraftingOutcome {
     }
 }
 
-/// The form data for a recipe unlock (deprecated but kept for compatibility).
-#[derive(Clone, Debug, Default)]
-pub struct RecipeUnlockFormData {
-    /// The base recipe ID (e.g., "bone_sword")
-    pub id: String,
-    /// Display name (e.g., "Bone Sword Recipe")
-    pub display_name: String,
-    /// Unlock condition
-    pub unlock_condition: UnlockCondition,
-}
 
-impl RecipeUnlockFormData {
-    /// Creates a new form with default values.
-    pub fn new() -> Self {
-        Self {
-            id: String::new(),
-            display_name: String::new(),
-            unlock_condition: UnlockCondition::Single(LeafCondition::Unlock { id: String::new() }),
-        }
-    }
-
-    /// Derives the unlock file ID from the base recipe ID.
-    pub fn unlock_id(&self) -> String {
-        format!("recipe_{}_unlock", self.id)
-    }
-
-    /// Derives the reward ID from the base recipe ID.
-    pub fn reward_id(&self) -> String {
-        format!("recipe:{}", self.id)
-    }
-
-    /// Derives the unlock file name.
-    pub fn unlock_filename(&self) -> String {
-        format!("recipe_{}.unlock.ron", self.id)
-    }
-
-    /// Validates the form data and returns a list of errors.
-    pub fn validate(&self) -> Vec<String> {
-        let mut errors = Vec::new();
-
-        if self.id.trim().is_empty() {
-            errors.push("Recipe ID is required".to_string());
-        }
-        if self.display_name.trim().is_empty() {
-            errors.push("Display name is required".to_string());
-        }
-
-        errors.extend(self.unlock_condition.validate());
-        errors
-    }
-
-    pub fn from_assets(unlock: &UnlockDefinition) -> Self {
-        let id = if let Some(stripped) = unlock.reward_id.strip_prefix("recipe:") {
-            stripped.to_string()
-        } else if let Some(stripped) = unlock.reward_id.strip_prefix("recipe_") {
-            stripped.to_string()
-        } else {
-            unlock.reward_id.clone()
-        };
-
-        Self {
-            id,
-            display_name: unlock.display_name.clone().unwrap_or_default(),
-            unlock_condition: UnlockCondition::from(&unlock.condition),
-        }
-    }
-
-    pub fn to_unlock_definition(&self) -> UnlockDefinition {
-        UnlockDefinition {
-            id: self.unlock_id(),
-            display_name: Some(self.display_name.clone()),
-            reward_id: self.reward_id(),
-            condition: self.unlock_condition.to_condition_node(),
-        }
-    }
-}
 
 // ==================== Bonus Stats Form Data ====================
 
@@ -1335,18 +1328,7 @@ impl AssetLoader for ResearchLoader {
     }
 }
 
-pub struct RecipeUnlockLoader;
-impl AssetLoader for RecipeUnlockLoader {
-    fn sub_path(&self) -> PathBuf {
-        PathBuf::from("unlocks").join("recipes")
-    }
-    fn extension(&self) -> &str {
-        ".unlock.ron"
-    }
-    fn extract_id(&self, stem: &str, _content: &str) -> Option<String> {
-        stem.strip_prefix("recipe_").map(|s| s.to_string())
-    }
-}
+
 
 pub struct DivinityLoader;
 impl AssetLoader for DivinityLoader {

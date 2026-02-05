@@ -298,5 +298,36 @@ fn show_leaf_editor(
                 );
             }
         }
+        LeafCondition::Custom {
+            prefix,
+            id,
+            value,
+            op,
+        } => {
+            ui.horizontal(|ui| {
+                ui.label("Prefix:");
+                ui.add(egui::TextEdit::singleline(prefix).desired_width(80.0));
+                ui.label("ID:");
+                ui.add(egui::TextEdit::singleline(id).desired_width(120.0));
+
+                ui.label("Op:");
+                egui::ComboBox::from_id_salt(format!("{}_custom_op", id_prefix))
+                    .selected_text(op.display_name())
+                    .width(50.0)
+                    .show_ui(ui, |ui| {
+                        for op_name in CompareOp::all() {
+                            if ui
+                                .selectable_label(op.display_name() == op_name, op_name)
+                                .clicked()
+                            {
+                                *op = CompareOp::from_display(op_name);
+                            }
+                        }
+                    });
+                ui.label("Value:");
+                ui.add(egui::DragValue::new(value).speed(1.0));
+            });
+            ui.small("Triggers on Value(topic: '{prefix}:{id}', ...)");
+        }
     }
 }

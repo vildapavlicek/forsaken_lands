@@ -13,7 +13,7 @@ use {
         },
         models::{
             AutopsyFormData, BonusEntry, BonusStatsFormData, CraftingOutcomeExt, DivinityFormData,
-            RecipeCategoryExt, RecipeFormData, RecipeUnlockFormData, ResourceCost, UnlockCondition,
+            RecipeCategoryExt, RecipeFormData, ResourceCost, UnlockCondition,
             WeaponDefinitionExt, WeaponTypeExt,
         },
         monster_prefab::{
@@ -41,7 +41,6 @@ use {
 pub enum EditorTab {
     #[default]
     Research,
-    RecipeUnlock,
     Weapon,
     Recipe,
     MonsterPrefab,
@@ -60,8 +59,6 @@ pub struct EditorState {
     active_tab: EditorTab,
     /// Research Tab
     research: ResearchTabState,
-    /// Form data for the current recipe unlock.
-    recipe_unlock_form: RecipeUnlockFormData,
     /// Form data for the current weapon.
     weapon_form: WeaponDefinition,
     /// Form data for the current recipe.
@@ -72,8 +69,6 @@ pub struct EditorState {
     status: String,
     /// List of existing research IDs for the dropdown.
     existing_research_ids: Vec<String>,
-    /// List of existing recipe unlock IDs.
-    existing_recipe_unlock_ids: Vec<String>,
     /// List of existing weapon IDs.
     existing_weapon_ids: Vec<String>,
     /// List of existing recipe IDs.
@@ -140,13 +135,11 @@ impl EditorState {
         Self {
             active_tab: EditorTab::Research,
             research: ResearchTabState::new(),
-            recipe_unlock_form: RecipeUnlockFormData::new(),
             weapon_form: WeaponDefinition::new_default(),
             recipe_data_form: RecipeFormData::new(),
             assets_dir: None,
             status: "Select assets directory to begin".to_string(),
             existing_research_ids: Vec::new(),
-            existing_recipe_unlock_ids: Vec::new(),
             existing_weapon_ids: Vec::new(),
             existing_recipe_ids: Vec::new(),
             existing_research_filenames: Vec::new(),
@@ -239,10 +232,6 @@ impl EditorState {
                             ui.add_space(10.0);
                             ui.label("Unlock File (Deprecated/Embedded):");
                             ui.label("Unlock definition is now embedded in the research file.");
-                        }
-                        EditorTab::RecipeUnlock => {
-                            ui.label("Recipe Unlock File (Deprecated):");
-                            ui.label("Recipe unlocks are now managed in the Recipe tab.");
                         }
                         EditorTab::Weapon => {
                             ui.label("Weapon File:");
@@ -349,11 +338,6 @@ impl EditorState {
             // Tab bar
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.active_tab, EditorTab::Research, "📚 Research");
-                ui.selectable_value(
-                    &mut self.active_tab,
-                    EditorTab::RecipeUnlock,
-                    "🔧 Recipe Unlock",
-                );
                 ui.selectable_value(&mut self.active_tab, EditorTab::Weapon, "⚔ Weapon");
                 ui.selectable_value(&mut self.active_tab, EditorTab::Recipe, "🧪 Recipe");
                 ui.selectable_value(
@@ -389,7 +373,6 @@ impl EditorState {
                     &self.existing_monster_ids,
                     &self.existing_recipe_ids,
                 ),
-                EditorTab::RecipeUnlock => self.show_recipe_unlock_form(ui),
                 EditorTab::Weapon => self.show_weapon_form(ui),
                 EditorTab::Recipe => self.show_recipe_form(ui),
                 EditorTab::MonsterPrefab => self.show_monster_prefab_form(ui),
@@ -409,119 +392,6 @@ impl EditorState {
         });
     }
 
-    fn show_recipe_unlock_form(&mut self, ui: &mut egui::Ui) {
-        ui.heading("Recipe Unlock Definition");
-        ui.add_space(4.0);
-
-        // Load existing recipe unlocks
-        ui.group(|ui| {
-            ui.heading("Load Existing Recipe Unlock");
-            ui.separator();
-            if self.assets_dir.is_none() {
-                ui.colored_label(
-                    egui::Color32::YELLOW,
-                    "⚠ Select assets directory first (File → Select Assets Directory)",
-                );
-            } else if self.existing_recipe_unlock_ids.is_empty() {
-                ui.label("No recipe unlock assets found in assets/unlocks/recipes/.");
-            } else {
-                ui.horizontal_wrapped(|ui| {
-                    let mut load_id = None;
-                    for id in &self.existing_recipe_unlock_ids {
-                        if ui.button(id).clicked() {
-                            load_id = Some(id.clone());
-                        }
-                    }
-                    if let Some(id) = load_id {
-                        self.load_recipe_unlock(&id);
-                    }
-                });
-            }
-        });
-
-        ui.add_space(8.0);
-        ui.separator();
-        ui.add_space(8.0);
-
-        ui.small(
-            "Define an unlock condition for an existing recipe. The recipe itself must be defined separately.",
-        );
-        ui.add_space(8.0);
-
-        // Recipe ID
-        ui.horizontal(|ui| {
-            ui.label("Recipe ID:");
-            ui.text_edit_singleline(&mut self.recipe_unlock_form.id);
-        });
-        ui.small("The ID of the recipe to unlock (e.g., \"bone_sword\")");
-        ui.add_space(8.0);
-
-        // Display Name
-        ui.horizontal(|ui| {
-            ui.label("Display Name:");
-            ui.text_edit_singleline(&mut self.recipe_unlock_form.display_name);
-        });
-        ui.small("Shown in unlock notifications (e.g., \"Bone Sword Recipe\")");
-        ui.add_space(8.0);
-
-        // Unlock condition section
-        ui.separator();
-        ui.heading("Unlock Condition");
-        show_condition_editor(
-            ui,
-            "recipe",
-            &self.existing_research_ids,
-            &self.existing_monster_ids,
-            &self.existing_recipe_ids,
-            &mut self.recipe_unlock_form.unlock_condition,
-        );
-        ui.add_space(16.0);
-
-        // ID Preview section
-        ui.separator();
-        ui.heading("Generated IDs (Preview)");
-        ui.add_enabled_ui(false, |ui| {
-            ui.horizontal(|ui| {
-                ui.label("Unlock file:");
-                ui.monospace(self.recipe_unlock_form.unlock_filename());
-            });
-            ui.horizontal(|ui| {
-                ui.label("Unlock ID:");
-                ui.monospace(self.recipe_unlock_form.unlock_id());
-            });
-            ui.horizontal(|ui| {
-                ui.label("Reward ID:");
-                ui.monospace(self.recipe_unlock_form.reward_id());
-            });
-        });
-        ui.add_space(16.0);
-
-        // Validation and Save
-        ui.separator();
-        let errors = self.recipe_unlock_form.validate();
-        if !errors.is_empty() {
-            ui.colored_label(egui::Color32::RED, "Validation Errors:");
-            for error in &errors {
-                ui.colored_label(egui::Color32::RED, format!("  • {}", error));
-            }
-            ui.add_space(8.0);
-        }
-
-            ui.colored_label(
-                egui::Color32::YELLOW,
-                "⚠ This tab is deprecated. Use the Recipe tab to manage unlocks.",
-            );
-            ui.add_enabled_ui(false, |ui| {
-                let _ = ui.button("💾 Save (Deprecated)");
-            });
-
-        if self.assets_dir.is_none() {
-            ui.colored_label(
-                egui::Color32::YELLOW,
-                "⚠ Select assets directory first (File → Select Assets Directory)",
-            );
-        }
-    }
 
     fn show_weapon_form(&mut self, ui: &mut egui::Ui) {
         ui.heading("Weapon Definition");
@@ -845,6 +715,20 @@ impl EditorState {
         }
         ui.add_space(16.0);
 
+        // Unlock Condition
+        ui.separator();
+        ui.heading("Unlock Condition");
+        ui.small("Define when this recipe becomes available to craft.");
+        show_condition_editor(
+            ui,
+            "recipe",
+            &self.existing_research_ids,
+            &self.existing_monster_ids,
+            &self.existing_recipe_ids,
+            &mut self.recipe_data_form.unlock_condition,
+        );
+
+
         // Preview
         ui.separator();
         ui.heading("Generated File (Preview)");
@@ -889,10 +773,6 @@ impl EditorState {
             EditorTab::Research => {
                 self.research.reset();
                 self.status = "New research form created".to_string();
-            }
-            EditorTab::RecipeUnlock => {
-                self.recipe_unlock_form = RecipeUnlockFormData::new();
-                self.status = "New recipe unlock form created".to_string();
             }
             EditorTab::Weapon => {
                 self.weapon_form = WeaponDefinition::new_default();
@@ -952,7 +832,7 @@ impl EditorState {
         use crate::{
             models::{
                 AutopsyLoader, BonusStatsLoader, DivinityLoader, MonsterLoader, RecipeLoader,
-                RecipeUnlockLoader, ResearchLoader, WeaponLoader,
+                ResearchLoader, WeaponLoader,
             },
             traits::load_assets,
         };
@@ -963,9 +843,6 @@ impl EditorState {
         self.existing_research_filenames = research_assets.filenames;
         self.research_id_to_file = research_assets.id_to_filename;
 
-        // Load recipe unlock IDs
-        let recipe_unlock_assets = load_assets(assets_dir, &RecipeUnlockLoader);
-        self.existing_recipe_unlock_ids = recipe_unlock_assets.ids;
 
         // Load divinity unlock IDs
         let divinity_assets = load_assets(assets_dir, &DivinityLoader);
@@ -1000,37 +877,6 @@ impl EditorState {
         self.existing_bonus_filenames = bonus_stats_assets.ids;
     }
 
-    fn load_recipe_unlock(&mut self, id: &str) {
-        if let Some(assets_dir) = &self.assets_dir {
-            // Construct path
-            let unlock_path = assets_dir
-                .join("unlocks")
-                .join("recipes")
-                .join(format!("recipe_{}.unlock.ron", id));
-
-            // Read file
-            let unlock_content = match std::fs::read_to_string(&unlock_path) {
-                Ok(c) => c,
-                Err(e) => {
-                    self.status = format!("✗ Failed to read unlock file: {}", e);
-                    return;
-                }
-            };
-
-            // Parse RON
-            let unlock_def: UnlockDefinition = match ron::from_str(&unlock_content) {
-                Ok(d) => d,
-                Err(e) => {
-                    self.status = format!("✗ Failed to parse unlock RON: {}", e);
-                    return;
-                }
-            };
-
-            // Convert and populate form
-            self.recipe_unlock_form = RecipeUnlockFormData::from_assets(&unlock_def);
-            self.status = format!("✓ Loaded recipe unlock: {}", id);
-        }
-    }
 
     fn save_weapon(&mut self) {
         if let Some(assets_dir) = &self.assets_dir {
