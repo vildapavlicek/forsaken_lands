@@ -109,4 +109,7 @@ impl Default for ProjectileTarget {
 pub struct ProjectileSpeed(pub f32);
 
 #[derive(Component, Default)]
-pub struct ProjectileDamage(pub f32);
+pub struct ProjectileDamage {
+    pub base_damage: f32,
+    pub source_tags: Vec<String>,
+}

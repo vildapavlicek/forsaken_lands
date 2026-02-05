@@ -7,9 +7,11 @@ impl Plugin for HeroEventsPlugin {
         app.register_type::<AttackIntent>()
             .register_type::<ProjectileHit>()
             .register_type::<MeleeHit>()
-            .register_type::<EnemyKilled>();
+            .register_type::<EnemyKilled>()
+            .register_type::<DamageRequest>();
     }
 }
+
 
 /// Represents an entity's decision and readiness to attack a specific target.
 ///
@@ -110,12 +112,39 @@ pub struct MeleeHit {
     pub damage: f32,
 }
 
+
 impl Default for MeleeHit {
     fn default() -> Self {
         Self {
             attacker: Entity::PLACEHOLDER,
             targets: Vec::new(),
             damage: 0.0,
+        }
+    }
+}
+
+/// Represents a request to apply damage to a single target.
+/// Triggered once per target hit by any damage source.
+#[derive(Event, Reflect)]
+#[reflect(Default)]
+pub struct DamageRequest {
+    /// The weapon/source entity performing the attack
+    pub source: Entity,
+    /// The target entity receiving damage
+    pub target: Entity,
+    /// Base damage before any modifiers
+    pub base_damage: f32,
+    /// Tags from the damage source (e.g., ["damage:melee", "damage:bone"])
+    pub source_tags: Vec<String>,
+}
+
+impl Default for DamageRequest {
+    fn default() -> Self {
+        Self {
+            source: Entity::PLACEHOLDER,
+            target: Entity::PLACEHOLDER,
+            base_damage: 0.0,
+            source_tags: Vec::new(),
         }
     }
 }

@@ -5,7 +5,7 @@ use {
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
     },
-    hero_events::{AttackIntent, MeleeHit, ProjectileHit},
+    hero_events::{AttackIntent, DamageRequest, MeleeHit, ProjectileHit},
     shared_components::HitIndicator,
     states::GameState,
     system_schedule::GameSchedule,
@@ -33,8 +33,7 @@ impl Plugin for HeroesPlugin {
 
         app.add_observer(hero_projectile_spawn_system);
         app.add_observer(hero_melee_attack_system);
-        app.add_observer(apply_damage_system);
-        app.add_observer(apply_melee_damage_observer);
+        app.add_observer(damage_pipeline_observer);
         app.add_observer(apply_hit_indicator_observer);
         app.add_systems(OnExit(GameState::Running), clean_up_heroes);
     }
@@ -107,7 +106,6 @@ fn hero_projectile_spawn_system(
     weapons: Query<(&Damage, &WeaponTags), (With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
     enemies: Query<&MonsterTags, With<Enemy>>,
-    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {
@@ -124,14 +122,10 @@ fn hero_projectile_spawn_system(
     let intent = trigger.event();
 
     // Double check the attacker is still a valid weapon.
-    // The intent system already filters this, but if a weapon was unequipped
-    // between intent and action, this would catch it.
     if let Ok((damage, tags)) = weapons.get(intent.attacker)
-        && let Ok(target_tags) = enemies.get(intent.target).map(|t| &t.0)
+        // Check if target still exists (optional for spawn, but good practice)
+        && enemies.get(intent.target).is_ok()
     {
-        let final_damage =
-            bonus_stats::calculate_damage(damage.0, &tags, &target_tags, &bonus_stats);
-
         commands.spawn((
             Sprite {
                 color: Color::srgb(1.0, 1.0, 0.0),
@@ -142,7 +136,11 @@ fn hero_projectile_spawn_system(
             Projectile,
             ProjectileTarget(intent.target),
             ProjectileSpeed(400.0),
-            ProjectileDamage(final_damage),
+            // Store raw damage context, calculate on hit
+            ProjectileDamage {
+                base_damage: damage.0,
+                source_tags: tags.0.clone(),
+            },
         ));
     }
 }
@@ -192,7 +190,7 @@ fn hero_melee_attack_system(
                     return None;
                 };
 
-                // Check 2: Angle within MeleeArc
+        // Check 2: Angle within MeleeArc
                 // angle_to returns value in [-PI, PI], so we check its absolute value
                 let angle = attack_direction.angle_to(to_enemy.truncate());
                 if angle.abs() > arc.width / 2.0 {
@@ -207,18 +205,22 @@ fn hero_melee_attack_system(
             return;
         }
 
-        let Ok((_, _, target_tags)) = enemies.get(intent.target) else {
-            warn!("intent's target does not exist");
-            return;
-        };
+        // Trigger DamageRequest for EACH target individually
+        // This allows per-target damage calculation (e.g., individual defenses)
+        for &target in &targets {
+            commands.trigger(DamageRequest {
+                source: intent.attacker,
+                target,
+                base_damage: damage.0,
+                source_tags: tags.0.clone(),
+            });
+        }
 
-        let final_damage =
-            bonus_stats::calculate_damage(damage.0, tags, &target_tags.0, &bonus_stats);
-
+        // Keep MeleeHit for visual indicators (HitIndicator), but damage is handled by DamageRequest.
         commands.trigger(MeleeHit {
             attacker: intent.attacker,
             targets,
-            damage: final_damage,
+            damage: 0.0, // Deprecated, damage applied via DamageRequest
         });
     }
 }
@@ -244,17 +246,26 @@ fn projectile_collision_system(
     >,
     enemies: Query<&Transform, With<Enemy>>,
 ) {
-    for (projectile_entity, projectile_transform, target, damage) in projectiles.iter() {
+    for (projectile_entity, projectile_transform, target, damage_data) in projectiles.iter() {
         if let Ok(target_transform) = enemies.get(target.0) {
             let distance = projectile_transform
                 .translation
                 .distance(target_transform.translation);
 
             if distance < 10.0 {
+                // Trigger DamageRequest
+                commands.trigger(DamageRequest {
+                    source: projectile_entity,
+                    target: target.0,
+                    base_damage: damage_data.base_damage,
+                    source_tags: damage_data.source_tags.clone(),
+                });
+
+                // Trigger ProjectileHit for other potential observers (visuals, etc)
                 commands.trigger(ProjectileHit {
                     projectile: projectile_entity,
                     target: target.0,
-                    damage: damage.0,
+                    damage: 0.0, // Deprecated
                 });
                 commands.entity(projectile_entity).despawn();
             }
@@ -265,30 +276,24 @@ fn projectile_collision_system(
     }
 }
 
-fn apply_damage_system(trigger: On<ProjectileHit>, mut enemies: Query<&mut Health, With<Enemy>>) {
-    let hit = trigger.event();
-    if let Ok(mut health) = enemies.get_mut(hit.target) {
-        health.current -= hit.damage;
-        trace!(
-            "Projectile hit enemy {:?} for {} damage. Health: {}/{}",
-            hit.target, hit.damage, health.current, health.max
-        );
-    }
-}
-
-fn apply_melee_damage_observer(
-    trigger: On<MeleeHit>,
-    mut enemies: Query<&mut Health, With<Enemy>>,
+fn damage_pipeline_observer(
+    trigger: On<DamageRequest>,
+    mut enemies: Query<(&mut Health, &MonsterTags), With<Enemy>>,
+    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
-    let hit = trigger.event();
-    for &target in &hit.targets {
-        if let Ok(mut health) = enemies.get_mut(target) {
-            health.current -= hit.damage;
-            trace!(
-                "Melee hit enemy {:?} for {} damage. Health: {}/{}",
-                target, hit.damage, health.current, health.max
-            );
-        }
+    let req = trigger.event();
+
+    if let Ok((mut health, monster_tags)) = enemies.get_mut(req.target) {
+        let ctx = bonus_stats::DamageContext::new(req.base_damage, &req.source_tags, &monster_tags.0);
+
+        let final_damage = bonus_stats::pipeline::calculate(&ctx, &bonus_stats);
+
+        health.current -= final_damage;
+
+        trace!(
+            "Damage applied to {:?}: base={} -> final={} (health now {}/{})",
+            req.target, req.base_damage, final_damage, health.current, health.max
+        );
     }
 }
 

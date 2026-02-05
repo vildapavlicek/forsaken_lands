@@ -4,6 +4,8 @@ use {
     std::collections::HashMap,
 };
 
+pub mod pipeline;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, Reflect)]
 pub enum StatMode {
     #[default]
@@ -16,6 +18,25 @@ pub enum StatMode {
 pub struct StatBonus {
     pub value: f32,
     pub mode: StatMode,
+}
+
+/// Encapsulates all data needed to calculate final damage for a single hit.
+/// Passed through pure calculation functions.
+#[derive(Debug, Clone)]
+pub struct DamageContext {
+    pub base_damage: f32,
+    pub source_tags: Vec<String>,
+    pub target_tags: Vec<String>,
+}
+
+impl DamageContext {
+    pub fn new(base_damage: f32, source_tags: &[String], target_tags: &[String]) -> Self {
+        Self {
+            base_damage,
+            source_tags: source_tags.to_vec(),
+            target_tags: target_tags.to_vec(),
+        }
+    }
 }
 
 /// Aggregated bonuses for a specific key (e.g., "damage:melee").
@@ -135,40 +156,8 @@ pub fn calculate_damage(
     target_tags: &[String],
     bonus_stats: &BonusStats,
 ) -> f32 {
-    let mut total_bonus_stats = BonusStat::default();
-
-    // We only care about the "damage" category
-    if let Some(damage_bonuses) = bonus_stats.bonuses.get("damage") {
-        // 1. Process Source Tags match against "damage:{tag}"
-        // The source tags are expected to be full keys like "damage:melee" or just "melee"?
-        // Looking at the original code, it filtered for "damage:..." prefix.
-        for tag in source_tags {
-            if let Some(("damage", suffix)) = tag.split_once(':') {
-                if let Some(bonus) = damage_bonuses.get(suffix) {
-                    total_bonus_stats = total_bonus_stats + *bonus;
-                }
-            }
-        }
-
-        // 2. Process Target Tags match against "damage:{tag}"
-        // Target tags are "siled" which should match "damage:siled" rule.
-        // In our structure, "damage:siled" is stored as category="damage", subkey="siled".
-        // So we just look up the tag directly in the damage_bonuses map.
-        for tag in target_tags {
-            if let Some(bonus) = damage_bonuses.get(tag.as_str()) {
-                total_bonus_stats = total_bonus_stats + *bonus;
-            }
-        }
-    }
-
-    // Calculation:
-    // (Base + Additive) * (1 + Percent) * Multiplicative
-    let final_damage = (base_damage + total_bonus_stats.additive)
-        * (1.0 + total_bonus_stats.percent)
-        * total_bonus_stats.multiplicative.max(1.0);
-
-    // Ensure damage doesn't go below 0
-    final_damage.max(0.0)
+    let ctx = DamageContext::new(base_damage, source_tags, target_tags);
+    pipeline::calculate(&ctx, bonus_stats)
 }
 
 #[cfg(test)]
@@ -287,7 +276,6 @@ mod tests {
         // Target specific bonus (NEW "damage:<tag>")
         // Target specific bonus (NEW "damage:<tag>")
         stats.add(
-            "damage:siled",
             "damage:siled",
             StatBonus {
                 value: 0.5, // +50%
