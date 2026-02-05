@@ -12,7 +12,6 @@ impl Plugin for HeroEventsPlugin {
     }
 }
 
-
 /// Represents an entity's decision and readiness to attack a specific target.
 ///
 /// This **Observer** event acts as the bridge between the "Decision Phase" (AI, Input, Cooldowns)
@@ -111,7 +110,6 @@ pub struct MeleeHit {
     /// Raw damage amount to apply to each target
     pub damage: f32,
 }
-
 
 impl Default for MeleeHit {
     fn default() -> Self {

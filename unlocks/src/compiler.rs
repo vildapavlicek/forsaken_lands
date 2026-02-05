@@ -1,8 +1,11 @@
 //! Compiles UnlockDefinition assets into runtime ECS logic graphs.
 
 use {
-    bevy::prelude::*, unlocks_assets::ConditionNode, unlocks_assets::UnlockDefinition,
-    unlocks_components::*, unlocks_events::*, unlocks_resources::*,
+    bevy::prelude::*,
+    unlocks_assets::{ConditionNode, UnlockDefinition},
+    unlocks_components::*,
+    unlocks_events::*,
+    unlocks_resources::*,
 };
 
 // ============================================================================

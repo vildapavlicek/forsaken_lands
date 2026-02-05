@@ -190,7 +190,7 @@ fn hero_melee_attack_system(
                     return None;
                 };
 
-        // Check 2: Angle within MeleeArc
+                // Check 2: Angle within MeleeArc
                 // angle_to returns value in [-PI, PI], so we check its absolute value
                 let angle = attack_direction.angle_to(to_enemy.truncate());
                 if angle.abs() > arc.width / 2.0 {
@@ -284,7 +284,8 @@ fn damage_pipeline_observer(
     let req = trigger.event();
 
     if let Ok((mut health, monster_tags)) = enemies.get_mut(req.target) {
-        let ctx = bonus_stats::DamageContext::new(req.base_damage, &req.source_tags, &monster_tags.0);
+        let ctx =
+            bonus_stats::DamageContext::new(req.base_damage, &req.source_tags, &monster_tags.0);
 
         let final_damage = bonus_stats::pipeline::calculate(&ctx, &bonus_stats);
 

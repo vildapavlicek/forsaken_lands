@@ -280,28 +280,26 @@ fn spawn_enemy_card(
                     }
 
                     // Only display if there's any bonus
-                    if total.additive != 0.0 || total.percent != 0.0 || total.multiplicative > 0.0 {
-                        let mult_val = total.multiplicative.max(1.0);
-                        let text = format!(
-                            "Bonus: +{}/{:.0}%/*{}",
-                            total.additive,
-                            total.percent * 100.0,
-                            mult_val
-                        );
+                    let mult_val = total.multiplicative.max(1.0);
+                    let text = format!(
+                        "Bonus: +{}/{:.0}%/*{}",
+                        total.additive,
+                        total.percent * 100.0,
+                        mult_val
+                    );
 
-                        details_node.spawn((
-                            Text::new(text),
-                            TextColor(Color::srgb(1.0, 0.5, 0.5)), // Red-ish for damage?
-                            TextFont {
-                                font_size: 14.0,
-                                ..default()
-                            },
-                            Node {
-                                margin: UiRect::top(Val::Px(5.0)),
-                                ..default()
-                            },
-                        ));
-                    }
+                    details_node.spawn((
+                        Text::new(text),
+                        TextColor(Color::srgb(1.0, 0.5, 0.5)), // Red-ish for damage?
+                        TextFont {
+                            font_size: 14.0,
+                            ..default()
+                        },
+                        Node {
+                            margin: UiRect::top(Val::Px(5.0)),
+                            ..default()
+                        },
+                    ));
                 });
             } else {
                 // Locked info

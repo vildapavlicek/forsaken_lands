@@ -36,8 +36,10 @@ pub fn calculate(ctx: &DamageContext, bonus_stats: &BonusStats) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{StatBonus, StatMode};
+    use {
+        super::*,
+        crate::{StatBonus, StatMode},
+    };
 
     #[test]
     fn test_pipeline_basic() {

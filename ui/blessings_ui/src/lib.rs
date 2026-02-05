@@ -51,7 +51,7 @@ pub struct BlessingDisplayData {
     pub cost: u32,
     pub can_afford: bool,
     pub is_locked: bool,
-    pub limit: BlessingLimit, 
+    pub limit: BlessingLimit,
 }
 
 fn spawn_blessings_ui(
