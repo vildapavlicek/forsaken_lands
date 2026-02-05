@@ -8,4 +8,19 @@
     },
     time_required: 60.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_portal_discovery_unlock",
+        display_name: Some("Portal Discovery Research"),
+        condition: And([
+            Completed(
+                topic: "research:simple_crafting",
+            ),
+            Value(
+                topic: "divinity",
+                op: Ge,
+                target: 105.0,
+            ),
+        ]),
+        reward_id: "research:portal_discovery",
+    )),
 )

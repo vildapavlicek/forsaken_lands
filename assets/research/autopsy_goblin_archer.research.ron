@@ -7,4 +7,14 @@
     },
     time_required: 90.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_autopsy_goblin_archer_unlock",
+        display_name: Some("Autopsy: goblin_archer"),
+        condition: Value(
+            topic: "kills:goblin_archer",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_goblin_archer",
+    )),
 )

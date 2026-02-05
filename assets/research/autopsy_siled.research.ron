@@ -5,4 +5,14 @@
     cost: {},
     time_required: 10.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_autopsy_siled_unlock",
+        display_name: Some("Autopsy: Siled Research"),
+        condition: Value(
+            topic: "kills:siled",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_siled",
+    )),
 )

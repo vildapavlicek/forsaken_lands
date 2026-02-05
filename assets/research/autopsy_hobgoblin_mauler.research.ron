@@ -8,4 +8,14 @@
     },
     time_required: 90.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_autopsy_hobgoblin_mauler_unlock",
+        display_name: Some("Autopsy: hobgoblin_mauler"),
+        condition: Value(
+            topic: "kills:hobgoblin_mauler",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_hobgoblin_mauler",
+    )),
 )

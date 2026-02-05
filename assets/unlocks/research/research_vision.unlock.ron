@@ -1,8 +1,0 @@
-(
-    id: "research_vision_unlock",
-    display_name: Some("A god has spoken Research"),
-    condition: Completed(
-        topic: "research:bone_pile_ii",
-    ),
-    reward_id: "research:vision",
-)

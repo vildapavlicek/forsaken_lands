@@ -7,4 +7,14 @@
     },
     time_required: 45.0,
     max_repeats: 1,
+    unlock: Some((
+        id: "research_autopsy_elite_goblin_scout_unlock",
+        display_name: Some("Autopsy: Elite Goblin Scout Research"),
+        condition: Value(
+            topic: "kills:elite_goblin_scout",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_elite_goblin_scout",
+    )),
 )
