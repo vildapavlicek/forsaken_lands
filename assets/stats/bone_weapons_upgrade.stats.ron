@@ -1,5 +1,5 @@
 (
-    id: "research:bone_weapons_upgrade",
+    id: "stat:bone_weapons_upgrade",
     bonuses: {
         "damage:bones": [
             (
@@ -8,4 +8,5 @@
             ),
         ],
     },
+    unlock: None,
 )

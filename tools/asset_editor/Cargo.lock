@@ -1957,7 +1957,9 @@ dependencies = [
  "bonus_stats_events",
  "bonus_stats_resources",
  "states",
+ "unlocks",
  "unlocks_events",
+ "unlocks_resources",
 ]
 
 [[package]]
@@ -1967,6 +1969,7 @@ dependencies = [
  "bevy",
  "bonus_stats_resources",
  "serde",
+ "unlocks_assets",
 ]
 
 [[package]]
@@ -5958,6 +5961,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
+name = "unlocks"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "serde",
+ "unlocks_assets",
+ "unlocks_components",
+ "unlocks_events",
+ "unlocks_resources",
+]
+
+[[package]]
 name = "unlocks_assets"
 version = "0.1.0"
 dependencies = [
@@ -5980,6 +5995,14 @@ name = "unlocks_events"
 version = "0.1.0"
 dependencies = [
  "bevy",
+]
+
+[[package]]
+name = "unlocks_resources"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "unlocks_components",
 ]
 
 [[package]]

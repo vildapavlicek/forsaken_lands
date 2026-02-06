@@ -25,3 +25,5 @@ weapon_assets.workspace = true
 ron = "0.8"
 serde.workspace = true
 blessings.workspace = true
+bonus_stats.workspace = true
+bonus_stats_assets.workspace = true

@@ -1,5 +1,5 @@
 (
-    id: "research:autopsy_worg",
+    id: "stat:autopsy_worg",
     bonuses: {
         "damage:race:beasts": [
             (
@@ -8,4 +8,12 @@
             ),
         ],
     },
+    unlock: Some((
+        id: "stat:autopsy_worg_unlock",
+        display_name: Some("Stat Bonus: stat:autopsy_worg"),
+        condition: Completed(
+            topic: "research:autopsy_worg",
+        ),
+        reward_id: "stat:autopsy_worg",
+    )),
 )

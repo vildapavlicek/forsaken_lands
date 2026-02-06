@@ -1219,6 +1219,8 @@ pub struct BonusStatsFormData {
     pub bonuses: Vec<BonusEntry>,
     /// Filename (without extension)
     pub filename: String,
+    /// The unlock condition for this bonus
+    pub unlock_condition: UnlockCondition,
 }
 
 impl BonusStatsFormData {
@@ -1227,6 +1229,7 @@ impl BonusStatsFormData {
             id: String::new(),
             bonuses: Vec::new(),
             filename: String::new(),
+            unlock_condition: UnlockCondition::True,
         }
     }
 
@@ -1246,6 +1249,9 @@ impl BonusStatsFormData {
                 errors.push(format!("Bonus #{}: Value cannot be 0", i + 1));
             }
         }
+
+        errors.extend(self.unlock_condition.validate());
+
         errors
     }
 
@@ -1261,9 +1267,21 @@ impl BonusStatsFormData {
             }
         }
 
+        let unlock = if let UnlockCondition::True = self.unlock_condition {
+            None
+        } else {
+            Some(UnlockDefinition {
+                id: format!("{}_unlock", self.id),
+                display_name: Some(format!("Stat Bonus: {}", self.id)),
+                reward_id: self.id.clone(),
+                condition: self.unlock_condition.to_condition_node(),
+            })
+        };
+
         StatBonusDefinition {
             id: self.id.clone(),
             bonuses: map,
+            unlock,
         }
     }
 
@@ -1285,10 +1303,17 @@ impl BonusStatsFormData {
             }
         }
 
+        let unlock_condition = if let Some(unlock) = &def.unlock {
+            UnlockCondition::from(&unlock.condition)
+        } else {
+            UnlockCondition::True
+        };
+
         Self {
             id: def.id.clone(),
             bonuses,
             filename,
+            unlock_condition,
         }
     }
 

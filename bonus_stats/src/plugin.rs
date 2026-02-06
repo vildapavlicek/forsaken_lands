@@ -4,7 +4,9 @@ use {
     bonus_stats_assets::StatBonusDefinition,
     bonus_stats_events::*,
     bonus_stats_resources::{BonusStats, StatBonus},
-    unlocks_events::{StatusCompleted, UnlockAchieved},
+    unlocks,
+    unlocks_events::UnlockAchieved,
+    unlocks_resources,
 };
 
 pub struct BonusStatsPlugin;
@@ -21,7 +23,6 @@ impl Plugin for BonusStatsPlugin {
             .add_observer(on_increase_stat_bonus)
             .add_observer(on_decrease_stat_bonus)
             // Integration Support
-            // .add_observer(on_status_completed)
             .add_observer(on_unlock_achieved)
             .add_systems(Update, update_bonus_trigger_map)
             .add_systems(OnEnter(states::GameState::Loading), clear_bonus_stats);
@@ -68,25 +69,6 @@ fn update_bonus_trigger_map(
     );
 }
 
-/// Listens for StatusCompleted events (from Research, Quests, etc.)
-/// and applies corresponding bonuses.
-fn on_status_completed(
-    trigger: On<StatusCompleted>,
-    mut stats: ResMut<BonusStats>,
-    map: Res<BonusTriggerMap>,
-) {
-    let event = trigger.event();
-    trace!(?map, %event.topic, "observed event for topic");
-    if let Some(bonuses_map) = map.triggers.get(&event.topic) {
-        info!("Applying bonuses for completed topic: {}", event.topic);
-        for (stat_key, bonus_list) in bonuses_map {
-            for bonus in bonus_list {
-                stats.add(stat_key, bonus.clone());
-            }
-        }
-    }
-}
-
 fn on_unlock_achieved(
     trigger: On<UnlockAchieved>,
     mut stats: ResMut<BonusStats>,
@@ -104,6 +86,32 @@ fn on_unlock_achieved(
     for (stat_key, bonus_list) in bonuses_map {
         for bonus in bonus_list {
             stats.add(stat_key, bonus.clone());
+        }
+    }
+}
+
+/// Compiles inline unlocks from StatBonusDefinition assets.
+/// This is called during the LoadingPhase::CompileUnlocks phase.
+pub fn compile_bonus_stats_unlocks(
+    mut commands: Commands,
+    stats_assets: Res<Assets<StatBonusDefinition>>,
+    mut topic_map: ResMut<unlocks::TopicMap>,
+    unlock_state: Res<unlocks_resources::UnlockState>,
+    compiled: Query<&unlocks::CompiledUnlock>,
+) {
+    let compiled_ids: std::collections::HashSet<_> =
+        compiled.iter().map(|c| c.definition_id.as_str()).collect();
+
+    for (_, def) in stats_assets.iter() {
+        if let Some(unlock) = &def.unlock {
+            debug!(%unlock.id, "compiling bonus stats unlock");
+            unlocks::compile_unlock_definition(
+                &mut commands,
+                &mut topic_map,
+                unlock,
+                &compiled_ids,
+                &unlock_state,
+            );
         }
     }
 }

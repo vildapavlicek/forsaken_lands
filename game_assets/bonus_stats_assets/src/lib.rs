@@ -3,6 +3,7 @@ use {
     bonus_stats_resources::StatBonus,
     serde::{Deserialize, Serialize},
     std::collections::HashMap,
+    unlocks_assets::UnlockDefinition,
 };
 
 #[derive(Asset, TypePath, Debug, Clone, Deserialize, Serialize)]
@@ -11,4 +12,7 @@ pub struct StatBonusDefinition {
     pub id: String,
     /// Map of stat keys to list of bonuses (e.g. "damage" -> [+10])
     pub bonuses: HashMap<String, Vec<StatBonus>>,
+    /// Optional inline unlock definition for when this bonus should be granted
+    #[serde(default)]
+    pub unlock: Option<UnlockDefinition>,
 }

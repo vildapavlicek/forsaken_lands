@@ -1,5 +1,5 @@
 (
-    id: "research:autopsy_goblin_defender",
+    id: "stat:autopsy_goblin_defender",
     bonuses: {
         "damage:race:goblins": [
             (
@@ -8,4 +8,12 @@
             ),
         ],
     },
+    unlock: Some((
+        id: "stat:autopsy_goblin_defender_unlock",
+        display_name: Some("Stat Bonus: stat:autopsy_goblin_defender"),
+        condition: Completed(
+            topic: "research:autopsy_goblin_defender",
+        ),
+        reward_id: "stat:autopsy_goblin_defender",
+    )),
 )

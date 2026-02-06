@@ -1,5 +1,5 @@
 (
-    id: "research:autopsy_boss_worg_rider",
+    id: "stat:autopsy_boss_worg_rider",
     bonuses: {
         "damage:race:goblins": [
             (
@@ -8,4 +8,12 @@
             ),
         ],
     },
+    unlock: Some((
+        id: "stat:autopsy_boss_worg_rider_unlock",
+        display_name: Some("Stat Bonus: stat:autopsy_boss_worg_rider"),
+        condition: Completed(
+            topic: "research:autopsy_boss_worg_rider",
+        ),
+        reward_id: "stat:autopsy_boss_worg_rider",
+    )),
 )

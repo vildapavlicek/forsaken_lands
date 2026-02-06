@@ -1800,7 +1800,9 @@ dependencies = [
  "bonus_stats_events",
  "bonus_stats_resources",
  "states",
+ "unlocks",
  "unlocks_events",
+ "unlocks_resources",
 ]
 
 [[package]]
@@ -1810,6 +1812,7 @@ dependencies = [
  "bevy",
  "bonus_stats_resources",
  "serde",
+ "unlocks_assets",
 ]
 
 [[package]]
@@ -3542,6 +3545,8 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "blessings",
+ "bonus_stats",
+ "bonus_stats_assets",
  "crafting",
  "crafting_resources",
  "divinity_components",

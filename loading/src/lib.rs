@@ -63,6 +63,7 @@ impl Plugin for LoadingManagerPlugin {
                     compile_research_unlocks,
                     compile_recipe_unlocks,
                     compile_blessing_unlocks,
+                    bonus_stats::plugin::compile_bonus_stats_unlocks,
                 ),
             )
             .add_systems(
@@ -583,16 +584,14 @@ fn evaluate_unlocks(
     for unlock_id in &claimed_divinity.claimed {
         // Find definitions to get correct display name and reward id
         // Inefficient lookup but acceptable for loading screen with < 1000 items
-        if let Some(def) = unlock_assets
+        if let Some(_def) = unlock_assets
             .iter()
             .map(|(_, def)| def)
             .find(|d| &d.id == unlock_id)
         {
-            debug!(unlock_id = %unlock_id, "Restoring claimed divinity unlock status");
-            commands.trigger(unlocks_events::UnlockAchieved {
-                unlock_id: def.id.clone(),
-                display_name: def.display_name.clone(),
-                reward_id: def.reward_id.clone(),
+            debug!(unlock_id = %unlock_id, "Restoring claimed divinity status");
+            commands.trigger(unlocks_events::StatusCompleted {
+                topic: format!("divinity:{}", unlock_id),
             });
         }
     }

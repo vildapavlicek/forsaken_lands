@@ -1928,6 +1928,22 @@ impl EditorState {
             });
         }
 
+        ui.add_space(8.0);
+
+        // Unlock Condition
+        ui.separator();
+        ui.heading("Unlock Condition");
+        ui.small("Define when this bonus becomes active. If empty, it's always active.");
+        show_condition_editor(
+            ui,
+            "bonus_stats",
+            &self.existing_research_ids,
+            &self.existing_monster_ids,
+            &self.existing_recipe_ids,
+            &mut self.bonus_stats_form.unlock_condition,
+        );
+
+        ui.add_space(16.0);
         ui.separator();
 
         // Save

@@ -7,3 +7,4 @@ edition = "2024"
 bevy.workspace = true
 serde.workspace = true
 bonus_stats_resources.workspace = true
+unlocks_assets.workspace = true

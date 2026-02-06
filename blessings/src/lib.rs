@@ -63,11 +63,10 @@ fn purchase_blessing(
                 event.blessing_id, new_level
             );
 
-            // Trigger generic unlock event for downstream systems
-            commands.trigger(UnlockAchieved {
-                unlock_id: format!("blessing:{}", event.blessing_id),
-                display_name: Some(def.name.clone()),
-                reward_id: def.reward_id.clone(),
+            // Trigger status completed event - the unlock system will handle
+            // triggering Reward via UnlockAchieved if there's an associated unlock.
+            commands.trigger(unlocks_events::StatusCompleted {
+                topic: format!("blessing:{}", event.blessing_id),
             });
         }
     }
