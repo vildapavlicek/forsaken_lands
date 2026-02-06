@@ -5,7 +5,7 @@ use {
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
     },
-    hero_events::{AttackIntent, DamageRequest, MeleeHit, ProjectileHit},
+    hero_events::{AttackIntent, DamageRequest, ProjectileHit},
     shared_components::HitIndicator,
     states::GameState,
     system_schedule::GameSchedule,
@@ -214,13 +214,6 @@ fn hero_melee_attack_system(
                 source_tags: tags.0.clone(),
             });
         }
-
-        // Keep MeleeHit for visual indicators (HitIndicator), but damage is handled by DamageRequest.
-        commands.trigger(MeleeHit {
-            attacker: intent.attacker,
-            targets,
-            damage: 0.0, // Deprecated, damage applied via DamageRequest
-        });
     }
 }
 
@@ -298,21 +291,28 @@ fn damage_pipeline_observer(
 }
 
 fn apply_hit_indicator_observer(
-    trigger: On<MeleeHit>,
+    trigger: On<DamageRequest>,
     mut commands: Commands,
     mut sprites: Query<&mut Sprite>,
+    weapons: Query<(), With<MeleeWeapon>>,
 ) {
-    let hit = trigger.event();
-    for &target in &hit.targets {
-        if let Ok(mut sprite) = sprites.get_mut(target) {
-            let mut indicator = HitIndicator::new();
-            // Swap immediately for instant feedback
-            std::mem::swap(&mut sprite.color, &mut indicator.saved_color);
-            // Since we already did 1 swap, we need 3 more (total 4) to end back on original color.
-            indicator.blink_count = 3;
-            commands.entity(target).insert(indicator);
-        }
+    let req = trigger.event();
+
+    // Check if the source is a melee weapon
+    if !weapons.contains(req.source) {
+        return;
     }
+
+    let Ok(mut sprite) = sprites.get_mut(req.target) else {
+        return;
+    };
+
+    let mut indicator = HitIndicator::new();
+    // Swap immediately for instant feedback
+    std::mem::swap(&mut sprite.color, &mut indicator.saved_color);
+    // Since we already did 1 swap, we need 3 more (total 4) to end back on original color.
+    indicator.blink_count = 3;
+    commands.entity(req.target).insert(indicator);
 }
 
 fn hit_indicator_system(
