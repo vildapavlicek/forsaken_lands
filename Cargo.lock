@@ -3235,6 +3235,7 @@ dependencies = [
  "shared_components",
  "states",
  "system_schedule",
+ "unlocks_events",
  "village_components",
 ]
 

@@ -1,0 +1,21 @@
+(
+    id: "reinforcement_i",
+    name: "Reinforcement",
+    description: "After seeing us kill the boss, they would like to join us in our fight..",
+    cost: {
+        "bones": 200,
+        "xykego": 100,
+    },
+    time_required: 240.0,
+    max_repeats: 1,
+    unlock: Some((
+        id: "research_reinforcement_i_unlock",
+        display_name: Some("Reinforcement Research"),
+        condition: Value(
+            topic: "kills:boss_worg_rider",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:reinforcement_i",
+    )),
+)

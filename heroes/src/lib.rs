@@ -12,6 +12,8 @@ use {
     village_components::Village,
 };
 
+mod hero_spawner;
+
 pub struct HeroesPlugin;
 
 impl Plugin for HeroesPlugin {
@@ -35,6 +37,10 @@ impl Plugin for HeroesPlugin {
         app.add_observer(hero_melee_attack_system);
         app.add_observer(damage_pipeline_observer);
         app.add_observer(apply_hit_indicator_observer);
+
+        // Hero Spawning
+        app.add_observer(hero_spawner::hero_spawn_on_unlock);
+
         app.add_systems(OnExit(GameState::Running), clean_up_heroes);
     }
 }

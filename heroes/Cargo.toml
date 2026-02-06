@@ -13,3 +13,4 @@ village_components.workspace = true
 states.workspace = true
 shared_components.workspace = true
 bonus_stats.workspace = true
+unlocks_events.workspace = true

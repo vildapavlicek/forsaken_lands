@@ -431,6 +431,7 @@ fn compile_unlocks(
         compiled.iter().map(|c| c.definition_id.as_str()).collect();
 
     for (_, definition) in unlock_assets.iter() {
+        debug!(%definition.id, "compiling unlock");
         unlocks::compile_unlock_definition(
             &mut commands,
             &mut topic_map,
