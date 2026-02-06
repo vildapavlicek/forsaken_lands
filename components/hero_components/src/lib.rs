@@ -64,16 +64,6 @@ pub struct MeleeArc {
     pub width: f32,
 }
 
-/// Defines the base offensive power of a weapon entity.
-///
-/// This component stores the raw damage value before any additive modifiers (from `AttackBonus`)
-/// or multipliers are applied.
-///
-/// # Usage
-/// - **Combat Calculation**: Serves as the baseline for the damage formula in combat systems.
-///   - **Melee**: `hero_melee_attack_system` reads this directly.
-///   - **Ranged**: `hero_projectile_spawn_system` reads this to initialize the `ProjectileDamage` component.
-/// - **UI**: Displayed in weapon tooltips as the base statistic.
 #[derive(Component, Default)]
 pub struct Damage(pub f32);
 
