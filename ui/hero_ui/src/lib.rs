@@ -1,70 +1,72 @@
 use bevy::prelude::*;
 use hero_components::{AttackRange, AttackSpeed, Damage, Hero, Weapon};
-use hero_events::OpenHeroScreen;
 use states::GameState;
+use village_components::Village;
 use widgets::{spawn_card, spawn_effect_display, spawn_primary_button, spawn_stat_display};
 
 pub struct HeroUiPlugin;
 
 impl Plugin for HeroUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_message::<OpenHeroScreen>().add_systems(
-            Update,
-            (setup_hero_ui, handle_close_button).run_if(in_state(GameState::Running)),
-        );
+        app.add_observer(on_village_click);
+        app.add_systems(Update, handle_close_button.run_if(in_state(GameState::Running)));
     }
 }
 
 #[derive(Component)]
 struct HeroUiRoot;
 
-fn setup_hero_ui(
-    mut commands: Commands,
-    mut hero_screen_events: MessageReader<OpenHeroScreen>,
+fn on_village_click(
+    trigger: On<Pointer<Click>>,
+    village_query: Query<Entity, With<Village>>,
     hero_query: Query<&Children, With<Hero>>,
     weapon_query: Query<(&Damage, &AttackRange, &AttackSpeed), With<Weapon>>,
     ui_root_query: Query<Entity, With<HeroUiRoot>>,
+    mut commands: Commands,
 ) {
+    // Check if the clicked entity is a village
+    if village_query.get(trigger.entity).is_err() {
+        return;
+    }
+
+    // Singleton check
     if !ui_root_query.is_empty() {
         return;
     }
 
-    if hero_query.is_empty() {
-        return;
-    }
-
-    let Ok(children) = hero_query.single() else {
-        error!("Expected a single hero entity, but found none or multiple.");
+    // Get hero and weapon data
+    let Ok(hero_children) = hero_query.single() else {
+        error!("Expected a single hero entity");
         return;
     };
+
     let mut weapon_stats = None;
-    for &child in children {
+    for &child in hero_children {
         if let Ok(stats) = weapon_query.get(child) {
             weapon_stats = Some(stats);
             break;
         }
     }
 
-    let (damage, range, speed) = if let Some(stats) = weapon_stats {
-        stats
-    } else {
+    let Some((damage, range, speed)) = weapon_stats else {
         error!("no weapon for a hero");
         return;
     };
 
-    for _ in hero_screen_events.read() {
-        commands
-            .spawn((
-                    HeroUiRoot,
-                Node {
-                    width: Val::Vw(100.0),
-                    height: Val::Vh(100.0),
-                    position_type: PositionType::Absolute,
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
+    // Spawn UI
+    commands
+        .spawn((
+            HeroUiRoot,
+            Node {
+                width: Val::Vw(100.0),
+                height: Val::Vh(100.0),
+                position_type: PositionType::Absolute,
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
                 ..default()
             },
             BackgroundColor(Color::srgb_u8(16, 22, 34)),
+            ZIndex(100), // Ensure it's on top
         ))
         .with_children(|parent| {
             // Header
@@ -74,7 +76,7 @@ fn setup_hero_ui(
                         width: Val::Percent(100.0),
                         padding: UiRect::all(Val::Px(16.0)),
                         border: UiRect::bottom(Val::Px(1.0)),
-                        justify_content: JustifyContent::Center,
+                        justify_content: JustifyContent::SpaceBetween,
                         align_items: AlignItems::Center,
                         ..default()
                     },
@@ -82,6 +84,9 @@ fn setup_hero_ui(
                     BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.05)),
                 ))
                 .with_children(|header| {
+                    // Empty node for spacing
+                    header.spawn(Node::default());
+
                     header.spawn((
                         Text::new("CYBER-KNIGHT"),
                         TextFont {
@@ -91,26 +96,28 @@ fn setup_hero_ui(
                         TextColor(Color::WHITE),
                     ));
 
-                    header.spawn((
-                        Button,
-                        Node {
-                            width: Val::Px(32.0),
-                            height: Val::Px(32.0),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        CloseButton,
-                    )).with_children(|parent| {
-                        parent.spawn((
-                            Text::new("X"),
-                            TextFont {
-                                font_size: 24.0,
+                    header
+                        .spawn((
+                            Button,
+                            Node {
+                                width: Val::Px(32.0),
+                                height: Val::Px(32.0),
+                                justify_content: JustifyContent::Center,
+                                align_items: AlignItems::Center,
                                 ..default()
                             },
-                            TextColor(Color::WHITE),
-                        ));
-                    });
+                            CloseButton,
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                Text::new("X"),
+                                TextFont {
+                                    font_size: 24.0,
+                                    ..default()
+                                },
+                                TextColor(Color::WHITE),
+                            ));
+                        });
                 });
 
             // Content
@@ -124,81 +131,79 @@ fn setup_hero_ui(
                     ..default()
                 })
                 .with_children(|content| {
-                    spawn_card(
-                        content,
-                        UiRect::all(Val::Px(12.0)),
-                        |card_content| {
-                            card_content
-                                .spawn(Node {
-                                    align_items: AlignItems::Center,
-                                    column_gap: Val::Px(16.0),
-                                    ..default()
-                                })
-                                .with_children(|equipped_section| {
-                                    equipped_section.spawn((
-                                        Node {
-                                            width: Val::Px(56.0),
-                                            height: Val::Px(56.0),
-                                            justify_content: JustifyContent::Center,
-                                            align_items: AlignItems::Center,
-                                            border: UiRect::all(Val::Px(1.0)),
-                                            ..default()
-                                        },
-                                        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.3)),
-                                        BorderColor::all(Color::srgba(0.2, 0.5, 1.0, 0.3)),
-                                    ));
-                                    equipped_section
-                                        .spawn(Node {
-                                            flex_direction: FlexDirection::Column,
-                                            flex_grow: 1.0,
-                                            ..default()
-                                        })
-                                        .with_children(|text_section| {
-                                            text_section.spawn((
-                                                Text::new("Equipped Weapon"),
-                                                TextFont {
-                                                    font_size: 12.0,
-                                                    ..default()
-                                                },
-                                                TextColor(Color::srgb_u8(156, 163, 175)),
-                                            ));
-                                            text_section.spawn((
-                                                Text::new("Pulse Laser Rifle MK-IV"),
-                                                TextFont {
-                                                    font_size: 16.0,
-                                                    ..default()
-                                                },
-                                                TextColor(Color::WHITE),
-                                            ));
-                                        });
-
-                                    equipped_section
-                                        .spawn((
-                                            Button,
-                                            Node {
-                                                height: Val::Px(36.0),
-                                                padding: UiRect::horizontal(Val::Px(16.0)),
-                                                border: UiRect::all(Val::Px(1.0)),
-                                                justify_content: JustifyContent::Center,
-                                                align_items: AlignItems::Center,
+                    spawn_card(content, UiRect::all(Val::Px(12.0)), |card_content| {
+                        card_content
+                            .spawn(Node {
+                                align_items: AlignItems::Center,
+                                column_gap: Val::Px(16.0),
+                                ..default()
+                            })
+                            .with_children(|equipped_section| {
+                                equipped_section.spawn((
+                                    Node {
+                                        width: Val::Px(56.0),
+                                        height: Val::Px(56.0),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        border: UiRect::all(Val::Px(1.0)),
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.3)),
+                                    BorderColor::all(Color::srgba(0.2, 0.5, 1.0, 0.3)),
+                                    BorderRadius::all(Val::Px(8.0)),
+                                ));
+                                equipped_section
+                                    .spawn(Node {
+                                        flex_direction: FlexDirection::Column,
+                                        flex_grow: 1.0,
+                                        ..default()
+                                    })
+                                    .with_children(|text_section| {
+                                        text_section.spawn((
+                                            Text::new("Equipped Weapon"),
+                                            TextFont {
+                                                font_size: 12.0,
                                                 ..default()
                                             },
-                                            BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.05)),
-                                            BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.1)),
-                                        ))
-                                        .with_children(|button| {
-                                            button.spawn((
-                                                Text::new("Change"),
-                                                TextFont {
-                                                    font_size: 12.0,
-                                                    ..default()
-                                                },
-                                                TextColor(Color::WHITE),
-                                            ));
-                                        });
-                                });
-                        },
-                    );
+                                            TextColor(Color::srgb_u8(156, 163, 175)),
+                                        ));
+                                        text_section.spawn((
+                                            Text::new("Pulse Laser Rifle MK-IV"),
+                                            TextFont {
+                                                font_size: 16.0,
+                                                ..default()
+                                            },
+                                            TextColor(Color::WHITE),
+                                        ));
+                                    });
+
+                                equipped_section
+                                    .spawn((
+                                        Button,
+                                        Node {
+                                            height: Val::Px(36.0),
+                                            padding: UiRect::horizontal(Val::Px(16.0)),
+                                            border: UiRect::all(Val::Px(1.0)),
+                                            justify_content: JustifyContent::Center,
+                                            align_items: AlignItems::Center,
+                                            ..default()
+                                        },
+                                        BackgroundColor(Color::srgba(1.0, 1.0, 1.0, 0.05)),
+                                        BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.1)),
+                                        BorderRadius::all(Val::Px(8.0)),
+                                    ))
+                                    .with_children(|button| {
+                                        button.spawn((
+                                            Text::new("Change"),
+                                            TextFont {
+                                                font_size: 12.0,
+                                                ..default()
+                                            },
+                                            TextColor(Color::WHITE),
+                                        ));
+                                    });
+                            });
+                    });
 
                     content
                         .spawn(Node {
@@ -307,7 +312,6 @@ fn setup_hero_ui(
                         });
                 });
         });
-    }
 }
 
 #[derive(Component)]

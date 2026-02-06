@@ -14,19 +14,18 @@ members = [
   "core",
   "crafting",
   "events/crafting_events",
-  "events/hero_events",
   "game_assets",
   "heroes",
   "messages",
   "portals",
   "research",
   "resources/crafting_resources",
+  "ui/hero_ui",
   "resources/enemy_resources",
   "states",
   "system_schedule",
   "ui/crafting_ui",
   "ui/research_ui",
-  "ui/hero_ui",
   "ui/resources_ui",
   "ui/widgets",
   "village",
@@ -38,7 +37,6 @@ bevy = "0.17"
 core = { path = "core" }
 crafting = { path = "crafting" }
 crafting_events = { path = "events/crafting_events" }
-hero_events = { path = "events/hero_events" }
 crafting_resources = { path = "resources/crafting_resources" }
 crafting_ui = { path = "ui/crafting_ui" }
 enemy_components = { path = "components/enemy_components" }
@@ -66,4 +64,3 @@ widgets = { path = "ui/widgets" }
 bevy.workspace = true
 core.workspace = true
 states.workspace = true
-hero_ui = { path = "ui/hero_ui" }
