@@ -1,16 +1,16 @@
 (
-    id: "boss_worg_rider_doom",
+    id: "boss_worg_riders_doom",
     name: "Worg Rider Boss's Doom",
     description: "He shall die!",
-    reward_id: "blessing:worg_rider_boss_doom",
+    reward_id: "stat:boss_worg_riders_doom",
     cost: Static((base: 100.0)),
     limit: MaxLevel(1),
     unlock: Some((
-        id: "boss_worg_rider_doom_unlock",
-        display_name: Some("Worg Rider Boss's Doom"),
+        id: "boss_worg_riders_doom_unlock",
+        display_name: Some("Boss Worg Rider's Doom"),
         condition: And([
             Completed(topic: "research:we_cant_kill_him")
         ]),
-        reward_id: "blessing:boss_worg_rider_doom",
+        reward_id: "blessing:boss_worg_riders_doom",
     )),
 )

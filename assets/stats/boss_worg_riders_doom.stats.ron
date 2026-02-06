@@ -1,0 +1,21 @@
+(
+    id: "stat:boss_worg_riders_doom",
+    bonuses: {
+        "damage:enemy:boss_worg_rider": [
+            (
+                value: 10.0,
+                mode: Additive,
+            ),
+        ],
+    },
+    unlock: Some((
+        id: "stat:boss_worg_riders_doom_unlock",
+        display_name: Some("Stat Bonus: stat:boss_worg_riders_doom"),
+        condition: Value(
+            topic: "blessing:boss_worg_riders_doom",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "stat:boss_worg_riders_doom",
+    )),
+)
