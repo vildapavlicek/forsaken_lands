@@ -331,11 +331,6 @@ impl TtkTabState {
                         // Prepare BonusStats
                         let mut stats = bonus_stats::BonusStats::default();
 
-                        // Apply weapon bonuses first (intrinsic stats)
-                        for (key, bonus) in &weapon.bonuses {
-                            stats.add(key, bonus.clone());
-                        }
-
                         // Apply simulation bonuses on top (simulating player stats/buffs)
                         for (key, bonus) in &self.simulation_bonuses {
                             stats.add(key, bonus.clone());
@@ -439,7 +434,6 @@ impl TtkTabState {
                                     .unwrap_or_default()
                                     .to_string_lossy()
                                     .to_string(),
-                                bonuses: weapon_def.bonuses.into_iter().collect(),
                                 tags: weapon_def.tags,
                             });
                         }

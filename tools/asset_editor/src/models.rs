@@ -137,7 +137,9 @@ impl LeafCondition {
     }
 
     pub fn all_types() -> Vec<&'static str> {
-        vec!["Research", "Kills", "Resource", "Divinity", "Craft", "Custom"]
+        vec![
+            "Research", "Kills", "Resource", "Divinity", "Craft", "Custom",
+        ]
     }
 
     pub fn from_type_name(name: &str) -> Self {
@@ -462,7 +464,7 @@ impl From<&ConditionNode> for LeafCondition {
                     }
                 } else {
                     // Fallback or generic completion
-                    // We stick with Unlock for generic completed events for now, 
+                    // We stick with Unlock for generic completed events for now,
                     // unless they have a clear custom pattern we want to force into Custom.
                     // But Custom uses Value(), so Completed() usually maps to Unlock or Craft.
                     // If it's unknown, let's keep it as Research for legacy reasons or change it if requested.
@@ -626,10 +628,7 @@ impl ResearchFormData {
         errors
     }
 
-    pub fn from_assets(
-        research: &ResearchDefinition,
-        filename: String,
-    ) -> Self {
+    pub fn from_assets(research: &ResearchDefinition, filename: String) -> Self {
         let costs = research
             .cost
             .iter()
@@ -641,9 +640,9 @@ impl ResearchFormData {
 
         // Use the inline unlock if present, otherwise default to True
         let unlock_condition = if let Some(unlock) = &research.unlock {
-             UnlockCondition::from(&unlock.condition)
+            UnlockCondition::from(&unlock.condition)
         } else {
-             UnlockCondition::True
+            UnlockCondition::True
         };
 
         Self {
@@ -668,7 +667,7 @@ impl ResearchFormData {
         let unlock = if let UnlockCondition::True = self.unlock_condition {
             None
         } else {
-             Some(UnlockDefinition {
+            Some(UnlockDefinition {
                 id: self.unlock_id(), // We still use this ID for the unlock definition itself
                 display_name: Some(format!("{} Research", self.name)),
                 reward_id: self.reward_id(),
@@ -688,7 +687,7 @@ impl ResearchFormData {
     }
 }
 
-// RecipeUnlockFormData is effectively deprecated for editing recipes, but we keep the struct definition 
+// RecipeUnlockFormData is effectively deprecated for editing recipes, but we keep the struct definition
 // if needed elsewhere, although we are moving towards inline `RecipeFormData`.
 
 /// The form data for a recipe.
@@ -700,7 +699,7 @@ pub struct RecipeFormData {
     pub craft_time: f32,
     pub costs: Vec<ResourceCost>,
     pub outcomes: Vec<CraftingOutcome>,
-    
+
     /// Optional inline unlock condition
     pub unlock_condition: UnlockCondition,
 }
@@ -735,7 +734,7 @@ impl RecipeFormData {
 
     /// Derives the reward ID for internal consistency
     pub fn reward_id(&self) -> String {
-         format!("recipe:{}", self.id)
+        format!("recipe:{}", self.id)
     }
 
     pub fn validate(&self) -> Vec<String> {
@@ -766,7 +765,7 @@ impl RecipeFormData {
                 }
             }
         }
-        
+
         errors.extend(self.unlock_condition.validate());
 
         errors
@@ -781,7 +780,7 @@ impl RecipeFormData {
         let unlock = if let UnlockCondition::True = self.unlock_condition {
             None
         } else {
-             Some(UnlockDefinition {
+            Some(UnlockDefinition {
                 id: self.unlock_id(),
                 display_name: Some(self.display_name.clone()),
                 reward_id: self.reward_id(),
@@ -809,11 +808,11 @@ impl RecipeFormData {
                 amount: *v,
             })
             .collect();
-            
+
         let unlock_condition = if let Some(unlock) = &def.unlock {
-             UnlockCondition::from(&unlock.condition)
+            UnlockCondition::from(&unlock.condition)
         } else {
-             UnlockCondition::True
+            UnlockCondition::True
         };
 
         Self {
@@ -923,8 +922,8 @@ impl AutopsyFormData {
             cost,
             time_required: self.research_time,
             max_repeats: 1,
-            unlock: None, // Autopsy research itself doesn't have an unlock condition embedded usually? 
-                          // Wait, the plan was to embedded it. 
+            unlock: None, // Autopsy research itself doesn't have an unlock condition embedded usually?
+                          // Wait, the plan was to embedded it.
                           // But Autopsy logic in file_generator uses explicit separate files for unlocks?
                           // Lines 146 in file_generator save separate files.
                           // So Autopsy is largely unchanged regarding inline unlocks for now?
@@ -1079,7 +1078,6 @@ impl WeaponDefinitionExt for WeaponDefinition {
             attack_range: 150.0,
             attack_speed_ms: 750,
             tags: Vec::new(),
-            bonuses: bevy::platform::collections::HashMap::new(),
         }
     }
 
@@ -1133,7 +1131,6 @@ pub struct CachedWeapon {
     pub damage: f32,
     pub attack_speed_ms: u32,
     pub filename: String,
-    pub bonuses: std::collections::HashMap<String, bonus_stats::StatBonus>,
     pub tags: Vec<String>,
 }
 
@@ -1200,8 +1197,6 @@ impl CraftingOutcomeExt for CraftingOutcome {
         }
     }
 }
-
-
 
 // ==================== Bonus Stats Form Data ====================
 
@@ -1352,8 +1347,6 @@ impl AssetLoader for ResearchLoader {
         extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
     }
 }
-
-
 
 pub struct DivinityLoader;
 impl AssetLoader for DivinityLoader {
