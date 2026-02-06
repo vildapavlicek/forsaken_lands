@@ -1,7 +1,7 @@
 (
     id: "research:autopsy_worg_alpha",
     bonuses: {
-        "damage:race:monsters": [
+        "damage:race:beasts": [
             (
                 value: 0.1,
                 mode: Percent,
