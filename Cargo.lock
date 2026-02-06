@@ -1851,6 +1851,7 @@ dependencies = [
  "buildings_assets",
  "buildings_components",
  "crafting_resources",
+ "recipes_assets",
  "shared_components",
  "unlocks_events",
  "wallet",
@@ -5932,6 +5933,7 @@ name = "weapon_factory"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "recipes_assets",
  "unlocks_events",
  "village_components",
  "weapon_assets",

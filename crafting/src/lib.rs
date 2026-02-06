@@ -20,6 +20,7 @@ pub struct CraftingInProgress {
     pub recipe_id: String,
     pub outcomes: Vec<CraftingOutcome>,
     pub timer: Timer,
+    pub category: recipes_assets::RecipeCategory,
 }
 
 pub struct CraftingPlugin;
@@ -30,7 +31,7 @@ impl Plugin for CraftingPlugin {
             .register_type::<CraftingInProgress>()
             .add_observer(systems::start_crafting)
             .add_observer(systems::on_recipe_unlock_achieved)
-            .add_observer(systems::on_crafting_completed)
+            .add_observer(systems::on_construction_completed)
             .add_systems(
                 Update,
                 systems::update_crafting_progress

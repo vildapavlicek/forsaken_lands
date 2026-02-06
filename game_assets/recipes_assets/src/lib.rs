@@ -9,6 +9,14 @@ use {
     unlocks_assets::UnlockDefinition,
 };
 
+/// Prefix for crafting completion topics (used in StatusCompleted).
+/// Usage: `crafting:{recipe_id}`
+pub const CRAFTING_TOPIC_PREFIX: &str = "crafting:";
+
+/// Prefix for construction completion topics (used in StatusCompleted/RewardId).
+/// Usage: `construction:{recipe_id}`
+pub const CONSTRUCTION_TOPIC_PREFIX: &str = "construction:";
+
 pub struct RecipesAssetsPlugin;
 
 impl Plugin for RecipesAssetsPlugin {
@@ -41,12 +49,21 @@ pub struct RecipeDefinition {
 }
 
 /// Category for organizing recipes into tabs.
-#[derive(Reflect, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Reflect, Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum RecipeCategory {
     #[default]
     Weapons,
     Idols,
     Construction,
+}
+
+impl RecipeCategory {
+    pub fn as_topic_prefix(&self) -> &str {
+        match self {
+            Self::Weapons | Self::Idols => CRAFTING_TOPIC_PREFIX,
+            Self::Construction => CONSTRUCTION_TOPIC_PREFIX,
+        }
+    }
 }
 
 /// Actions that occur upon crafting completion.

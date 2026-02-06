@@ -3,7 +3,7 @@ use {
     blessings::Blessings,
     buildings_components::{EntropyGenerator, TheMaw},
     shared_components::IncludeInSave,
-    unlocks_events::{CRAFTING_TOPIC_PREFIX, StatusCompleted, ValueChanged},
+    unlocks_events::{StatusCompleted, ValueChanged},
     wallet::Wallet,
 };
 
@@ -21,7 +21,7 @@ fn on_construction_completed(trigger: On<StatusCompleted>, mut commands: Command
     let event = trigger.event();
     // Check if the completed crafting was "the_maw"
     // Topic format: "craft:{recipe_id}"
-    if event.topic == format!("{}bone_idol", CRAFTING_TOPIC_PREFIX) {
+    if event.topic == format!("{}bone_idol", recipes_assets::CRAFTING_TOPIC_PREFIX) {
         commands.spawn((
             TheMaw,
             EntropyGenerator::default(),

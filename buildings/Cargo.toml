@@ -12,3 +12,4 @@ crafting_resources.workspace = true
 shared_components.workspace = true
 unlocks_events.workspace = true
 wallet.workspace = true
+recipes_assets.workspace = true

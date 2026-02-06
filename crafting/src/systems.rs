@@ -7,6 +7,14 @@ use {
     unlocks_events::StatusCompleted,
 };
 
+/// Prefix for crafting completion topics (used in StatusCompleted).
+/// Usage: `crafting:{recipe_id}`
+pub const CRAFTING_TOPIC_PREFIX: &str = "crafting:";
+
+/// Prefix for construction completion topics (used in StatusCompleted/RewardId).
+/// Usage: `construction:{recipe_id}`
+pub const CONSTRUCTION_TOPIC_PREFIX: &str = "construction:";
+
 /// Observer that handles StartCraftingRequest events.
 /// Spawns a CraftingInProgress entity with a timer.
 /// Note: Validation and resource deduction already handled by UI.
@@ -42,6 +50,7 @@ pub fn start_crafting(
         recipe_id: recipe_id.clone(),
         outcomes: def.outcomes.clone(),
         timer: Timer::from_seconds(def.craft_time, TimerMode::Once),
+        category: def.category,
     });
 
     info!("Crafting started for: {}", def.display_name);
@@ -88,14 +97,14 @@ pub fn update_crafting_progress(
         crafting.timer.tick(time.delta());
 
         if crafting.timer.is_finished() {
-            info!("Crafting complete for: {}", crafting.recipe_id);
+            info!(%crafting.recipe_id, ?crafting.category, "Crafting complete" );
 
             // Despawn the crafting entity
             commands.entity(entity).despawn();
             commands.trigger(StatusCompleted {
                 topic: format!(
                     "{}{}",
-                    unlocks_events::CRAFTING_TOPIC_PREFIX,
+                    crafting.category.as_topic_prefix(),
                     crafting.recipe_id
                 ),
             });
@@ -105,7 +114,7 @@ pub fn update_crafting_progress(
 
 /// Observer for StatusCompleted events.
 /// Handles construction completion (marking building as constructed, removing recipe from UI).
-pub fn on_crafting_completed(
+pub fn on_construction_completed(
     trigger: On<StatusCompleted>,
     mut commands: Commands,
     recipe_map: Res<RecipeMap>,
@@ -115,31 +124,26 @@ pub fn on_crafting_completed(
 ) {
     let event = trigger.event();
 
-    if let Some(recipe_id) = event
-        .topic
-        .strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX)
-    {
-        // Check if this is a construction recipe
-        let is_construction = recipe_map
-            .entities
-            .get(recipe_id)
-            .and_then(|&e| recipe_nodes.get(e).ok())
-            .and_then(|node| recipe_assets.get(&node.handle))
-            .map(|def| matches!(def.category, recipes_assets::RecipeCategory::Construction))
-            .unwrap_or(false);
+    let Some(recipe_id) = event.topic.strip_prefix(CRAFTING_TOPIC_PREFIX) else {
+        return;
+    };
 
-        if is_construction {
-            info!("Construction complete: {}", recipe_id);
-            constructed_buildings.ids.insert(recipe_id.to_string());
+    let Some(recipes_assets::RecipeCategory::Construction) = recipe_map
+        .entities
+        .get(recipe_id)
+        .and_then(|&e| recipe_nodes.get(e).ok())
+        .and_then(|node| recipe_assets.get(&node.handle))
+        .map(|d| d.category)
+    else {
+        return;
+    };
 
-            // Despawn the recipe entity to hide it from UI
-            if let Some(&recipe_entity) = recipe_map.entities.get(recipe_id) {
-                commands.entity(recipe_entity).despawn();
-                // We can't remove from recipe_map here as we don't have mutable access
-                // But since we check recipe_nodes.get(e) in UI and systems,
-                // despawning the entity effectively removes it.
-            }
-        }
+    info!(%recipe_id, "Construction complete");
+    constructed_buildings.ids.insert(recipe_id.to_string());
+
+    // Despawn the recipe entity to hide it from UI
+    if let Some(&recipe_entity) = recipe_map.entities.get(recipe_id) {
+        commands.entity(recipe_entity).despawn();
     }
 }
 

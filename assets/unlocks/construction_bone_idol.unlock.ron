@@ -1,0 +1,5 @@
+(
+    id: "construction_bone_idol_unlock",
+    condition: Completed(topic: "construction:bone_idol"),
+    reward_id: "construction:bone_idol",
+)

@@ -73,7 +73,7 @@ fn on_crafting_completed(
 
     if let Some(recipe_id) = event
         .topic
-        .strip_prefix(unlocks_events::CRAFTING_TOPIC_PREFIX)
+        .strip_prefix(recipes_assets::CRAFTING_TOPIC_PREFIX)
     {
         // Ensure this recipe ID corresponds to a registered weapon
         let Some(handle) = weapon_map.handles.get(recipe_id) else {
