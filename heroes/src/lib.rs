@@ -154,7 +154,6 @@ fn hero_melee_attack_system(
     >,
     villages: Query<&Transform, With<Village>>,
     enemies: Query<(Entity, &Transform, &MonsterTags), With<Enemy>>,
-    bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     let Ok(village_transform) = villages.single() else {
         if villages.is_empty() {

@@ -138,6 +138,10 @@ impl BonusStats {
         let (category, subkey) = key.split_once(':').unwrap_or((key, ""));
         self.bonuses.get(category)?.get(subkey)
     }
+
+    pub fn get_with_prefix(&self, category: &str, key: &str) -> Option<&BonusStat> {
+        self.bonuses.get(category)?.get(key)
+    }
 }
 
 /// Calculates the final damage considering base damage, source tags, target tags, and active bonuses.

@@ -271,15 +271,13 @@ fn spawn_enemy_card(
                     }
 
                     // Bonus Stats
-                    let mut total = BonusStat::default();
-                    for tag in &details.tags {
-                        let key = format!("damage:{}", tag);
-                        if let Some(stat) = bonus_stats.get(&key) {
-                            total = total + *stat;
-                        }
-                    }
+                    let total = details.tags.iter().fold(BonusStat::default(), |acc, tag| {
+                        acc + bonus_stats
+                            .get_with_prefix("damage", tag)
+                            .cloned()
+                            .unwrap_or_default()
+                    });
 
-                    // Only display if there's any bonus
                     let mult_val = total.multiplicative.max(1.0);
                     let text = format!(
                         "Bonus: +{}/{:.0}%/*{}",
