@@ -63,10 +63,11 @@ fn purchase_blessing(
                 event.blessing_id, new_level
             );
 
-            // Trigger status completed event - the unlock system will handle
-            // triggering Reward via UnlockAchieved if there's an associated unlock.
-            commands.trigger(unlocks_events::StatusCompleted {
+            // Trigger ValueChanged event so Value conditions (like in stats)
+            // can react to the new blessing level.
+            commands.trigger(unlocks_events::ValueChanged {
                 topic: format!("blessing:{}", event.blessing_id),
+                value: new_level as f32,
             });
         }
     }
