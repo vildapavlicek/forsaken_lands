@@ -13,3 +13,4 @@ village_components.workspace = true
 wallet.workspace = true
 widgets.workspace = true
 shared_components.workspace = true
+unlocks_assets.workspace = true

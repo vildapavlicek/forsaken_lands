@@ -4474,6 +4474,7 @@ dependencies = [
  "portal_components",
  "shared_components",
  "states",
+ "unlocks_assets",
  "village_components",
  "wallet",
  "widgets",

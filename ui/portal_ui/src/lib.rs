@@ -3,6 +3,7 @@ use {
     divinity_components::{CurrentDivinity, Divinity},
     portal_components::Portal,
     states::GameState,
+    unlocks_assets::{ConditionNode, UnlockDefinition},
     village_components::Village,
     widgets::{PanelWrapperRef, UiTheme, spawn_menu_panel, spawn_panel_header_with_close},
 };
@@ -37,6 +38,9 @@ struct CurrentDivinityText;
 
 #[derive(Component)]
 struct MaxDivinityText;
+
+#[derive(Component)]
+struct UnlockConditionText;
 
 #[derive(Component)]
 struct DecreaseTierButton {
@@ -199,6 +203,31 @@ fn spawn_portal_ui(commands: &mut Commands, portal_entity: Entity) {
                     },
                 ));
             });
+
+        // Unlock Condition Text
+        parent
+            .spawn(Node {
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                width: Val::Percent(100.0),
+                padding: UiRect::vertical(Val::Px(10.0)),
+                ..default()
+            })
+            .with_children(|col| {
+                col.spawn((
+                    Text::new(""),
+                    TextFont {
+                        font_size: 14.0,
+                        ..default()
+                    },
+                    TextColor(UiTheme::TEXT_INFO),
+                    UnlockConditionText,
+                    Node {
+                        max_width: Val::Px(300.0),
+                        ..default()
+                    },
+                ));
+            });
     });
 }
 
@@ -231,6 +260,15 @@ fn update_portal_ui(
     ui_query: Query<&PortalUiRoot>,
     mut current_text_query: Query<&mut Text, (With<CurrentDivinityText>, Without<MaxDivinityText>)>,
     mut max_text_query: Query<&mut Text, (With<MaxDivinityText>, Without<CurrentDivinityText>)>,
+    mut condition_text_query: Query<
+        &mut Text,
+        (
+            With<UnlockConditionText>,
+            Without<CurrentDivinityText>,
+            Without<MaxDivinityText>,
+        ),
+    >,
+    unlock_definitions: Res<Assets<UnlockDefinition>>,
 ) {
     let Some(max_divinity) = village_query.iter().next() else {
         return;
@@ -249,6 +287,66 @@ fn update_portal_ui(
         // Update max divinity text
         for mut text in max_text_query.iter_mut() {
             text.0 = format!("Tier {} - Level {}", max_divinity.tier, max_divinity.level);
+        }
+
+        // Update unlock condition text
+        // Determine what the NEXT unlock is
+        let (target_tier, target_level) = if max_divinity.level < divinity_components::MAX_LEVEL {
+            (max_divinity.tier, max_divinity.level + 1)
+        } else {
+            (max_divinity.tier + 1, 1)
+        };
+        let target_reward_id = format!("divinity:{}-{}", target_tier, target_level);
+
+        let mut condition_text: String;
+
+        // Find the unlock definition for this reward
+        if let Some((_, def)) = unlock_definitions
+            .iter()
+            .find(|(_, d)| d.reward_id == target_reward_id)
+        {
+            condition_text = format!("To unlock Tier {} Level {}:\n", target_tier, target_level);
+            match &def.condition {
+                ConditionNode::Completed { topic } => {
+                    // Try to fix up the topic for display if it's a known format
+                    if let Some(research_name) = topic.strip_prefix("research:") {
+                        // Basic capitalization or formatting could go here
+                        condition_text.push_str(&format!("Research: {}", research_name));
+                    } else {
+                        condition_text.push_str(&format!("Complete: {}", topic));
+                    }
+                }
+                ConditionNode::Value { topic, target, .. } => {
+                    condition_text.push_str(&format!("{} >= {}", topic, target));
+                }
+                ConditionNode::And(nodes) => {
+                    condition_text.push_str("Complete ALL:\n");
+                    for node in nodes {
+                        match node {
+                            ConditionNode::Completed { topic } => {
+                                if let Some(research_name) = topic.strip_prefix("research:") {
+                                    condition_text
+                                        .push_str(&format!("- Research: {}\n", research_name));
+                                } else {
+                                    condition_text.push_str(&format!("- Complete: {}\n", topic));
+                                }
+                            }
+                            ConditionNode::Value { topic, target, .. } => {
+                                condition_text.push_str(&format!("- {} >= {}\n", topic, target));
+                            }
+                            _ => condition_text.push_str("- ...\n"),
+                        }
+                    }
+                }
+                _ => condition_text.push_str("Unknown condition"),
+            }
+        } else {
+            // Check if we are at absolute max (no more definitions found)
+            condition_text = "Max Level Reached".to_string();
+        }
+
+        for mut text in condition_text_query.iter_mut() {
+            text.0 = condition_text.clone();
         }
     }
 }
