@@ -117,3 +117,7 @@ condition: Value(topic: "kills:goblin", target: 10.0, op: Ge)
 ```
 
 This applies to any Rust enum with named fields:
+
+## Timer API Changes
+- `timer.finished()` renamed to `timer.is_finished()`.
+- `timer.just_finished()` renamed to `timer.is_just_finished()` (verification needed).
