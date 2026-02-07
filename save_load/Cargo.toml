@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bevy.workspace = true
+blessings.workspace = true
 chrono = "0.4"
 crafting.workspace = true
 crafting_resources.workspace = true

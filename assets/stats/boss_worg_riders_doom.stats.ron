@@ -17,5 +17,6 @@
             target: 1.0,
         ),
         reward_id: "stat:boss_worg_riders_doom",
+        repeat_mode: Once,
     )),
 )

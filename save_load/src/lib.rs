@@ -14,6 +14,7 @@ use {
     chrono::Local,
     states::{GameState, LoadingPhase},
     std::{fs, io::Write, path::Path},
+    unlocks_resources::UnlockProgress, // Ensure UnlockProgress is imported
     wallet::Wallet,
 };
 
@@ -57,6 +58,7 @@ impl Plugin for SaveLoadPlugin {
                     reconstruction::reconstruct_weapons_from_inventory,
                     reconstruction::relink_in_progress_research,
                     reconstruction::hydrate_research_unlocks,
+                    reconstruction::hydrate_blessed_unlocks,
                 )
                     .chain(),
             )
@@ -256,6 +258,7 @@ fn build_save_scene(world: &World, saveable_entities: Vec<Entity>) -> DynamicSce
         .allow_resource::<research::ResearchState>()
         .allow_resource::<village_resources::DivinityUnlockState>()
         .allow_resource::<crafting_resources::ConstructedBuildings>()
+        .allow_resource::<UnlockProgress>()
         // === Entity extraction ===
         // Only include entities marked with IncludeInSave
         .extract_entities(saveable_entities.into_iter())

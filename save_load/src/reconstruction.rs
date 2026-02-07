@@ -7,6 +7,7 @@
 
 use {
     bevy::prelude::*,
+    blessings::Blessings,
     hero_components::{EquippedWeaponId, Hero},
     research::{ResearchCompletionCount, ResearchMap, ResearchNode},
     states::LoadingPhase,
@@ -177,6 +178,29 @@ pub fn hydrate_research_unlocks(
         "Hydration complete. Replayed {} completion events.",
         total_triggers
     );
+}
+
+/// Hydrates the unlock system by replaying blessing purchase events.
+///
+/// Iterates through all purchased blessings and triggers `ValueChanged` events
+/// to restore the topic values (e.g., "blessing:my_blessing_id" = level).
+/// This allows dependent unlocks (like stat bonuses) to re-trigger.
+pub fn hydrate_blessed_unlocks(
+    mut commands: Commands,
+    blessings_query: Query<&Blessings>,
+) {
+    info!("Hydrating unlock system from blessings...");
+
+    for blessings in blessings_query.iter() {
+        for (blessing_id, level) in &blessings.unlocked {
+            // Restore topic value
+            commands.trigger(unlocks_events::ValueChanged {
+                topic: format!("blessing:{}", blessing_id),
+                value: *level as f32,
+            });
+            debug!("Restored blessing topic: blessing:{} = {}", blessing_id, level);
+        }
+    }
 }
 
 /// Finishes the reconstruction phase and transitions to Ready.

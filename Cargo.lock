@@ -4945,6 +4945,7 @@ name = "save_load"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "blessings",
  "chrono",
  "crafting",
  "crafting_resources",
