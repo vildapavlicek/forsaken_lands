@@ -64,6 +64,19 @@ pub struct MeleeArc {
     pub width: f32,
 }
 
+/// The base damage value of a weapon.
+///
+/// This component represents the raw power of a weapon before any modifiers (stats, critical hits)
+/// are applied. It serves as the starting point for damage calculations in combat.
+///
+/// # Usage
+/// - **Melee Combat**: The `hero_melee_attack_system` queries this component to determine the
+///   base damage of a melee strike.
+/// - **Ranged Combat**: The `hero_projectile_spawn_system` reads this component to initialize
+///   the `ProjectileDamage` component on spawned projectiles.
+///
+/// # Units
+/// - The value is in raw hit points.
 #[derive(Component, Default)]
 pub struct Damage(pub f32);
 
