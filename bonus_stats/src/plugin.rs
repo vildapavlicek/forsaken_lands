@@ -97,6 +97,7 @@ pub fn compile_bonus_stats_unlocks(
     stats_assets: Res<Assets<StatBonusDefinition>>,
     mut topic_map: ResMut<unlocks::TopicMap>,
     unlock_state: Res<unlocks_resources::UnlockState>,
+    unlock_progress: Res<unlocks_resources::UnlockProgress>,
     compiled: Query<&unlocks::CompiledUnlock>,
 ) {
     let compiled_ids: std::collections::HashSet<_> =
@@ -111,6 +112,7 @@ pub fn compile_bonus_stats_unlocks(
                 unlock,
                 &compiled_ids,
                 &unlock_state,
+                &unlock_progress,
             );
         }
     }

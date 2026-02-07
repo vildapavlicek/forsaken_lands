@@ -56,14 +56,14 @@ impl Plugin for SaveLoadPlugin {
                 (
                     reconstruction::reconstruct_weapons_from_inventory,
                     reconstruction::relink_in_progress_research,
-                    reconstruction::reconstruct_resource_rates,
+                    reconstruction::hydrate_research_unlocks,
                 )
                     .chain(),
             )
             .add_systems(
                 OnEnter(LoadingPhase::PostLoadReconstruction),
                 reconstruction::finish_reconstruction
-                    .after(reconstruction::reconstruct_resource_rates),
+                    .after(reconstruction::hydrate_research_unlocks),
             )
             .add_systems(OnExit(GameState::Running), clean_up_save_load);
     }

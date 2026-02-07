@@ -416,12 +416,14 @@ fn spawn_all_entities(
 }
 
 // --- Phase: CompileUnlocks ---
+use unlocks_resources::UnlockProgress;
 
 fn compile_unlocks(
     mut commands: Commands,
     unlock_assets: Res<Assets<UnlockDefinition>>,
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
+    unlock_progress: Res<UnlockProgress>,
     compiled: Query<&CompiledUnlock>,
     mut status: ResMut<LoadingStatus>,
 ) {
@@ -439,6 +441,7 @@ fn compile_unlocks(
             definition,
             &compiled_ids,
             &unlock_state,
+            &unlock_progress,
         );
     }
 }
@@ -448,6 +451,7 @@ fn compile_research_unlocks(
     research_assets: Res<Assets<ResearchDefinition>>,
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
+    unlock_progress: Res<UnlockProgress>,
     compiled: Query<&CompiledUnlock>,
 ) {
     let compiled_ids: std::collections::HashSet<_> =
@@ -461,6 +465,7 @@ fn compile_research_unlocks(
                 unlock,
                 &compiled_ids,
                 &unlock_state,
+                &unlock_progress,
             );
         }
     }
@@ -471,6 +476,7 @@ fn compile_recipe_unlocks(
     recipe_assets: Res<Assets<RecipeDefinition>>,
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
+    unlock_progress: Res<UnlockProgress>,
     compiled: Query<&CompiledUnlock>,
 ) {
     let compiled_ids: std::collections::HashSet<_> =
@@ -484,6 +490,7 @@ fn compile_recipe_unlocks(
                 unlock,
                 &compiled_ids,
                 &unlock_state,
+                &unlock_progress,
             );
         }
     }
@@ -494,6 +501,7 @@ fn compile_blessing_unlocks(
     blessing_assets: Res<Assets<BlessingDefinition>>,
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
+    unlock_progress: Res<UnlockProgress>,
     compiled: Query<&CompiledUnlock>,
 ) {
     let compiled_ids: std::collections::HashSet<_> =
@@ -507,6 +515,7 @@ fn compile_blessing_unlocks(
                 unlock,
                 &compiled_ids,
                 &unlock_state,
+                &unlock_progress,
             );
         }
     }

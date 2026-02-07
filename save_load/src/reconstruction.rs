@@ -145,37 +145,41 @@ pub fn relink_in_progress_research(
     info!("Research relinking complete");
 }
 
-/// Reconstructs ResourceRates from completed research.
+/// Hydrates the unlock system by replaying research completion events.
 ///
-/// Note: Currently a placeholder since ResearchDefinition doesn't store effects.
-/// Effects are applied via observers when research completes. For a full implementation,
-/// we would need to either:
-/// 1. Store effects in ResearchDefinition
-/// 2. Replay the research completion events
-/// 3. Store ResourceRates in the save file directly
-pub fn reconstruct_resource_rates(
-    mut rates: ResMut<ResourceRates>,
+/// This iterates through all completed research and triggers `StatusCompleted` events
+/// for each completion count. This ensures that:
+/// 1. Repeatable unlocks (e.g., stacking stats) are re-applied correct number of times.
+/// 2. One-time unlocks are marked as completed in the new session.
+pub fn hydrate_research_unlocks(
+    mut commands: Commands,
     research_query: Query<(&ResearchNode, &ResearchCompletionCount)>,
 ) {
-    info!("Reconstructing resource rates from completed research");
+    info!("Hydrating unlock system from research history...");
 
-    // Reset rates to default
-    rates.rates.clear();
+    let mut total_triggers = 0;
 
-    // Log completed research for debugging
     for (node, count) in research_query.iter() {
         if count.0 > 0 {
+            let topic = format!("research:{}", node.id);
             debug!(
-                "Research '{}' completed {} times - effects would be applied here",
-                node.id, count.0
+                "Replaying '{}' completion {} times",
+                topic, count.0
             );
+
+            // Replay the completion event N times
+            for _ in 0..count.0 {
+                commands.trigger(unlocks_events::StatusCompleted {
+                    topic: topic.clone(),
+                });
+                total_triggers += 1;
+            }
         }
     }
 
-    // TODO: Implement effect replay when ResearchDefinition includes effects,
-    // or consider saving ResourceRates directly in the save file.
     info!(
-        "Resource rate reconstruction complete (placeholder - effects not stored in definitions)"
+        "Hydration complete. Replayed {} completion events.",
+        total_triggers
     );
 }
 
