@@ -201,17 +201,20 @@ Order systems by dependencies:
 ))
 ```
 
-## 8. Not Filtering Queries Early
+## 10. Despawn Recursive vs Despawn
 
 **❌ Problem:**
 ```rust
-// Filter in loop (inefficient)
-Query<(&A, Option<&B>, Option<&C>)>
-// Then check in loop
+// Inside an observer or system iterating hierarchy
+commands.entity(parent).despawn_recursive();
 ```
+**Symptoms:**
+- Panics or crashes during frame execution.
+- Issues with event propagation if children are despawned while processing events.
 
 **✅ Solution:**
+Use `despawn()` if you are unsure about safe recursion state, or ensure no other systems are operating on the children.
 ```rust
-// Filter in query (efficient)
-Query<&A, (With<B>, Without<C>)>
+commands.entity(parent).despawn();
+// Let Bevy's hierarchy cleanup handle children if using ChildOf
 ```
