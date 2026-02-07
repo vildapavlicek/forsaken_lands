@@ -124,7 +124,10 @@ pub fn handle_unlock_completion(
     info!(unlock_id = %event.unlock_id, reward_id = %event.reward_id, "Processing unlock");
 
     // Persist progress
-    *unlock_progress.counts.entry(event.unlock_id.clone()).or_insert(0) += 1;
+    *unlock_progress
+        .counts
+        .entry(event.unlock_id.clone())
+        .or_insert(0) += 1;
 
     // Mark as completed in session state (improves lookup perf)
     if !unlock_state.completed.contains(&event.unlock_id) {
@@ -250,7 +253,9 @@ pub fn handle_unlock_lifecycle(
     let unlock_id = &event.unlock_id;
 
     // Find the root entity for this unlock
-    let Some((root_entity, _root, list_repeatable)) = roots.iter_mut().find(|(_, r, _)| r.id == *unlock_id) else {
+    let Some((root_entity, _root, list_repeatable)) =
+        roots.iter_mut().find(|(_, r, _)| r.id == *unlock_id)
+    else {
         return;
     };
 
@@ -259,7 +264,7 @@ pub fn handle_unlock_lifecycle(
     // Check if repeatable
     if let Some(mut repeatable) = list_repeatable {
         repeatable.trigger_count += 1;
-        
+
         let is_exhausted = repeatable
             .max_triggers
             .map(|max| repeatable.trigger_count >= max)
@@ -268,15 +273,20 @@ pub fn handle_unlock_lifecycle(
         if !is_exhausted {
             should_despawn = false;
             debug!(unlock_id = %unlock_id, count = repeatable.trigger_count, "Resetting repeatable unlock");
-            
+
             // Reset the graph sensors and gates
-            reset_condition_tree(root_entity, &children, &mut condition_sensors, &mut logic_gates);
+            reset_condition_tree(
+                root_entity,
+                &children,
+                &mut condition_sensors,
+                &mut logic_gates,
+            );
         }
     }
 
     if should_despawn {
         debug!(unlock_id = %unlock_id, "Cleaning up finished unlock");
-        
+
         // Remove unlock topic
         let topic_key = format!("unlock:{}", unlock_id);
         if let Some(entity) = topic_map.topics.remove(&topic_key) {

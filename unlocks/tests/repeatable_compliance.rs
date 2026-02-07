@@ -1,25 +1,24 @@
-use {
-    bevy::prelude::*,
-    unlocks::*,
-};
+use {bevy::prelude::*, unlocks::*};
 
 #[test]
 fn tested_repeatable_modes() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
-       .add_plugins(UnlocksPlugin)
-       .add_plugins(AssetPlugin::default())
-       .init_asset::<UnlockDefinition>();
+        .add_plugins(UnlocksPlugin)
+        .add_plugins(AssetPlugin::default())
+        .init_asset::<UnlockDefinition>();
 
     // 1. Setup Assets
     let mut handles = Vec::new();
     let mut assets = app.world_mut().resource_mut::<Assets<UnlockDefinition>>();
-    
+
     // Finite(2) Unlock
     handles.push(assets.add(UnlockDefinition {
         id: "finite_test".to_string(),
         display_name: None,
-        condition: ConditionNode::Completed { topic: "test:finite".to_string() },
+        condition: ConditionNode::Completed {
+            topic: "test:finite".to_string(),
+        },
         reward_id: "reward:finite".to_string(),
         repeat_mode: RepeatMode::Finite(2),
     }));
@@ -28,7 +27,9 @@ fn tested_repeatable_modes() {
     handles.push(assets.add(UnlockDefinition {
         id: "infinite_test".to_string(),
         display_name: None,
-        condition: ConditionNode::Completed { topic: "test:infinite".to_string() },
+        condition: ConditionNode::Completed {
+            topic: "test:infinite".to_string(),
+        },
         reward_id: "reward:infinite".to_string(),
         repeat_mode: RepeatMode::Infinite,
     }));
@@ -37,7 +38,9 @@ fn tested_repeatable_modes() {
     handles.push(assets.add(UnlockDefinition {
         id: "once_test".to_string(),
         display_name: None,
-        condition: ConditionNode::Completed { topic: "test:once".to_string() },
+        condition: ConditionNode::Completed {
+            topic: "test:once".to_string(),
+        },
         reward_id: "reward:once".to_string(),
         repeat_mode: RepeatMode::Once,
     }));
@@ -51,9 +54,9 @@ fn tested_repeatable_modes() {
     app.update(); // Initialize plugins
 
     // Run compile system once to spawn graphs
-    app.update(); 
+    app.update();
     // We need to make sure `compile_pending_unlocks` runs. It is not added to Update schedule in Plugin?
-    // Let's check `UnlocksPlugin`. 
+    // Let's check `UnlocksPlugin`.
     // Ah, `compile_pending_unlocks` is NOT added to `UnlocksPlugin`. It is called by game code.
     // So we must manually run it or add it to schedule for test.
     app.add_systems(Update, compile_pending_unlocks);
@@ -65,7 +68,7 @@ fn tested_repeatable_modes() {
     assert_graph_exists(&mut app, "once_test", true);
 
     // --- TEST FINITE (2) ---
-    
+
     // Trigger 1
     trigger_completion(&mut app, "test:finite");
     app.update(); // propagate signal -> unlock achieved -> handle lifecycle
@@ -108,14 +111,16 @@ fn tested_repeatable_modes() {
     app.update();
     assert_graph_exists(&mut app, "once_test", false);
     assert_progress(&app, "once_test", 1);
-    
+
     // Check UnlockState for Once
     let state = app.world().resource::<UnlockState>();
     assert!(state.is_unlocked("once_test"));
 }
 
 fn trigger_completion(app: &mut App, topic: &str) {
-    app.world_mut().trigger(StatusCompleted { topic: topic.to_string() });
+    app.world_mut().trigger(StatusCompleted {
+        topic: topic.to_string(),
+    });
 }
 
 fn assert_graph_exists(app: &mut App, id: &str, exists: bool) {

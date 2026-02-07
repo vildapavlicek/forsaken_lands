@@ -41,8 +41,12 @@ mod systems;
 
 use {bevy::prelude::*, systems::*};
 pub use {
-    compiler::compile_unlock_definition, systems::clean_up_unlocks, systems::compile_pending_unlocks, unlocks_assets::*,
-    unlocks_components::*, unlocks_events::*, unlocks_resources::*,
+    compiler::compile_unlock_definition,
+    systems::{clean_up_unlocks, compile_pending_unlocks},
+    unlocks_assets::*,
+    unlocks_components::*,
+    unlocks_events::*,
+    unlocks_resources::*,
 };
 
 pub struct UnlocksPlugin;

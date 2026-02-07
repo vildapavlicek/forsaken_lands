@@ -68,10 +68,10 @@ pub fn compile_unlock_definition(
             RepeatMode::Infinite => None,
             RepeatMode::Once => None, // Unreachable
         };
-        
+
         // Initialize trigger count from progress
         let current_count = *unlock_progress.counts.get(&definition.id).unwrap_or(&0);
-        
+
         root_cmd.insert(RepeatableUnlock {
             max_triggers,
             trigger_count: current_count,

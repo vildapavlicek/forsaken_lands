@@ -162,10 +162,7 @@ pub fn hydrate_research_unlocks(
     for (node, count) in research_query.iter() {
         if count.0 > 0 {
             let topic = format!("research:{}", node.id);
-            debug!(
-                "Replaying '{}' completion {} times",
-                topic, count.0
-            );
+            debug!("Replaying '{}' completion {} times", topic, count.0);
 
             // Replay the completion event N times
             for _ in 0..count.0 {
