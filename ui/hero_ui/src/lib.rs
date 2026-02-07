@@ -22,6 +22,7 @@ impl Plugin for HeroUiPlugin {
                     handle_close_equipment_popup,
                     handle_equip_button,
                     handle_unequip_button,
+                    handle_hero_tab_interaction,
                 )
                     .run_if(in_state(HeroUiState::Open).and(in_state(GameState::Running))),
             );
@@ -91,8 +92,11 @@ pub struct UnequipWeaponButton {
 pub struct UnequippedWeaponsList;
 
 /// Marker for the hero content container that can be refreshed
-#[derive(Component)]
-pub struct HeroContentContainer;
+/// Marker for the hero content container that can be refreshed
+#[derive(Component, Default)]
+pub struct HeroContentContainer {
+    pub selected_index: usize,
+}
 
 // ============================================================================
 // Events
@@ -129,7 +133,10 @@ fn on_hero_ui_removed(
 fn on_hero_ui_refresh(
     _trigger: On<RefreshHeroUiEvent>,
     mut commands: Commands,
-    content_container_query: Query<(Entity, Option<&Children>), With<HeroContentContainer>>,
+    content_container_query: Query<
+        (Entity, Option<&Children>, &HeroContentContainer),
+        With<HeroContentContainer>,
+    >,
     hero_query: Query<Entity, With<Hero>>,
     children_query: Query<&Children>,
     weapon_query: Query<
@@ -148,7 +155,7 @@ fn on_hero_ui_refresh(
     bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     // Get the content container
-    let Ok((container_entity, container_children)) = content_container_query.single() else {
+    let Ok((container_entity, container_children, container)) = content_container_query.single() else {
         return;
     };
 
@@ -176,7 +183,7 @@ fn on_hero_ui_refresh(
 
     // Respawn updated hero content
     commands.entity(container_entity).with_children(|parent| {
-        spawn_hero_content(parent, heroes_data, 0);
+        spawn_hero_content(parent, heroes_data, container.selected_index);
     });
 }
 
@@ -871,6 +878,29 @@ fn handle_unequip_button(
                 commands.entity(entity).despawn();
             }
             commands.trigger(RefreshHeroUiEvent);
+        }
+    }
+}
+
+fn handle_hero_tab_interaction(
+    mut commands: Commands,
+    interaction_query: Query<
+        (&Interaction, &HeroTabButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut container_query: Query<&mut HeroContentContainer>,
+    hero_query: Query<Entity, With<Hero>>,
+) {
+    for (interaction, btn) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            if let Ok(mut container) = container_query.single_mut() {
+                // Find index of this hero
+                let heroes: Vec<Entity> = hero_query.iter().collect();
+                if let Some(index) = heroes.iter().position(|e| *e == btn.hero_entity) {
+                    container.selected_index = index;
+                    commands.trigger(RefreshHeroUiEvent);
+                }
+            }
         }
     }
 }

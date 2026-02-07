@@ -3,7 +3,7 @@
     display_name: Some("Reinforcements"),
     condition: And([
         Completed(
-            topic: "research:reinfocements_i",
+            topic: "research:reinforcement_i",
         ),
     ]),
     reward_id: "hero:second_hero",

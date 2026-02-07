@@ -13,6 +13,8 @@ pub fn hero_spawn_on_unlock(
 ) {
     let event = trigger.event();
 
+    debug!(%event.reward_id, "hero spawner reacting to event");
+
     let Some(hero_name) = event.reward_id.strip_prefix("hero:") else {
         return;
     };

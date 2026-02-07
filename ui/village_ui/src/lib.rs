@@ -338,7 +338,7 @@ impl Command for SpawnHeroesContentCommand {
                         width: Val::Percent(100.0),
                         ..default()
                     },
-                    HeroContentContainer,
+                    HeroContentContainer::default(),
                 ))
                 .with_children(|content| {
                     spawn_hero_content(content, heroes_data, 0);
