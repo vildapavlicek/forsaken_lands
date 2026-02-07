@@ -41,7 +41,7 @@ mod systems;
 
 use {bevy::prelude::*, systems::*};
 pub use {
-    compiler::compile_unlock_definition, systems::clean_up_unlocks, unlocks_assets::*,
+    compiler::compile_unlock_definition, systems::clean_up_unlocks, systems::compile_pending_unlocks, unlocks_assets::*,
     unlocks_components::*, unlocks_events::*, unlocks_resources::*,
 };
 
@@ -53,13 +53,15 @@ impl Plugin for UnlocksPlugin {
             // Resources
             .init_resource::<TopicMap>()
             .init_resource::<UnlockState>()
+            .init_resource::<UnlockProgress>()
             // Registration
             .register_type::<UnlockState>()
+            .register_type::<UnlockProgress>()
             .register_type::<TopicSubscribers>()
             // Observers for gate logic
             .add_observer(propagate_logic_signal)
             .add_observer(handle_unlock_completion)
-            .add_observer(cleanup_finished_unlock)
+            .add_observer(handle_unlock_lifecycle)
             // Observers for generic events
             .add_observer(on_value_changed)
             .add_observer(on_status_completed);

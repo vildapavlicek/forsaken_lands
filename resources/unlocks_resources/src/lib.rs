@@ -51,3 +51,14 @@ impl UnlockState {
         self.completed.contains(&id.to_string())
     }
 }
+
+/// Persistent state tracking how many times each unlock has been triggered.
+///
+/// **IMPORTANT**: This resource MUST be persisted in save files to support repeatable unlocks.
+/// It works in tandem with `UnlockState` (which is transient/session-based).
+#[derive(Resource, Reflect, Default, Debug)]
+#[reflect(Resource)]
+pub struct UnlockProgress {
+    /// Maps unlock_id -> number of times triggered across all sessions.
+    pub counts: HashMap<String, u32>,
+}

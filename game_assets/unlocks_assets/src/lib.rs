@@ -13,6 +13,18 @@ impl Plugin for UnlocksAssetsPlugin {
     }
 }
 
+/// Controls how often an unlock can trigger.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Deserialize, Serialize, Default)]
+pub enum RepeatMode {
+    /// Trigger once, then cleanup (current behavior).
+    #[default]
+    Once,
+    /// Trigger up to N times, then cleanup.
+    Finite(u32),
+    /// Trigger indefinitely whenever conditions are met.
+    Infinite,
+}
+
 /// The top-level asset definition for an unlockable item.
 #[derive(Asset, TypePath, Debug, Clone, Deserialize, Serialize)]
 pub struct UnlockDefinition {
@@ -24,6 +36,9 @@ pub struct UnlockDefinition {
     pub condition: ConditionNode,
     /// Abstract identifier for the reward (processed by downstream systems).
     pub reward_id: String,
+    /// How many times this unlock can be triggered.
+    #[serde(default)]
+    pub repeat_mode: RepeatMode,
 }
 
 /// A node in the logical condition tree.

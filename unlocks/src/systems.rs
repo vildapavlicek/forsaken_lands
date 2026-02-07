@@ -11,15 +11,13 @@ use {
 
 /// System that compiles newly loaded unlock definitions.
 /// This is called by game code (e.g., LoadingManager) after assets are loaded.
-#[expect(
-    unused,
-    reason = "this is kept around in case we would need runtime compilation in the future"
-)]
+/// This is called by game code (e.g., LoadingManager) after assets are loaded.
 pub fn compile_pending_unlocks(
     mut commands: Commands,
     unlock_assets: Res<Assets<UnlockDefinition>>,
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
+    unlock_progress: Res<UnlockProgress>,
     compiled: Query<&CompiledUnlock>,
 ) {
     // Collect already-compiled IDs for filtering
@@ -30,28 +28,17 @@ pub fn compile_pending_unlocks(
     let pending_definitions = unlock_assets
         .iter()
         .map(|(_, def)| def)
-        .filter(|def| !compiled_ids.contains(def.id.as_str()))
-        .filter(|def| !unlock_state.is_unlocked(&def.id));
+        .filter(|def| !compiled_ids.contains(def.id.as_str()));
 
     for definition in pending_definitions {
-        debug!(unlock_id = %definition.id, "Compiling unlock definition");
-
-        // Spawn root entity
-        let root = commands
-            .spawn((
-                UnlockRoot {
-                    id: definition.id.clone(),
-                    display_name: definition.display_name.clone(),
-                    reward_id: definition.reward_id.clone(),
-                },
-                CompiledUnlock {
-                    definition_id: definition.id.clone(),
-                },
-            ))
-            .id();
-
-        // Build the condition tree
-        build_condition_node(&mut commands, &mut topic_map, &definition.condition, root);
+        compile_unlock_definition(
+            &mut commands,
+            &mut topic_map,
+            definition,
+            &compiled_ids,
+            &unlock_state,
+            &unlock_progress,
+        );
     }
 }
 
@@ -121,17 +108,25 @@ pub fn propagate_logic_signal(
 // Unlock Completion Handler
 // ============================================================================
 
+// ============================================================================
+// Unlock Completion Handler
+// ============================================================================
+
 /// Observer for when an unlock is completed.
 pub fn handle_unlock_completion(
     trigger: On<UnlockAchieved>,
     mut unlock_state: ResMut<UnlockState>,
+    mut unlock_progress: ResMut<UnlockProgress>,
     topic_map: Res<TopicMap>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
     info!(unlock_id = %event.unlock_id, reward_id = %event.reward_id, "Processing unlock");
 
-    // Mark as completed
+    // Persist progress
+    *unlock_progress.counts.entry(event.unlock_id.clone()).or_insert(0) += 1;
+
+    // Mark as completed in session state (improves lookup perf)
     if !unlock_state.completed.contains(&event.unlock_id) {
         unlock_state.completed.push(event.unlock_id.clone());
     }
@@ -237,32 +232,86 @@ pub fn on_status_completed(
 }
 
 // ============================================================================
-// Cleanup
+// Cleanup / Lifecycle
 // ============================================================================
 
-/// Observer that cleans up the unlock logic graph when an unlock is completed.
-pub fn cleanup_finished_unlock(
+/// Observer that manages the graph lifecycle when an unlock is completed.
+/// Either despawns it (if done) or resets it (if repeatable).
+pub fn handle_unlock_lifecycle(
     trigger: On<UnlockAchieved>,
     mut topic_map: ResMut<TopicMap>,
-    roots: Query<(Entity, &UnlockRoot)>,
+    mut roots: Query<(Entity, &UnlockRoot, Option<&mut RepeatableUnlock>)>,
+    children: Query<&Children>,
+    mut condition_sensors: Query<&mut ConditionSensor>,
+    mut logic_gates: Query<&mut LogicGate>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
     let unlock_id = &event.unlock_id;
 
-    // Remove unlock topic
-    let topic_key = format!("unlock:{}", unlock_id);
-    if let Some(entity) = topic_map.topics.remove(&topic_key) {
-        commands.entity(entity).despawn();
+    // Find the root entity for this unlock
+    let Some((root_entity, _root, list_repeatable)) = roots.iter_mut().find(|(_, r, _)| r.id == *unlock_id) else {
+        return;
+    };
+
+    let mut should_despawn = true;
+
+    // Check if repeatable
+    if let Some(mut repeatable) = list_repeatable {
+        repeatable.trigger_count += 1;
+        
+        let is_exhausted = repeatable
+            .max_triggers
+            .map(|max| repeatable.trigger_count >= max)
+            .unwrap_or(false);
+
+        if !is_exhausted {
+            should_despawn = false;
+            debug!(unlock_id = %unlock_id, count = repeatable.trigger_count, "Resetting repeatable unlock");
+            
+            // Reset the graph sensors and gates
+            reset_condition_tree(root_entity, &children, &mut condition_sensors, &mut logic_gates);
+        }
     }
 
-    // Find and despawn the root entity
-    // This will recursively despawn all children (gates, sensors)
-    for (entity, root) in &roots {
-        if &root.id == unlock_id {
-            debug!(unlock_id = %unlock_id, "cleaned up finished unlock");
+    if should_despawn {
+        debug!(unlock_id = %unlock_id, "Cleaning up finished unlock");
+        
+        // Remove unlock topic
+        let topic_key = format!("unlock:{}", unlock_id);
+        if let Some(entity) = topic_map.topics.remove(&topic_key) {
             commands.entity(entity).despawn();
-            break;
+        }
+
+        commands.entity(root_entity).despawn();
+    }
+}
+
+/// Recursively resets all sensors and gates in the tree to their initial state.
+fn reset_condition_tree(
+    entity: Entity,
+    children_query: &Query<&Children>,
+    sensors: &mut Query<&mut ConditionSensor>,
+    gates: &mut Query<&mut LogicGate>,
+) {
+    // Reset sensor
+    if let Ok(mut sensor) = sensors.get_mut(entity) {
+        sensor.is_met = false;
+    }
+
+    // Reset gate
+    if let Ok(mut gate) = gates.get_mut(entity) {
+        gate.current_signals = 0;
+        gate.was_active = match gate.operator {
+            LogicOperator::Not => true, // NOT starts true when 0 signals
+            _ => false,
+        };
+    }
+
+    // Recurse
+    if let Ok(children) = children_query.get(entity) {
+        for &child in children {
+            reset_condition_tree(child, children_query, sensors, gates);
         }
     }
 }
@@ -271,6 +320,7 @@ pub fn clean_up_unlocks(
     mut commands: Commands,
     mut topic_map: ResMut<TopicMap>,
     mut unlock_state: ResMut<UnlockState>,
+    mut unlock_progress: ResMut<UnlockProgress>,
     unlock_roots: Query<Entity, With<UnlockRoot>>,
     topic_entities: Query<Entity, With<TopicEntity>>,
 ) {
@@ -289,4 +339,5 @@ pub fn clean_up_unlocks(
     // Clear resources
     topic_map.topics.clear();
     unlock_state.completed.clear();
+    unlock_progress.counts.clear();
 }

@@ -20,6 +20,18 @@ pub struct UnlockRoot {
     pub reward_id: String,
 }
 
+/// Component for unlocks that can be triggered multiple times.
+#[derive(Component, Reflect, Default, Debug)]
+#[reflect(Component)]
+pub struct RepeatableUnlock {
+    /// Maximum number of times this unlock can be triggered.
+    /// If None, it can be triggered infinitely.
+    pub max_triggers: Option<u32>,
+    /// Number of times this unlock has been triggered in the current session.
+    /// Note: Total progress across sessions is tracked in `UnlockProgress` resource.
+    pub trigger_count: u32,
+}
+
 /// Represents a boolean logic gate in the ECS world.
 /// Parent relationship is tracked via ChildOf component for event bubbling.
 #[derive(Component)]

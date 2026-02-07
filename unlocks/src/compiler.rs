@@ -2,7 +2,7 @@
 
 use {
     bevy::prelude::*,
-    unlocks_assets::{ConditionNode, UnlockDefinition},
+    unlocks_assets::{ConditionNode, RepeatMode, UnlockDefinition},
     unlocks_components::*,
     unlocks_events::*,
     unlocks_resources::*,
@@ -14,38 +14,71 @@ use {
 
 /// Compiles a single unlock definition into an ECS logic graph.
 /// Returns the root entity, or None if already compiled/unlocked.
+/// Compiles a single unlock definition into an ECS logic graph.
+/// Returns the root entity, or None if already compiled/unlocked.
 pub fn compile_unlock_definition(
     commands: &mut Commands,
     topic_map: &mut TopicMap,
     definition: &UnlockDefinition,
     compiled_ids: &std::collections::HashSet<&str>,
     unlock_state: &UnlockState,
+    unlock_progress: &UnlockProgress,
 ) -> Option<Entity> {
     // Skip if already compiled
     if compiled_ids.contains(definition.id.as_str()) {
         return None;
     }
 
-    // Skip if already unlocked
-    if unlock_state.is_unlocked(&definition.id) {
-        return None;
+    // Check completion status based on mode
+    match definition.repeat_mode {
+        RepeatMode::Once => {
+            if unlock_state.is_unlocked(&definition.id) {
+                return None;
+            }
+        }
+        RepeatMode::Finite(max) => {
+            let count = *unlock_progress.counts.get(&definition.id).unwrap_or(&0);
+            if count >= max {
+                return None;
+            }
+        }
+        RepeatMode::Infinite => {
+            // Always compile
+        }
     }
 
     debug!(unlock_id = %definition.id, "Compiling unlock definition");
 
     // Spawn root entity
-    let root = commands
-        .spawn((
-            UnlockRoot {
-                id: definition.id.clone(),
-                display_name: definition.display_name.clone(),
-                reward_id: definition.reward_id.clone(),
-            },
-            CompiledUnlock {
-                definition_id: definition.id.clone(),
-            },
-        ))
-        .id();
+    let mut root_cmd = commands.spawn((
+        UnlockRoot {
+            id: definition.id.clone(),
+            display_name: definition.display_name.clone(),
+            reward_id: definition.reward_id.clone(),
+        },
+        CompiledUnlock {
+            definition_id: definition.id.clone(),
+        },
+    ));
+
+    // Attach RepeatableUnlock component if needed
+    if !matches!(definition.repeat_mode, RepeatMode::Once) {
+        let max_triggers = match definition.repeat_mode {
+            RepeatMode::Finite(n) => Some(n),
+            RepeatMode::Infinite => None,
+            RepeatMode::Once => None, // Unreachable
+        };
+        
+        // Initialize trigger count from progress
+        let current_count = *unlock_progress.counts.get(&definition.id).unwrap_or(&0);
+        
+        root_cmd.insert(RepeatableUnlock {
+            max_triggers,
+            trigger_count: current_count,
+        });
+    }
+
+    let root = root_cmd.id();
 
     // Build the condition tree
     build_condition_node(commands, topic_map, &definition.condition, root);
