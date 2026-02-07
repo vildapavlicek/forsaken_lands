@@ -78,11 +78,12 @@ fn execute_save(world: &mut World) {
 
     // 1. Check Manual Save (F5)
     if let Some(keyboard) = world.get_resource::<ButtonInput<KeyCode>>()
-        && keyboard.just_pressed(KeyCode::F5) {
-            info!("Manual save triggered (F5)");
-            manual_triggered = true;
-            is_autosave = false;
-        }
+        && keyboard.just_pressed(KeyCode::F5)
+    {
+        info!("Manual save triggered (F5)");
+        manual_triggered = true;
+        is_autosave = false;
+    }
 
     // 2. Check Autosave Timer
     if !manual_triggered {

@@ -155,7 +155,8 @@ fn on_hero_ui_refresh(
     bonus_stats: Res<bonus_stats::BonusStats>,
 ) {
     // Get the content container
-    let Ok((container_entity, container_children, container)) = content_container_query.single() else {
+    let Ok((container_entity, container_children, container)) = content_container_query.single()
+    else {
         return;
     };
 
@@ -884,10 +885,7 @@ fn handle_unequip_button(
 
 fn handle_hero_tab_interaction(
     mut commands: Commands,
-    interaction_query: Query<
-        (&Interaction, &HeroTabButton),
-        (Changed<Interaction>, With<Button>),
-    >,
+    interaction_query: Query<(&Interaction, &HeroTabButton), (Changed<Interaction>, With<Button>)>,
     mut container_query: Query<&mut HeroContentContainer>,
     hero_query: Query<Entity, With<Hero>>,
 ) {

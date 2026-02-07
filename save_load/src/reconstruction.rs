@@ -185,10 +185,7 @@ pub fn hydrate_research_unlocks(
 /// Iterates through all purchased blessings and triggers `ValueChanged` events
 /// to restore the topic values (e.g., "blessing:my_blessing_id" = level).
 /// This allows dependent unlocks (like stat bonuses) to re-trigger.
-pub fn hydrate_blessed_unlocks(
-    mut commands: Commands,
-    blessings_query: Query<&Blessings>,
-) {
+pub fn hydrate_blessed_unlocks(mut commands: Commands, blessings_query: Query<&Blessings>) {
     info!("Hydrating unlock system from blessings...");
 
     for blessings in blessings_query.iter() {
@@ -198,7 +195,10 @@ pub fn hydrate_blessed_unlocks(
                 topic: format!("blessing:{}", blessing_id),
                 value: *level as f32,
             });
-            debug!("Restored blessing topic: blessing:{} = {}", blessing_id, level);
+            debug!(
+                "Restored blessing topic: blessing:{} = {}",
+                blessing_id, level
+            );
         }
     }
 }

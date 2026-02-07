@@ -267,9 +267,10 @@ fn update_blessings_ui(
     if !data.is_empty() && container_empty {
         // Force update if we have data but UI is empty
     } else if let Some(last) = last_data.as_ref()
-        && *last == data {
-            return;
-        }
+        && *last == data
+    {
+        return;
+    }
     *last_data = Some(data.clone());
 
     commands.queue(PopulateBlessingsCommand { data });

@@ -281,28 +281,28 @@ fn handle_tab_switch(
         if *interaction == Interaction::Pressed {
             // Update active tab
             if let Ok(mut ui_root) = ui_query.single_mut()
-                && ui_root.active_tab != tab_btn.category {
-                    ui_root.active_tab = tab_btn.category;
+                && ui_root.active_tab != tab_btn.category
+            {
+                ui_root.active_tab = tab_btn.category;
 
-                    // Update tab button styling
-                    for (btn, mut bg_color) in tab_buttons.iter_mut() {
-                        if btn.category == ui_root.active_tab {
-                            *bg_color = BackgroundColor(UiTheme::TAB_ACTIVE_BG);
-                        } else {
-                            *bg_color = BackgroundColor(UiTheme::TAB_INACTIVE_BG);
-                        }
+                // Update tab button styling
+                for (btn, mut bg_color) in tab_buttons.iter_mut() {
+                    if btn.category == ui_root.active_tab {
+                        *bg_color = BackgroundColor(UiTheme::TAB_ACTIVE_BG);
+                    } else {
+                        *bg_color = BackgroundColor(UiTheme::TAB_INACTIVE_BG);
                     }
-
-                    // Repopulate recipes
-                    let recipes =
-                        build_recipe_list(&recipe_query, &assets, &wallet, &tab_btn.category);
-                    commands.queue(PopulateRecipesDirectCommand {
-                        recipes_data: recipes
-                            .into_iter()
-                            .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
-                            .collect(),
-                    });
                 }
+
+                // Repopulate recipes
+                let recipes = build_recipe_list(&recipe_query, &assets, &wallet, &tab_btn.category);
+                commands.queue(PopulateRecipesDirectCommand {
+                    recipes_data: recipes
+                        .into_iter()
+                        .map(|r| (r.id, r.display_name, r.craft_time, r.cost_str, r.can_afford))
+                        .collect(),
+                });
+            }
         }
     }
 }

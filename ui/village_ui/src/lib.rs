@@ -208,7 +208,11 @@ impl Command for SpawnMenuContentCommand {
             );
             spawn_menu_button(
                 parent,
-                if maw_exists { "✨ Blessings" } else { "✨ Blessings (Locked)" },
+                if maw_exists {
+                    "✨ Blessings"
+                } else {
+                    "✨ Blessings (Locked)"
+                },
                 VillageMenuButton {
                     target: VillageContent::Blessings,
                 },
@@ -363,27 +367,26 @@ fn handle_menu_button(
 ) {
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed
-            && let Ok(mut ui_root) = ui_query.single_mut() {
-                ui_root.content = btn.target;
+            && let Ok(mut ui_root) = ui_query.single_mut()
+        {
+            ui_root.content = btn.target;
 
-                match btn.target {
-                    VillageContent::Crafting => next_village_state.set(VillageView::Crafting),
-                    VillageContent::Research => next_village_state.set(VillageView::Research),
-                    VillageContent::Encyclopedia => {
-                        next_village_state.set(VillageView::Encyclopedia)
-                    }
-                    VillageContent::Heroes => next_village_state.set(VillageView::Heroes),
-                    VillageContent::Blessings => next_village_state.set(VillageView::Blessings),
-                    VillageContent::Menu => next_village_state.set(VillageView::Menu),
-                }
-
-                match btn.target {
-                    VillageContent::Heroes => {
-                        commands.queue(SpawnHeroesContentCommand);
-                    }
-                    _ => {} // Other views handle their own content via state monitoring
-                }
+            match btn.target {
+                VillageContent::Crafting => next_village_state.set(VillageView::Crafting),
+                VillageContent::Research => next_village_state.set(VillageView::Research),
+                VillageContent::Encyclopedia => next_village_state.set(VillageView::Encyclopedia),
+                VillageContent::Heroes => next_village_state.set(VillageView::Heroes),
+                VillageContent::Blessings => next_village_state.set(VillageView::Blessings),
+                VillageContent::Menu => next_village_state.set(VillageView::Menu),
             }
+
+            match btn.target {
+                VillageContent::Heroes => {
+                    commands.queue(SpawnHeroesContentCommand);
+                }
+                _ => {} // Other views handle their own content via state monitoring
+            }
+        }
     }
 }
 
@@ -395,10 +398,11 @@ fn handle_back_button(
 ) {
     for interaction in interaction_query.iter() {
         if *interaction == Interaction::Pressed
-            && let Ok(mut ui_root) = ui_query.single_mut() {
-                ui_root.content = VillageContent::Menu;
-                next_village_state.set(VillageView::Menu);
-            }
+            && let Ok(mut ui_root) = ui_query.single_mut()
+        {
+            ui_root.content = VillageContent::Menu;
+            next_village_state.set(VillageView::Menu);
+        }
     }
 }
 

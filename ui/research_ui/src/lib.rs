@@ -408,53 +408,54 @@ fn handle_tab_switch(
     for (interaction, tab_btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed
             && let Ok(mut ui_root) = ui_query.single_mut()
-                && ui_root.active_tab != tab_btn.tab {
-                    ui_root.active_tab = tab_btn.tab;
+            && ui_root.active_tab != tab_btn.tab
+        {
+            ui_root.active_tab = tab_btn.tab;
 
-                    // Update tab button styling
-                    for (btn, mut bg_color) in tab_buttons.iter_mut() {
-                        if btn.tab == ui_root.active_tab {
-                            *bg_color = BackgroundColor(UiTheme::TAB_ACTIVE_BG);
-                        } else {
-                            *bg_color = BackgroundColor(UiTheme::TAB_INACTIVE_BG);
-                        }
-                    }
-
-                    // Collect query results
-                    let available: Vec<_> = available_query.iter().collect();
-                    let in_progress: Vec<_> = in_progress_query.iter().collect();
-                    let completed: Vec<_> = completed_query.iter().collect();
-
-                    // Repopulate research
-                    let items = build_research_list(
-                        &assets,
-                        &wallet,
-                        ui_root.active_tab,
-                        &available,
-                        &in_progress,
-                        &completed,
-                    );
-                    commands.queue(PopulateResearchDirectCommand {
-                        research_data: items
-                            .into_iter()
-                            .map(|r| {
-                                (
-                                    r.id,
-                                    r.name,
-                                    r.description,
-                                    r.time,
-                                    r.cost_str,
-                                    r.can_afford,
-                                    r.is_completed,
-                                    r.btn_text,
-                                    r.btn_color,
-                                    r.btn_border,
-                                    r.progress_info,
-                                )
-                            })
-                            .collect(),
-                    });
+            // Update tab button styling
+            for (btn, mut bg_color) in tab_buttons.iter_mut() {
+                if btn.tab == ui_root.active_tab {
+                    *bg_color = BackgroundColor(UiTheme::TAB_ACTIVE_BG);
+                } else {
+                    *bg_color = BackgroundColor(UiTheme::TAB_INACTIVE_BG);
                 }
+            }
+
+            // Collect query results
+            let available: Vec<_> = available_query.iter().collect();
+            let in_progress: Vec<_> = in_progress_query.iter().collect();
+            let completed: Vec<_> = completed_query.iter().collect();
+
+            // Repopulate research
+            let items = build_research_list(
+                &assets,
+                &wallet,
+                ui_root.active_tab,
+                &available,
+                &in_progress,
+                &completed,
+            );
+            commands.queue(PopulateResearchDirectCommand {
+                research_data: items
+                    .into_iter()
+                    .map(|r| {
+                        (
+                            r.id,
+                            r.name,
+                            r.description,
+                            r.time,
+                            r.cost_str,
+                            r.can_afford,
+                            r.is_completed,
+                            r.btn_text,
+                            r.btn_color,
+                            r.btn_border,
+                            r.progress_info,
+                        )
+                    })
+                    .collect(),
+            });
+        }
     }
 }
 
@@ -488,9 +489,10 @@ fn update_research_ui(
 
         // Check for changes to avoid unnecessary rebuilds
         if let Some(last) = last_data.as_ref()
-            && *last == items {
-                return;
-            }
+            && *last == items
+        {
+            return;
+        }
         *last_data = Some(items.clone());
 
         commands.queue(PopulateResearchDirectCommand {

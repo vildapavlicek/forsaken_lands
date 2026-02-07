@@ -229,10 +229,12 @@ fn update_progress_bars(
     }
 
     // Cleanup empty root
-    if research_bars.is_empty() && crafting_bars.is_empty()
-        && let Ok(root) = root_query.single() {
-            commands.entity(root).despawn();
-        }
+    if research_bars.is_empty()
+        && crafting_bars.is_empty()
+        && let Ok(root) = root_query.single()
+    {
+        commands.entity(root).despawn();
+    }
 }
 
 fn update_bar_visuals(

@@ -370,39 +370,41 @@ fn handle_tier_navigation(
     // Handle decrease button
     for (interaction, btn) in decrease_query.iter() {
         if *interaction == Interaction::Pressed
-            && let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
-                // Decrease level, wrapping to previous tier if needed
-                if divinity.level > 1 {
-                    divinity.level -= 1;
-                } else if divinity.tier > 1 {
-                    divinity.tier -= 1;
-                    divinity.level = divinity_components::MAX_LEVEL;
-                }
-                // If already at tier 1 level 1, do nothing
+            && let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity)
+        {
+            // Decrease level, wrapping to previous tier if needed
+            if divinity.level > 1 {
+                divinity.level -= 1;
+            } else if divinity.tier > 1 {
+                divinity.tier -= 1;
+                divinity.level = divinity_components::MAX_LEVEL;
             }
+            // If already at tier 1 level 1, do nothing
+        }
     }
 
     // Handle increase button
     for (interaction, btn) in increase_query.iter() {
         if *interaction == Interaction::Pressed
-            && let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
-                // Only allow increase up to max unlocked divinity
-                let current = **divinity;
-                let max = *max_divinity;
+            && let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity)
+        {
+            // Only allow increase up to max unlocked divinity
+            let current = **divinity;
+            let max = *max_divinity;
 
-                if current < max {
-                    if divinity.level < divinity_components::MAX_LEVEL {
-                        divinity.level += 1;
-                    } else {
-                        divinity.tier += 1;
-                        divinity.level = 1;
-                    }
+            if current < max {
+                if divinity.level < divinity_components::MAX_LEVEL {
+                    divinity.level += 1;
+                } else {
+                    divinity.tier += 1;
+                    divinity.level = 1;
+                }
 
-                    // Clamp to max
-                    if divinity.0 > max {
-                        divinity.0 = max;
-                    }
+                // Clamp to max
+                if divinity.0 > max {
+                    divinity.0 = max;
                 }
             }
+        }
     }
 }
