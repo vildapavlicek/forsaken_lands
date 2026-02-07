@@ -257,7 +257,7 @@ fn spawn_enemy_card(
                             let drop_text = if wallet.unlocked_resources.contains(drop) {
                                 format!(" • {}", drop)
                             } else {
-                                format!(" • Unidentified")
+                                " • Unidentified".to_string()
                             };
                             details_node.spawn((
                                 Text::new(drop_text),

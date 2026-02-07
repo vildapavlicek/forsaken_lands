@@ -192,7 +192,7 @@ fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingData)
                 ..default()
             },
             RecipesUiRoot {
-                active_tab: data.active_tab.clone(),
+                active_tab: data.active_tab,
             },
         ))
         .id();
@@ -280,9 +280,9 @@ fn handle_tab_switch(
     for (interaction, tab_btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             // Update active tab
-            if let Ok(mut ui_root) = ui_query.single_mut() {
-                if ui_root.active_tab != tab_btn.category {
-                    ui_root.active_tab = tab_btn.category.clone();
+            if let Ok(mut ui_root) = ui_query.single_mut()
+                && ui_root.active_tab != tab_btn.category {
+                    ui_root.active_tab = tab_btn.category;
 
                     // Update tab button styling
                     for (btn, mut bg_color) in tab_buttons.iter_mut() {
@@ -303,7 +303,6 @@ fn handle_tab_switch(
                             .collect(),
                     });
                 }
-            }
         }
     }
 }

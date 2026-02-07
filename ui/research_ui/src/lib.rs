@@ -406,9 +406,9 @@ fn handle_tab_switch(
     completed_query: Query<(Entity, &ResearchNode, &ResearchCompletionCount), With<Completed>>,
 ) {
     for (interaction, tab_btn) in interaction_query.iter() {
-        if *interaction == Interaction::Pressed {
-            if let Ok(mut ui_root) = ui_query.single_mut() {
-                if ui_root.active_tab != tab_btn.tab {
+        if *interaction == Interaction::Pressed
+            && let Ok(mut ui_root) = ui_query.single_mut()
+                && ui_root.active_tab != tab_btn.tab {
                     ui_root.active_tab = tab_btn.tab;
 
                     // Update tab button styling
@@ -455,8 +455,6 @@ fn handle_tab_switch(
                             .collect(),
                     });
                 }
-            }
-        }
     }
 }
 
@@ -489,11 +487,10 @@ fn update_research_ui(
         );
 
         // Check for changes to avoid unnecessary rebuilds
-        if let Some(last) = last_data.as_ref() {
-            if *last == items {
+        if let Some(last) = last_data.as_ref()
+            && *last == items {
                 return;
             }
-        }
         *last_data = Some(items.clone());
 
         commands.queue(PopulateResearchDirectCommand {

@@ -290,13 +290,11 @@ fn extract_monster_id(
             if type_info.type_id() == std::any::TypeId::of::<MonsterId>() {
                 // MonsterId is a tuple struct: MonsterId(String)
                 // Access field 0 to get the inner String
-                if let bevy::reflect::ReflectRef::TupleStruct(ts) = component.reflect_ref() {
-                    if let Some(field) = ts.field(0) {
-                        if let Some(s) = field.try_downcast_ref::<String>() {
+                if let bevy::reflect::ReflectRef::TupleStruct(ts) = component.reflect_ref()
+                    && let Some(field) = ts.field(0)
+                        && let Some(s) = field.try_downcast_ref::<String>() {
                             return Some(s.clone());
                         }
-                    }
-                }
             }
         }
     }
@@ -578,14 +576,13 @@ fn evaluate_unlocks(
 
     // Trigger StatusCompleted for research that was completed (count > 0)
     for node in &research_query {
-        if let Some(&count) = research_state.completion_counts.get(&node.id) {
-            if count > 0 {
+        if let Some(&count) = research_state.completion_counts.get(&node.id)
+            && count > 0 {
                 debug!(research_id = %node.id, count = count, "Firing StatusCompleted for loaded research");
                 commands.trigger(StatusCompleted {
                     topic: format!("research:{}", node.id),
                 });
             }
-        }
     }
 
     // Trigger UnlockAchieved for claimed divinity levels

@@ -69,17 +69,15 @@ fn enemy_spawn_system(
     let mut speed_modifier = 1.0;
     if let Ok(blessings) = maw_query.single() {
         for (id, level) in &blessings.unlocked {
-            if let Some(handle) = blessing_state.blessings.get(id) {
-                if let Some(def) = blessing_definitions.get(handle) {
-                    if def.reward_id == "blessing:spawn_timer:decrease" {
+            if let Some(handle) = blessing_state.blessings.get(id)
+                && let Some(def) = blessing_definitions.get(handle)
+                    && def.reward_id == "blessing:spawn_timer:decrease" {
                         // Example: 10% faster per level (compounding? or linear?)
                         // Let's assume linear for now or use the base_stats logic if defined,
                         // but for prototype, hardcode effect logic:
                         // modifier = 1.0 + (0.1 * level)
                         speed_modifier += 0.1 * (*level as f32);
                     }
-                }
-            }
         }
     }
 
@@ -178,8 +176,8 @@ fn manage_enemy_lifecycle(
         }
 
         // Handle Death
-        if let Some(health) = health_opt {
-            if dead_opt.is_none() && health.current <= 0.0 {
+        if let Some(health) = health_opt
+            && dead_opt.is_none() && health.current <= 0.0 {
                 commands.trigger(EnemyKilled { entity });
                 commands
                     .entity(entity)
@@ -188,7 +186,6 @@ fn manage_enemy_lifecycle(
                 // Prevent despawn this frame to avoid conflict
                 should_despawn = true;
             }
-        }
 
         if should_despawn {
             commands.entity(entity).despawn();
@@ -357,18 +354,16 @@ fn apply_blessing_to_lifetime(
     blessing_state: Res<BlessingState>,
     blessing_definitions: Res<Assets<BlessingDefinition>>,
 ) {
-    if let Ok(mut lifetime) = query.get_mut(trigger.entity) {
-        if let Ok(blessings) = maw_query.single() {
+    if let Ok(mut lifetime) = query.get_mut(trigger.entity)
+        && let Ok(blessings) = maw_query.single() {
             let mut extra_seconds = 0.0;
             for (id, level) in &blessings.unlocked {
-                if let Some(handle) = blessing_state.blessings.get(id) {
-                    if let Some(def) = blessing_definitions.get(handle) {
-                        if def.reward_id == "blessing:monster:lifetime_increase" {
+                if let Some(handle) = blessing_state.blessings.get(id)
+                    && let Some(def) = blessing_definitions.get(handle)
+                        && def.reward_id == "blessing:monster:lifetime_increase" {
                             // Example: +1s per level
                             extra_seconds += 1.0 * (*level as f32);
                         }
-                    }
-                }
             }
 
             if extra_seconds > 0.0 {
@@ -382,7 +377,6 @@ fn apply_blessing_to_lifetime(
                 );
             }
         }
-    }
 }
 
 #[derive(Component)]

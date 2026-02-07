@@ -75,13 +75,12 @@ fn execute_save(world: &mut World) {
     let mut manual_triggered = false;
 
     // 1. Check Manual Save (F5)
-    if let Some(keyboard) = world.get_resource::<ButtonInput<KeyCode>>() {
-        if keyboard.just_pressed(KeyCode::F5) {
+    if let Some(keyboard) = world.get_resource::<ButtonInput<KeyCode>>()
+        && keyboard.just_pressed(KeyCode::F5) {
             info!("Manual save triggered (F5)");
             manual_triggered = true;
             is_autosave = false;
         }
-    }
 
     // 2. Check Autosave Timer
     if !manual_triggered {
@@ -109,7 +108,7 @@ fn execute_save(world: &mut World) {
 
     // 3. Process Save
     let filename = if is_autosave {
-        format!("autosave.scn.ron")
+        "autosave.scn.ron".to_string()
     } else {
         let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S");
         format!("save_{}.scn.ron", timestamp)

@@ -369,8 +369,8 @@ fn handle_tier_navigation(
     };
     // Handle decrease button
     for (interaction, btn) in decrease_query.iter() {
-        if *interaction == Interaction::Pressed {
-            if let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
+        if *interaction == Interaction::Pressed
+            && let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
                 // Decrease level, wrapping to previous tier if needed
                 if divinity.level > 1 {
                     divinity.level -= 1;
@@ -380,13 +380,12 @@ fn handle_tier_navigation(
                 }
                 // If already at tier 1 level 1, do nothing
             }
-        }
     }
 
     // Handle increase button
     for (interaction, btn) in increase_query.iter() {
-        if *interaction == Interaction::Pressed {
-            if let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
+        if *interaction == Interaction::Pressed
+            && let Ok(mut divinity) = portal_query.get_mut(btn.portal_entity) {
                 // Only allow increase up to max unlocked divinity
                 let current = **divinity;
                 let max = *max_divinity;
@@ -405,6 +404,5 @@ fn handle_tier_navigation(
                     }
                 }
             }
-        }
     }
 }

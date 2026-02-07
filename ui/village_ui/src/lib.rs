@@ -208,9 +208,7 @@ impl Command for SpawnMenuContentCommand {
             );
             spawn_menu_button(
                 parent,
-                maw_exists
-                    .then_some("✨ Blessings")
-                    .unwrap_or("✨ Blessings (Locked)"),
+                if maw_exists { "✨ Blessings" } else { "✨ Blessings (Locked)" },
                 VillageMenuButton {
                     target: VillageContent::Blessings,
                 },
@@ -364,8 +362,8 @@ fn handle_menu_button(
     mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
-        if *interaction == Interaction::Pressed {
-            if let Ok(mut ui_root) = ui_query.single_mut() {
+        if *interaction == Interaction::Pressed
+            && let Ok(mut ui_root) = ui_query.single_mut() {
                 ui_root.content = btn.target;
 
                 match btn.target {
@@ -386,7 +384,6 @@ fn handle_menu_button(
                     _ => {} // Other views handle their own content via state monitoring
                 }
             }
-        }
     }
 }
 
@@ -397,12 +394,11 @@ fn handle_back_button(
     mut next_village_state: ResMut<NextState<VillageView>>,
 ) {
     for interaction in interaction_query.iter() {
-        if *interaction == Interaction::Pressed {
-            if let Ok(mut ui_root) = ui_query.single_mut() {
+        if *interaction == Interaction::Pressed
+            && let Ok(mut ui_root) = ui_query.single_mut() {
                 ui_root.content = VillageContent::Menu;
                 next_village_state.set(VillageView::Menu);
             }
-        }
     }
 }
 

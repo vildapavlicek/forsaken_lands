@@ -11,7 +11,6 @@ use {
     research::{ResearchCompletionCount, ResearchMap, ResearchNode},
     states::LoadingPhase,
     village_components::{Village, WeaponInventory},
-    wallet::ResourceRates,
     weapon_factory_events,
 };
 

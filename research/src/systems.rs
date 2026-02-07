@@ -94,8 +94,7 @@ pub fn on_unlock_achieved(
     let Some(entity) = event
         .reward_id
         .strip_prefix(RESEARCH_REWARD_PREFIX)
-        .and_then(|research_id| research_map.entities.get(research_id))
-        .map(|e| *e)
+        .and_then(|research_id| research_map.entities.get(research_id)).copied()
     else {
         return;
     };
