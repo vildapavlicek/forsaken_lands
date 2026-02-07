@@ -552,6 +552,8 @@ pub struct ResearchFormData {
     pub filename: String,
     /// Unlock condition
     pub unlock_condition: UnlockCondition,
+    /// How many times this unlock can be triggered.
+    pub repeat_mode: unlocks_assets::RepeatMode,
 }
 
 impl ResearchFormData {
@@ -569,6 +571,7 @@ impl ResearchFormData {
             max_repeats: 1,
             filename: "new_research".to_string(),
             unlock_condition: UnlockCondition::True,
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         }
     }
 
@@ -639,10 +642,13 @@ impl ResearchFormData {
             .collect();
 
         // Use the inline unlock if present, otherwise default to True
-        let unlock_condition = if let Some(unlock) = &research.unlock {
-            UnlockCondition::from(&unlock.condition)
+        let (unlock_condition, repeat_mode) = if let Some(unlock) = &research.unlock {
+            (
+                UnlockCondition::from(&unlock.condition),
+                unlock.repeat_mode,
+            )
         } else {
-            UnlockCondition::True
+            (UnlockCondition::True, unlocks_assets::RepeatMode::Once)
         };
 
         Self {
@@ -654,6 +660,7 @@ impl ResearchFormData {
             max_repeats: research.max_repeats,
             filename,
             unlock_condition,
+            repeat_mode,
         }
     }
 
@@ -664,16 +671,13 @@ impl ResearchFormData {
         }
 
         // Create the inline unlock definition
-        let unlock = if let UnlockCondition::True = self.unlock_condition {
-            None
-        } else {
-            Some(UnlockDefinition {
-                id: self.unlock_id(), // We still use this ID for the unlock definition itself
-                display_name: Some(format!("{} Research", self.name)),
-                reward_id: self.reward_id(),
-                condition: self.unlock_condition.to_condition_node(),
-            })
-        };
+        let unlock = Some(UnlockDefinition {
+            id: self.unlock_id(), // We still use this ID for the unlock definition itself
+            display_name: Some(format!("{} Research", self.name)),
+            reward_id: self.reward_id(),
+            condition: self.unlock_condition.to_condition_node(),
+            repeat_mode: self.repeat_mode,
+        });
 
         ResearchDefinition {
             id: self.id.clone(),
@@ -702,6 +706,8 @@ pub struct RecipeFormData {
 
     /// Optional inline unlock condition
     pub unlock_condition: UnlockCondition,
+    /// How many times this unlock can be triggered.
+    pub repeat_mode: unlocks_assets::RepeatMode,
 }
 
 impl RecipeFormData {
@@ -720,6 +726,7 @@ impl RecipeFormData {
                 amount: 1,
             }],
             unlock_condition: UnlockCondition::True,
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         }
     }
 
@@ -777,16 +784,13 @@ impl RecipeFormData {
             cost.insert(c.resource_id.clone(), c.amount);
         }
 
-        let unlock = if let UnlockCondition::True = self.unlock_condition {
-            None
-        } else {
-            Some(UnlockDefinition {
-                id: self.unlock_id(),
-                display_name: Some(self.display_name.clone()),
-                reward_id: self.reward_id(),
-                condition: self.unlock_condition.to_condition_node(),
-            })
-        };
+        let unlock = Some(UnlockDefinition {
+            id: self.unlock_id(),
+            display_name: Some(self.display_name.clone()),
+            reward_id: self.reward_id(),
+            condition: self.unlock_condition.to_condition_node(),
+            repeat_mode: self.repeat_mode,
+        });
 
         RecipeDefinition {
             id: self.id.clone(),
@@ -809,10 +813,13 @@ impl RecipeFormData {
             })
             .collect();
 
-        let unlock_condition = if let Some(unlock) = &def.unlock {
-            UnlockCondition::from(&unlock.condition)
+        let (unlock_condition, repeat_mode) = if let Some(unlock) = &def.unlock {
+            (
+                UnlockCondition::from(&unlock.condition),
+                unlock.repeat_mode,
+            )
         } else {
-            UnlockCondition::True
+            (UnlockCondition::True, unlocks_assets::RepeatMode::Once)
         };
 
         Self {
@@ -823,6 +830,7 @@ impl RecipeFormData {
             costs,
             outcomes: def.outcomes.clone(),
             unlock_condition,
+            repeat_mode,
         }
     }
 }
@@ -944,6 +952,7 @@ impl AutopsyFormData {
                 op: unlocks_components::ComparisonOp::Ge,
                 target: 1.0,
             },
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         }
     }
 
@@ -955,6 +964,7 @@ impl AutopsyFormData {
             condition: ConditionNode::Completed {
                 topic: format!("research:{}", self.generate_research_id()),
             },
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         }
     }
 }
@@ -970,6 +980,8 @@ pub struct DivinityFormData {
     pub level: u32,
     /// Unlock condition
     pub unlock_condition: UnlockCondition,
+    /// How many times this unlock can be triggered.
+    pub repeat_mode: unlocks_assets::RepeatMode,
 }
 
 impl DivinityFormData {
@@ -983,6 +995,7 @@ impl DivinityFormData {
                 value: 10.0,
                 op: CompareOp::Ge,
             }),
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         }
     }
 
@@ -1027,6 +1040,7 @@ impl DivinityFormData {
             display_name: Some(format!("Divinity Tier {} Level {}", self.tier, self.level)),
             reward_id: self.reward_id(),
             condition: self.unlock_condition.to_condition_node(),
+            repeat_mode: self.repeat_mode,
         }
     }
 }
@@ -1216,6 +1230,8 @@ pub struct BonusStatsFormData {
     pub filename: String,
     /// The unlock condition for this bonus
     pub unlock_condition: UnlockCondition,
+    /// How many times this unlock can be triggered.
+    pub repeat_mode: unlocks_assets::RepeatMode,
 }
 
 impl BonusStatsFormData {
@@ -1225,6 +1241,7 @@ impl BonusStatsFormData {
             bonuses: Vec::new(),
             filename: String::new(),
             unlock_condition: UnlockCondition::True,
+            repeat_mode: unlocks_assets::RepeatMode::Infinite, // Stats are usually infinite
         }
     }
 
@@ -1262,16 +1279,13 @@ impl BonusStatsFormData {
             }
         }
 
-        let unlock = if let UnlockCondition::True = self.unlock_condition {
-            None
-        } else {
-            Some(UnlockDefinition {
-                id: format!("{}_unlock", self.id),
-                display_name: Some(format!("Stat Bonus: {}", self.id)),
-                reward_id: self.id.clone(),
-                condition: self.unlock_condition.to_condition_node(),
-            })
-        };
+        let unlock = Some(UnlockDefinition {
+            id: format!("{}_unlock", self.id),
+            display_name: Some(format!("Stat Bonus: {}", self.id)),
+            reward_id: self.id.clone(),
+            condition: self.unlock_condition.to_condition_node(),
+            repeat_mode: self.repeat_mode,
+        });
 
         StatBonusDefinition {
             id: self.id.clone(),
@@ -1298,10 +1312,13 @@ impl BonusStatsFormData {
             }
         }
 
-        let unlock_condition = if let Some(unlock) = &def.unlock {
-            UnlockCondition::from(&unlock.condition)
+        let (unlock_condition, repeat_mode) = if let Some(unlock) = &def.unlock {
+            (
+                UnlockCondition::from(&unlock.condition),
+                unlock.repeat_mode,
+            )
         } else {
-            UnlockCondition::True
+            (UnlockCondition::True, unlocks_assets::RepeatMode::Infinite)
         };
 
         Self {
@@ -1309,6 +1326,7 @@ impl BonusStatsFormData {
             bonuses,
             filename,
             unlock_condition,
+            repeat_mode,
         }
     }
 

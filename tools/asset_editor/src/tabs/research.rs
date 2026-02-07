@@ -2,12 +2,11 @@ use {
     crate::{
         file_generator::save_research_files,
         models::{ResearchFormData, ResourceCost},
-        tabs::common::show_condition_editor,
+        tabs::common::{show_condition_editor, show_repeat_mode_editor},
     },
     eframe::egui,
     research_assets::ResearchDefinition,
     std::path::Path,
-    unlocks_assets::UnlockDefinition,
 };
 
 pub struct ResearchTabState {
@@ -160,6 +159,11 @@ impl ResearchTabState {
             existing_monster_ids,
             existing_recipe_ids,
             &mut self.research_form.unlock_condition,
+        );
+        show_repeat_mode_editor(
+            ui,
+            "research_unlock",
+            &mut self.research_form.repeat_mode,
         );
         ui.add_space(16.0);
 

@@ -22,7 +22,7 @@ use {
         },
 
         tabs::{
-            common::show_condition_editor, overview::OverviewState, research::ResearchTabState,
+            common::{show_condition_editor, show_repeat_mode_editor}, overview::OverviewState, research::ResearchTabState,
             spawn_table::SpawnTableTabState, ttk::TtkTabState,
         },
     },
@@ -726,6 +726,11 @@ impl EditorState {
             &self.existing_monster_ids,
             &self.existing_recipe_ids,
             &mut self.recipe_data_form.unlock_condition,
+        );
+        show_repeat_mode_editor(
+            ui,
+            "recipe_unlock",
+            &mut self.recipe_data_form.repeat_mode,
         );
 
 
@@ -1656,6 +1661,11 @@ impl EditorState {
             &self.existing_recipe_ids,
             &mut self.divinity_form.unlock_condition,
         );
+        show_repeat_mode_editor(
+            ui,
+            "divinity_unlock",
+            &mut self.divinity_form.repeat_mode,
+        );
         ui.add_space(16.0);
 
         // Preview
@@ -1737,6 +1747,7 @@ impl EditorState {
                             tier,
                             level,
                             unlock_condition: UnlockCondition::from(&unlock_def.condition),
+                            repeat_mode: unlock_def.repeat_mode,
                         };
                         self.status = format!("✓ Loaded divinity unlock: {}", id);
                         return;
@@ -1941,6 +1952,11 @@ impl EditorState {
             &self.existing_monster_ids,
             &self.existing_recipe_ids,
             &mut self.bonus_stats_form.unlock_condition,
+        );
+        show_repeat_mode_editor(
+            ui,
+            "bonus_stats_unlock",
+            &mut self.bonus_stats_form.repeat_mode,
         );
 
         ui.add_space(16.0);

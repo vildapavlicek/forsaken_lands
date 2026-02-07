@@ -331,3 +331,55 @@ fn show_leaf_editor(
         }
     }
 }
+
+/// Show editor for RepeatMode.
+pub fn show_repeat_mode_editor(
+    ui: &mut egui::Ui,
+    id_prefix: &str,
+    repeat_mode: &mut unlocks_assets::RepeatMode,
+) {
+    ui.horizontal(|ui| {
+        ui.label("Repeat Mode:");
+        let current_text = match repeat_mode {
+            unlocks_assets::RepeatMode::Once => "Once",
+            unlocks_assets::RepeatMode::Finite(_) => "Finite",
+            unlocks_assets::RepeatMode::Infinite => "Infinite",
+        };
+
+        egui::ComboBox::from_id_salt(format!("{}_repeat_mode", id_prefix))
+            .selected_text(current_text)
+            .show_ui(ui, |ui| {
+                if ui
+                    .selectable_label(matches!(repeat_mode, unlocks_assets::RepeatMode::Once), "Once")
+                    .clicked()
+                {
+                    *repeat_mode = unlocks_assets::RepeatMode::Once;
+                }
+                if ui
+                    .selectable_label(
+                        matches!(repeat_mode, unlocks_assets::RepeatMode::Finite(_)),
+                        "Finite",
+                    )
+                    .clicked()
+                {
+                    if !matches!(repeat_mode, unlocks_assets::RepeatMode::Finite(_)) {
+                        *repeat_mode = unlocks_assets::RepeatMode::Finite(1);
+                    }
+                }
+                if ui
+                    .selectable_label(
+                        matches!(repeat_mode, unlocks_assets::RepeatMode::Infinite),
+                        "Infinite",
+                    )
+                    .clicked()
+                {
+                    *repeat_mode = unlocks_assets::RepeatMode::Infinite;
+                }
+            });
+
+        if let unlocks_assets::RepeatMode::Finite(n) = repeat_mode {
+            ui.label("Limit:");
+            ui.add(egui::DragValue::new(n).range(1..=1000));
+        }
+    });
+}

@@ -3,8 +3,8 @@ use {
     egui_extras::{Column, TableBuilder},
     research_assets::ResearchDefinition,
     std::{
-        collections::{HashMap, HashSet},
-        path::{Path, PathBuf},
+        collections::HashMap,
+        path::Path,
     },
     unlocks_assets::UnlockDefinition,
 };
