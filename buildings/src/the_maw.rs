@@ -17,11 +17,26 @@ impl Plugin for TheMawPlugin {
 }
 
 /// Spawns 'The Maw' when construction is completed.
-fn on_construction_completed(trigger: On<StatusCompleted>, mut commands: Commands) {
+fn on_construction_completed(
+    trigger: On<StatusCompleted>,
+    mut commands: Commands,
+    existing_maw: Query<(), With<TheMaw>>,
+) {
     let event = trigger.event();
     // Check if the completed crafting was "the_maw"
-    // Topic format: "craft:{recipe_id}"
-    if event.topic == format!("{}bone_idol", recipes_assets::CRAFTING_TOPIC_PREFIX) {
+    // Handle both crafting: (legacy/bugged) and construction: (correct) prefixes
+    let construction_topic = format!("{}bone_idol", recipes_assets::CONSTRUCTION_TOPIC_PREFIX);
+    let crafting_topic = format!("{}bone_idol", recipes_assets::CRAFTING_TOPIC_PREFIX);
+
+    if event.topic == construction_topic || event.topic == crafting_topic {
+        if !existing_maw.is_empty() {
+            warn!(
+                "Prevented duplicate spawn of 'The Maw'. Event topic: {}",
+                event.topic
+            );
+            return;
+        }
+
         commands.spawn((
             TheMaw,
             EntropyGenerator::default(),
@@ -29,7 +44,10 @@ fn on_construction_completed(trigger: On<StatusCompleted>, mut commands: Command
             IncludeInSave,
             Name::new("The Maw"),
         ));
-        info!("Spawned 'The Maw' building (Construction Complete)");
+        info!(
+            "Spawned 'The Maw' building (Construction Complete). Topic: {}",
+            event.topic
+        );
     }
 }
 
