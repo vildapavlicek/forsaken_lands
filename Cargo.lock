@@ -4960,6 +4960,7 @@ dependencies = [
  "states",
  "unlock_states",
  "unlocks",
+ "unlocks_events",
  "unlocks_resources",
  "village",
  "village_components",
