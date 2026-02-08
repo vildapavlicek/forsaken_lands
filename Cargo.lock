@@ -3564,6 +3564,7 @@ dependencies = [
  "research_assets",
  "ron 0.8.1",
  "serde",
+ "skill_components",
  "skills_assets",
  "states",
  "unlocks",
@@ -5107,6 +5108,7 @@ dependencies = [
  "skill_components",
  "skill_events",
  "skills_assets",
+ "unlocks_events",
  "village_components",
 ]
 
@@ -5117,6 +5119,7 @@ dependencies = [
  "bevy",
  "bevy_common_assets",
  "serde",
+ "unlocks_assets",
 ]
 
 [[package]]

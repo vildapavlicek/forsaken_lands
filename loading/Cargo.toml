@@ -28,3 +28,4 @@ blessings.workspace = true
 bonus_stats.workspace = true
 bonus_stats_assets.workspace = true
 skills_assets.workspace = true
+skill_components.workspace = true

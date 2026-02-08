@@ -7,5 +7,15 @@
     effects: [
         Projectile(speed: 400.0, damage: 25.0),
     ],
+    unlock: Some((
+        id: "skill_fireball_unlock:",
+        display_name: Some("Skill: Fireball"),
+        condition: Value(
+            topic: "kills:siled",
+            op: Ge,
+            target: 5.0,
+        ),
+        reward_id: "skill:fireball",
+    )),
     tags: ["skill:fire", "skill:ranged"],
 )

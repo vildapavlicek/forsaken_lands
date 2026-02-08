@@ -16,3 +16,4 @@ bonus_stats_events.workspace = true
 shared_components.workspace = true
 village_components.workspace = true
 rand.workspace = true
+unlocks_events.workspace = true

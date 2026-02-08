@@ -1,9 +1,28 @@
-use {bevy::prelude::*, std::collections::HashMap};
+use {bevy::prelude::*, std::collections::{HashMap, HashSet}};
+
+pub struct SkillComponentsPlugin;
+
+impl Plugin for SkillComponentsPlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<UnlockedSkills>()
+            .register_type::<HasSkills>()
+            .register_type::<UnlockedSkills>()
+            .register_type::<EquippedSkills>()
+            .register_type::<SkillCooldowns>()
+            .register_type::<SkillBuff>()
+            .register_type::<StatusEffect>();
+    }
+}
 
 /// Marker: entity has skills equipped
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct HasSkills;
+
+/// Tracks which skills the entity has unlocked
+#[derive(Resource, Reflect, Default, Clone)]
+#[reflect(Resource)]
+pub struct UnlockedSkills(pub HashSet<String>);
 
 /// References equipped skills by ID
 #[derive(Component, Reflect, Default, Clone)]

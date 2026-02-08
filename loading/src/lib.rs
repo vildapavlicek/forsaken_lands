@@ -18,10 +18,11 @@ use {
     research::ResearchMap,
     research_assets::ResearchDefinition,
     serde::de::DeserializeSeed,
+    skill_components::UnlockedSkills,
     skills_assets::{SkillDefinition, SkillMap},
     states::{GameState, LoadingPhase},
     std::{fs, path::Path},
-    unlocks::{CompiledUnlock, TopicMap, UnlockState},
+    unlocks::{CompiledUnlock, TopicMap, UnlockProgress, UnlockState},
     unlocks_assets::UnlockDefinition,
     unlocks_events::{StatusCompleted, ValueChanged},
     village_components::{EnemyEncyclopedia, Village},
@@ -68,6 +69,7 @@ impl Plugin for LoadingManagerPlugin {
                     compile_research_unlocks,
                     compile_recipe_unlocks,
                     compile_blessing_unlocks,
+                    compile_skill_unlocks,
                     bonus_stats::plugin::compile_bonus_stats_unlocks,
                 ),
             )
@@ -448,8 +450,6 @@ fn spawn_all_entities(
     next_phase.set(LoadingPhase::CompileUnlocks);
 }
 
-// --- Phase: CompileUnlocks ---
-use unlocks_resources::UnlockProgress;
 
 fn compile_unlocks(
     mut commands: Commands,
@@ -550,6 +550,38 @@ fn compile_blessing_unlocks(
                 &unlock_state,
                 &unlock_progress,
             );
+        }
+    }
+}
+
+fn compile_skill_unlocks(
+    mut commands: Commands,
+    skill_assets: Res<Assets<SkillDefinition>>,
+    mut topic_map: ResMut<TopicMap>,
+    unlock_state: Res<UnlockState>,
+    unlock_progress: Res<UnlockProgress>,
+    compiled: Query<&CompiledUnlock>,
+    mut unlocked_skills: ResMut<UnlockedSkills>,
+) {
+    let compiled_ids: std::collections::HashSet<_> =
+        compiled.iter().map(|c| c.definition_id.as_str()).collect();
+
+    for (_, skill) in skill_assets.iter() {
+        if let Some(unlock) = &skill.unlock {
+            unlocks::compile_unlock_definition(
+                &mut commands,
+                &mut topic_map,
+                unlock,
+                &compiled_ids,
+                &unlock_state,
+                &unlock_progress,
+            );
+        } else {
+            // Skills without an explicit unlock definition are considered starter skills
+            // and are unlocked by default.
+            if unlocked_skills.0.insert(skill.id.clone()) {
+                debug!(skill_id = %skill.id, "Unlocked starter skill.");
+            }
         }
     }
 }
@@ -762,3 +794,4 @@ fn clear_unlock_state(mut unlock_state: ResMut<UnlockState>) {
     info!("Clearing UnlockState to prevent state leakage from previous sessions");
     unlock_state.completed.clear();
 }
+

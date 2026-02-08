@@ -3,7 +3,7 @@ use {
     equipment_events::{EquipWeaponRequest, UnequipWeaponRequest},
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     shared_components::DisplayName,
-    skill_components::EquippedSkills,
+    skill_components::{EquippedSkills, UnlockedSkills},
     skills_assets::{SkillDefinition, SkillMap},
     states::GameState,
     widgets::{UiTheme, spawn_action_button, spawn_card_title, spawn_item_card},
@@ -1177,16 +1177,19 @@ fn handle_change_skill_button(
     >,
     skill_map: Res<SkillMap>,
     skill_definitions: Res<Assets<SkillDefinition>>,
+    unlocked_skills: Res<UnlockedSkills>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
             let hero_entity = btn.hero_entity;
 
-            // Collect available skills
+            // Collect available skills (only those that are unlocked)
             let mut available_skills = Vec::new();
             for (id, handle) in skill_map.handles.iter() {
-                if let Some(def) = skill_definitions.get(handle) {
-                    available_skills.push((id.clone(), def.display_name.clone()));
+                if unlocked_skills.0.contains(id) {
+                    if let Some(def) = skill_definitions.get(handle) {
+                        available_skills.push((id.clone(), def.display_name.clone()));
+                    }
                 }
             }
 

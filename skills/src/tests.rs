@@ -28,6 +28,7 @@ fn test_skill_activation_damage() {
         target: TargetType::Identity, // Easier to test self-target
         effects: vec![SkillEffect::Damage { amount: 10.0 }],
         tags: vec![],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -95,6 +96,7 @@ fn test_skill_stat_modifier() {
             duration_ms: 5000,
         }],
         tags: vec![],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -155,6 +157,7 @@ fn test_skill_apply_status() {
             duration_ms: 2000,
         }],
         tags: vec![],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -204,6 +207,7 @@ fn test_skill_cooldown() {
         target: TargetType::Identity,
         effects: vec![SkillEffect::Damage { amount: 10.0 }],
         tags: vec![],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -310,6 +314,7 @@ fn test_skill_target_single_enemy() {
         target: TargetType::SingleEnemy { range: 100.0 },
         effects: vec![SkillEffect::Damage { amount: 15.0 }],
         tags: vec![],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -371,6 +376,7 @@ fn test_skill_target_aoe_range() {
         target: TargetType::AllEnemiesInRange { radius: 10.0 },
         effects: vec![SkillEffect::Damage { amount: 5.0 }],
         tags: vec![],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -442,6 +448,7 @@ fn test_skill_projectile_spawns() {
             damage: 25.0,
         }],
         tags: vec!["skill:fire".to_string()],
+        unlock: None,
     });
 
     let mut map = app.world_mut().resource_mut::<SkillMap>();
@@ -503,4 +510,49 @@ fn test_skill_projectile_spawns() {
 #[derive(Component)]
 struct TestResult {
     damage: f32,
+}
+
+#[test]
+fn test_skill_unlocking() {
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .add_plugins(SkillEventsPlugin)
+        .add_plugins(SkillComponentsPlugin)
+        .add_observer(unlocks::handle_skill_unlocks);
+
+    // Verify initial state
+    {
+        let unlocked = app.world().resource::<UnlockedSkills>();
+        assert!(unlocked.0.is_empty());
+    }
+
+    // Trigger UnlockAchieved for a skill (reward_id = skill_id)
+    app.world_mut().trigger(unlocks_events::UnlockAchieved {
+        unlock_id: "fireball_unlock".to_string(),
+        display_name: Some("Fireball Unlock".to_string()),
+        reward_id: "fireball".to_string(),
+    });
+
+    app.update();
+
+    // Verify fireball is unlocked
+    {
+        let unlocked = app.world().resource::<UnlockedSkills>();
+        assert!(unlocked.0.contains("fireball"));
+    }
+
+    // Trigger UnlockAchieved with prefix
+    app.world_mut().trigger(unlocks_events::UnlockAchieved {
+        unlock_id: "ice_bolt_unlock".to_string(),
+        display_name: Some("Ice Bolt Unlock".to_string()),
+        reward_id: "skill:ice_bolt".to_string(),
+    });
+
+    app.update();
+
+    // Verify ice_bolt is unlocked
+    {
+        let unlocked = app.world().resource::<UnlockedSkills>();
+        assert!(unlocked.0.contains("ice_bolt"));
+    }
 }

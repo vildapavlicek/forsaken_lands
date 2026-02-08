@@ -37,6 +37,9 @@ pub struct SkillDefinition {
     /// Tags for bonus stat lookups (e.g., ["skill:fire", "skill:aoe"])
     #[serde(default)]
     pub tags: Vec<String>,
+    /// Optional inline unlock definition for when this skill becomes available
+    #[serde(default)]
+    pub unlock: Option<unlocks_assets::UnlockDefinition>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Reflect, Default)]

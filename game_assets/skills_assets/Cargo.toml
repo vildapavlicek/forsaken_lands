@@ -7,3 +7,4 @@ edition = "2024"
 bevy.workspace = true
 bevy_common_assets.workspace = true
 serde.workspace = true
+unlocks_assets = { path = "../../game_assets/unlocks_assets" }
