@@ -6,7 +6,7 @@ use {
     skill_components::EquippedSkills,
     skills_assets::{SkillDefinition, SkillMap},
     states::GameState,
-    widgets::{spawn_action_button, spawn_card_title, spawn_item_card, UiTheme},
+    widgets::{UiTheme, spawn_action_button, spawn_card_title, spawn_item_card},
 };
 
 pub struct HeroUiPlugin;
@@ -1220,7 +1220,10 @@ fn handle_equip_skill_button(
 ) {
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
-            info!("Skill {} equipped to hero {:?}", btn.skill_id, btn.hero_entity);
+            info!(
+                "Skill {} equipped to hero {:?}",
+                btn.skill_id, btn.hero_entity
+            );
 
             if let Ok(mut equipped) = hero_query.get_mut(btn.hero_entity) {
                 // For now, let's just replace the first skill or add if empty
@@ -1231,7 +1234,9 @@ fn handle_equip_skill_button(
                 }
             } else {
                 // If the hero doesn't have the component, something is wrong, but we can add it
-                commands.entity(btn.hero_entity).insert(EquippedSkills(vec![btn.skill_id.clone()]));
+                commands
+                    .entity(btn.hero_entity)
+                    .insert(EquippedSkills(vec![btn.skill_id.clone()]));
             }
 
             // Close popup and refresh UI

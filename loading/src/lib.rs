@@ -6,7 +6,9 @@ use {
         RecipesFolderHandle, ResearchFolderHandle, SkillsFolderHandle, UnlocksFolderHandle,
         WeaponsFolderHandle,
     },
-    bevy::{asset::LoadedFolder, ecs::system::SystemParam, platform::collections::HashMap, prelude::*},
+    bevy::{
+        asset::LoadedFolder, ecs::system::SystemParam, platform::collections::HashMap, prelude::*,
+    },
     blessings::BlessingDefinition,
     crafting_resources::RecipeMap,
     divinity_components::Divinity,

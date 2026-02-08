@@ -1,10 +1,10 @@
 use {
     crate::*,
     bevy::prelude::*,
+    bonus_stats::BonusStats,
     skill_events::SkillActivated,
     skills_assets::{SkillDefinition, SkillEffect, SkillType, TargetType},
     std::time::Duration,
-    bonus_stats::BonusStats,
 };
 
 #[test]
@@ -61,7 +61,10 @@ fn test_skill_activation_damage() {
     app.update();
 
     let mut query = app.world_mut().query::<&TestResult>();
-    let result = query.iter(app.world()).next().expect("Should have one result");
+    let result = query
+        .iter(app.world())
+        .next()
+        .expect("Should have one result");
     assert_eq!(result.damage, 10.0);
 }
 
@@ -112,12 +115,17 @@ fn test_skill_stat_modifier() {
 
     // Verify BonusStats
     let bonus_stats = app.world().resource::<BonusStats>();
-    let stat = bonus_stats.get("damage:melee").expect("Stat bonus should be added");
+    let stat = bonus_stats
+        .get("damage:melee")
+        .expect("Stat bonus should be added");
     assert_eq!(stat.percent, 0.5);
 
     // Verify SkillBuff entity
     let mut query = app.world_mut().query::<&SkillBuff>();
-    let buff = query.iter(app.world()).next().expect("Should have one buff");
+    let buff = query
+        .iter(app.world())
+        .next()
+        .expect("Should have one buff");
     assert_eq!(buff.source_skill_id, skill_id);
     assert_eq!(buff.stat_key, "damage:melee");
 }
@@ -166,7 +174,10 @@ fn test_skill_apply_status() {
     app.update();
 
     // Verify StatusEffect component on caster (since it's TargetType::Identity)
-    let status = app.world().get::<StatusEffect>(caster).expect("Target should have StatusEffect");
+    let status = app
+        .world()
+        .get::<StatusEffect>(caster)
+        .expect("Target should have StatusEffect");
     assert_eq!(status.status_id, "stun");
     assert_eq!(status.timer.duration().as_millis(), 2000);
 }
@@ -209,7 +220,7 @@ fn test_skill_cooldown() {
             });
         },
     );
-    
+
     // Add ticking system
     app.add_systems(Update, systems::tick_cooldowns);
 
@@ -223,7 +234,11 @@ fn test_skill_cooldown() {
     app.update();
 
     let mut query = app.world_mut().query::<&TestResult>();
-    assert_eq!(query.iter(app.world()).count(), 1, "First activation should succeed");
+    assert_eq!(
+        query.iter(app.world()).count(),
+        1,
+        "First activation should succeed"
+    );
 
     // Trigger 2: Should fail (on cooldown)
     app.world_mut().trigger(SkillActivated {
@@ -235,15 +250,25 @@ fn test_skill_cooldown() {
     app.update();
 
     let mut query = app.world_mut().query::<&TestResult>();
-    assert_eq!(query.iter(app.world()).count(), 1, "Second activation should fail due to cooldown");
+    assert_eq!(
+        query.iter(app.world()).count(),
+        1,
+        "Second activation should fail due to cooldown"
+    );
 
     // Advance time manually
     {
-        let mut cooldowns = app.world_mut().get_mut::<SkillCooldowns>(caster).expect("Should have cooldowns");
-        let timer = cooldowns.timers.get_mut(&skill_id).expect("Should have timer");
+        let mut cooldowns = app
+            .world_mut()
+            .get_mut::<SkillCooldowns>(caster)
+            .expect("Should have cooldowns");
+        let timer = cooldowns
+            .timers
+            .get_mut(&skill_id)
+            .expect("Should have timer");
         timer.tick(Duration::from_millis(1100));
     }
-    
+
     app.update();
 
     // Trigger 3: Should succeed (cooldown finished)
@@ -256,7 +281,11 @@ fn test_skill_cooldown() {
     app.update();
 
     let mut query = app.world_mut().query::<&TestResult>();
-    assert_eq!(query.iter(app.world()).count(), 2, "Third activation should succeed after cooldown");
+    assert_eq!(
+        query.iter(app.world()).count(),
+        2,
+        "Third activation should succeed after cooldown"
+    );
 }
 
 #[test]
@@ -313,7 +342,10 @@ fn test_skill_target_single_enemy() {
     app.update();
 
     let mut query = app.world_mut().query::<&TestResult>();
-    let result = query.iter(app.world()).next().expect("Should have hit the target");
+    let result = query
+        .iter(app.world())
+        .next()
+        .expect("Should have hit the target");
     assert_eq!(result.damage, 15.0);
 }
 
@@ -345,19 +377,18 @@ fn test_skill_target_aoe_range() {
     map.handles.insert(skill_id.clone(), skill_handle);
 
     // Spawn caster
-    let caster = app.world_mut().spawn(Transform::from_xyz(0.0, 0.0, 0.0)).id();
-    
+    let caster = app
+        .world_mut()
+        .spawn(Transform::from_xyz(0.0, 0.0, 0.0))
+        .id();
+
     // Spawn enemies in and out of range
     // Enemy in range (distance ~5)
-    app.world_mut().spawn((
-        enemy_components::Enemy,
-        Transform::from_xyz(5.0, 0.0, 0.0),
-    ));
+    app.world_mut()
+        .spawn((enemy_components::Enemy, Transform::from_xyz(5.0, 0.0, 0.0)));
     // Enemy out of range (distance ~15)
-    app.world_mut().spawn((
-        enemy_components::Enemy,
-        Transform::from_xyz(15.0, 0.0, 0.0),
-    ));
+    app.world_mut()
+        .spawn((enemy_components::Enemy, Transform::from_xyz(15.0, 0.0, 0.0)));
 
     // Spy on DamageRequest
     app.add_observer(
@@ -379,7 +410,11 @@ fn test_skill_target_aoe_range() {
     app.update();
 
     let mut query = app.world_mut().query::<&TestResult>();
-    assert_eq!(query.iter(app.world()).count(), 1, "Only one enemy should be in range");
+    assert_eq!(
+        query.iter(app.world()).count(),
+        1,
+        "Only one enemy should be in range"
+    );
 }
 
 #[derive(Component)]

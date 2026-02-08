@@ -2,7 +2,7 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     buildings_components::TheMaw,
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
-    hero_ui::{spawn_hero_content, HeroContentContainer, HeroUiRoot},
+    hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
     research::ResearchState,
     shared_components::DisplayName,
     skill_components::EquippedSkills,
