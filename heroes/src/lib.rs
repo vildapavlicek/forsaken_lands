@@ -5,7 +5,7 @@ use {
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
     },
-    hero_events::{AttackIntent, DamageRequest, ProjectileHit},
+    hero_events::{AttackIntent, DamageRequest, ProjectileHit, ProjectileSpawnRequest},
     shared_components::HitIndicator,
     states::GameState,
     system_schedule::GameSchedule,
@@ -34,6 +34,7 @@ impl Plugin for HeroesPlugin {
         );
 
         app.add_observer(hero_projectile_spawn_system);
+        app.add_observer(projectile_spawn_observer);
         app.add_observer(hero_melee_attack_system);
         app.add_observer(damage_pipeline_observer);
         app.add_observer(apply_hit_indicator_observer);
@@ -111,44 +112,51 @@ fn hero_projectile_spawn_system(
     mut commands: Commands,
     weapons: Query<(&Damage, &WeaponTags), (With<RangedWeapon>, Without<MeleeWeapon>)>,
     villages: Query<&Transform, With<Village>>,
-    enemies: Query<&MonsterTags, With<Enemy>>,
 ) {
     let Ok(village_transform) = villages.single() else {
-        if villages.is_empty() {
-            error!("hero_projectile_spawn_system: No village with Transform found.");
-        } else {
-            error!(
-                "hero_projectile_spawn_system: Multiple villages with Transform found! Count: {}",
-                villages.iter().count()
-            );
-        }
         return;
     };
 
     let intent = trigger.event();
 
-    // Double check the attacker is still a valid weapon.
-    if let Ok((damage, tags)) = weapons.get(intent.attacker)
-        // Check if target still exists (optional for spawn, but good practice)
-        && enemies.get(intent.target).is_ok()
-    {
-        commands.spawn((
-            Sprite {
-                color: Color::srgb(1.0, 1.0, 0.0),
-                custom_size: Some(Vec2::new(10.0, 10.0)),
-                ..default()
-            },
-            Transform::from_translation(village_transform.translation),
-            Projectile,
-            ProjectileTarget(intent.target),
-            ProjectileSpeed(400.0),
-            // Store raw damage context, calculate on hit
-            ProjectileDamage {
-                base_damage: damage.0,
-                source_tags: tags.0.clone(),
-            },
-        ));
+    if let Ok((damage, tags)) = weapons.get(intent.attacker) {
+        commands.trigger(ProjectileSpawnRequest {
+            source_position: village_transform.translation,
+            target: intent.target,
+            speed: 400.0,
+            base_damage: damage.0,
+            source_tags: tags.0.clone(),
+        });
     }
+}
+
+fn projectile_spawn_observer(
+    trigger: On<ProjectileSpawnRequest>,
+    mut commands: Commands,
+    enemies: Query<(), With<Enemy>>,
+) {
+    let req = trigger.event();
+
+    // Check if target still exists
+    if enemies.get(req.target).is_err() {
+        return;
+    }
+
+    commands.spawn((
+        Sprite {
+            color: Color::srgb(1.0, 1.0, 0.0),
+            custom_size: Some(Vec2::new(10.0, 10.0)),
+            ..default()
+        },
+        Transform::from_translation(req.source_position),
+        Projectile,
+        ProjectileTarget(req.target),
+        ProjectileSpeed(req.speed),
+        ProjectileDamage {
+            base_damage: req.base_damage,
+            source_tags: req.source_tags.clone(),
+        },
+    ));
 }
 
 fn hero_melee_attack_system(

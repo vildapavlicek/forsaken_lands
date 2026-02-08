@@ -116,3 +116,18 @@ impl Default for DamageRequest {
         }
     }
 }
+
+/// Represents a request to spawn a projectile.
+#[derive(Event)]
+pub struct ProjectileSpawnRequest {
+    /// The entity or position the projectile originates from.
+    pub source_position: Vec3,
+    /// The target entity the projectile should home in on.
+    pub target: Entity,
+    /// The speed of the projectile.
+    pub speed: f32,
+    /// The base damage of the projectile.
+    pub base_damage: f32,
+    /// Tags describing the damage source.
+    pub source_tags: Vec<String>,
+}
