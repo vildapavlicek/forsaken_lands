@@ -108,6 +108,14 @@ pub enum SkillEffect {
     /// Spawn an entity (trap, projectile, summon)
     Spawn { prefab_id: String },
 
+    /// Spawn a projectile that deals damage on impact
+    Projectile {
+        /// Projectile travel speed
+        speed: f32,
+        /// Damage dealt on impact
+        damage: f32,
+    },
+
     // === Conditional/Meta Effects ===
     /// Only apply inner effects if condition is met
     Conditional {

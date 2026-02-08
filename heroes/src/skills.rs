@@ -1,7 +1,7 @@
 use {
     bevy::prelude::*,
     enemy_components::Enemy,
-    hero_components::{AttackRange, Hero},
+    hero_components::Hero,
     skill_components::{EquippedSkills, SkillCooldowns},
     skill_events::SkillActivated,
     skills_assets::{SkillDefinition, SkillEffect, SkillMap, SkillType, TargetType},
@@ -12,7 +12,7 @@ use {
 /// when enemies are within the defensive perimeter.
 pub fn hero_auto_activate_skills_system(
     mut commands: Commands,
-    heroes: Query<(Entity, &EquippedSkills, &SkillCooldowns, Option<&AttackRange>), With<Hero>>,
+    heroes: Query<(Entity, &EquippedSkills, &SkillCooldowns), With<Hero>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     villages: Query<&Transform, With<Village>>,
     skill_map: Res<SkillMap>,
@@ -22,7 +22,7 @@ pub fn hero_auto_activate_skills_system(
         return;
     };
 
-    for (hero_entity, equipped, cooldowns, hero_range) in &heroes {
+    for (hero_entity, equipped, cooldowns) in &heroes {
         for skill_id in &equipped.0 {
             // Check if skill is on cooldown
             if let Some(timer) = cooldowns.timers.get(skill_id) {
@@ -48,9 +48,12 @@ pub fn hero_auto_activate_skills_system(
             let is_attacking = skill_def.effects.iter().any(|e| {
                 matches!(
                     e,
-                    SkillEffect::Damage { .. } | SkillEffect::DamagePercent { .. }
+                    SkillEffect::Damage { .. }
+                        | SkillEffect::DamagePercent { .. }
+                        | SkillEffect::Projectile { .. }
                 )
             });
+
             if !is_attacking {
                 continue;
             }

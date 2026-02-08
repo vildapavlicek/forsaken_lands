@@ -5107,6 +5107,7 @@ dependencies = [
  "skill_components",
  "skill_events",
  "skills_assets",
+ "village_components",
 ]
 
 [[package]]

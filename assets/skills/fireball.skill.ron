@@ -5,8 +5,7 @@
     cooldown_ms: 2000,
     target: SingleEnemy(range: 380.0),
     effects: [
-        Damage(amount: 25.0),
-        ApplyStatus(status_id: "burning", duration_ms: 3000),
+        Projectile(speed: 400.0, damage: 25.0),
     ],
     tags: ["skill:fire", "skill:ranged"],
 )

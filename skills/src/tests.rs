@@ -416,6 +416,90 @@ fn test_skill_target_aoe_range() {
         "Only one enemy should be in range"
     );
 }
+
+#[test]
+fn test_skill_projectile_spawns() {
+    let mut app = App::new();
+    app.add_plugins(MinimalPlugins)
+        .add_plugins(AssetPlugin::default())
+        .add_plugins(SkillEventsPlugin)
+        .init_resource::<SkillMap>()
+        .init_resource::<Assets<SkillDefinition>>()
+        .init_resource::<BonusStats>()
+        .add_observer(systems::process_skill_activation);
+
+    // Create a mock skill with Projectile effect
+    let mut skills = app.world_mut().resource_mut::<Assets<SkillDefinition>>();
+    let skill_id = "test_projectile".to_string();
+    let skill_handle = skills.add(SkillDefinition {
+        id: skill_id.clone(),
+        display_name: "Test Projectile".to_string(),
+        skill_type: SkillType::Active,
+        cooldown_ms: 0,
+        target: TargetType::SingleEnemy { range: 100.0 },
+        effects: vec![SkillEffect::Projectile {
+            speed: 500.0,
+            damage: 25.0,
+        }],
+        tags: vec!["skill:fire".to_string()],
+    });
+
+    let mut map = app.world_mut().resource_mut::<SkillMap>();
+    map.handles.insert(skill_id.clone(), skill_handle);
+
+    // Spawn Village (needed for source position)
+    app.world_mut().spawn((
+        village_components::Village,
+        Transform::from_xyz(10.0, 20.0, 0.0),
+    ));
+
+    // Spawn caster and target
+    let caster = app.world_mut().spawn(Transform::default()).id();
+    let target = app.world_mut().spawn(Transform::default()).id();
+
+    // Spy on ProjectileSpawnRequest
+    #[derive(Component)]
+    struct ProjectileSpawnResult {
+        pos: Vec3,
+        target: Entity,
+        speed: f32,
+        damage: f32,
+    }
+
+    app.add_observer(
+        move |trigger: On<hero_events::ProjectileSpawnRequest>, mut commands: Commands| {
+            let event = trigger.event();
+            commands.spawn(ProjectileSpawnResult {
+                pos: event.source_position,
+                target: event.target,
+                speed: event.speed,
+                damage: event.base_damage,
+            });
+        },
+    );
+
+    // Trigger skill
+    app.world_mut().trigger(SkillActivated {
+        caster,
+        skill_id: skill_id.clone(),
+        target: Some(target),
+        target_position: None,
+    });
+
+    app.update();
+
+    let mut query = app.world_mut().query::<&ProjectileSpawnResult>();
+    let result = query
+        .iter(app.world())
+        .next()
+        .expect("Should have triggered ProjectileSpawnRequest");
+
+    assert_eq!(result.pos, Vec3::new(10.0, 20.0, 0.0));
+    assert_eq!(result.target, target);
+    assert_eq!(result.speed, 500.0);
+    assert_eq!(result.damage, 25.0);
+}
+
 #[derive(Component)]
 struct TestResult {
     damage: f32,

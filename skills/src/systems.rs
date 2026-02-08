@@ -3,8 +3,9 @@ use {
     bevy::prelude::*,
     bonus_stats::{BonusStats, StatBonus},
     enemy_components::Enemy,
-    hero_events::DamageRequest,
+    hero_events::{DamageRequest, ProjectileSpawnRequest},
     std::time::Duration,
+    village_components::Village,
 };
 
 /// Ticks all skill cooldown timer and initializes missing ones
@@ -87,6 +88,7 @@ pub fn process_skill_activation(
     mut bonus_stats: ResMut<BonusStats>,
     transforms: Query<&Transform>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
+    villages: Query<&Transform, With<Village>>,
 ) {
     let event = trigger.event();
 
@@ -214,6 +216,20 @@ pub fn process_skill_activation(
                         timer: Timer::from_seconds(*duration_ms as f32 / 1000.0, TimerMode::Once),
                     });
                     affected_entities.push(*target);
+                }
+            }
+            SkillEffect::Projectile { speed, damage } => {
+                if let Ok(village_transform) = villages.single() {
+                    for target in &targets {
+                        commands.trigger(ProjectileSpawnRequest {
+                            source_position: village_transform.translation,
+                            target: *target,
+                            speed: *speed,
+                            base_damage: *damage,
+                            source_tags: skill_def.tags.clone(),
+                        });
+                        affected_entities.push(*target);
+                    }
                 }
             }
             _ => todo!("triggered skill effect that has not been implemented yet! {effect:?}"),
