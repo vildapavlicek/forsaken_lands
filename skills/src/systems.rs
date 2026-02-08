@@ -4,9 +4,10 @@ use {
     bonus_stats::{BonusStats, StatBonus},
     enemy_components::Enemy,
     hero_events::DamageRequest,
+    std::time::Duration,
 };
 
-/// Ticks all skill cooldown timer and triggers auto-activate skills
+/// Ticks all skill cooldown timer and initializes missing ones
 pub fn tick_cooldowns(
     mut commands: Commands,
     time: Res<Time>,
@@ -16,26 +17,12 @@ pub fn tick_cooldowns(
 ) {
     for (entity, mut cooldowns, equipped) in &mut query {
         if let Some(ref mut cooldowns) = cooldowns {
-            for (skill_id, timer) in cooldowns.timers.iter_mut() {
+            for timer in cooldowns.timers.values_mut() {
                 timer.tick(time.delta());
-                if timer.is_finished() {
-                    if let Some(skill_def) =
-                        skill_map.handles.get(skill_id).and_then(|h| skills.get(h))
-                    {
-                        if matches!(skill_def.skill_type, SkillType::AutoActivate) {
-                            commands.trigger(SkillActivated {
-                                caster: entity,
-                                skill_id: skill_id.clone(),
-                                target: None,
-                                target_position: None,
-                            });
-                        }
-                    }
-                }
             }
         }
 
-        // Auto-start skills that are equipped but not yet tracked
+        // Initialize timers for skills that are equipped but not yet tracked
         if let Some(equipped) = equipped {
             for skill_id in &equipped.0 {
                 let already_tracked = cooldowns
@@ -46,13 +33,15 @@ pub fn tick_cooldowns(
                     if let Some(skill_def) =
                         skill_map.handles.get(skill_id).and_then(|h| skills.get(h))
                     {
-                        if matches!(skill_def.skill_type, SkillType::AutoActivate) {
-                            commands.trigger(SkillActivated {
-                                caster: entity,
-                                skill_id: skill_id.clone(),
-                                target: None,
-                                target_position: None,
-                            });
+                        let duration = Duration::from_millis(skill_def.cooldown_ms as u64);
+                        let timer = Timer::new(duration, TimerMode::Once);
+
+                        if let Some(ref mut c) = cooldowns {
+                            c.timers.insert(skill_id.clone(), timer);
+                        } else {
+                            let mut timers = std::collections::HashMap::new();
+                            timers.insert(skill_id.clone(), timer);
+                            commands.entity(entity).insert(SkillCooldowns { timers });
                         }
                     }
                 }
@@ -121,6 +110,7 @@ pub fn process_skill_activation(
     }
 
     let mut targets = Vec::new();
+    info!(?skill_def.display_name, "triggering skill");
 
     // Target Resolution
     match skill_def.target {

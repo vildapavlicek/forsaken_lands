@@ -13,6 +13,7 @@ use {
 };
 
 mod hero_spawner;
+mod skills;
 
 pub struct HeroesPlugin;
 
@@ -25,6 +26,7 @@ impl Plugin for HeroesPlugin {
             Update,
             (
                 hero_attack_intent_system.in_set(GameSchedule::ResolveIntent),
+                skills::hero_auto_activate_skills_system.in_set(GameSchedule::ResolveIntent),
                 (projectile_movement_system, projectile_collision_system)
                     .in_set(GameSchedule::PerformAction)
                     .chain(),

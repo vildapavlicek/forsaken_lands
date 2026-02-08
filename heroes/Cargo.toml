@@ -14,3 +14,6 @@ states.workspace = true
 shared_components.workspace = true
 bonus_stats.workspace = true
 unlocks_events.workspace = true
+skill_components.workspace = true
+skill_events.workspace = true
+skills_assets.workspace = true

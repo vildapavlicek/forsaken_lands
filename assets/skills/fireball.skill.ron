@@ -1,7 +1,7 @@
 (
     id: "fireball",
     display_name: "Fireball",
-    skill_type: Active,
+    skill_type: AutoActivate,
     cooldown_ms: 2000,
     target: SingleEnemy,
     effects: [
