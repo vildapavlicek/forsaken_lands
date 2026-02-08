@@ -1,0 +1,17 @@
+[package]
+name = "skills"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+skill_components.workspace = true
+skill_events.workspace = true
+skills_assets.workspace = true
+hero_components.workspace = true
+hero_events = { workspace = true }
+enemy_components.workspace = true
+bonus_stats.workspace = true
+bonus_stats_events.workspace = true
+shared_components.workspace = true
+rand.workspace = true

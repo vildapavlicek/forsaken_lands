@@ -1,0 +1,12 @@
+(
+    id: "fireball",
+    display_name: "Fireball",
+    skill_type: Active,
+    cooldown_ms: 2000,
+    target: SingleEnemy,
+    effects: [
+        Damage(amount: 25.0),
+        ApplyStatus(status_id: "burning", duration_ms: 3000),
+    ],
+    tags: ["skill:fire", "skill:ranged"],
+)

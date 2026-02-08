@@ -64,6 +64,10 @@ members = [
   "village",
   "wallet",
   "weapon_factory", "game_assets/bonus_stats_assets",
+  "game_assets/skills_assets",
+  "components/skill_components",
+  "events/skill_events",
+  "skills",
 ]
 
 [workspace.dependencies]
@@ -130,6 +134,10 @@ weapon_assets = { path = "game_assets/weapon_assets" }
 weapon_factory = { path = "weapon_factory" }
 weapon_factory_events = { path = "events/weapon_factory_events" }
 widgets = { path = "ui/widgets" }
+skills_assets = { path = "game_assets/skills_assets" }
+skill_components = { path = "components/skill_components" }
+skill_events = { path = "events/skill_events" }
+skills = { path = "skills" }
 
 [dependencies]
 bevy.workspace = true

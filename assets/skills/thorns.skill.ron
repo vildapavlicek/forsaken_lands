@@ -1,0 +1,11 @@
+(
+    id: "thorns",
+    display_name: "Thorns",
+    skill_type: Reactive(trigger: OnDamageTaken),
+    cooldown_ms: 500,
+    target: Self_,
+    effects: [
+        Damage(amount: 5.0), 
+    ],
+    tags: ["skill:defensive", "skill:reactive"],
+)

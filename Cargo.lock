@@ -2134,6 +2134,7 @@ dependencies = [
  "resources_ui",
  "save_load",
  "shared_components",
+ "skills",
  "states",
  "system_schedule",
  "unlocks",
@@ -5070,6 +5071,46 @@ name = "simd-adler32"
 version = "0.3.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e320a6c5ad31d271ad523dcf3ad13e2767ad8b1cb8f047f75a8aeaf8da139da2"
+
+[[package]]
+name = "skill_components"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "skill_events"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
+name = "skills"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bonus_stats",
+ "bonus_stats_events",
+ "enemy_components",
+ "hero_components",
+ "hero_events",
+ "rand",
+ "shared_components",
+ "skill_components",
+ "skill_events",
+ "skills_assets",
+]
+
+[[package]]
+name = "skills_assets"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_common_assets",
+ "serde",
+]
 
 [[package]]
 name = "skrifa"

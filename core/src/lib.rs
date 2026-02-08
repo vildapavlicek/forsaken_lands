@@ -29,6 +29,7 @@ impl Plugin for CorePlugin {
                 BuildingsPlugin,
                 BuildingsComponentsPlugin,
                 BuildingsAssetsPlugin,
+                skills::SkillsPlugin,
                 blessings::BlessingsPlugin,
                 CraftingPlugin,
                 CraftingResourcesPlugin,
