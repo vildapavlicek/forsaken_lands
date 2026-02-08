@@ -25,6 +25,8 @@ impl Plugin for CorePlugin {
                 (FrameStart, ResolveIntent, PerformAction, Effect, FrameEnd).chain(),
             )
             .add_plugins((
+                // Do NOT add more plugins here
+                // it will complain that tuple is too big
                 LoadingManagerPlugin,
                 BuildingsPlugin,
                 BuildingsComponentsPlugin,
@@ -57,6 +59,7 @@ impl Plugin for CorePlugin {
             ))
             .add_plugins((
                 VillagePlugin,
+                skills::SkillsPlugin,
                 VillageUiPlugin,
                 WalletPlugin,
                 WidgetsPlugin,
