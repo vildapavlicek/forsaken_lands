@@ -41,10 +41,10 @@ impl Plugin for CorePlugin {
                 EnemyEventsPlugin,
                 HeroesPlugin,
                 HeroEventsPlugin,
-                PortalsPlugin,
-                PortalAssetsPlugin,
             ))
             .add_plugins((
+                PortalsPlugin,
+                PortalAssetsPlugin,
                 BlessingsUiPlugin,
                 PortalUiPlugin,
                 ResearchPlugin,
@@ -59,7 +59,6 @@ impl Plugin for CorePlugin {
             ))
             .add_plugins((
                 VillagePlugin,
-                skills::SkillsPlugin,
                 VillageUiPlugin,
                 WalletPlugin,
                 WidgetsPlugin,

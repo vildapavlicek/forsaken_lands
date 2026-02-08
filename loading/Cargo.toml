@@ -27,3 +27,4 @@ serde.workspace = true
 blessings.workspace = true
 bonus_stats.workspace = true
 bonus_stats_assets.workspace = true
+skills_assets.workspace = true

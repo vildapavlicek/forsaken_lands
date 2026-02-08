@@ -3,8 +3,10 @@ use {
     equipment_events::{EquipWeaponRequest, UnequipWeaponRequest},
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
     shared_components::DisplayName,
+    skill_components::EquippedSkills,
+    skills_assets::{SkillDefinition, SkillMap},
     states::GameState,
-    widgets::{UiTheme, spawn_action_button, spawn_card_title, spawn_item_card},
+    widgets::{spawn_action_button, spawn_card_title, spawn_item_card, UiTheme},
 };
 
 pub struct HeroUiPlugin;
@@ -23,6 +25,9 @@ impl Plugin for HeroUiPlugin {
                     handle_equip_button,
                     handle_unequip_button,
                     handle_hero_tab_interaction,
+                    handle_change_skill_button,
+                    handle_close_skill_popup,
+                    handle_equip_skill_button,
                 )
                     .run_if(in_state(HeroUiState::Open).and(in_state(GameState::Running))),
             );
@@ -91,6 +96,29 @@ pub struct UnequipWeaponButton {
 #[derive(Component)]
 pub struct UnequippedWeaponsList;
 
+/// Button to open skill change popup
+#[derive(Component)]
+pub struct ChangeSkillButton {
+    pub hero_entity: Entity,
+}
+
+/// Marker for the skill popup
+#[derive(Component)]
+pub struct SkillPopup {
+    pub hero_entity: Entity,
+}
+
+/// Close button for skill popup
+#[derive(Component)]
+pub struct CloseSkillPopupButton;
+
+/// Button to equip a specific skill
+#[derive(Component)]
+pub struct EquipSkillButton {
+    pub hero_entity: Entity,
+    pub skill_id: String,
+}
+
 /// Marker for the hero content container that can be refreshed
 /// Marker for the hero content container that can be refreshed
 #[derive(Component, Default)]
@@ -139,6 +167,9 @@ fn on_hero_ui_refresh(
     >,
     hero_query: Query<Entity, With<Hero>>,
     children_query: Query<&Children>,
+    equipped_skills_query: Query<&EquippedSkills>,
+    skill_map: Res<SkillMap>,
+    skill_definitions: Res<Assets<SkillDefinition>>,
     weapon_query: Query<
         (
             Entity,
@@ -177,6 +208,9 @@ fn on_hero_ui_refresh(
             &children_query,
             &weapon_query,
             &melee_query,
+            &equipped_skills_query,
+            &skill_map,
+            &skill_definitions,
             &bonus_stats,
         );
         heroes_data.push((*hero_entity, data));
@@ -204,11 +238,19 @@ pub struct WeaponDisplayData {
     pub melee_arc: Option<f32>, // In degrees, only for melee weapons
 }
 
+/// Data for displaying skill info
+#[derive(Clone)]
+pub struct SkillDisplayData {
+    pub id: String,
+    pub name: String,
+}
+
 /// Data for displaying a hero
 pub struct HeroDisplayData {
     pub entity: Entity,
     pub name: String,
     pub weapon: Option<WeaponDisplayData>,
+    pub equipped_skills: Vec<SkillDisplayData>,
 }
 
 // ============================================================================
@@ -293,6 +335,9 @@ fn spawn_hero_details(
     parent.commands().entity(name_card).with_children(|card| {
         spawn_card_title(card, &hero.name);
     });
+
+    // Skills section
+    spawn_skills_section(parent, hero_entity, &hero.equipped_skills);
 
     // Weapon section
     if let Some(weapon) = &hero.weapon {
@@ -408,6 +453,227 @@ fn spawn_stat_row(parent: &mut ChildSpawnerCommands, label: &str, value: &str) {
                 TextColor(UiTheme::TEXT_PRIMARY),
             ));
         });
+}
+
+pub fn spawn_skills_section(
+    parent: &mut ChildSpawnerCommands,
+    hero_entity: Entity,
+    equipped_skills: &[SkillDisplayData],
+) {
+    // Skills header
+    parent.spawn((
+        Text::new("Skills"),
+        TextFont {
+            font_size: 18.0,
+            ..default()
+        },
+        TextColor(UiTheme::TEXT_HEADER),
+        Node {
+            margin: UiRect::vertical(Val::Px(8.0)),
+            ..default()
+        },
+    ));
+
+    // Skill slots container
+    parent
+        .spawn(Node {
+            flex_direction: FlexDirection::Row,
+            width: Val::Percent(100.0),
+            margin: UiRect::bottom(Val::Px(10.0)),
+            ..default()
+        })
+        .with_children(|container| {
+            // For now, let's just show one slot
+            let skill = equipped_skills.first().cloned();
+
+            spawn_skill_slot(container, hero_entity, skill);
+        });
+}
+
+fn spawn_skill_slot(
+    parent: &mut ChildSpawnerCommands,
+    hero_entity: Entity,
+    skill: Option<SkillDisplayData>,
+) {
+    let (label, border_color) = if let Some(s) = skill {
+        (s.name, UiTheme::TAB_BORDER)
+    } else {
+        ("[ Empty Slot ]".to_string(), UiTheme::TEXT_SECONDARY)
+    };
+
+    spawn_action_button(
+        parent,
+        &label,
+        UiTheme::TEXT_PRIMARY,
+        border_color,
+        ChangeSkillButton { hero_entity },
+    );
+}
+
+// ============================================================================
+// Skill Popup
+// ============================================================================
+
+pub fn spawn_skill_popup(
+    commands: &mut Commands,
+    hero_entity: Entity,
+    available_skills: Vec<(String, String)>, // (id, display_name)
+) {
+    // Full-screen overlay
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.5)),
+            SkillPopup { hero_entity },
+            Interaction::default(),
+        ))
+        .with_children(|overlay| {
+            // Popup panel
+            overlay
+                .spawn((
+                    Node {
+                        width: Val::Px(400.0),
+                        max_height: Val::Vh(70.0),
+                        flex_direction: FlexDirection::Column,
+                        padding: UiRect::all(Val::Px(15.0)),
+                        border: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    BackgroundColor(UiTheme::POPUP_BG),
+                    BorderColor::all(UiTheme::POPUP_BORDER),
+                ))
+                .with_children(|popup| {
+                    // Header row
+                    popup
+                        .spawn(Node {
+                            flex_direction: FlexDirection::Row,
+                            justify_content: JustifyContent::SpaceBetween,
+                            align_items: AlignItems::Center,
+                            margin: UiRect::bottom(Val::Px(10.0)),
+                            ..default()
+                        })
+                        .with_children(|header| {
+                            header.spawn((
+                                Text::new("Select Skill"),
+                                TextFont {
+                                    font_size: 20.0,
+                                    ..default()
+                                },
+                                TextColor(UiTheme::TEXT_HEADER),
+                            ));
+
+                            // Close button
+                            header
+                                .spawn((
+                                    Button,
+                                    Node {
+                                        width: Val::Px(24.0),
+                                        height: Val::Px(24.0),
+                                        justify_content: JustifyContent::Center,
+                                        align_items: AlignItems::Center,
+                                        ..default()
+                                    },
+                                    BackgroundColor(UiTheme::CLOSE_BUTTON_BG),
+                                    CloseSkillPopupButton,
+                                ))
+                                .with_children(|btn| {
+                                    btn.spawn((
+                                        Text::new("X"),
+                                        TextFont {
+                                            font_size: 16.0,
+                                            ..default()
+                                        },
+                                        TextColor(Color::WHITE),
+                                    ));
+                                });
+                        });
+
+                    // Scrollable container for available skills
+                    popup
+                        .spawn(Node {
+                            flex_direction: FlexDirection::Column,
+                            max_height: Val::Vh(40.0),
+                            overflow: Overflow::scroll_y(),
+                            ..default()
+                        })
+                        .with_children(|scroll_container| {
+                            for (skill_id, display_name) in available_skills {
+                                spawn_skill_selection_card(
+                                    scroll_container,
+                                    hero_entity,
+                                    skill_id,
+                                    display_name,
+                                );
+                            }
+                        });
+                });
+        });
+}
+
+fn spawn_skill_selection_card(
+    parent: &mut ChildSpawnerCommands,
+    hero_entity: Entity,
+    skill_id: String,
+    display_name: String,
+) {
+    let card = spawn_item_card(parent, ());
+    parent.commands().entity(card).with_children(|card| {
+        card.spawn(Node {
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::SpaceBetween,
+            align_items: AlignItems::Center,
+            width: Val::Percent(100.0),
+            ..default()
+        })
+        .with_children(|row| {
+            row.spawn((
+                Text::new(&display_name),
+                TextFont {
+                    font_size: 14.0,
+                    ..default()
+                },
+                TextColor(UiTheme::TEXT_PRIMARY),
+            ));
+
+            row.spawn((
+                Button,
+                Node {
+                    padding: UiRect::axes(Val::Px(10.0), Val::Px(5.0)),
+                    border: UiRect::all(Val::Px(1.0)),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    ..default()
+                },
+                BorderColor::all(UiTheme::BORDER_SUCCESS),
+                BackgroundColor(UiTheme::BUTTON_NORMAL),
+                EquipSkillButton {
+                    hero_entity,
+                    skill_id,
+                },
+            ))
+            .with_children(|btn| {
+                btn.spawn((
+                    Text::new("Equip"),
+                    TextFont {
+                        font_size: 12.0,
+                        ..default()
+                    },
+                    TextColor(UiTheme::TEXT_PRIMARY),
+                ));
+            });
+        });
+    });
 }
 
 // ============================================================================
@@ -903,6 +1169,80 @@ fn handle_hero_tab_interaction(
     }
 }
 
+fn handle_change_skill_button(
+    mut commands: Commands,
+    interaction_query: Query<
+        (&Interaction, &ChangeSkillButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    skill_map: Res<SkillMap>,
+    skill_definitions: Res<Assets<SkillDefinition>>,
+) {
+    for (interaction, btn) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            let hero_entity = btn.hero_entity;
+
+            // Collect available skills
+            let mut available_skills = Vec::new();
+            for (id, handle) in skill_map.handles.iter() {
+                if let Some(def) = skill_definitions.get(handle) {
+                    available_skills.push((id.clone(), def.display_name.clone()));
+                }
+            }
+
+            spawn_skill_popup(&mut commands, hero_entity, available_skills);
+        }
+    }
+}
+
+fn handle_close_skill_popup(
+    mut commands: Commands,
+    interaction_query: Query<&Interaction, (Changed<Interaction>, With<CloseSkillPopupButton>)>,
+    popup_query: Query<Entity, With<SkillPopup>>,
+) {
+    for interaction in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            for entity in popup_query.iter() {
+                commands.entity(entity).despawn();
+            }
+        }
+    }
+}
+
+fn handle_equip_skill_button(
+    mut commands: Commands,
+    interaction_query: Query<
+        (&Interaction, &EquipSkillButton),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut hero_query: Query<&mut EquippedSkills>,
+    popup_query: Query<Entity, With<SkillPopup>>,
+) {
+    for (interaction, btn) in interaction_query.iter() {
+        if *interaction == Interaction::Pressed {
+            info!("Skill {} equipped to hero {:?}", btn.skill_id, btn.hero_entity);
+
+            if let Ok(mut equipped) = hero_query.get_mut(btn.hero_entity) {
+                // For now, let's just replace the first skill or add if empty
+                if equipped.0.is_empty() {
+                    equipped.0.push(btn.skill_id.clone());
+                } else {
+                    equipped.0[0] = btn.skill_id.clone();
+                }
+            } else {
+                // If the hero doesn't have the component, something is wrong, but we can add it
+                commands.entity(btn.hero_entity).insert(EquippedSkills(vec![btn.skill_id.clone()]));
+            }
+
+            // Close popup and refresh UI
+            for entity in popup_query.iter() {
+                commands.entity(entity).despawn();
+            }
+            commands.trigger(RefreshHeroUiEvent);
+        }
+    }
+}
+
 // ============================================================================
 // Query Helpers
 // ============================================================================
@@ -925,10 +1265,34 @@ pub fn build_hero_display_data(
         With<Weapon>,
     >,
     is_melee_query: &Query<(), With<MeleeWeapon>>,
+    equipped_skills_query: &Query<&EquippedSkills>,
+    skill_map: &SkillMap,
+    skill_definitions: &Assets<SkillDefinition>,
     bonus_stats: &bonus_stats::BonusStats,
 ) -> HeroDisplayData {
     // Placeholder hero name (heroes don't have names yet)
     let name = "Hero".to_string();
+
+    // Fetch equipped skills
+    let equipped_skills = equipped_skills_query
+        .get(hero_entity)
+        .map(|s| {
+            s.0.iter()
+                .map(|id| {
+                    let name = skill_map
+                        .handles
+                        .get(id)
+                        .and_then(|h| skill_definitions.get(h))
+                        .map(|def| def.display_name.clone())
+                        .unwrap_or_else(|| id.clone());
+                    SkillDisplayData {
+                        id: id.clone(),
+                        name,
+                    }
+                })
+                .collect()
+        })
+        .unwrap_or_default();
 
     // Find weapon child
     let weapon = children_query.get(hero_entity).ok().and_then(|children| {
@@ -972,5 +1336,6 @@ pub fn build_hero_display_data(
         entity: hero_entity,
         name,
         weapon,
+        equipped_skills,
     }
 }

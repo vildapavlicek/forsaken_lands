@@ -3,9 +3,10 @@ mod resources;
 use {
     crate::resources::{
         BlessingsFolderHandle, BonusStatsFolderHandle, EnemyPrefabsFolderHandle,
-        RecipesFolderHandle, ResearchFolderHandle, UnlocksFolderHandle, WeaponsFolderHandle,
+        RecipesFolderHandle, ResearchFolderHandle, SkillsFolderHandle, UnlocksFolderHandle,
+        WeaponsFolderHandle,
     },
-    bevy::{asset::LoadedFolder, platform::collections::HashMap, prelude::*},
+    bevy::{asset::LoadedFolder, ecs::system::SystemParam, platform::collections::HashMap, prelude::*},
     blessings::BlessingDefinition,
     crafting_resources::RecipeMap,
     divinity_components::Divinity,
@@ -15,6 +16,7 @@ use {
     research::ResearchMap,
     research_assets::ResearchDefinition,
     serde::de::DeserializeSeed,
+    skills_assets::{SkillDefinition, SkillMap},
     states::{GameState, LoadingPhase},
     std::{fs, path::Path},
     unlocks::{CompiledUnlock, TopicMap, UnlockState},
@@ -45,6 +47,7 @@ impl Plugin for LoadingManagerPlugin {
                     load_weapons_assets,
                     load_blessings_assets,
                     load_bonus_stats_assets,
+                    load_skills_assets,
                 ),
             )
             .add_systems(OnEnter(LoadingPhase::Assets), update_scene_handle)
@@ -188,23 +191,35 @@ fn load_bonus_stats_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
     cmd.insert_resource(BonusStatsFolderHandle(handle));
 }
 
-#[allow(clippy::too_many_arguments)]
+fn load_skills_assets(mut cmd: Commands, asset_server: Res<AssetServer>) {
+    let handle = asset_server.load_folder("skills");
+    cmd.insert_resource(SkillsFolderHandle(handle));
+}
 
+#[derive(SystemParam)]
+struct FolderHandles<'w> {
+    enemy_prefabs: Res<'w, EnemyPrefabsFolderHandle>,
+    unlocks: Res<'w, UnlocksFolderHandle>,
+    research: Res<'w, ResearchFolderHandle>,
+    recipes: Res<'w, RecipesFolderHandle>,
+    weapons: Res<'w, WeaponsFolderHandle>,
+    blessings: Res<'w, BlessingsFolderHandle>,
+    bonus_stats: Res<'w, BonusStatsFolderHandle>,
+    skills: Res<'w, SkillsFolderHandle>,
+}
+
+#[allow(clippy::too_many_arguments)]
 fn check_assets_loaded(
     mut next_phase: ResMut<NextState<LoadingPhase>>,
     mut loading_manager: ResMut<LoadingManager>,
     mut weapon_map: ResMut<WeaponMap>,
+    mut skill_map: ResMut<SkillMap>,
     mut status: ResMut<LoadingStatus>,
     asset_server: Res<AssetServer>,
-    enemy_prefabs: Res<EnemyPrefabsFolderHandle>,
-    unlocks: Res<UnlocksFolderHandle>,
-    research: Res<ResearchFolderHandle>,
-    recipes: Res<RecipesFolderHandle>,
-    weapons: Res<WeaponsFolderHandle>,
-    blessings: Res<BlessingsFolderHandle>,
-    bonus_stats: Res<BonusStatsFolderHandle>,
+    folders: FolderHandles,
     folder: Res<Assets<LoadedFolder>>,
     weapon_assets: Res<Assets<WeaponDefinition>>,
+    skill_assets: Res<Assets<SkillDefinition>>,
     scenes: Res<Assets<DynamicScene>>,
     type_registry: Res<AppTypeRegistry>,
 ) {
@@ -221,17 +236,18 @@ fn check_assets_loaded(
     // But `asset_server.is_loaded_with_dependencies` is generally cheap if already loaded.
     if asset_server.is_loaded_with_dependencies(&loading_manager.startup_scene)
         && spawn_tables_loaded
-        && asset_server.is_loaded_with_dependencies(enemy_prefabs.0.id())
-        && asset_server.is_loaded_with_dependencies(unlocks.0.id())
-        && asset_server.is_loaded_with_dependencies(research.0.id())
-        && asset_server.is_loaded_with_dependencies(recipes.0.id())
-        && asset_server.is_loaded_with_dependencies(weapons.0.id())
-        && asset_server.is_loaded_with_dependencies(blessings.0.id())
-        && asset_server.is_loaded_with_dependencies(bonus_stats.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.enemy_prefabs.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.unlocks.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.research.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.recipes.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.weapons.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.blessings.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.bonus_stats.0.id())
+        && asset_server.is_loaded_with_dependencies(folders.skills.0.id())
     {
         info!("assets loaded");
 
-        let Some(enemy_prefabs_folder) = folder.get(enemy_prefabs.0.id()) else {
+        let Some(enemy_prefabs_folder) = folder.get(folders.enemy_prefabs.0.id()) else {
             panic!("folder not loaded even tho asset server said it is")
         };
 
@@ -256,7 +272,7 @@ fn check_assets_loaded(
         }
 
         // Populate WeaponMap from loaded weapon assets
-        let Some(weapons_folder) = folder.get(weapons.0.id()) else {
+        let Some(weapons_folder) = folder.get(folders.weapons.0.id()) else {
             panic!("weapons folder not loaded even though asset server said it is")
         };
 
@@ -268,6 +284,22 @@ fn check_assets_loaded(
             if let Some(def) = weapon_assets.get(&handle) {
                 debug!("Loaded weapon definition: {}", def.id);
                 weapon_map.handles.insert(def.id.clone(), handle);
+            }
+        }
+
+        // Populate SkillMap from loaded skill assets
+        let Some(skills_folder) = folder.get(folders.skills.0.id()) else {
+            panic!("skills folder not loaded even though asset server said it is")
+        };
+
+        for untyped_handle in skills_folder.handles.iter().cloned() {
+            let Ok(handle) = untyped_handle.try_typed::<SkillDefinition>() else {
+                continue;
+            };
+
+            if let Some(def) = skill_assets.get(&handle) {
+                debug!("Loaded skill definition: {}", def.id);
+                skill_map.handles.insert(def.id.clone(), handle);
             }
         }
 

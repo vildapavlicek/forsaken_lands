@@ -2,9 +2,11 @@ use {
     bevy::{picking::prelude::*, prelude::*},
     buildings_components::TheMaw,
     hero_components::{AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Weapon},
-    hero_ui::{HeroContentContainer, HeroUiRoot, spawn_hero_content},
+    hero_ui::{spawn_hero_content, HeroContentContainer, HeroUiRoot},
     research::ResearchState,
     shared_components::DisplayName,
+    skill_components::EquippedSkills,
+    skills_assets::{SkillDefinition, SkillMap},
     states::{GameState, VillageView},
     village_components::Village,
     widgets::{
@@ -316,12 +318,36 @@ impl Command for SpawnHeroesContentCommand {
                 }
             }
 
+            let skill_map = world.resource::<SkillMap>();
+            let skill_definitions = world.resource::<Assets<SkillDefinition>>();
+
+            let equipped_skills = world
+                .get::<EquippedSkills>(*hero_entity)
+                .map(|s| {
+                    s.0.iter()
+                        .map(|id| {
+                            let name = skill_map
+                                .handles
+                                .get(id)
+                                .and_then(|h| skill_definitions.get(h))
+                                .map(|def| def.display_name.clone())
+                                .unwrap_or_else(|| id.clone());
+                            hero_ui::SkillDisplayData {
+                                id: id.clone(),
+                                name,
+                            }
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
             heroes_data.push((
                 *hero_entity,
                 hero_ui::HeroDisplayData {
                     entity: *hero_entity,
                     name,
                     weapon: weapon_data,
+                    equipped_skills,
                 },
             ));
         }

@@ -22,3 +22,6 @@ pub(super) struct BlessingsFolderHandle(pub Handle<LoadedFolder>);
 
 #[derive(Debug, Resource)]
 pub(super) struct BonusStatsFolderHandle(pub Handle<LoadedFolder>);
+
+#[derive(Debug, Resource)]
+pub(super) struct SkillsFolderHandle(pub Handle<LoadedFolder>);

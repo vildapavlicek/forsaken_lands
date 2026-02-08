@@ -21,3 +21,5 @@ research_assets.workspace = true
 blessings.workspace = true
 growth.workspace = true
 bonus_stats.workspace = true
+skill_components.workspace = true
+skills_assets.workspace = true
