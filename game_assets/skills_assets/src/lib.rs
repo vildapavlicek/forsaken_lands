@@ -49,6 +49,8 @@ pub enum SkillType {
     Passive,
     /// Triggered automatically on specific events (e.g., on_hit, on_kill)
     Reactive { trigger: ReactiveTrigger },
+    /// Triggered automatically when cooldown finishes
+    AutoActivate,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Reflect, Default)]

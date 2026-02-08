@@ -6,11 +6,57 @@ use {
     hero_events::DamageRequest,
 };
 
-/// Ticks all skill cooldown timer
-pub fn tick_cooldowns(time: Res<Time>, mut query: Query<&mut SkillCooldowns>) {
-    for mut cooldowns in &mut query {
-        for timer in cooldowns.timers.values_mut() {
-            timer.tick(time.delta());
+/// Ticks all skill cooldown timer and triggers auto-activate skills
+pub fn tick_cooldowns(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, Option<&mut SkillCooldowns>, Option<&EquippedSkills>)>,
+    skill_map: Res<SkillMap>,
+    skills: Res<Assets<SkillDefinition>>,
+) {
+    for (entity, mut cooldowns, equipped) in &mut query {
+        if let Some(ref mut cooldowns) = cooldowns {
+            for (skill_id, timer) in cooldowns.timers.iter_mut() {
+                timer.tick(time.delta());
+                if timer.is_finished() {
+                    if let Some(skill_def) =
+                        skill_map.handles.get(skill_id).and_then(|h| skills.get(h))
+                    {
+                        if matches!(skill_def.skill_type, SkillType::AutoActivate) {
+                            commands.trigger(SkillActivated {
+                                caster: entity,
+                                skill_id: skill_id.clone(),
+                                target: None,
+                                target_position: None,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Auto-start skills that are equipped but not yet tracked
+        if let Some(equipped) = equipped {
+            for skill_id in &equipped.0 {
+                let already_tracked = cooldowns
+                    .as_ref()
+                    .map_or(false, |c| c.timers.contains_key(skill_id));
+
+                if !already_tracked {
+                    if let Some(skill_def) =
+                        skill_map.handles.get(skill_id).and_then(|h| skills.get(h))
+                    {
+                        if matches!(skill_def.skill_type, SkillType::AutoActivate) {
+                            commands.trigger(SkillActivated {
+                                caster: entity,
+                                skill_id: skill_id.clone(),
+                                target: None,
+                                target_position: None,
+                            });
+                        }
+                    }
+                }
+            }
         }
     }
 }
