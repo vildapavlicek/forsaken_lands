@@ -17,6 +17,7 @@ fn main() {
                     unlocks=info,\
                     save_load=trace,\
                     bonus_stats=debug,\
+                    skills=debug,\
                     village_ui=debug"
                     .into(),
                 level: bevy::log::Level::TRACE,
