@@ -1,16 +1,5 @@
 use bevy::prelude::*;
 
-pub struct HeroEventsPlugin;
-
-impl Plugin for HeroEventsPlugin {
-    fn build(&self, app: &mut App) {
-        app.register_type::<AttackIntent>()
-            .register_type::<ProjectileHit>()
-            .register_type::<EnemyKilled>()
-            .register_type::<DamageRequest>();
-    }
-}
-
 /// Represents an entity's decision and readiness to attack a specific target.
 ///
 /// This **Observer** event acts as the bridge between the "Decision Phase" (AI, Input, Cooldowns)
@@ -20,8 +9,7 @@ impl Plugin for HeroEventsPlugin {
 /// # Observers
 /// - `hero_projectile_spawn_system`: Spawns a projectile if `attacker` is a `RangedWeapon`.
 /// - `hero_melee_attack_system`: Calculates damage arcs if `attacker` is a `MeleeWeapon`.
-#[derive(Event, Reflect)]
-#[reflect(Default)]
+#[derive(Event)]
 pub struct AttackIntent {
     /// The entity (typically a weapon) attempting to attack.
     pub attacker: Entity,
@@ -45,8 +33,7 @@ impl Default for AttackIntent {
 ///
 /// # Observers
 /// - `apply_damage_system`: Reduces health of the `target`.
-#[derive(Event, Reflect)]
-#[reflect(Default)]
+#[derive(Event)]
 pub struct ProjectileHit {
     /// The projectile entity that made contact.
     /// Note: This entity is typically despawned immediately after this event is triggered.
@@ -57,16 +44,6 @@ pub struct ProjectileHit {
     pub damage: f32,
 }
 
-impl Default for ProjectileHit {
-    fn default() -> Self {
-        Self {
-            projectile: Entity::PLACEHOLDER,
-            target: Entity::PLACEHOLDER,
-            damage: 0.0,
-        }
-    }
-}
-
 /// Represents the confirmed death of an enemy entity.
 ///
 /// This **Observer** event (triggered via `commands.trigger`) serves as the primary signal
@@ -75,26 +52,16 @@ impl Default for ProjectileHit {
 /// # Observers
 /// - `update_encyclopedia` (Village): Increments kill counts in `EnemyEncyclopedia` and triggers kill-based unlocks.
 /// - `process_enemy_killed_rewards` (Wallet): Rolls for loot based on `Drops` and adds resources to `Wallet`.
-#[derive(Event, Reflect)]
-#[reflect(Default)]
+#[derive(Event)]
 pub struct EnemyKilled {
     /// The enemy entity that was killed.
     /// Note: This entity is guaranteed to be alive with its components (e.g., `Drops`, `MonsterId`) during the event trigger.
     pub entity: Entity,
 }
 
-impl Default for EnemyKilled {
-    fn default() -> Self {
-        Self {
-            entity: Entity::PLACEHOLDER,
-        }
-    }
-}
-
 /// Represents a request to apply damage to a single target.
 /// Triggered once per target hit by any damage source.
-#[derive(Event, Reflect)]
-#[reflect(Default)]
+#[derive(Event)]
 pub struct DamageRequest {
     /// The weapon/source entity performing the attack
     pub source: Entity,
@@ -104,17 +71,6 @@ pub struct DamageRequest {
     pub base_damage: f32,
     /// Tags from the damage source (e.g., ["damage:melee", "damage:bone"])
     pub source_tags: Vec<String>,
-}
-
-impl Default for DamageRequest {
-    fn default() -> Self {
-        Self {
-            source: Entity::PLACEHOLDER,
-            target: Entity::PLACEHOLDER,
-            base_damage: 0.0,
-            source_tags: Vec::new(),
-        }
-    }
 }
 
 /// Represents a request to spawn a projectile.

@@ -4,8 +4,8 @@ use {
     buildings_components::BuildingsComponentsPlugin, crafting::CraftingPlugin,
     crafting_resources::CraftingResourcesPlugin, crafting_ui::CraftingUiPlugin,
     divinity_components::DivinityComponentsPlugin, enemy_encyclopedia::EnemyEncyclopediaUiPlugin,
-    enemy_events::EnemyEventsPlugin, hero_events::HeroEventsPlugin, heroes::HeroesPlugin,
-    hud::HudPlugin, loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
+    enemy_events::EnemyEventsPlugin, heroes::HeroesPlugin, hud::HudPlugin,
+    loading::LoadingManagerPlugin, notification_ui::NotificationUiPlugin,
     portal_assets::PortalAssetsPlugin, portal_ui::PortalUiPlugin, portals::PortalsPlugin,
     progress_bars::ProgressBarsPlugin, research::ResearchPlugin, research_ui::ResearchUiPlugin,
     resources_ui::ResourcesUiPlugin, save_load::SaveLoadPlugin,
@@ -40,7 +40,6 @@ impl Plugin for CorePlugin {
                 EnemyEncyclopediaUiPlugin,
                 EnemyEventsPlugin,
                 HeroesPlugin,
-                HeroEventsPlugin,
             ))
             .add_plugins((
                 PortalsPlugin,
