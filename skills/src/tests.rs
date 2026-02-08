@@ -307,7 +307,7 @@ fn test_skill_target_single_enemy() {
         display_name: "Test Single".to_string(),
         skill_type: SkillType::Active,
         cooldown_ms: 0,
-        target: TargetType::SingleEnemy,
+        target: TargetType::SingleEnemy { range: 100.0 },
         effects: vec![SkillEffect::Damage { amount: 15.0 }],
         tags: vec![],
     });

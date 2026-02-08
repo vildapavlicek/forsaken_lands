@@ -117,7 +117,7 @@ pub fn process_skill_activation(
         TargetType::Identity => {
             targets.push(event.caster);
         }
-        TargetType::SingleEnemy => {
+        TargetType::SingleEnemy { range: _ } => {
             if let Some(target) = event.target {
                 targets.push(target);
             }

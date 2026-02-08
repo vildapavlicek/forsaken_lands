@@ -3,7 +3,7 @@
     display_name: "Fireball",
     skill_type: AutoActivate,
     cooldown_ms: 2000,
-    target: SingleEnemy,
+    target: SingleEnemy(range: 380.0),
     effects: [
         Damage(amount: 25.0),
         ApplyStatus(status_id: "burning", duration_ms: 3000),

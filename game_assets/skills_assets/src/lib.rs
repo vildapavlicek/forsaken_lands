@@ -67,7 +67,9 @@ pub enum ReactiveTrigger {
 pub enum TargetType {
     #[default]
     Identity,
-    SingleEnemy,
+    SingleEnemy {
+        range: f32,
+    },
     AllEnemiesInRange {
         radius: f32,
     },

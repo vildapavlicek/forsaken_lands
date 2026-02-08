@@ -57,9 +57,7 @@ pub fn hero_auto_activate_skills_system(
 
             // Target Resolution & Range Check
             match &skill_def.target {
-                TargetType::SingleEnemy => {
-                    // Use hero's weapon range if available, otherwise fallback to a reasonable default
-                    let range = hero_range.map(|r| r.0).unwrap_or(200.0);
+                TargetType::SingleEnemy { range } => {
                     let mut closest: Option<(Entity, f32)> = None;
 
                     for (enemy_entity, enemy_transform) in &enemies {
@@ -67,7 +65,7 @@ pub fn hero_auto_activate_skills_system(
                             .translation
                             .distance(enemy_transform.translation);
 
-                        if dist <= range {
+                        if dist <= *range {
                             if let Some((_, closest_dist)) = closest {
                                 if dist < closest_dist {
                                     closest = Some((enemy_entity, dist));
