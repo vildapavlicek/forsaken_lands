@@ -3,7 +3,7 @@
     display_name: "Thorns",
     skill_type: Reactive(trigger: OnDamageTaken),
     cooldown_ms: 500,
-    target: Self_,
+    target: Identity,
     effects: [
         Damage(amount: 5.0), 
     ],

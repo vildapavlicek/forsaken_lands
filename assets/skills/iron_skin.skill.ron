@@ -3,7 +3,7 @@
     display_name: "Iron Skin",
     skill_type: Passive,
     cooldown_ms: 0,
-    target: Self_,
+    target: Identity,
     effects: [
         StatModifier(
             stat_key: "defense:physical",
