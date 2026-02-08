@@ -121,8 +121,22 @@ impl Default for ProjectileTarget {
 #[derive(Component, Default)]
 pub struct ProjectileSpeed(pub f32);
 
+/// Stores the offensive capabilities of a projectile at the moment of its creation.
+///
+/// This component acts as a "snapshot" of the weapon's damage stats, ensuring that
+/// the damage calculation reflects the state of the weapon *when fired*, even if
+/// the projectile travels for some time before impact.
+///
+/// # Usage
+/// - **Creation**: `hero_projectile_spawn_system` initializes this component using
+///   values from the `Damage` and `WeaponTags` of the source weapon.
+/// - **Impact**: `projectile_collision_system` reads this data to populate the
+///   `DamageRequest` event when the projectile hits a valid target.
 #[derive(Component, Default)]
 pub struct ProjectileDamage {
+    /// The raw damage value (Hit Points) before bonuses are applied on hit.
     pub base_damage: f32,
+    /// Tags describing the damage source (e.g., "arrow", "fire"), used by `bonus_stats`
+    /// to apply conditional modifiers.
     pub source_tags: Vec<String>,
 }
