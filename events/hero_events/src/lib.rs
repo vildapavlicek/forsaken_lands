@@ -74,16 +74,28 @@ pub struct DamageRequest {
 }
 
 /// Represents a request to spawn a projectile.
+///
+/// This **Observer** event (triggered via `commands.trigger`) serves as a factory request for creating
+/// standard projectile entities. It decouples the *intent* to fire a projectile (e.g., from a weapon
+/// or skill) from the *implementation* of the projectile entity itself.
+///
+/// # Observers
+/// - `projectile_spawn_observer`: Instantiates the projectile entity with `Projectile`, `ProjectileTarget`,
+///   and `ProjectileSpeed` components.
+///
+/// # Triggers
+/// - `hero_projectile_spawn_system`: Triggered when an `AttackIntent` is processed for a `RangedWeapon`.
+/// - `skills`: Triggered by various skill systems when a projectile-based skill is activated.
 #[derive(Event)]
 pub struct ProjectileSpawnRequest {
-    /// The entity or position the projectile originates from.
+    /// The world position where the projectile originates (e.g., player position).
     pub source_position: Vec3,
-    /// The target entity the projectile should home in on.
+    /// The entity the projectile should home in on.
     pub target: Entity,
-    /// The speed of the projectile.
+    /// The movement speed of the projectile in logical pixels per second.
     pub speed: f32,
-    /// The base damage of the projectile.
+    /// The raw damage value (Hit Points) carried by the projectile.
     pub base_damage: f32,
-    /// Tags describing the damage source.
+    /// Tags describing the damage source (e.g., "arrow", "fire") for `bonus_stats` calculation.
     pub source_tags: Vec<String>,
 }
