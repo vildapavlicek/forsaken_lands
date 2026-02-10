@@ -207,7 +207,7 @@ impl LeafCondition {
                 )
             }
             LeafCondition::Craft { recipe_id } => {
-                format!("Completed(topic: \"craft:{}\")", recipe_id)
+                format!("Completed(topic: \"crafting:{}\")", recipe_id)
             }
             LeafCondition::Custom {
                 prefix,
@@ -643,10 +643,7 @@ impl ResearchFormData {
 
         // Use the inline unlock if present, otherwise default to True
         let (unlock_condition, repeat_mode) = if let Some(unlock) = &research.unlock {
-            (
-                UnlockCondition::from(&unlock.condition),
-                unlock.repeat_mode,
-            )
+            (UnlockCondition::from(&unlock.condition), unlock.repeat_mode)
         } else {
             (UnlockCondition::True, unlocks_assets::RepeatMode::Once)
         };
@@ -814,10 +811,7 @@ impl RecipeFormData {
             .collect();
 
         let (unlock_condition, repeat_mode) = if let Some(unlock) = &def.unlock {
-            (
-                UnlockCondition::from(&unlock.condition),
-                unlock.repeat_mode,
-            )
+            (UnlockCondition::from(&unlock.condition), unlock.repeat_mode)
         } else {
             (UnlockCondition::True, unlocks_assets::RepeatMode::Once)
         };
@@ -1313,10 +1307,7 @@ impl BonusStatsFormData {
         }
 
         let (unlock_condition, repeat_mode) = if let Some(unlock) = &def.unlock {
-            (
-                UnlockCondition::from(&unlock.condition),
-                unlock.repeat_mode,
-            )
+            (UnlockCondition::from(&unlock.condition), unlock.repeat_mode)
         } else {
             (UnlockCondition::True, unlocks_assets::RepeatMode::Infinite)
         };
