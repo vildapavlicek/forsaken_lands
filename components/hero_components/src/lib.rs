@@ -80,6 +80,19 @@ pub struct MeleeArc {
 #[derive(Component, Default)]
 pub struct Damage(pub f32);
 
+/// Defines the maximum effective distance (reach) of a weapon.
+///
+/// This component serves as the primary engagement gate for the combat AI and the
+/// physical limit for melee hit detection.
+///
+/// # Usage
+/// - **Decision Phase**: `hero_attack_intent_system` queries this to determine if any enemy
+///   is close enough to initiate an attack (generating an `AttackIntent`).
+/// - **Execution Phase (Melee)**: `hero_melee_attack_system` uses this to filter valid targets
+///   within the weapon's arc and reach during a swing.
+///
+/// # Units
+/// - Distance in **pixels**.
 #[derive(Component, Default)]
 pub struct AttackRange(pub f32);
 
