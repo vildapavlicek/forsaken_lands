@@ -156,11 +156,35 @@ The weapon progression follows your rule:
 
 ---
 
-### Summary of Weapon Lifecycle
 
-| Weapon Tier | Acquired | Prime Usage | Replaced By |
-| --- | --- | --- | --- |
-| **Rock** | Level 1 | Levels 1, 2, 3 | **Sling** |
-| **Sling** | Level 3 | Levels 4, 5, 6 | **Bone Set** |
-| **Bone Set** | Level 6 | Levels 7, 8 | **Upgraded Bone (+)** |
-| **Upgraded Bone** | Level 8 | Level 9 (Boss) | **Iron/Orc Gear (Lvl 10)** |
+# WIP
+# T1-10-19
+1. Common/Raider Orcs
+
+    Description: The "standard" grunt. They are usually slightly shorter than humans but broad-shouldered, stooped, and physically strong. They wear dirty, mismatched armor and use crude, heavy weapons.
+    Behavior: Primitive and chaotic, they live in tribes and spend their time raiding, pillaging, and fighting.
+    Media Examples: The Lord of the Rings (Misty Mountain/Mordor Orcs), Dungeons & Dragons (Mountain Orcs), Warhammer Fantasy. 
+
+2. Elite/Uruk-hai
+
+    Description: A stronger, larger, and more disciplined breed of orc, often created specifically for war. They are generally around human height, more upright, and often possess tougher hides.
+    Behavior: More intelligent and organized than common orcs, they can operate in formation and often serve as elite shock troops or leaders of war parties.
+    Media Examples: Saruman’s "Fighting Uruk-hai" in The Lord of the Rings, Black Uruks in Mordor. 
+
+3. Goblinoids (Lesser Orcs)
+
+    Description: Smaller, faster, and more numerous than standard orcs, often sharing the same culture or serving under them. They are often cowardly but dangerous in large numbers.
+    Behavior: Scavengers and stealthy killers.
+    Media Examples: Moria Goblins in The Lord of the Rings, Dungeons & Dragons Goblins/Hobgoblins. 
+
+4. Specialized Orc Types
+
+    Orc Shaman/Witch Doctor: Magic-using orcs that utilize black magic or divine magic from evil gods.
+    Snufflers/Trackers: A breed with a highly developed sense of smell used for hunting.
+    Warg-Riders: Orcs riding giant, vicious wolves or wargs, serving as fast cavalry.
+    Half-Orcs: Human-orc hybrids that are sometimes more intelligent or cunning than pure-bred orcs, often acting as spies or leaders. 
+
+5. Specialized Crossbreeds
+
+    Orog/Ogrillon: The result of a crossbreed between a male orc and a female ogre, creating a much larger, tougher, and more muscular beast.
+    Tanarukk: A D&D-specific, demon-tainted orc, which is shorter and stockier but far more savage. 
