@@ -176,10 +176,18 @@ pub fn start_research(
     research_map: Res<ResearchMap>,
     assets: Res<Assets<ResearchDefinition>>,
     query: Query<&ResearchNode, With<Available>>,
+    in_progress_query: Query<(), With<InProgress>>,
     mut wallet: ResMut<Wallet>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
+
+    // Check if any research is already in progress
+    if !in_progress_query.is_empty() {
+        warn!("Cannot start research: another project is already in progress");
+        return;
+    }
+
     let Some(&entity) = research_map.entities.get(&event.0) else {
         warn!("Research '{}' not found", event.0);
         return;

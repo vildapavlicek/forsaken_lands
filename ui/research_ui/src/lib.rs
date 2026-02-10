@@ -144,7 +144,15 @@ fn build_research_list(
                     }
                 }
 
-                let (btn_text, btn_color, btn_border) = if can_afford {
+                let is_busy = !in_progress_query.is_empty();
+
+                let (btn_text, btn_color, btn_border) = if is_busy {
+                    (
+                        "Busy".to_string(),
+                        UiTheme::BORDER_DISABLED,
+                        UiTheme::BORDER_DISABLED,
+                    )
+                } else if can_afford {
                     (
                         "Start".to_string(),
                         UiTheme::AFFORDABLE,
@@ -627,11 +635,17 @@ fn handle_research_button(
     assets: Res<Assets<ResearchDefinition>>,
     wallet: Res<Wallet>,
     available_query: Query<&ResearchNode, With<Available>>,
+    in_progress_query: Query<(), With<InProgress>>,
     research_map: Res<ResearchMap>,
     interaction_query: Query<(&Interaction, &ResearchButton), (Changed<Interaction>, With<Button>)>,
 ) {
     for (interaction, btn) in interaction_query.iter() {
         if *interaction == Interaction::Pressed {
+            // Check if any research is already in progress
+            if !in_progress_query.is_empty() {
+                continue;
+            }
+
             let id = &btn.id;
 
             // Check if research is available
