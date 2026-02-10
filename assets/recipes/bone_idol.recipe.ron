@@ -14,5 +14,6 @@
             topic: "research:vision",
         ),
         reward_id: "recipe:bone_idol",
+        repeat_mode: Once,
     )),
 )
