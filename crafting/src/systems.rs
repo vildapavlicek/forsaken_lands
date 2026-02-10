@@ -3,17 +3,9 @@ use {
     bevy::prelude::*,
     crafting_events::StartCraftingRequest,
     crafting_resources::RecipeMap,
-    recipes_assets::RecipeDefinition,
+    recipes_assets::{CONSTRUCTION_TOPIC_PREFIX, RecipeDefinition},
     unlocks_events::StatusCompleted,
 };
-
-/// Prefix for crafting completion topics (used in StatusCompleted).
-/// Usage: `crafting:{recipe_id}`
-pub const CRAFTING_TOPIC_PREFIX: &str = "crafting:";
-
-/// Prefix for construction completion topics (used in StatusCompleted/RewardId).
-/// Usage: `construction:{recipe_id}`
-pub const CONSTRUCTION_TOPIC_PREFIX: &str = "construction:";
 
 /// Observer that handles StartCraftingRequest events.
 /// Spawns a CraftingInProgress entity with a timer.
@@ -124,7 +116,7 @@ pub fn on_construction_completed(
 ) {
     let event = trigger.event();
 
-    let Some(recipe_id) = event.topic.strip_prefix(CRAFTING_TOPIC_PREFIX) else {
+    let Some(recipe_id) = event.topic.strip_prefix(CONSTRUCTION_TOPIC_PREFIX) else {
         return;
     };
 
