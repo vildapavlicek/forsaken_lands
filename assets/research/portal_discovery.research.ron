@@ -18,9 +18,10 @@
             Value(
                 topic: "divinity",
                 op: Ge,
-                target: 105.0,
+                target: 104.0,
             ),
         ]),
         reward_id: "research:portal_discovery",
+        repeat_mode: Once,
     )),
 )
