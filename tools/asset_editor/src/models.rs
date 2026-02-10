@@ -108,7 +108,7 @@ pub enum LeafCondition {
         op: CompareOp,
     },
     /// Craft condition: triggers when player crafts a specific recipe
-    Craft { recipe_id: String },
+    Craft { recipe_id: String, is_construction: bool },
     /// Custom condition: generic value trigger with prefix:id
     Custom {
         prefix: String,
@@ -161,6 +161,7 @@ impl LeafCondition {
             },
             "Craft" => LeafCondition::Craft {
                 recipe_id: String::new(),
+                is_construction: false,
             },
             "Custom" => LeafCondition::Custom {
                 prefix: String::new(),
@@ -206,8 +207,16 @@ impl LeafCondition {
                     val
                 )
             }
-            LeafCondition::Craft { recipe_id } => {
-                format!("Completed(topic: \"crafting:{}\")", recipe_id)
+            LeafCondition::Craft {
+                recipe_id,
+                is_construction,
+            } => {
+                let prefix = if *is_construction {
+                    "construction"
+                } else {
+                    "crafting"
+                };
+                format!("Completed(topic: \"{}:{}\")", prefix, recipe_id)
             }
             LeafCondition::Custom {
                 prefix,
@@ -258,7 +267,7 @@ impl LeafCondition {
                     errors.push("Level must be 1-99".to_string());
                 }
             }
-            LeafCondition::Craft { recipe_id } => {
+            LeafCondition::Craft { recipe_id, .. } => {
                 if recipe_id.trim().is_empty() {
                     errors.push("Recipe ID is required".to_string());
                 }
@@ -302,9 +311,19 @@ impl LeafCondition {
                 op: (*op).into(),
                 target: (tier * 100 + level) as f32,
             },
-            LeafCondition::Craft { recipe_id } => ConditionNode::Completed {
-                topic: format!("craft:{}", recipe_id),
-            },
+            LeafCondition::Craft {
+                recipe_id,
+                is_construction,
+            } => {
+                let prefix = if *is_construction {
+                    "construction"
+                } else {
+                    "crafting"
+                };
+                ConditionNode::Completed {
+                    topic: format!("{}:{}", prefix, recipe_id),
+                }
+            }
             LeafCondition::Custom {
                 prefix,
                 id,
@@ -458,9 +477,15 @@ impl From<&ConditionNode> for LeafCondition {
                 } else if let Some(id) = topic.strip_prefix("unlock:") {
                     // Handle older or alternative unlock topics if necessary, or just treat as Research
                     LeafCondition::Research { id: id.to_string() }
-                } else if let Some(id) = topic.strip_prefix("craft:") {
+                } else if let Some(id) = topic.strip_prefix("crafting:") {
                     LeafCondition::Craft {
                         recipe_id: id.to_string(),
+                        is_construction: false,
+                    }
+                } else if let Some(id) = topic.strip_prefix("construction:") {
+                    LeafCondition::Craft {
+                        recipe_id: id.to_string(),
+                        is_construction: true,
                     }
                 } else {
                     // Fallback or generic completion

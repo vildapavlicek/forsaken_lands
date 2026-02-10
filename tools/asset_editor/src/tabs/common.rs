@@ -269,7 +269,15 @@ fn show_leaf_editor(
             });
             ui.small("Triggers when player reaches this divinity tier/level");
         }
-        LeafCondition::Craft { recipe_id } => {
+        LeafCondition::Craft {
+            recipe_id,
+            is_construction,
+        } => {
+            ui.horizontal(|ui| {
+                ui.label("Prefix:");
+                ui.radio_value(is_construction, false, "Crafting");
+                ui.radio_value(is_construction, true, "Construction");
+            });
             ui.horizontal(|ui| {
                 ui.label("Recipe ID:");
                 if !existing_recipe_ids.is_empty() {

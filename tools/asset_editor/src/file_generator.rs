@@ -201,6 +201,7 @@ mod tests {
     use {
         super::*,
         crate::models::{LeafCondition, ResourceCost, UnlockCondition},
+        unlocks_assets,
     };
 
     #[test]
@@ -217,6 +218,7 @@ mod tests {
             max_repeats: 5,
             filename: "test_research".to_string(),
             unlock_condition: UnlockCondition::True,
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         };
 
         let ron = generate_research_ron(&data);
@@ -238,6 +240,7 @@ mod tests {
             max_repeats: 1,
             filename: "free_research".to_string(),
             unlock_condition: UnlockCondition::True,
+            repeat_mode: unlocks_assets::RepeatMode::Once,
         };
 
         let ron = generate_research_ron(&data);

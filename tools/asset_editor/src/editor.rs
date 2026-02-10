@@ -1872,7 +1872,7 @@ impl EditorState {
                         ui.separator();
                         ui.label("Crafting");
                         for id in &self.existing_recipe_ids {
-                            let topic = format!("craft:{}", id);
+                            let topic = format!("crafting:{}", id);
                             if ui.button(&topic).clicked() {
                                 self.bonus_stats_form.id = topic;
                                 ui.close_menu();
