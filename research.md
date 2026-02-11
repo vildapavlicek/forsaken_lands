@@ -156,6 +156,40 @@ The weapon progression follows your rule:
 
 ---
 
+## Tier 1
+#### **Level 10**
+* **Theme:** New stage - orcs
+* **Enemies:** Orc Grunt (5.0 HP)
+* **Player Weapon:** Bone Sword / Bone Bow
+* **Research:**
+* *Autopsy: Orc Grunt* - Green, big and muscular.
+* *Bone Grinding* - Our survival requires better weapons
+* *Strengthened Bones I* - 
+* *Strengthened Bones II*
+* *Strengthened Sinew I*
+* *Strengthened Sinew II*
+
+* **Next Level Condition:** Research(Strengthened Bones II), kills: Orc Grunt >= 20
+
+#### **Level 11**
+* **Enemies:** Orc Hunter (5.5 HP)
+* **Player Weapon:** Bone Sword / Bone Bow
+* **Research:**
+* *Autopsy: Orc Hunter*
+* *Bone Greatsword*
+* *Bone Greatbow*
+
+* **Next Level Condition:** kills: Orc Hunter >= 40 || kills:Orc Grunt >= 80
+
+=======================================
+
+* **Theme:** 
+* **Enemies:** 
+* **Player Weapon:** 
+* **Research:**
+
+* **Next Level Condition:** 
+
 
 # WIP
 # T1-10-19
