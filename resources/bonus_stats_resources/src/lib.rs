@@ -6,12 +6,35 @@ use {
 
 pub mod pipeline;
 
+/// Defines how a [`StatBonus`] value interacts with the base statistic.
+///
+/// The bonus system aggregates values in three stages:
+/// 1. **Additive**: Bonuses are summed (e.g., +10).
+/// 2. **Percent**: Bonuses are summed and applied as a multiplier to the base (e.g., +10% and +20% = +30% -> x1.3).
+/// 3. **Multiplicative**: Bonuses are summed and applied as a *final* multiplier to the result (e.g., x2 and x2 = x4).
+///
+/// The calculation formula is:
+/// `(Base + AdditiveSum) * (1.0 + PercentSum) * max(1.0, MultiplicativeSum)`
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, Reflect)]
 pub enum StatMode {
+    /// Adds directly to the base value.
+    ///
+    /// Use this for flat increases like "+10 Damage" or "+50 Health".
     #[default]
-    Additive, // +10
-    Percent,        // +10% (0.10)
-    Multiplicative, // x2.0
+    Additive,
+    /// Adds to a percentage accumulator.
+    ///
+    /// A value of `0.1` represents +10%. Multiple percent bonuses are additive with each other
+    /// (e.g., +10% and +20% results in +30%, not +32%).
+    /// This multiplier is applied after flat additives.
+    Percent,
+    /// Adds to a final multiplier accumulator.
+    ///
+    /// Use this for powerful scaling effects like "Double Damage" (value 2.0).
+    /// Note that multiple multiplicative bonuses are **additive with each other**:
+    /// two x1.5 bonuses result in x3.0 (1.5 + 1.5), not x2.25 (1.5 * 1.5).
+    /// The final multiplier is clamped to a minimum of 1.0.
+    Multiplicative,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Reflect)]
