@@ -1560,6 +1560,27 @@ impl EditorState {
             );
             ui.label("seconds");
         });
+        ui.add_space(8.0);
+        
+        // Tags section
+        ui.separator();
+        ui.heading("Tags");
+        let mut remove_tag_idx: Option<usize> = None;
+        for (i, tag) in self.autopsy_form.tags.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label(format!("Tag #{}", i + 1));
+                ui.text_edit_singleline(tag);
+                if ui.button("🗑").clicked() {
+                    remove_tag_idx = Some(i);
+                }
+            });
+        }
+        if let Some(idx) = remove_tag_idx {
+            self.autopsy_form.tags.remove(idx);
+        }
+        if ui.button("+ Add Tag").clicked() {
+            self.autopsy_form.tags.push(String::new());
+        }
         ui.add_space(16.0);
 
         // Preview Generated IDs

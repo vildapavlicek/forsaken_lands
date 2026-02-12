@@ -20,6 +20,10 @@ pub struct ResearchDefinition {
     /// Optional inline unlock definition for when this research becomes available
     #[serde(default)]
     pub unlock: Option<UnlockDefinition>,
+
+    /// Tags used for bonus stats calculations (e.g., ["research:autopsy"]).
+    #[serde(default)]
+    pub tags: Vec<String>,
 }
 
 fn default_max_repeats() -> u32 {

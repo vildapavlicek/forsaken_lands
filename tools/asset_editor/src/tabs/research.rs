@@ -148,6 +148,27 @@ impl ResearchTabState {
             ui.small("(1 = one-time)");
         });
         ui.add_space(8.0);
+        
+        // Tags section
+        ui.separator();
+        ui.heading("Tags");
+        let mut remove_tag_idx: Option<usize> = None;
+        for (i, tag) in self.research_form.tags.iter_mut().enumerate() {
+            ui.horizontal(|ui| {
+                ui.label(format!("Tag #{}", i + 1));
+                ui.text_edit_singleline(tag);
+                if ui.button("🗑").clicked() {
+                    remove_tag_idx = Some(i);
+                }
+            });
+        }
+        if let Some(idx) = remove_tag_idx {
+            self.research_form.tags.remove(idx);
+        }
+        if ui.button("+ Add Tag").clicked() {
+            self.research_form.tags.push(String::new());
+        }
+        ui.add_space(8.0);
 
         // Unlock condition section
         ui.separator();

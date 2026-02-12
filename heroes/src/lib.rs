@@ -287,15 +287,17 @@ fn projectile_collision_system(
 fn damage_pipeline_observer(
     trigger: On<DamageRequest>,
     mut enemies: Query<(&mut Health, &MonsterTags), With<Enemy>>,
-    bonus_stats: Res<bonus_stats::BonusStats>,
+    bonus_stats: Res<bonus_stats_resources::BonusStats>,
 ) {
     let req = trigger.event();
 
     if let Ok((mut health, monster_tags)) = enemies.get_mut(req.target) {
-        let ctx =
-            bonus_stats::DamageContext::new(req.base_damage, &req.source_tags, &monster_tags.0);
-
-        let final_damage = bonus_stats::pipeline::calculate(&ctx, &bonus_stats);
+        let final_damage = bonus_stats_resources::calculate_damage(
+            req.base_damage,
+            &req.source_tags,
+            &monster_tags.0,
+            &bonus_stats,
+        );
 
         health.current -= final_damage;
 

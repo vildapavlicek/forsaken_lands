@@ -7,6 +7,7 @@
     },
     time_required: 60.0,
     max_repeats: 1,
+    tags: ["research:autopsy"],
     unlock: Some((
         id: "research_autopsy_worg_unlock",
         display_name: Some("Autopsy: Worg Research"),

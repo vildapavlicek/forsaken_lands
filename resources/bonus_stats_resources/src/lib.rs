@@ -4,7 +4,6 @@ use {
     std::collections::HashMap,
 };
 
-pub mod pipeline;
 
 /// Defines how a [`StatBonus`] value interacts with the base statistic.
 ///
@@ -43,24 +42,6 @@ pub struct StatBonus {
     pub mode: StatMode,
 }
 
-/// Encapsulates all data needed to calculate final damage for a single hit.
-/// Passed through pure calculation functions.
-#[derive(Debug, Clone)]
-pub struct DamageContext {
-    pub base_damage: f32,
-    pub source_tags: Vec<String>,
-    pub target_tags: Vec<String>,
-}
-
-impl DamageContext {
-    pub fn new(base_damage: f32, source_tags: &[String], target_tags: &[String]) -> Self {
-        Self {
-            base_damage,
-            source_tags: source_tags.to_vec(),
-            target_tags: target_tags.to_vec(),
-        }
-    }
-}
 
 /// Aggregated bonuses for a specific key (e.g., "damage:melee").
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Reflect)]
@@ -165,6 +146,45 @@ impl BonusStats {
     pub fn get_with_prefix(&self, category: &str, key: &str) -> Option<&BonusStat> {
         self.bonuses.get(category)?.get(key)
     }
+
+    /// Calculates a final value for a specific stat category and sub-stat.
+    ///
+    /// # Arguments
+    /// * `category` - The main stat category (e.g., "damage", "research").
+    /// * `base_value` - The starting value.
+    /// * `tags` - Tags to match for bonuses (e.g., "melee", "weapon:bone_sword").
+    ///            It will look for bonuses at `category:{tag}`.
+    pub fn calculate_stat(&self, category: &str, base_value: f32, tags: &[String]) -> f32 {
+        let mut total_bonus = BonusStat::default();
+
+        if let Some(category_bonuses) = self.bonuses.get(category) {
+            for tag in tags {
+                // We support both "category:tag" and just "tag" check if we split it
+                // But the current convention for source tags seems to be "damage:melee"
+                // and they expect to match against the suffix.
+                let suffix = if let Some((cat, suf)) = tag.split_once(':') {
+                    if cat == category {
+                        suf
+                    } else {
+                        tag.as_str()
+                    }
+                } else {
+                    tag.as_str()
+                };
+
+                if let Some(bonus) = category_bonuses.get(suffix) {
+                    total_bonus = total_bonus + *bonus;
+                }
+            }
+        }
+
+        // Calculation: (Base + Additive) * (1 + Percent) * Multiplicative
+        let final_value = (base_value + total_bonus.additive)
+            * (1.0 + total_bonus.percent)
+            * total_bonus.multiplicative.max(1.0);
+
+        final_value.max(0.0)
+    }
 }
 
 /// Calculates the final damage considering base damage, source tags, target tags, and active bonuses.
@@ -183,8 +203,9 @@ pub fn calculate_damage(
     target_tags: &[String],
     bonus_stats: &BonusStats,
 ) -> f32 {
-    let ctx = DamageContext::new(base_damage, source_tags, target_tags);
-    pipeline::calculate(&ctx, bonus_stats)
+    let mut tags = source_tags.to_vec();
+    tags.extend_from_slice(target_tags);
+    bonus_stats.calculate_stat("damage", base_damage, &tags)
 }
 
 #[cfg(test)]
@@ -384,5 +405,25 @@ mod tests {
             10.0,
             calculate_damage(5.0, &["damage:fire".into()], &[], &stats)
         )
+    }
+
+    #[test]
+    fn test_calculate_generic() {
+        let mut stats = BonusStats::default();
+
+        stats.add(
+            "research:autopsy",
+            StatBonus {
+                value: -0.25, // 25% reduction
+                mode: StatMode::Percent,
+            },
+        );
+
+        let tags = vec!["research:autopsy".to_string()];
+        // 100 * (1 - 0.25) = 75
+        assert_eq!(stats.calculate_stat("research", 100.0, &tags), 75.0);
+
+        // Without tag -> no bonus
+        assert_eq!(stats.calculate_stat("research", 100.0, &[]), 100.0);
     }
 }

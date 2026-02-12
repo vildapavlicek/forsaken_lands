@@ -36,13 +36,13 @@ Everything is a Plugin. The `main.rs` simply adds the `CorePlugin`. The `CorePlu
 *   **Encapsulation**: Features manage their own systems and resources.
 *   **Dependency Injection**: Features declare dependencies in their `Cargo.toml`.
 
-### 2. The "Pipeline" Pattern (e.g., Damage Calculation)
-Complex logic is decoupled from Bevy systems using pure Rust functions and "Context" structs.
+### 2. The "Pipeline" Pattern (e.g., Damage/Research Calculation)
+Complex logic is decoupled from Bevy systems using pure Rust functions.
 *   **Example**: `bonus_stats` crate.
 *   **Mechanism**:
-    1.  **Context Creation**: A system gathers data (tags, base stats) into a `DamageContext` struct.
-    2.  **Pure Calculation**: `calculate_damage(ctx, bonus_stats_resource)` is called. This function is pure and testable outside of ECS.
-    3.  **Execution**: The system applies the result (e.g., modifies HP).
+    1.  **Context Gathering**: A system gathers data (tags, base stats) for the calculation.
+    2.  **Pure Calculation**: `calculate_stat(category, base_value, tags)` is called. This function is pure and testable outside of ECS.
+    3.  **Execution**: The system applies the result (e.g., sets a timer duration or modifies HP).
 
 ### 3. Event-Driven Architecture
 Systems rarely mutate state directly based on input. Instead, they emit **Events**.

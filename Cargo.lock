@@ -3235,7 +3235,7 @@ name = "heroes"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "bonus_stats",
+ "bonus_stats_resources",
  "enemy_components",
  "hero_components",
  "hero_events",
@@ -4779,6 +4779,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_common_assets",
+ "bonus_stats_resources",
  "research_assets",
  "serde",
  "shared_components",

@@ -579,6 +579,8 @@ pub struct ResearchFormData {
     pub unlock_condition: UnlockCondition,
     /// How many times this unlock can be triggered.
     pub repeat_mode: unlocks_assets::RepeatMode,
+    /// Tags for the research
+    pub tags: Vec<String>,
 }
 
 impl ResearchFormData {
@@ -597,6 +599,7 @@ impl ResearchFormData {
             filename: "new_research".to_string(),
             unlock_condition: UnlockCondition::True,
             repeat_mode: unlocks_assets::RepeatMode::Once,
+            tags: Vec::new(),
         }
     }
 
@@ -683,6 +686,7 @@ impl ResearchFormData {
             filename,
             unlock_condition,
             repeat_mode,
+            tags: research.tags.clone(),
         }
     }
 
@@ -709,6 +713,7 @@ impl ResearchFormData {
             time_required: self.time_required,
             max_repeats: self.max_repeats,
             unlock,
+            tags: self.tags.clone(),
         }
     }
 }
@@ -867,6 +872,8 @@ pub struct AutopsyFormData {
     pub research_costs: Vec<ResourceCost>,
     /// Time required for the research.
     pub research_time: f32,
+    /// Tags for the research
+    pub tags: Vec<String>,
 }
 
 impl AutopsyFormData {
@@ -879,6 +886,7 @@ impl AutopsyFormData {
                 amount: 1,
             }],
             research_time: 15.0,
+            tags: vec!["research:autopsy".to_string()],
         }
     }
 
@@ -949,15 +957,8 @@ impl AutopsyFormData {
             cost,
             time_required: self.research_time,
             max_repeats: 1,
-            unlock: None, // Autopsy research itself doesn't have an unlock condition embedded usually?
-                          // Wait, the plan was to embedded it.
-                          // But Autopsy logic in file_generator uses explicit separate files for unlocks?
-                          // Lines 146 in file_generator save separate files.
-                          // So Autopsy is largely unchanged regarding inline unlocks for now?
-                          // The task was Research/Recipes/Blessings.
-                          // Autopsy generates Research, so it should probably use inline unlock too maybe?
-                          // But file_generator still saves separate unlock file for Autopsy in lines 146.
-                          // Let's keep it compatible with file_generator for now.
+            unlock: None,
+            tags: self.tags.clone(),
         }
     }
 

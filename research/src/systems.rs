@@ -7,6 +7,7 @@ use {
     unlocks_events,
     unlocks_resources::UnlockState,
     wallet::Wallet,
+    bonus_stats_resources::BonusStats,
 };
 
 // TODO: Move this to a loading stage once asset loading is consolidated
@@ -178,6 +179,7 @@ pub fn start_research(
     query: Query<&ResearchNode, With<Available>>,
     in_progress_query: Query<(), With<InProgress>>,
     mut wallet: ResMut<Wallet>,
+    bonus_stats: Res<BonusStats>,
     mut commands: Commands,
 ) {
     let event = trigger.event();
@@ -210,12 +212,14 @@ pub fn start_research(
         }
     }
 
+    let duration = bonus_stats.calculate_stat("research", def.time_required, &def.tags);
+
     commands
         .entity(entity)
         .remove::<Available>()
         .insert(InProgress {
             research_id: node.id.clone(),
-            timer: Timer::from_seconds(def.time_required, TimerMode::Once),
+            timer: Timer::from_seconds(duration, TimerMode::Once),
         });
     info!("Started researching: {}", def.name);
 }
