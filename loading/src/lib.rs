@@ -485,12 +485,28 @@ fn compile_research_unlocks(
     mut topic_map: ResMut<TopicMap>,
     unlock_state: Res<UnlockState>,
     unlock_progress: Res<UnlockProgress>,
+    research_state: Res<research::ResearchState>,
     compiled: Query<&CompiledUnlock>,
 ) {
     let compiled_ids: std::collections::HashSet<_> =
         compiled.iter().map(|c| c.definition_id.as_str()).collect();
 
     for (_, research) in research_assets.iter() {
+        // Skip if fully completed
+        let completed_count = research_state
+            .completion_counts
+            .get(&research.id)
+            .copied()
+            .unwrap_or(0);
+
+        if completed_count >= research.max_repeats {
+            debug!(
+                "Skipping unlock compilation for fully completed research: {}",
+                research.id
+            );
+            continue;
+        }
+
         if let Some(unlock) = &research.unlock {
             unlocks::compile_unlock_definition(
                 &mut commands,
