@@ -25,10 +25,9 @@ fn on_construction_completed(
     let event = trigger.event();
     // Check if the completed crafting was "the_maw"
     // Handle both crafting: (legacy/bugged) and construction: (correct) prefixes
-    let construction_topic = format!("{}bone_idol", recipes_assets::CONSTRUCTION_TOPIC_PREFIX);
-    let crafting_topic = format!("{}bone_idol", recipes_assets::CRAFTING_TOPIC_PREFIX);
+    let construction_topic = format!("{}bone_idol_ii", recipes_assets::CONSTRUCTION_TOPIC_PREFIX);
 
-    if event.topic == construction_topic || event.topic == crafting_topic {
+    if event.topic == construction_topic {
         if !existing_maw.is_empty() {
             warn!(
                 "Prevented duplicate spawn of 'The Maw'. Event topic: {}",

@@ -3,8 +3,8 @@
     name: "Bone Bow",
     description: "Their bones and sinews combined to kill them all more easily.",
     cost: {
-        "bones": 150,
-        "sinew": 20,
+        "bones": 100,
+        "sinew": 25,
     },
     time_required: 120.0,
     max_repeats: 1,

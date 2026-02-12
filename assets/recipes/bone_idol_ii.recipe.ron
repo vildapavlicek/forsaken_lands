@@ -1,0 +1,24 @@
+(
+    id: "bone_idol_ii",
+    display_name: "Enchanted Bone Idol",
+    category: Construction,
+    craft_time: 300.0,
+    cost: {
+        "xykego": 300,
+    },
+    outcomes: [],
+    unlock: Some((
+        id: "recipe_bone_idol_ii_unlock",
+        display_name: Some("Enchanted Bone Idol"),
+        condition: And([
+            Completed(
+                topic: "research:bone_idol_ii",
+            ),
+            Completed(
+                topic: "construction:bone_idol",
+            ),
+        ]),
+        reward_id: "recipe:bone_idol_ii",
+        repeat_mode: Once,
+    )),
+)

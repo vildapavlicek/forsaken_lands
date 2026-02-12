@@ -112,5 +112,115 @@
             ]),
             weight: 70, // 70% chance he has his pet pack
         ),
+        // --- LEVEL 10: The Horde Arrives ---
+        // Introduction of Orcs. 2x HP scale starts here.
+        (
+            condition: Specific((tier: 1, level: 10)),
+            spawn_type: Single("orc_grunt"),
+            weight: 50,
+        ),
+        (
+            condition: Specific((tier: 1, level: 10)),
+            spawn_type: Group(["orc_grunt", "orc_hunter"]),
+            weight: 50,
+        ),
+
+        // --- LEVEL 11: Skirmishers ---
+        (
+            condition: Specific((tier: 1, level: 11)),
+            spawn_type: Group(["orc_grunt", "orc_grunt", "orc_hunter"]),
+            weight: 60,
+        ),
+        (
+            condition: Specific((tier: 1, level: 11)),
+            spawn_type: Single("orc_hunter"),
+            weight: 40,
+        ),
+
+        // --- LEVEL 12: Hunting Parties ---
+        (
+            condition: Specific((tier: 1, level: 12)),
+            spawn_type: Group(["orc_hunter", "orc_hunter", "orc_grunt"]),
+            weight: 50,
+        ),
+        (
+            condition: Specific((tier: 1, level: 12)),
+            spawn_type: Group(["orc_grunt", "orc_grunt", "orc_grunt"]),
+            weight: 50,
+        ),
+
+        // --- LEVEL 13: Dark Magic ---
+        // Introduction of Shamans.
+        (
+            condition: Specific((tier: 1, level: 13)),
+            spawn_type: Single("orc_shaman"),
+            weight: 40,
+        ),
+        (
+            condition: Specific((tier: 1, level: 13)),
+            spawn_type: Group(["orc_shaman", "orc_grunt"]),
+            weight: 60,
+        ),
+
+        // --- LEVEL 14: The heavy Infantry ---
+        // Introduction of Warriors.
+        (
+            condition: Specific((tier: 1, level: 14)),
+            spawn_type: Single("orc_warrior"),
+            weight: 40,
+        ),
+        (
+            condition: Specific((tier: 1, level: 14)),
+            spawn_type: Group(["orc_warrior", "orc_grunt", "orc_grunt"]),
+            weight: 60,
+        ),
+
+        // --- LEVEL 15: Combined Arms ---
+        (
+            condition: Specific((tier: 1, level: 15)),
+            spawn_type: Group(["orc_shaman", "orc_warrior", "orc_hunter"]),
+            weight: 100,
+        ),
+
+        // --- LEVEL 16: The Elites ---
+        // Introduction of Elites.
+        (
+            condition: Specific((tier: 1, level: 16)),
+            spawn_type: Single("orc_elite"),
+            weight: 40,
+        ),
+        (
+            condition: Specific((tier: 1, level: 16)),
+            spawn_type: Group(["orc_elite", "orc_warrior"]),
+            weight: 60,
+        ),
+
+        // --- LEVEL 17: Unleash the Beasts ---
+        // Introduction of Dire Worgs.
+        (
+            condition: Specific((tier: 1, level: 17)),
+            spawn_type: Single("dire_worg"),
+            weight: 40,
+        ),
+        (
+            condition: Specific((tier: 1, level: 17)),
+            spawn_type: Group(["dire_worg", "dire_worg", "orc_elite"]),
+            weight: 60,
+        ),
+
+        // --- LEVEL 18: Total War ---
+        (
+            condition: Specific((tier: 1, level: 18)),
+            spawn_type: Group(["orc_elite", "orc_shaman", "orc_warrior", "dire_worg"]),
+            weight: 100,
+        ),
+
+        // --- LEVEL 19: The Warlord ---
+        // BOSS
+        (
+            condition: Specific((tier: 1, level: 19)),
+            spawn_type: Single("boss_orc_warlord"),
+            weight: 100,
+        ),
     ],
 )

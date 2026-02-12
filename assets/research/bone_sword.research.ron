@@ -3,7 +3,7 @@
     name: "Bone Sword",
     description: "Their bones are sharp. Sharper than our rocks.",
     cost: {
-        "bones": 225,
+        "bones": 150,
     },
     time_required: 120.0,
     max_repeats: 1,

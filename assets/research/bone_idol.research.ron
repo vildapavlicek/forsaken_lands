@@ -1,19 +1,20 @@
 (
-    id: "vision",
+    id: "bone_idol",
     name: "A god has spoken",
     description: "God has spoken to us through the bones. His wish shall be fullfilled",
     cost: {
         "bones": 150,
-        "xykego": 250,
     },
     time_required: 120.0,
     max_repeats: 1,
     unlock: Some((
-        id: "research_vision_unlock",
+        id: "research_bone_idol_unlock",
         display_name: Some("A god has spoken Research"),
         condition: Completed(
             topic: "research:bone_pile_ii",
         ),
-        reward_id: "research:vision",
+        reward_id: "research:bone_idol",
+        repeat_mode: Once,
     )),
+    tags: [],
 )

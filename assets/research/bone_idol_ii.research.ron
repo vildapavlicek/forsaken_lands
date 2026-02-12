@@ -1,0 +1,20 @@
+(
+    id: "bone_idol_ii",
+    name: "The Bone Idol is quiet",
+    description: "We have created idol as god instructed but it is quite while the pile of bones whispered..",
+    cost: {
+        "bones": 150,
+    },
+    time_required: 120.0,
+    max_repeats: 1,
+    unlock: Some((
+        id: "research_bone_idol_ii_unlock",
+        display_name: Some("The Bone Idol is quiet Research"),
+        condition: Completed(
+            topic: "construction:bone_idol",
+        ),
+        reward_id: "research:bone_idol_ii",
+        repeat_mode: Once,
+    )),
+    tags: [],
+)

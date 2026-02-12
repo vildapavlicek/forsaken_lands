@@ -1,0 +1,20 @@
+(
+  resources: {},
+  entities: {
+    1: (
+      components: {
+        "enemy_components::Enemy": (),
+        "enemy_components::MonsterId": ("orc_hunter"),
+        "enemy_components::EnemyRange": LongRange,
+        "shared_components::DisplayName": ("Orc Hunter"),
+        "enemy_components::Health": (current: 8.0, max: 8.0),
+        "enemy_components::MovementSpeed": (180.0),
+        "enemy_components::Lifetime": ((stopwatch: (elapsed: (secs: 0, nanos: 0), is_paused: false), duration: (secs: 8, nanos: 0), mode: Once, finished: false, times_finished_this_tick: 0)),
+        "bevy_transform::components::transform::Transform": (translation: (0.0, 290.0, 0.0)),
+        "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.25, green: 0.3, blue: 0.1, alpha: 1.0)), custom_size: Some((18.0, 18.0))),
+        "enemy_components::Drops": ([(id: "bones", value: 4, chance: 1.0), (id: "sinew", value: 2, chance: 0.5), (id: "xykego", value: 1, chance: 1.0)]),
+        "enemy_components::MonsterTags": (["monster:orc_hunter", "race:orcs"]),
+      },
+    ),
+  },
+)

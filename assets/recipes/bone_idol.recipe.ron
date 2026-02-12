@@ -2,16 +2,16 @@
     id: "bone_idol",
     display_name: "Bone Idol",
     category: Construction,
-    craft_time: 5.0,
+    craft_time: 300.0,
     cost: {
-        "bones": 100,
+        "bones": 300,
     },
     outcomes: [],
     unlock: Some((
         id: "recipe_bone_idol_unlock",
         display_name: Some("Bone Idol"),
         condition: Completed(
-            topic: "research:vision",
+            topic: "research:bone_idol",
         ),
         reward_id: "recipe:bone_idol",
         repeat_mode: Once,

@@ -3,7 +3,7 @@
     bonuses: {
         "damage:enemy:boss_worg_rider": [
             (
-                value: 10.0,
+                value: 5.0,
                 mode: Additive,
             ),
         ],
