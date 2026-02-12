@@ -3,9 +3,9 @@
     name: "Bone Sword",
     description: "Their bones are sharp. Sharper than our rocks.",
     cost: {
-        "bones": 75,
+        "bones": 225,
     },
-    time_required: 60.0,
+    time_required: 120.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_bone_sword_unlock",
@@ -14,5 +14,7 @@
             topic: "research:bone_crafting",
         ),
         reward_id: "research:bone_sword",
+        repeat_mode: Once,
     )),
+    tags: [],
 )

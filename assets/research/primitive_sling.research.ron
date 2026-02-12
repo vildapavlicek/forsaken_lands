@@ -5,7 +5,7 @@
     cost: {
         "sinew": 3,
     },
-    time_required: 30.0,
+    time_required: 60.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_primitive_sling_unlock",
@@ -16,5 +16,7 @@
             ),
         ]),
         reward_id: "research:primitive_sling",
+        repeat_mode: Once,
     )),
+    tags: [],
 )

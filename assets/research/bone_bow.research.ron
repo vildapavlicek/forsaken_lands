@@ -3,10 +3,10 @@
     name: "Bone Bow",
     description: "Their bones and sinews combined to kill them all more easily.",
     cost: {
-        "bones": 75,
-        "sinew": 10,
+        "bones": 150,
+        "sinew": 20,
     },
-    time_required: 60.0,
+    time_required: 120.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_bone_bow_unlock",
@@ -15,5 +15,7 @@
             topic: "research:bone_crafting",
         ),
         reward_id: "research:bone_bow",
+        repeat_mode: Once,
     )),
+    tags: [],
 )

@@ -4,10 +4,9 @@
     category: Weapons,
     craft_time: 60.0,
     cost: {
-        "bones": 100,
+        "bones": 200,
     },
     outcomes: [],
-    description: "",
     unlock: Some((
         id: "recipe_bone_sword_unlock",
         display_name: Some("Bone Sword"),
@@ -15,5 +14,6 @@
             topic: "research:bone_sword",
         ),
         reward_id: "recipe:bone_sword",
+        repeat_mode: Once,
     )),
 )

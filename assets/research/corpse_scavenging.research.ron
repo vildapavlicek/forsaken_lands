@@ -8,17 +8,7 @@
     unlock: Some((
         id: "research_corpse_scavenging_unlock",
         display_name: Some("Corpse Scavenging Research"),
-        condition: Or([
-            Value(
-                topic: "kills:siled",
-                op: Ge,
-                target: 20.0,
-            ),
-            Value(
-                topic: "kills:siled_alpha",
-                op: Ge,
-                target: 10.0,
-            ),
+        condition: And([
             Completed(
                 topic: "research:invaders",
             ),

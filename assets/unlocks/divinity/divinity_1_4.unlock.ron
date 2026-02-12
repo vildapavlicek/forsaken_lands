@@ -1,9 +1,16 @@
 (
     id: "divinity_1_4",
     display_name: Some("Divinity Tier 1 Level 4"),
-    condition: Completed(
-        topic: "crafting:primitive_sling",
-    ),
+    condition: And([
+        Completed(
+            topic: "crafting:primitive_sling",
+        ),
+        Value(
+            topic: "kills:goblin_scout",
+            op: Ge,
+            target: 1.0,
+        ),
+    ]),
     reward_id: "divinity:1-4",
     repeat_mode: Once,
 )

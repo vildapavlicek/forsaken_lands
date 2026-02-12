@@ -5,7 +5,7 @@
     cost: {
         "bones": 300,
     },
-    time_required: 90.0,
+    time_required: 180.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_bone_pile_ii_unlock",
@@ -26,5 +26,7 @@
             ),
         ]),
         reward_id: "research:bone_pile_ii",
+        repeat_mode: Once,
     )),
+    tags: [],
 )

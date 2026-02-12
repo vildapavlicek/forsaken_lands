@@ -2,7 +2,7 @@
     id: "primitive_sling",
     display_name: "Primitive Sling",
     category: Weapons,
-    craft_time: 25.0,
+    craft_time: 60.0,
     cost: {
         "sinew": 5,
     },
@@ -14,5 +14,6 @@
             topic: "research:primitive_sling",
         ),
         reward_id: "recipe:primitive_sling",
+        repeat_mode: Once,
     )),
 )

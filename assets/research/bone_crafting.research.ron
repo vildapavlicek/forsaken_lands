@@ -5,7 +5,7 @@
     cost: {
         "bones": 100,
     },
-    time_required: 45.0,
+    time_required: 90.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_bone_crafting_unlock",
@@ -21,5 +21,7 @@
             ),
         ]),
         reward_id: "research:bone_crafting",
+        repeat_mode: Once,
     )),
+    tags: [],
 )

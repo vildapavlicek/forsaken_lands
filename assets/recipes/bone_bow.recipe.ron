@@ -4,8 +4,8 @@
     category: Weapons,
     craft_time: 60.0,
     cost: {
-        "bones": 75,
-        "sinew": 5,
+        "bones": 150,
+        "sinew": 10,
     },
     outcomes: [],
     unlock: Some((
@@ -15,5 +15,6 @@
             topic: "research:bone_bow",
         ),
         reward_id: "recipe:bone_bow",
+        repeat_mode: Once,
     )),
 )
