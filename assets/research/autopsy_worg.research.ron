@@ -3,9 +3,9 @@
     name: "Autopsy: Worg",
     description: "Filthy ugly beast. We shall turn it to bones.",
     cost: {
-        "bones": 30,
+        "bones": 40,
     },
-    time_required: 45.0,
+    time_required: 60.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_worg_unlock",
@@ -16,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_worg",
+        repeat_mode: Once,
     )),
 )

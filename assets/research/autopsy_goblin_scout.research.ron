@@ -3,9 +3,9 @@
     name: "Autopsy: Goblin Scout",
     description: "They are small, thin and angry. And very, very ugly.",
     cost: {
-        "xykego": 10,
+        "bones": 20,
     },
-    time_required: 30.0,
+    time_required: 60.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_goblin_scout_unlock",
@@ -16,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_goblin_scout",
+        repeat_mode: Once,
     )),
 )

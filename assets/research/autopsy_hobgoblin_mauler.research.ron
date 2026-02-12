@@ -3,10 +3,9 @@
     name: "Autopsy: Hobgoblin Mauler",
     description: "They are bigger. And muscular?",
     cost: {
-        "bones": 75,
-        "xykego": 50,
+        "bones": 150,
     },
-    time_required: 90.0,
+    time_required: 120.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_hobgoblin_mauler_unlock",
@@ -17,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_hobgoblin_mauler",
+        repeat_mode: Once,
     )),
 )

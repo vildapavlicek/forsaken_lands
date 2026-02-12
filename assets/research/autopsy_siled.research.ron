@@ -3,7 +3,7 @@
     name: "Autopsy: Siled",
     description: "Ugly teeth, six legs.. And mean.",
     cost: {},
-    time_required: 10.0,
+    time_required: 20.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_siled_unlock",
@@ -14,5 +14,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_siled",
+        repeat_mode: Once,
     )),
 )

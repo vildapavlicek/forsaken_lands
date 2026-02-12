@@ -2,7 +2,9 @@
     id: "autopsy_boss_worg_rider",
     name: "Autopsy: Boss Worg Rider",
     description: "We killed their boss. Time to celebrate.",
-    cost: {},
+    cost: {
+        "bones": 150,
+    },
     time_required: 180.0,
     max_repeats: 1,
     unlock: Some((
@@ -14,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_boss_worg_rider",
+        repeat_mode: Once,
     )),
 )

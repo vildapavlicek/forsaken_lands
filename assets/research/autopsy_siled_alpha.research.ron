@@ -3,7 +3,7 @@
     name: "Autopsy: Siled Alpha",
     description: "Bigger and meaner.",
     cost: {},
-    time_required: 15.0,
+    time_required: 40.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_siled_alpha_unlock",
@@ -14,5 +14,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_siled_alpha",
+        repeat_mode: Once,
     )),
 )

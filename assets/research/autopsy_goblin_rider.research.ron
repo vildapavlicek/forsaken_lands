@@ -16,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_goblin_rider",
+        repeat_mode: Once,
     )),
 )

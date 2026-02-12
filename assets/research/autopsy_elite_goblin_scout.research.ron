@@ -3,9 +3,9 @@
     name: "Autopsy: Elite Goblin Scout",
     description: "A bit bigger but also uglier. Way uglier. And greener?",
     cost: {
-        "xykego": 20,
+        "bones": 60,
     },
-    time_required: 45.0,
+    time_required: 80.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_elite_goblin_scout_unlock",
@@ -16,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_elite_goblin_scout",
+        repeat_mode: Once,
     )),
 )

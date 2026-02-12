@@ -3,10 +3,9 @@
     name: "Autopsy: Worg Alpha",
     description: "Their fur is as hard as stell and black as a night. Are they demons?",
     cost: {
-        "bones": 75,
-        "xykego": 50,
+        "bones": 120,
     },
-    time_required: 120.0,
+    time_required: 150.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_worg_alpha_unlock",
@@ -17,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_worg_alpha",
+        repeat_mode: Once,
     )),
 )

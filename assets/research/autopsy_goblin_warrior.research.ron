@@ -3,10 +3,9 @@
     name: "Autopsy: Goblin Warrior",
     description: "This one has weapons of bones and some scars. Still green and even more uglier.",
     cost: {
-        "bones": 30,
-        "xykego": 10,
+        "bones": 60,
     },
-    time_required: 60.0,
+    time_required: 80.0,
     max_repeats: 1,
     unlock: Some((
         id: "research_autopsy_goblin_warrior_unlock",
@@ -17,5 +16,6 @@
             target: 1.0,
         ),
         reward_id: "research:autopsy_goblin_warrior",
+        repeat_mode: Once,
     )),
 )

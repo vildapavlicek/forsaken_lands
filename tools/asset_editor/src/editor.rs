@@ -23,6 +23,7 @@ use {
 
         tabs::{
             common::{show_condition_editor, show_repeat_mode_editor}, overview::OverviewState, research::ResearchTabState,
+            research_balancing::ResearchBalancingTabState,
             spawn_table::SpawnTableTabState, ttk::TtkTabState,
         },
     },
@@ -50,6 +51,7 @@ pub enum EditorTab {
     Autopsy,
     Divinity,
     BonusStats,
+    ResearchBalancing,
     Overview,
 }
 
@@ -110,6 +112,9 @@ pub struct EditorState {
     // TTK Tab
     ttk: TtkTabState,
 
+    // Research Balancing Tab
+    research_balancing: ResearchBalancingTabState,
+
     // Autopsy Tab
     autopsy_form: AutopsyFormData,
 
@@ -161,6 +166,7 @@ impl EditorState {
 
 
             ttk: TtkTabState::new(),
+            research_balancing: ResearchBalancingTabState::new(),
 
             autopsy_form: AutopsyFormData::new(),
             divinity_form: DivinityFormData::new(),
@@ -329,6 +335,9 @@ impl EditorState {
                                     .desired_width(f32::INFINITY),
                             );
                         }
+                        EditorTab::ResearchBalancing => {
+                            ui.label("Mass-editing mode - no single RON preview");
+                        }
                     });
                 });
         }
@@ -359,6 +368,11 @@ impl EditorState {
                     EditorTab::BonusStats,
                     "📈 Bonus Stats",
                 );
+                ui.selectable_value(
+                    &mut self.active_tab,
+                    EditorTab::ResearchBalancing,
+                    "⚖ Balancing",
+                );
                 ui.selectable_value(&mut self.active_tab, EditorTab::Overview, "🔍 Overview");
             });
             ui.separator();
@@ -387,6 +401,11 @@ impl EditorState {
                 EditorTab::Autopsy => self.show_autopsy_form(ui),
                 EditorTab::Divinity => self.show_divinity_form(ui),
                 EditorTab::BonusStats => self.show_bonus_stats_form(ui),
+                EditorTab::ResearchBalancing => self.research_balancing.show(
+                    ui,
+                    self.assets_dir.as_deref(),
+                    &mut self.status,
+                ),
                 EditorTab::Overview => self.overview.show(ui, self.assets_dir.as_deref()),
             });
         });
@@ -817,6 +836,11 @@ impl EditorState {
             EditorTab::Overview => {
                 // Overview is view-only, but we can reset sort/filter if we had them
                 self.status = "Overview refreshed".to_string();
+            }
+            EditorTab::ResearchBalancing => {
+                if let Some(dir) = &self.assets_dir {
+                    self.research_balancing.load_data(dir, &mut self.status);
+                }
             }
         }
     }
