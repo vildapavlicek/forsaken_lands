@@ -1,11 +1,31 @@
 use bevy::prelude::*;
 
+/// The high-level state machine controlling the application's execution flow.
+///
+/// This state drives the primary loop of the game, gating which systems run
+/// during initialization, loading, and active gameplay.
+///
+/// # Usage
+/// - **Bootstrap**: The app starts in `Loading`, where `LoadingPhase` sub-states
+///   manage asset loading and entity spawning.
+/// - **Gameplay**: Systems tagged with `.run_if(in_state(GameState::Running))`
+///   only execute when this state is active.
+/// - **Transitions**: The `loading` crate manages the transition from `Loading`
+///   to `Running` once all resources are ready.
 #[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum GameState {
+    /// Bootstrapping phase.
+    /// Handles asset loading, world spawning, and system initialization via `LoadingPhase`.
     #[default]
     Loading,
+    /// Reserved for post-load initialization logic before the game loop starts.
+    /// Currently unused/reserved for future expansion.
     Initializing,
+    /// The active gameplay loop.
+    /// Physics, input, and game logic systems run in this state.
     Running,
+    /// Specialized state for deserializing save data.
+    /// Currently unused/reserved (save loading happens within `LoadingPhase`).
     LoadingSave,
 }
 
