@@ -3,3 +3,4 @@
 ## 2025-05-22 - **Insight:** **Singleton Composition:** Singleton entities often aggregate subsystems via `#[require]`. **Rule:** Document `#[require]` dependencies as architectural components of the entity.
 ## 2025-05-23 - **Insight:** **Implicit Dependencies:** Systems often query for components (e.g., `SpawnTimer`) alongside a marker (e.g., `Portal`) that cannot be `#[require]`'d due to crate boundaries. **Rule:** Document these implicit dependencies in the 'Usage' section.
 ## 2025-05-23 - **Insight:** **Stat Mechanics:** `StatMode::Multiplicative` bonuses stack additively (e.g. x2 + x2 = x4), not multiplicatively. This is counter-intuitive and must be explicitly documented.
+## 2025-05-24 - **Insight:** **Asset Dependency:** The `enemy_spawn_system` (in `portals`) strictly requires `SpawnTable` assets (in `game_assets`) to be loaded and indexed by `SpawnTableId`. **Rule:** Document Asset types that drive core system logic.
