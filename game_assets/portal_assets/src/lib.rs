@@ -56,7 +56,19 @@ pub struct SpawnEntry {
     pub weight: u32,
 }
 
+/// Defines a collection of spawn rules used by Portals to generate enemies.
+///
+/// This asset acts as a configuration file (typically loaded from `.spawn_table.ron`) that
+/// determines *what* can spawn and *when* (based on `Divinity` levels).
+///
+/// # Usage
+/// - **Configuration**: Designers create these assets to define the enemy composition for different
+///   areas or portal types (e.g., "Forest Portal" vs "Dungeon Portal").
+/// - **Runtime**: The `enemy_spawn_system` retrieves this asset using the `SpawnTableId` component
+///   on a `Portal` entity. It then filters `entries` by the portal's `CurrentDivinity` and selects
+///   one based on weight.
 #[derive(Asset, TypePath, Default, Debug, Deserialize, Serialize, PartialEq)]
 pub struct SpawnTable {
+    /// The list of potential spawn candidates and their conditions.
     pub entries: Vec<SpawnEntry>,
 }
