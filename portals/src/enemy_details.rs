@@ -6,6 +6,18 @@ use {
     unlocks::UnlockAchieved,
 };
 
+/// An Observer that listens for `UnlockAchieved` events to populate the `EnemyDetailsCache`.
+///
+/// This system bridges the gap between the Unlock System (logic) and the UI System (display).
+/// When an enemy-related unlock occurs (identified by the `encyclopedia_data:` prefix),
+/// it parses the enemy's prefab (DynamicScene) to extract static stats like health, speed, and drops,
+/// caching them for efficient UI access without entity instantiation.
+///
+/// # Trigger
+/// - `UnlockAchieved`: Triggered by the Unlock System when all conditions for an unlock are met.
+///
+/// # Outcome
+/// - Populates `EnemyDetailsCache` with an `EnemyStatBlock` for the unlocked monster ID.
 pub fn cache_details_on_unlock(
     trigger: On<UnlockAchieved>,
     game_assets: Res<GameAssets>,
