@@ -65,18 +65,41 @@ pub enum ReactiveTrigger {
     OnDamageTaken,
 }
 
+/// Defines how a skill selects its targets.
+///
+/// This enum determines both the targeting logic (who gets hit) and the
+/// validation constraints (range/radius).
+///
+/// # Usage
+/// - **Skill Definition**: Used in `.skill.ron` assets to configure the skill.
+/// - **Execution**: The `process_skill_activation` system uses this to resolve
+///   the final list of affected entities.
+/// - **Validation**: Systems triggering `SkillActivated` (like AI or Input) must
+///   respect the `range`/`radius` constraints defined here, as `process_skill_activation`
+///   assumes the target is valid.
 #[derive(Debug, Clone, Serialize, Deserialize, Reflect, Default)]
 #[reflect(Serialize, Deserialize)]
 pub enum TargetType {
+    /// Applies the effect to the caster itself (e.g., self-buffs).
     #[default]
     Identity,
+    /// Targets a specific enemy entity.
+    ///
+    /// The triggering system must ensure the target is within `range`.
     SingleEnemy {
+        /// Maximum allowed distance to target in pixels.
         range: f32,
     },
+    /// Targets all enemies within a radius around the caster.
     AllEnemiesInRange {
+        /// Radius of the area of effect in pixels.
         radius: f32,
     },
+    /// Targets a specific position in the world.
+    ///
+    /// Useful for ground-targeted AoE spells (e.g., "Meteor Strike").
     Point {
+        /// Radius of the area of effect in pixels.
         radius: f32,
     },
 }
