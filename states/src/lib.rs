@@ -29,15 +29,33 @@ pub enum GameState {
     LoadingSave,
 }
 
+/// The primary state machine for the Village UI overlay.
+///
+/// This state dictates which management panel is currently active for the player.
+/// It effectively acts as a sub-state of `GameState::Running` but is implemented as a
+/// parallel `States` enum for decoupling.
+///
+/// # Usage
+/// - **Transitions**: `village_ui` systems observe clicks on the `Village` entity to transition
+///   from `Closed` to `Menu`. Buttons in the menu then transition to specific views.
+/// - **UI Rendering**: Systems in `ui/village_ui` use `in_state(VillageView::Variant)` to
+///   conditionally show/hide panels.
 #[derive(States, Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum VillageView {
+    /// No village UI is visible. The player is in the main gameplay view.
     #[default]
     Closed,
+    /// The main village hub/menu, offering navigation to other facilities.
     Menu,
+    /// The crafting interface for creating weapons and items.
     Crafting,
+    /// The research tree interface for unlocking new technologies.
     Research,
+    /// The bestiary showing statistics of encountered enemies.
     Encyclopedia,
+    /// The hero management screen (equipment, stats).
     Heroes,
+    /// The "Maw" interface for purchasing global upgrades/blessings.
     Blessings,
 }
 
