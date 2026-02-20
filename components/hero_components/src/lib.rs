@@ -131,6 +131,18 @@ impl Default for ProjectileTarget {
     }
 }
 
+/// Defines the travel velocity of a projectile.
+///
+/// This component represents the scalar speed magnitude at which a projectile moves through the world.
+///
+/// # Usage
+/// - **Movement**: The `projectile_movement_system` queries this component to calculate the
+///   translation update: `velocity = direction * speed * delta_time`.
+/// - **Creation**: Initialized on the projectile entity during spawning (e.g., via `ProjectileSpawnRequest`)
+///   to set its constant speed.
+///
+/// # Units
+/// - Speed in **logical pixels per second**.
 #[derive(Component, Default)]
 pub struct ProjectileSpeed(pub f32);
 
