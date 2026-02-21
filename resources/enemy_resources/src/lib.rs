@@ -1,10 +1,23 @@
 use bevy::{platform::collections::HashMap, prelude::*};
 
+/// A snapshot of an enemy's base statistics and attributes.
+///
+/// This struct holds the static data extracted from an enemy prefab (DynamicScene)
+/// upon unlocking. It decouples the UI from the Scene system, preventing the need
+/// to instantiate entities just to read their component data.
+///
+/// # Usage
+/// - **Storage**: Stored in `EnemyDetailsCache` mapped by `MonsterId`.
+/// - **Display**: Consumed by the `enemy_encyclopedia` UI to render stats cards.
 #[derive(Debug, Clone)]
 pub struct EnemyStatBlock {
+    /// Maximum health points.
     pub health: f32,
+    /// Movement speed in logical pixels per second.
     pub speed: f32,
+    /// List of Item IDs (e.g., "resource:bones") dropped upon death.
     pub drops: Vec<String>,
+    /// Semantic tags (e.g., "undead", "boss") used for categorization and bonus calculations.
     pub tags: Vec<String>,
 }
 
