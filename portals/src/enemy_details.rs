@@ -51,6 +51,8 @@ fn extract_enemy_details(
 
     let mut health_val = 0.0;
     let mut speed_val = 0.0;
+    let mut armor_val = 0.0;
+    let mut shield_val = 0.0;
     let mut drops_vec = Vec::new();
     let mut tags_vec = Vec::new();
 
@@ -65,6 +67,16 @@ fn extract_enemy_details(
                 speed_val = s.0;
                 continue;
             };
+
+            if let Some(a) = component.try_downcast_ref::<enemy_components::Armor>() {
+                armor_val = a.0;
+                continue;
+            }
+
+            if let Some(sh) = component.try_downcast_ref::<enemy_components::Shield>() {
+                shield_val = sh.0;
+                continue;
+            }
 
             if let Some(d) = component.try_downcast_ref::<Drops>() {
                 drops_vec = d.0.iter().map(|drop| drop.id.clone()).collect();
@@ -81,6 +93,8 @@ fn extract_enemy_details(
     Some(EnemyStatBlock {
         health: health_val,
         speed: speed_val,
+        armor: armor_val,
+        shield: shield_val,
         drops: drops_vec,
         tags: tags_vec,
     })

@@ -1,6 +1,6 @@
 use {
     bevy::prelude::*,
-    enemy_components::{Enemy, Health, MonsterTags},
+    enemy_components::{Armor, Enemy, Health, MonsterTags, Shield},
     hero_components::{
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
@@ -286,18 +286,27 @@ fn projectile_collision_system(
 
 fn damage_pipeline_observer(
     trigger: On<DamageRequest>,
-    mut enemies: Query<(&mut Health, &MonsterTags), With<Enemy>>,
+    mut enemies: Query<(&mut Health, Option<&Armor>, Option<&Shield>, &MonsterTags), With<Enemy>>,
     bonus_stats: Res<bonus_stats_resources::BonusStats>,
 ) {
     let req = trigger.event();
 
-    if let Ok((mut health, monster_tags)) = enemies.get_mut(req.target) {
-        let final_damage = bonus_stats_resources::calculate_damage(
+    if let Ok((mut health, armor, shield, monster_tags)) = enemies.get_mut(req.target) {
+        let computed_damage = bonus_stats_resources::calculate_damage(
             req.base_damage,
             &req.source_tags,
             &monster_tags.0,
             &bonus_stats,
         );
+
+        let base_armor = armor.map_or(0.0, |a| a.0);
+        let total_armor = bonus_stats.calculate_stat("armor", base_armor, &monster_tags);
+
+        let base_shield = shield.map_or(0.0, |s| s.0);
+        let total_shield = bonus_stats.calculate_stat("shield", base_shield, &monster_tags);
+
+        let shield_reduction = computed_damage * total_shield;
+        let final_damage = (computed_damage - total_armor - shield_reduction).max(0.0);
 
         health.current -= final_damage;
 

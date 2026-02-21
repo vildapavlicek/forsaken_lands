@@ -13,6 +13,14 @@ pub struct Dead;
 #[reflect(Component)]
 pub struct MovementSpeed(pub f32);
 
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Armor(pub f32);
+
+#[derive(Component, Reflect, Default)]
+#[reflect(Component)]
+pub struct Shield(pub f32);
+
 /// Represents the maximum duration an entity remains in the world before escaping.
 ///
 /// This component implements a "time pressure" mechanic, requiring players to defeat
@@ -115,6 +123,6 @@ pub const MELEE_ENGAGEMENT_RADIUS: f32 = 150.0;
 #[reflect(Component, Default)]
 pub struct TargetDestination(pub Vec2);
 
-#[derive(Component, Reflect, Default, Debug, Clone)]
+#[derive(Component, Reflect, Default, Debug, Deref)]
 #[reflect(Component, Default)]
 pub struct MonsterTags(pub Vec<String>);

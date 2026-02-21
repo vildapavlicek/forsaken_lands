@@ -58,6 +58,8 @@ pub enum EnemyComponent {
     // Optional components
     Drops(Vec<Drop>),
     MonsterTags(Vec<String>),
+    Armor(f32),
+    Shield(f32),
 }
 
 impl EnemyComponent {
@@ -75,6 +77,8 @@ impl EnemyComponent {
             EnemyComponent::Sprite { .. } => "Sprite",
             EnemyComponent::Drops(_) => "Drops",
             EnemyComponent::MonsterTags(_) => "Monster Tags",
+            EnemyComponent::Armor(_) => "Armor",
+            EnemyComponent::Shield(_) => "Shield",
         }
     }
 
@@ -108,6 +112,8 @@ pub fn optional_components() -> Vec<(&'static str, EnemyComponent)> {
     vec![
         ("Drops", EnemyComponent::Drops(vec![])),
         ("Monster Tags", EnemyComponent::MonsterTags(vec![])),
+        ("Armor", EnemyComponent::Armor(0.0)),
+        ("Shield", EnemyComponent::Shield(0.0)),
     ]
 }
 
@@ -255,6 +261,12 @@ fn component_to_ron(component: &EnemyComponent) -> Option<String> {
                 ))
             }
         }
+        EnemyComponent::Armor(val) => {
+            Some(format!(r#""enemy_components::Armor": ({})"#, format_f32(*val)))
+        }
+        EnemyComponent::Shield(val) => {
+            Some(format!(r#""enemy_components::Shield": ({})"#, format_f32(*val)))
+        }
     }
 }
 
@@ -399,6 +411,20 @@ pub fn parse_components_from_ron(content: &str) -> Option<Vec<EnemyComponent>> {
             }
             components.push(EnemyComponent::MonsterTags(tags));
         }
+    }
+
+    // Armor
+    let armor_re = Regex::new(r#""enemy_components::Armor":\s*\(([\d.]+)\)"#).ok()?;
+    if let Some(caps) = armor_re.captures(content) {
+        let val: f32 = caps.get(1)?.as_str().parse().ok()?;
+        components.push(EnemyComponent::Armor(val));
+    }
+
+    // Shield
+    let shield_re = Regex::new(r#""enemy_components::Shield":\s*\(([\d.]+)\)"#).ok()?;
+    if let Some(caps) = shield_re.captures(content) {
+        let val: f32 = caps.get(1)?.as_str().parse().ok()?;
+        components.push(EnemyComponent::Shield(val));
     }
 
     if components.is_empty() {

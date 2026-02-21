@@ -1355,6 +1355,25 @@ impl EditorState {
                     changed = true;
                 }
             }
+            EnemyComponent::Armor(val) => {
+                ui.horizontal(|ui| {
+                    ui.label("Amount (flat):");
+                    if ui.add(egui::DragValue::new(val).speed(1.0)).changed() {
+                        changed = true;
+                    }
+                });
+            }
+            EnemyComponent::Shield(val) => {
+                ui.horizontal(|ui| {
+                    ui.label("Reduction (ratio, e.g. 0.1 for 10%):");
+                    if ui
+                        .add(egui::DragValue::new(val).speed(0.01).range(0.0..=1.0))
+                        .changed()
+                    {
+                        changed = true;
+                    }
+                });
+            }
         }
 
         changed

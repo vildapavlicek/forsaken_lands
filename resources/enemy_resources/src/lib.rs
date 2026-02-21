@@ -15,6 +15,8 @@ pub struct EnemyStatBlock {
     pub health: f32,
     /// Movement speed in logical pixels per second.
     pub speed: f32,
+    pub armor: f32,
+    pub shield: f32,
     /// List of Item IDs (e.g., "resource:bones") dropped upon death.
     pub drops: Vec<String>,
     /// Semantic tags (e.g., "undead", "boss") used for categorization and bonus calculations.
