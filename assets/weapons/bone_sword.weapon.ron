@@ -4,7 +4,7 @@
     weapon_type: Melee(
         arc_width: 1.047,
     ),
-    damage: 1.0,
+    damage: 1.25,
     attack_range: 150.0,
     attack_speed_ms: 500,
     tags: [
