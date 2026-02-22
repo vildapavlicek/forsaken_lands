@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_orc_hunter_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_orc_hunter",
+    ),
+    reward_id: "encyclopedia_data:orc_hunter",
+)

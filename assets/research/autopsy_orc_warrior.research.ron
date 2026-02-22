@@ -1,0 +1,22 @@
+(
+    id: "autopsy_orc_warrior",
+    name: "Autopsy: Orc Warrior",
+    description: "Heavily armored shock troops forming the vanguard of their assaults.",
+    cost: {
+        "bones": 500,
+    },
+    time_required: 240.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_orc_warrior_unlock",
+        display_name: Some("Autopsy: Orc Warrior Research"),
+        condition: Value(
+            topic: "kills:orc_warrior",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_orc_warrior",
+        repeat_mode: Once,
+    )),
+)

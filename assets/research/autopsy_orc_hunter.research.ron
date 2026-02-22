@@ -1,0 +1,22 @@
+(
+    id: "autopsy_orc_hunter",
+    name: "Autopsy: Orc Hunter",
+    description: "Equipped with vicious ranged weaponry and terrifying accuracy.",
+    cost: {
+        "bones": 300,
+    },
+    time_required: 180.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_orc_hunter_unlock",
+        display_name: Some("Autopsy: Orc Hunter Research"),
+        condition: Value(
+            topic: "kills:orc_hunter",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_orc_hunter",
+        repeat_mode: Once,
+    )),
+)

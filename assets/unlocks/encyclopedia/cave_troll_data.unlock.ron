@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_cave_troll_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_cave_troll",
+    ),
+    reward_id: "encyclopedia_data:cave_troll",
+)

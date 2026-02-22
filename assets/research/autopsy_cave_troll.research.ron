@@ -1,0 +1,22 @@
+(
+    id: "autopsy_cave_troll",
+    name: "Autopsy: Cave Troll",
+    description: "Massive and tough. Understanding their biology will help.",
+    cost: {
+        "bones": 80,
+    },
+    time_required: 80.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_cave_troll_unlock",
+        display_name: Some("Autopsy: Cave Troll Research"),
+        condition: Value(
+            topic: "kills:cave_troll",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_cave_troll",
+        repeat_mode: Once,
+    )),
+)

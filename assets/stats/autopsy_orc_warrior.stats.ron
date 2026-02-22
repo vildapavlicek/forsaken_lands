@@ -1,0 +1,19 @@
+(
+    id: "stat:autopsy_orc_warrior",
+    bonuses: {
+        "damage:race:orcs": [
+            (
+                value: 0.1,
+                mode: Percent,
+            ),
+        ],
+    },
+    unlock: Some((
+        id: "stat:autopsy_orc_warrior_unlock",
+        display_name: Some("Stat Bonus: stat:autopsy_orc_warrior"),
+        condition: Completed(
+            topic: "research:autopsy_orc_warrior",
+        ),
+        reward_id: "stat:autopsy_orc_warrior",
+    )),
+)

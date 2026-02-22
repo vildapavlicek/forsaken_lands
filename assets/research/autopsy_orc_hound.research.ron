@@ -1,0 +1,22 @@
+(
+    id: "autopsy_orc_hound",
+    name: "Autopsy: Orc Hound",
+    description: "These beasts are fast and vicious. What drives them?",
+    cost: {
+        "bones": 50,
+    },
+    time_required: 45.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_orc_hound_unlock",
+        display_name: Some("Autopsy: Orc Hound Research"),
+        condition: Value(
+            topic: "kills:orc_hound",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_orc_hound",
+        repeat_mode: Once,
+    )),
+)

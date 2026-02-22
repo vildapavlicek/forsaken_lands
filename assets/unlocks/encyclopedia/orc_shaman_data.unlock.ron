@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_orc_shaman_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_orc_shaman",
+    ),
+    reward_id: "encyclopedia_data:orc_shaman",
+)

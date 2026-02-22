@@ -1,0 +1,22 @@
+(
+    id: "autopsy_orc_elite",
+    name: "Autopsy: Orc Elite",
+    description: "Veterans of countless battles. The strongest of their horde.",
+    cost: {
+        "bones": 800,
+    },
+    time_required: 300.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_orc_elite_unlock",
+        display_name: Some("Autopsy: Orc Elite Research"),
+        condition: Value(
+            topic: "kills:orc_elite",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_orc_elite",
+        repeat_mode: Once,
+    )),
+)

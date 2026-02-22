@@ -1,0 +1,22 @@
+(
+    id: "autopsy_orc_grunt",
+    name: "Autopsy: Orc Grunt",
+    description: "Basic foot soldier of the orc horde. Strong but undisciplined.",
+    cost: {
+        "bones": 300,
+    },
+    time_required: 180.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_orc_grunt_unlock",
+        display_name: Some("Autopsy: Orc Grunt Research"),
+        condition: Value(
+            topic: "kills:orc_grunt",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_orc_grunt",
+        repeat_mode: Once,
+    )),
+)

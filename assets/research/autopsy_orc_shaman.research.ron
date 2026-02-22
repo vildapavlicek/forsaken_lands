@@ -1,0 +1,22 @@
+(
+    id: "autopsy_orc_shaman",
+    name: "Autopsy: Orc Shaman",
+    description: "Casters of dark magic, healing their allies and cursing our ranks.",
+    cost: {
+        "bones": 500,
+    },
+    time_required: 240.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_orc_shaman_unlock",
+        display_name: Some("Autopsy: Orc Shaman Research"),
+        condition: Value(
+            topic: "kills:orc_shaman",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_orc_shaman",
+        repeat_mode: Once,
+    )),
+)

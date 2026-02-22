@@ -1,0 +1,19 @@
+(
+    id: "stat:autopsy_orc_hound",
+    bonuses: {
+        "damage:race:beasts": [
+            (
+                value: 0.1,
+                mode: Percent,
+            ),
+        ],
+    },
+    unlock: Some((
+        id: "stat:autopsy_orc_hound_unlock",
+        display_name: Some("Stat Bonus: stat:autopsy_orc_hound"),
+        condition: Completed(
+            topic: "research:autopsy_orc_hound",
+        ),
+        reward_id: "stat:autopsy_orc_hound",
+    )),
+)

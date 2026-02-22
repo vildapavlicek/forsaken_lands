@@ -1,0 +1,19 @@
+(
+    id: "stat:autopsy_cave_troll",
+    bonuses: {
+        "damage:race:trolls": [
+            (
+                value: 0.1,
+                mode: Percent,
+            ),
+        ],
+    },
+    unlock: Some((
+        id: "stat:autopsy_cave_troll_unlock",
+        display_name: Some("Stat Bonus: stat:autopsy_cave_troll"),
+        condition: Completed(
+            topic: "research:autopsy_cave_troll",
+        ),
+        reward_id: "stat:autopsy_cave_troll",
+    )),
+)

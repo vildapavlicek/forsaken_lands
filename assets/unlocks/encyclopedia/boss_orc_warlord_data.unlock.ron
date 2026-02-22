@@ -1,0 +1,8 @@
+(
+    id: "encyclopedia_boss_orc_warlord_data",
+    display_name: None,
+    condition: Completed(
+        topic: "research:autopsy_boss_orc_warlord",
+    ),
+    reward_id: "encyclopedia_data:boss_orc_warlord",
+)

@@ -1,0 +1,22 @@
+(
+    id: "autopsy_boss_orc_warlord",
+    name: "Autopsy: Boss Orc Warlord",
+    description: "The commander of the invasion force. Studying his remains will reveal the horde's innermost secrets.",
+    cost: {
+        "bones": 1500,
+    },
+    time_required: 600.0,
+    max_repeats: 1,
+    tags: ["research:autopsy"],
+    unlock: Some((
+        id: "research_autopsy_boss_orc_warlord_unlock",
+        display_name: Some("Autopsy: Boss Orc Warlord Research"),
+        condition: Value(
+            topic: "kills:boss_orc_warlord",
+            op: Ge,
+            target: 1.0,
+        ),
+        reward_id: "research:autopsy_boss_orc_warlord",
+        repeat_mode: Once,
+    )),
+)
