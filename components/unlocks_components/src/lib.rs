@@ -78,6 +78,17 @@ pub struct TopicEntity {
     pub key: String,
 }
 
+/// A registry of sensor entities subscribed to a specific event topic.
+///
+/// This component is attached to a `TopicEntity` and acts as an optimization for the Event-Driven Architecture.
+/// Instead of broadcasting updates to every `ConditionSensor` in the world, systems can query this
+/// component to identify exactly which entities need to be notified of a change.
+///
+/// # Usage
+/// - **Compilation**: Populated by `compile_unlock_definition` when building the logic graph.
+///   Each leaf node (Sensor) is registered here.
+/// - **Event Dispatch**: Read by `on_value_changed` and `on_status_completed` observers
+///   to efficiently route updates to the relevant `ConditionSensor` entities.
 #[derive(Component, Default, Debug, Reflect)]
 pub struct TopicSubscribers {
     pub sensors: Vec<Entity>,
