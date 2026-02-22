@@ -73,6 +73,17 @@ pub struct DamageRequest {
     pub source_tags: Vec<String>,
 }
 
+/// Represents a request to apply healing to a single target.
+#[derive(Event)]
+pub struct HealRequest {
+    /// The entity performing the heal
+    pub source: Entity,
+    /// The target entity receiving the heal
+    pub target: Entity,
+    /// The flat amount to heal
+    pub amount: f32,
+}
+
 /// Represents a request to spawn a projectile.
 ///
 /// This **Observer** event (triggered via `commands.trigger`) serves as a factory request for creating

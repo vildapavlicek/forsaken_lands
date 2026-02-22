@@ -3,7 +3,7 @@ use {
     bevy::prelude::*,
     bonus_stats::{BonusStats, StatBonus},
     enemy_components::Enemy,
-    hero_events::{DamageRequest, ProjectileSpawnRequest},
+    hero_events::{DamageRequest, HealRequest, ProjectileSpawnRequest},
     std::time::Duration,
     village_components::Village,
 };
@@ -87,7 +87,7 @@ pub fn process_skill_activation(
     mut cooldowns_query: Query<&mut SkillCooldowns>,
     mut bonus_stats: ResMut<BonusStats>,
     transforms: Query<&Transform>,
-    enemies: Query<(Entity, &Transform), With<Enemy>>,
+    enemies: Query<(Entity, &Transform, Option<&enemy_components::Health>), With<Enemy>>,
     villages: Query<&Transform, With<Village>>,
 ) {
     let event = trigger.event();
@@ -127,7 +127,7 @@ pub fn process_skill_activation(
         TargetType::Point { radius } => {
             // Find enemies in radius of target_position
             if let Some(pos) = event.target_position {
-                for (entity, transform) in &enemies {
+                for (entity, transform, _) in &enemies {
                     if transform.translation.truncate().distance(pos) <= radius {
                         targets.push(entity);
                     }
@@ -136,7 +136,7 @@ pub fn process_skill_activation(
         }
         TargetType::AllEnemiesInRange { radius } => {
             if let Ok(caster_transform) = transforms.get(event.caster) {
-                for (entity, transform) in &enemies {
+                for (entity, transform, _) in &enemies {
                     if transform
                         .translation
                         .truncate()
@@ -144,6 +144,39 @@ pub fn process_skill_activation(
                         <= radius
                     {
                         targets.push(entity);
+                    }
+                }
+            }
+        }
+        TargetType::SingleAlly { range } => {
+            if let Ok(caster_transform) = transforms.get(event.caster) {
+                if enemies.get(event.caster).is_ok() {
+                    // Caster is Enemy, find Enemy ally with lowest HP%
+                    let mut best_target = None;
+                    let mut lowest_hp_pct = 1.0;
+
+                    for (entity, transform, health_opt) in &enemies {
+                        let dist = transform
+                            .translation
+                            .truncate()
+                            .distance(caster_transform.translation.truncate());
+
+                        if dist <= range {
+                            if let Some(health) = health_opt {
+                                let hp_pct = health.current / health.max;
+                                if hp_pct < lowest_hp_pct {
+                                    lowest_hp_pct = hp_pct;
+                                    best_target = Some(entity);
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(target) = best_target {
+                        // Only target if taking damage
+                        if lowest_hp_pct < 1.0 {
+                            targets.push(target);
+                        }
                     }
                 }
             }
@@ -168,6 +201,16 @@ pub fn process_skill_activation(
             }
             SkillEffect::DamagePercent { percent: _ } => {
                 // Implementation pending health query
+            }
+            SkillEffect::Heal { amount } => {
+                for target in &targets {
+                    commands.trigger(HealRequest {
+                        source: event.caster,
+                        target: *target,
+                        amount: *amount,
+                    });
+                    affected_entities.push(*target);
+                }
             }
             SkillEffect::StatModifier {
                 stat_key,
@@ -263,6 +306,76 @@ pub fn process_skill_activation(
             commands
                 .entity(event.caster)
                 .insert(SkillCooldowns { timers });
+        }
+    }
+}
+
+/// System that automatically triggers enemy skills of type `AutoActivate`
+pub fn enemy_auto_activate_skills_system(
+    mut commands: Commands,
+    enemies: Query<(Entity, &EquippedSkills, &SkillCooldowns, &Transform), With<Enemy>>,
+    other_enemies: Query<(Entity, &Transform, Option<&enemy_components::Health>), With<Enemy>>,
+    skill_map: Res<SkillMap>,
+    skills: Res<Assets<SkillDefinition>>,
+) {
+    for (enemy_entity, equipped, cooldowns, caster_transform) in &enemies {
+        for skill_id in &equipped.0 {
+            // Check if skill is on cooldown
+            if let Some(timer) = cooldowns.timers.get(skill_id) {
+                if !timer.is_finished() {
+                    continue;
+                }
+            }
+
+            // Get skill definition
+            let Some(handle) = skill_map.handles.get(skill_id) else {
+                continue;
+            };
+            let Some(skill_def) = skills.get(handle) else {
+                continue;
+            };
+
+            // Filter 1: Type must be AutoActivate
+            if !matches!(skill_def.skill_type, SkillType::AutoActivate) {
+                continue;
+            }
+
+            // For enemies, right now we mostly support SingleAlly auto-activation.
+            match &skill_def.target {
+                TargetType::SingleAlly { range } => {
+                    let mut best_target = None;
+                    let mut lowest_hp_pct = 1.0;
+
+                    for (other_entity, other_transform, health_opt) in &other_enemies {
+                        let dist = caster_transform
+                            .translation
+                            .distance(other_transform.translation);
+
+                        if dist <= *range {
+                            if let Some(health) = health_opt {
+                                let hp_pct = health.current / health.max;
+                                if hp_pct < lowest_hp_pct {
+                                    lowest_hp_pct = hp_pct;
+                                    best_target = Some(other_entity);
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(target) = best_target {
+                        if lowest_hp_pct < 1.0 {
+                            commands.trigger(SkillActivated {
+                                caster: enemy_entity,
+                                skill_id: skill_id.clone(),
+                                target: Some(target),
+                                target_position: None,
+                            });
+                        }
+                    }
+                }
+                // (Extend here when enemies use attacking AutoActivate skills targeting village/heroes)
+                _ => {}
+            }
         }
     }
 }

@@ -90,6 +90,9 @@ pub enum TargetType {
         /// Maximum allowed distance to target in pixels.
         range: f32,
     },
+    SingleAlly {
+        range: f32,
+    },
     /// Targets all enemies within a radius around the caster.
     AllEnemiesInRange {
         /// Radius of the area of effect in pixels.

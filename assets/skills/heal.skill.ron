@@ -1,0 +1,11 @@
+(
+    id: "heal",
+    display_name: "Heal",
+    skill_type: AutoActivate,
+    cooldown_ms: 2000,
+    target: SingleAlly(range: 200.0),
+    effects: [
+        Heal(amount: 5.0),
+    ],
+    tags: ["skill:heal", "skill:magic"],
+)

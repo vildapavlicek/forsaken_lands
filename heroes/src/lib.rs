@@ -5,7 +5,7 @@ use {
         AttackRange, AttackSpeed, Damage, Hero, MeleeArc, MeleeWeapon, Projectile,
         ProjectileDamage, ProjectileSpeed, ProjectileTarget, RangedWeapon, Weapon, WeaponTags,
     },
-    hero_events::{AttackIntent, DamageRequest, ProjectileHit, ProjectileSpawnRequest},
+    hero_events::{AttackIntent, DamageRequest, HealRequest, ProjectileHit, ProjectileSpawnRequest},
     shared_components::HitIndicator,
     states::GameState,
     system_schedule::GameSchedule,
@@ -40,6 +40,7 @@ impl Plugin for HeroesPlugin {
         app.add_observer(hero_melee_attack_system);
         app.add_observer(damage_pipeline_observer);
         app.add_observer(apply_hit_indicator_observer);
+        app.add_observer(heal_pipeline_observer);
 
         // Hero Spawning
         app.add_observer(hero_spawner::hero_spawn_on_unlock);
@@ -313,6 +314,18 @@ fn damage_pipeline_observer(
         trace!(
             "Damage applied to {:?}: base={} -> final={} (health now {}/{})",
             req.target, req.base_damage, final_damage, health.current, health.max
+        );
+    }
+}
+
+fn heal_pipeline_observer(trigger: On<HealRequest>, mut healths: Query<&mut Health>) {
+    let req = trigger.event();
+
+    if let Ok(mut health) = healths.get_mut(req.target) {
+        health.current = (health.current + req.amount).min(health.max);
+        trace!(
+            "Heal applied to {:?}: amount={} (health now {}/{})",
+            req.target, req.amount, health.current, health.max
         );
     }
 }
