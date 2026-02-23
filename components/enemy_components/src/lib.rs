@@ -49,15 +49,32 @@ pub struct Health {
     pub max: f32,
 }
 
+/// Defines the potential rewards (loot table) for an entity upon death.
+///
+/// This component links the combat system to the economic system by specifying what resources
+/// an enemy *can* drop.
+///
+/// # Usage
+/// - **Economy**: `process_enemy_killed_rewards` (in `WalletPlugin`) queries this component when an
+///   `EnemyKilled` event is triggered. It evaluates each `Drop`'s chance and awards the resource
+///   if the player has unlocked it.
+/// - **UI**: The `cache_details_on_unlock` observer (in `PortalsPlugin`) reads this via `extract_enemy_details`
+///   to display the list of potential drops in the Enemy Encyclopedia.
 #[derive(Component, Reflect, Default, Debug, Clone)]
 #[reflect(Component)]
 pub struct Drops(pub Vec<Drop>);
 
+/// Represents a single potential resource reward within a loot table.
 #[derive(Reflect, Default, Debug, Clone)]
 pub struct Drop {
+    /// The unique identifier of the resource (e.g., "bones", "gold", "scrap").
+    /// This key must match a valid resource ID in the `Wallet` system.
     pub id: String,
+    /// The base quantity of the resource to award.
+    /// This value may be modified by `ResourceRates` multipliers in the `Wallet`.
     pub value: u32,
-    /// Drop chance from 0.0 to 1.0 (1.0 = 100% guaranteed drop)
+    /// Drop chance from 0.0 to 1.0 (1.0 = 100% guaranteed drop).
+    /// Evaluated independently for each drop in the `Drops` list.
     pub chance: f32,
 }
 
