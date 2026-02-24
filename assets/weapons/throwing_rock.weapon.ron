@@ -1,7 +1,9 @@
 (
     id: "throwing_rock",
     display_name: "Throwing rock",
-    weapon_type: Ranged,
+    weapon_type: Ranged(
+        projectile_speed: 250.0,
+    ),
     damage: 0.25,
     attack_range: 250.0,
     attack_speed_ms: 500,

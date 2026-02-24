@@ -6,8 +6,8 @@ use {
     crate::{WeaponDefinition, WeaponType},
     bevy::prelude::*,
     hero_components::{
-        AttackRange, AttackSpeed, Damage, MeleeArc, MeleeWeapon, RangedWeapon, Weapon, WeaponId,
-        WeaponTags,
+        AttackRange, AttackSpeed, Damage, MeleeArc, MeleeWeapon, ProjectileSpeed, RangedWeapon,
+        Weapon, WeaponId, WeaponTags,
     },
     shared_components::DisplayName,
 };
@@ -31,8 +31,8 @@ pub fn spawn_weapon(commands: &mut Commands, def: &WeaponDefinition) -> Entity {
         WeaponType::Melee { arc_width } => {
             entity.insert((MeleeWeapon, MeleeArc { width: *arc_width }));
         }
-        WeaponType::Ranged => {
-            entity.insert(RangedWeapon);
+        WeaponType::Ranged { projectile_speed } => {
+            entity.insert((RangedWeapon, ProjectileSpeed(*projectile_speed)));
         }
     }
 
@@ -82,5 +82,32 @@ mod tests {
             .get::<WeaponId>(entity)
             .expect("WeaponId component missing");
         assert_eq!(id.0, "test_weapon");
+    }
+
+    #[test]
+    fn test_spawn_ranged_weapon() {
+        let mut app = App::new();
+        let def = WeaponDefinition {
+            id: "bow".to_string(),
+            display_name: "Bow".to_string(),
+            weapon_type: WeaponType::Ranged {
+                projectile_speed: 500.0,
+            },
+            damage: 8.0,
+            attack_range: 300.0,
+            attack_speed_ms: 1000,
+            tags: vec![],
+        };
+
+        let entity = spawn_weapon(&mut app.world_mut().commands(), &def);
+        app.update();
+
+        let speed = app
+            .world()
+            .get::<ProjectileSpeed>(entity)
+            .expect("ProjectileSpeed component missing for ranged weapon");
+        assert_eq!(speed.0, 500.0);
+
+        assert!(app.world().get::<RangedWeapon>(entity).is_some());
     }
 }
