@@ -43,6 +43,18 @@ pub struct Weapon;
 #[derive(Component, Default)]
 pub struct RangedWeapon;
 
+/// Marker component that designates a weapon entity as a melee weapon.
+///
+/// This component classifies the weapon for the combat system, enabling melee-specific
+/// hit detection logic such as arc checks and instant damage application.
+///
+/// # Usage
+/// - **Combat Execution**: The `hero_melee_attack_system` queries for entities with this marker
+///   (and `Without<RangedWeapon>`) to process `AttackIntent` events.
+/// - **Hit Detection**: It implies the existence of a `MeleeArc` component, which defines
+///   the angular width of the swing.
+/// - **Asset Loading**: This component is automatically inserted when a weapon with type `Melee`
+///   is loaded from a `.weapon.ron` asset.
 #[derive(Component, Default)]
 pub struct MeleeWeapon;
 
