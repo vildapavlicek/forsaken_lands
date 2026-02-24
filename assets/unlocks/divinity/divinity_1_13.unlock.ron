@@ -1,0 +1,13 @@
+(
+    id: "divinity_1_13",
+    display_name: Some("Divinity Tier 1 Level 13"),
+    condition: And([
+        Value(
+            topic: "kills:cave_troll",
+            op: Ge,
+            target: 1.0,
+        ),
+    ]),
+    reward_id: "divinity:1-13",
+    repeat_mode: Once,
+)
