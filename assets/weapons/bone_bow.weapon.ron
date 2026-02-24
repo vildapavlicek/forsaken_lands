@@ -1,7 +1,9 @@
 (
     id: "bone_bow",
     display_name: "Bone Bow",
-    weapon_type: Ranged,
+    weapon_type: Ranged(
+        projectile_speed: 400.0,
+    ),
     damage: 1.25,
     attack_range: 380.0,
     attack_speed_ms: 750,

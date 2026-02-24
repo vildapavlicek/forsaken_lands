@@ -46,7 +46,7 @@ pub struct WeaponDefinition {
 pub enum WeaponType {
     Melee { arc_width: f32 },
     // TODO: Add projectile_speed: f32 field for ranged weapons
-    Ranged,
+    Ranged { projectile_speed: f32 },
 }
 
 /// Resource mapping weapon IDs to their asset handles.

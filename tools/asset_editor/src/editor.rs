@@ -489,6 +489,18 @@ impl EditorState {
             });
             ui.small("Melee attack arc width (1.047 = 60 degrees)");
         }
+        // Ranged-specific: projectile speed
+        if let WeaponType::Ranged { projectile_speed } = &mut self.weapon_form.weapon_type {
+            ui.horizontal(|ui| {
+                ui.label("Projectile Speed (px/s):");
+                ui.add(
+                    egui::DragValue::new(projectile_speed)
+                        .speed(1.0)
+                        .range(1.0..=2000.0),
+                );
+            });
+            ui.small("Speed of the projectile in logical pixels per second");
+        }
         ui.add_space(8.0);
 
         // Stats

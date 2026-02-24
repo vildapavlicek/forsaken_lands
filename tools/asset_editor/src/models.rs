@@ -1079,7 +1079,7 @@ impl WeaponTypeExt for WeaponType {
     fn display_name(&self) -> &'static str {
         match self {
             WeaponType::Melee { .. } => "Melee",
-            WeaponType::Ranged => "Ranged",
+            WeaponType::Ranged { .. } => "Ranged",
         }
     }
 
@@ -1090,7 +1090,9 @@ impl WeaponTypeExt for WeaponType {
     fn from_type_name(name: &str) -> Self {
         match name {
             "Melee" => WeaponType::Melee { arc_width: 1.047 },
-            "Ranged" => WeaponType::Ranged,
+            "Ranged" => WeaponType::Ranged {
+                projectile_speed: 400.0,
+            },
             _ => WeaponType::Melee { arc_width: 1.047 },
         }
     }
