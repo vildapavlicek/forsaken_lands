@@ -340,8 +340,15 @@ pub fn enemy_auto_activate_skills_system(
                 continue;
             }
 
-            // For enemies, right now we mostly support SingleAlly auto-activation.
             match &skill_def.target {
+                TargetType::Identity => {
+                    commands.trigger(SkillActivated {
+                        caster: enemy_entity,
+                        skill_id: skill_id.clone(),
+                        target: Some(enemy_entity),
+                        target_position: None,
+                    });
+                }
                 TargetType::SingleAlly { range } => {
                     let mut best_target = None;
                     let mut lowest_hp_pct = 1.0;

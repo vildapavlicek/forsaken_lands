@@ -14,6 +14,7 @@
         "bevy_sprite::sprite::Sprite": (color: Srgba(Srgba(red: 0.2, green: 0.4, blue: 0.3, alpha: 1.0)), custom_size: Some((30.0, 30.0))),
         "enemy_components::Drops": ([(id: "bones", value: 15, chance: 1.0), (id: "xykego", value: 2, chance: 1.0), (id: "sinew", value: 3, chance: 0.8)]),
         "enemy_components::MonsterTags": (["monster:cave_troll", "race:trolls"]),
+        "skill_components::EquippedSkills": (["regeneration"]),
       },
     ),
   },

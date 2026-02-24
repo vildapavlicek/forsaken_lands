@@ -1,0 +1,11 @@
+(
+    id: "regeneration",
+    display_name: "Regeneration",
+    skill_type: AutoActivate,
+    cooldown_ms: 250,
+    target: Identity,
+    effects: [
+        Heal(amount: 0.25),
+    ],
+    tags: ["skill:regeneration", "skill:passive"],
+)
