@@ -6,7 +6,7 @@
     ),
     damage: 1.25,
     attack_range: 150.0,
-    attack_speed_ms: 500,
+    attack_speed_ms: 650,
     tags: [
         "damage",
         "damage:melee",
