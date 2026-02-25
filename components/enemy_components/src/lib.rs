@@ -1,5 +1,19 @@
 use {bevy::prelude::*, shared_components::IncludeInSave};
 
+/// A marker component that identifies an entity as a hostile enemy.
+///
+/// This component is the primary discriminator for combat and lifecycle systems, allowing them
+/// to filter out non-hostile entities (like projectiles, heroes, or the village).
+/// It is automatically tagged with `IncludeInSave`, ensuring all active enemies are persisted.
+///
+/// # Usage
+/// - **Targeting**: Queried by `hero_attack_intent_system` (in `HeroesPlugin`) to identify valid
+///   targets for auto-attacks and skills.
+/// - **Lifecycle**: Used by `manage_enemy_lifecycle` (in `PortalsPlugin`) to trigger `EnemyEscaped`
+///   or `EnemyKilled` events.
+/// - **Movement**: Used by `move_enemy` (in `PortalsPlugin`) to drive entities towards the village.
+/// - **Damage**: `projectile_collision_system` filters collisions to ensure projectiles only
+///   damage entities with this component.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 #[require(IncludeInSave)]
