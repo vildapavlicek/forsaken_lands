@@ -122,6 +122,23 @@ pub struct AttackSpeed {
     pub timer: Timer,
 }
 
+/// The primary marker component for a projectile entity (e.g., arrow, fireball).
+///
+/// This component identifies independent moving objects that travel towards a target to inflict damage.
+/// It serves as the filter for the projectile physics and collision subsystems.
+///
+/// # Usage
+/// - **Movement**: The `projectile_movement_system` (in `HeroesPlugin`) queries this component alongside
+///   `ProjectileSpeed` and `ProjectileTarget` to update the entity's position.
+/// - **Collision**: The `projectile_collision_system` (in `HeroesPlugin`) checks distance between
+///   entities with this marker and their targets to trigger impacts.
+/// - **Lifecycle**: Entities with this component are automatically cleaned up by `clean_up_heroes`
+///   on state exit or by the collision system upon impact/target loss.
+///
+/// # Implicit Dependencies
+/// - `ProjectileTarget`: Required for navigation and collision checks.
+/// - `ProjectileSpeed`: Required for movement calculations.
+/// - `ProjectileDamage`: Required to apply effects upon impact.
 #[derive(Component, Default)]
 pub struct Projectile;
 
