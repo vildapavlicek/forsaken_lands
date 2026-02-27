@@ -100,6 +100,17 @@ pub struct Drop {
     pub chance: f32,
 }
 
+/// A stable identifier for an enemy species (e.g., "goblin_scout", "boss_worg").
+///
+/// This component links the runtime entity to its persistent statistics and static data definitions.
+/// It persists across save/load via scene serialization and is essential for the encyclopedia and unlock systems.
+///
+/// # Usage
+/// - **Statistics**: Used as the key for `EnemyEncyclopedia` (in `Village`) to track kill/escape counts.
+///   (e.g., "kills:goblin_scout").
+/// - **Data Lookup**: Used to retrieve static stats (base speed, drops) from the `EnemyDetailsCache` resource
+///   for UI display without needing to spawn the entity.
+/// - **Asset Loading**: Extracted from enemy prefab scenes during `LoadingPhase` to populate the `LoadingManager`.
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component, Default)]
 pub struct MonsterId(pub String);
