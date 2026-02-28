@@ -27,6 +27,18 @@ pub struct Dead;
 #[reflect(Component)]
 pub struct MovementSpeed(pub f32);
 
+/// Represents the physical damage reduction capability of an entity.
+///
+/// This component stores a defensive value that mitigates incoming damage,
+/// serving as a core mechanism for enemy survivability and scaling.
+///
+/// # Usage
+/// - **Damage Mitigation**: Queried by combat systems (e.g., `apply_melee_damage_observer`
+///   in `heroes` crate) to calculate effective damage before reducing `Health`.
+/// - **Asset Definitions**: Loaded from prefab assets (e.g., `.scn.ron` files) to configure
+///   baseline defenses for different enemy types.
+/// - **Dynamic Modification**: Can be dynamically altered via bonuses or debuffs using
+///   the `bonus_stats` system.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Armor(pub f32);
