@@ -383,9 +383,22 @@ fn apply_blessing_to_lifetime(
     }
 }
 
+/// A component attached to temporary, moving text elements in the world.
+///
+/// This component acts as a behavior controller for text that needs to drift
+/// over time and eventually despawn, such as the "Escaped!" message.
+///
+/// # Usage
+/// - **Movement and Fading**: The `update_floating_text` system queries this
+///   component to move the text entity according to its `velocity` and fade its
+///   opacity based on the remaining `lifetime`.
+/// - **Lifecycle**: When the `lifetime` timer finishes, the entity is automatically
+///   despawned by the same system.
 #[derive(Component)]
 pub struct FloatingText {
+    /// Movement speed and direction in logical pixels per second.
     pub velocity: Vec2,
+    /// Time remaining before the text entity is despawned.
     pub lifetime: Timer,
 }
 
