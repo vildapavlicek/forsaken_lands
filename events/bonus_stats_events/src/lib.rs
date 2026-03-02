@@ -22,10 +22,20 @@ pub struct AddStatBonus {
     pub mode: StatMode,
 }
 
+/// Removes an active bonus from the global `BonusStats` resource.
+///
+/// This **Observer** event (triggered via `commands.trigger`) immediately reverses
+/// a previously applied statistical modifier (e.g., when an item is unequipped or a buff expires).
+///
+/// # Observers
+/// - `bonus_stats::on_remove_stat_bonus`: Receives the event and updates the `BonusStats` resource.
 #[derive(Event, Debug, Clone)]
 pub struct RemoveStatBonus {
+    /// The unique key for the stat (e.g., "damage:melee", "hp", "research").
     pub key: String,
+    /// The numeric value of the bonus to remove.
     pub value: f32,
+    /// How this bonus aggregated with others (Additive, Percent, or Multiplicative).
     pub mode: StatMode,
 }
 
