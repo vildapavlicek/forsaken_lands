@@ -9,7 +9,19 @@ impl Plugin for SkillEventsPlugin {
     }
 }
 
-/// Request to activate a skill
+/// Represents a confirmed request to execute a skill's effects.
+///
+/// This **Observer** event (triggered via `commands.trigger`) decouples the decision
+/// to use a skill (from AI or Input) from the actual execution of its logic.
+///
+/// # Observers
+/// - `process_skill_activation` (in `skills/src/systems.rs`): Receives the event,
+///   evaluates the skill's effects, and triggers subsequent damage or healing events.
+///
+/// # Implicit Dependencies
+/// - **Range Validation**: Triggering systems are entirely responsible for validating target
+///   range before emitting this event, especially for `TargetType::SingleEnemy`. The
+///   execution logic assumes the target is already valid.
 #[derive(Event, Debug, Reflect)]
 #[reflect(Default)]
 pub struct SkillActivated {
