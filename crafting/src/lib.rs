@@ -11,14 +11,25 @@ pub use {
     unlock_states::{Available, Locked},
 };
 
-/// Component to track an in-progress crafting operation.
-/// Derives Reflect for save file inclusion.
+/// Represents the active state machine for a time-delayed crafting operation.
+///
+/// This component tracks the progress of creating items or constructing buildings.
+/// It exists temporarily on an entity while the crafting process is actively running.
+///
+/// # Usage
+/// - **Creation**: Spawned by the `start_crafting` observer when a `StartCraftingRequest` is processed.
+/// - **Progression**: The `update_crafting_progress` system ticks the `timer` every frame.
+/// - **Completion**: When the timer finishes, `update_crafting_progress` triggers a `StatusCompleted`
+///   observer (for the unlock system) and removes this component.
+/// - **Persistence**: Requires `IncludeInSave` to ensure ongoing crafting operations are paused and
+///   resumed correctly across game sessions.
 #[derive(Component, Debug, Reflect)]
 #[reflect(Component)]
 #[require(IncludeInSave)]
 pub struct CraftingInProgress {
     pub recipe_id: String,
     pub outcomes: Vec<CraftingOutcome>,
+    /// Timer tracking the remaining duration (in seconds) until completion.
     pub timer: Timer,
     pub category: recipes_assets::RecipeCategory,
 }
