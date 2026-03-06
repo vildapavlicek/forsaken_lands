@@ -4,6 +4,15 @@ use {
     std::collections::HashMap,
 };
 
+/// Represents the historical statistics and interaction records for a specific enemy species.
+///
+/// This struct acts as a data record within the `EnemyEncyclopedia` component, persisting the
+/// outcome of encounters with a particular `MonsterId` over the course of the game.
+///
+/// # Usage
+/// - **UI Display**: Queried by the `enemy_encyclopedia` UI system to populate the grid
+///   of discovered enemies, displaying their accumulated kills and escapes.
+/// - **Unlocks System**: Evaluated implicitly when the Unlocks System checks `StatCheck::Kills` conditions.
 #[derive(Reflect, Default, Debug, Clone)]
 pub struct EncyclopediaEntry {
     pub display_name: String,
