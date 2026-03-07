@@ -41,7 +41,17 @@ impl Default for SpawnTimer {
     }
 }
 
-/// Links a Portal to a specific SpawnTable asset (e.g., "default")
+/// Links a Portal to a specific `SpawnTable` asset by its string identifier.
+///
+/// This component dictates the composition of enemy waves by pointing to a specific
+/// set of spawn rules and probabilities defined in a `SpawnTable` asset.
+///
+/// # Usage
+/// - **Asset Dependency**: The `enemy_spawn_system` (in the `portals` crate) strictly requires
+///   the corresponding `SpawnTable` asset (loaded via the `game_assets` crate) to be
+///   present and indexed by this ID.
+/// - **Filtering**: Used in conjunction with `CurrentDivinity` to select valid spawn entries
+///   from the referenced table that match the portal's current tier.
 #[derive(Component, Reflect, Default, Debug, Clone, PartialEq, Eq, Hash)]
 #[reflect(Component)]
 pub struct SpawnTableId(pub String);
