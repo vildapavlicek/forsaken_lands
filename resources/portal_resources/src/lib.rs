@@ -38,6 +38,18 @@ pub struct SpawnEntry {
     pub weight: u32,
 }
 
+/// An Asset defining the composition of enemy waves.
+///
+/// This struct represents static data loaded from `.spawn_table.ron` files (in `game_assets`).
+/// It drives core system logic by declaring which enemy variants can spawn,
+/// under what conditions, and with what relative frequency.
+///
+/// # Usage
+/// - **Asset Dependency**: The `enemy_spawn_system` (in `portals`) strictly requires
+///   these assets to be loaded. It indexes them using the `SpawnTableId` component.
+/// - **Wave Generation**: The system evaluates each `SpawnEntry` against the
+///   portal's `CurrentDivinity` component, filtering out ineligible entries before
+///   performing a weighted random selection.
 #[derive(Asset, TypePath, Resource, Default, Debug, Deserialize)]
 pub struct SpawnTable {
     pub entries: Vec<SpawnEntry>,
