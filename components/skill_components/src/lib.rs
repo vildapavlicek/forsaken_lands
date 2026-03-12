@@ -19,12 +19,32 @@ impl Plugin for SkillComponentsPlugin {
 #[reflect(Component)]
 pub struct HasSkills;
 
-/// Tracks which skills the entity has unlocked
+/// Tracks the global pool of skills an entity has gained access to.
+///
+/// This resource serves as the progression gate for abilities. Skills must be present
+/// here before they can be equipped and utilized in combat.
+///
+/// # Usage
+/// - **Progression**: Queried and mutated by progression systems (e.g., unlocking via research
+///   or level up) to add new skill IDs.
+/// - **UI Management**: Read by the `hero_ui` system to populate the list of available
+///   skills that a player can choose to equip.
 #[derive(Resource, Reflect, Default, Clone)]
 #[reflect(Resource)]
 pub struct UnlockedSkills(pub HashSet<String>);
 
-/// References equipped skills by ID
+/// Represents the active skillset currently available for an entity to use in combat.
+///
+/// This component acts as the execution container for skills. While an entity might have
+/// many `UnlockedSkills`, only the IDs listed here can be triggered during gameplay.
+///
+/// # Usage
+/// - **Combat Execution**: The `hero_auto_activate_skills_system` and `enemy_auto_activate_skills_system`
+///   query this component to determine which skills to evaluate and potentially trigger.
+/// - **Asset Lookup**: The `String` elements are stable IDs used to retrieve `Handle<SkillDefinition>`
+///   from the `SkillMap` resource, allowing systems to access the actual skill logic and stats.
+/// - **UI Management**: Queried and mutated by `hero_ui` to display active skills and allow
+///   the player to equip/unequip different abilities.
 #[derive(Component, Reflect, Default, Clone)]
 #[reflect(Component)]
 pub struct EquippedSkills(pub Vec<String>);
