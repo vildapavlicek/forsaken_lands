@@ -39,6 +39,15 @@ pub struct RemoveStatBonus {
     pub mode: StatMode,
 }
 
+/// An event to increase a specific statistical modifier globally.
+///
+/// This **Observer** event (triggered via `commands.trigger`) immediately adds a value
+/// to the global `BonusStats` resource. It is currently functionally equivalent to `AddStatBonus`,
+/// serving as a semantic alternative for situations where a stat is being incremented rather
+/// than a distinct buff being applied.
+///
+/// # Observers
+/// - `bonus_stats::on_increase_stat_bonus`: Receives the event and updates the `BonusStats` resource.
 #[derive(Event, Debug, Clone)]
 pub struct IncreaseStatBonus {
     pub key: String,
