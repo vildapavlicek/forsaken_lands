@@ -5,7 +5,7 @@
       components: {
         "enemy_components::Enemy": (),
         "enemy_components::MonsterId": ("orc_hunter"),
-        "enemy_components::EnemyRange": LongRange,
+        "enemy_components::EnemyRange": MediumRange,
         "shared_components::DisplayName": ("Orc Hunter"),
         "enemy_components::Health": (current: 12.0, max: 12.0),
         "enemy_components::MovementSpeed": (180.0),

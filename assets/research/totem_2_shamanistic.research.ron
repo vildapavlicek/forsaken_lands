@@ -1,0 +1,21 @@
+(
+    id: "totem_2_shamanistic",
+    name: "Shamanistic Power",
+    description: "By studying the magic of the shamans, we can understand how their totems channel energy to aid their forces.",
+    cost: {
+        "bones": 150,
+        "xykego": 10,
+    },
+    time_required: 120.0,
+    max_repeats: 1,
+    tags: ["research:totem"],
+    unlock: Some((
+        id: "research_totem_2_shamanistic_unlock",
+        display_name: Some("Research: Shamanistic Power"),
+        condition: Completed(
+            topic: "research:totem_1_discovery",
+        ),
+        reward_id: "research:totem_2_shamanistic",
+        repeat_mode: Once,
+    )),
+)

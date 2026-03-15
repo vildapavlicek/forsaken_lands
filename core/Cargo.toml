@@ -46,3 +46,5 @@ hud.workspace = true
 save_load.workspace = true
 weapon_assets.workspace = true
 weapon_factory.workspace = true
+totem.workspace = true
+totem_ui.workspace = true

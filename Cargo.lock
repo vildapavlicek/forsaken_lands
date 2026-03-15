@@ -2137,6 +2137,8 @@ dependencies = [
  "skills",
  "states",
  "system_schedule",
+ "totem",
+ "totem_ui",
  "unlocks",
  "unlocks_assets",
  "village",
@@ -5460,6 +5462,29 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a3198b4b0a8e11f09dd03e133c0280504d0801269e9afa46362ffde1cbeebf44"
 dependencies = [
  "winnow",
+]
+
+[[package]]
+name = "totem"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "buildings_components",
+ "recipes_assets",
+ "shared_components",
+ "skill_components",
+ "skills_assets",
+ "unlocks_events",
+]
+
+[[package]]
+name = "totem_ui"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "states",
+ "totem",
+ "widgets",
 ]
 
 [[package]]

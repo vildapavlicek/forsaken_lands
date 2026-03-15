@@ -1,0 +1,21 @@
+(
+    id: "totem_3_bone_totem",
+    name: "Bone Totem Mechanics",
+    description: "The core of a totem requires sturdy material and a conduit for magic. Bones and xykego form an excellent foundation.",
+    cost: {
+        "bones": 300,
+        "xykego": 25,
+    },
+    time_required: 180.0,
+    max_repeats: 1,
+    tags: ["research:totem"],
+    unlock: Some((
+        id: "research_totem_3_bone_totem_unlock",
+        display_name: Some("Research: Bone Totem Mechanics"),
+        condition: Completed(
+            topic: "research:totem_2_shamanistic",
+        ),
+        reward_id: "research:totem_3_bone_totem",
+        repeat_mode: Once,
+    )),
+)

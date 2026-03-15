@@ -1,0 +1,12 @@
+(
+    id: "totem_base_damage",
+    display_name: "Totem Aura",
+    skill_type: AutoActivate,
+    cooldown_ms: 1000,
+    target: AllEnemiesInRange(radius: 250.0),
+    effects: [
+        Damage(amount: 10.0),
+    ],
+    tags: ["skill:totem", "skill:magic"],
+    unlock: None,
+)

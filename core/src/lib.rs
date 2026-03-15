@@ -29,6 +29,7 @@ impl Plugin for CorePlugin {
                 // it will complain that tuple is too big
                 LoadingManagerPlugin,
                 BuildingsPlugin,
+                totem::TotemPlugin,
                 BuildingsComponentsPlugin,
                 BuildingsAssetsPlugin,
                 skills::SkillsPlugin,
@@ -58,6 +59,7 @@ impl Plugin for CorePlugin {
             ))
             .add_plugins((
                 VillagePlugin,
+                totem_ui::TotemUiPlugin,
                 VillageUiPlugin,
                 WalletPlugin,
                 WidgetsPlugin,

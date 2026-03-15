@@ -1,0 +1,10 @@
+[package]
+name = "totem_ui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy.workspace = true
+states.workspace = true
+totem.workspace = true
+widgets.workspace = true

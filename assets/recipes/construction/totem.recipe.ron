@@ -1,0 +1,20 @@
+(
+    id: "totem",
+    display_name: "Totem",
+    category: Construction,
+    craft_time: 300.0,
+    cost: {
+        "bones": 500,
+        "xykego": 100,
+    },
+    outcomes: [],
+    unlock: Some((
+        id: "recipe_totem_unlock",
+        display_name: Some("Totem"),
+        condition: Completed(
+            topic: "research:totem_4_construction",
+        ),
+        reward_id: "recipe:totem",
+        repeat_mode: Once,
+    )),
+)

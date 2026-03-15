@@ -1,0 +1,22 @@
+(
+    id: "totem_1_discovery",
+    name: "Totems of the Enemy",
+    description: "Our scouts noticed that the Orc Shamans often carry small carved effigies that hum with dark energy.",
+    cost: {
+        "bones": 50,
+    },
+    time_required: 60.0,
+    max_repeats: 1,
+    tags: ["research:totem"],
+    unlock: Some((
+        id: "research_totem_1_discovery_unlock",
+        display_name: Some("Research: Totems of the Enemy"),
+        condition: Value(
+            topic: "kills:orc_shaman",
+            op: Ge,
+            target: 10.0,
+        ),
+        reward_id: "research:totem_1_discovery",
+        repeat_mode: Once,
+    )),
+)

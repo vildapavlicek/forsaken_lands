@@ -1,0 +1,21 @@
+(
+    id: "totem_4_construction",
+    name: "Constructing the Totem",
+    description: "We are finally ready to erect our own Totem to protect our lands and damage approaching enemies continually.",
+    cost: {
+        "bones": 500,
+        "xykego": 50,
+    },
+    time_required: 240.0,
+    max_repeats: 1,
+    tags: ["research:totem"],
+    unlock: Some((
+        id: "research_totem_4_construction_unlock",
+        display_name: Some("Research: Constructing the Totem"),
+        condition: Completed(
+            topic: "research:totem_3_bone_totem",
+        ),
+        reward_id: "research:totem_4_construction",
+        repeat_mode: Once,
+    )),
+)
