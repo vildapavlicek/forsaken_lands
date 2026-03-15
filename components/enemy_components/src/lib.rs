@@ -43,6 +43,13 @@ pub struct MovementSpeed(pub f32);
 #[reflect(Component)]
 pub struct Armor(pub f32);
 
+/// Represents proportional damage reduction for an entity.
+///
+/// This component acts as a percentage-based mitigator of incoming damage.
+///
+/// # Usage
+/// - **Combat Systems**: Queried by `damage_pipeline_observer` (in the `heroes` crate) alongside `Health` and `Armor`
+///   to calculate the final damage applied to the entity.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct Shield(pub f32);
