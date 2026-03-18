@@ -80,6 +80,7 @@ impl ResearchBalancingTabState {
             let research_filename = format!("autopsy_{}", monster_id);
             let research_path = assets_dir
                 .join("research")
+                .join("autopsies")
                 .join(format!("{}.research.ron", research_filename));
 
             let prefab_path = assets_dir
@@ -89,11 +90,12 @@ impl ResearchBalancingTabState {
 
             let mut research_form = ResearchFormData::new();
             research_form.id = research_filename.clone();
+            research_form.sub_folder = "autopsies".to_string();
             
             if research_path.exists() {
                 if let Ok(content) = std::fs::read_to_string(&research_path) {
                     if let Ok(research_def) = ron::from_str::<ResearchDefinition>(&content) {
-                        research_form = ResearchFormData::from_assets(&research_def, research_filename);
+                        research_form = ResearchFormData::from_assets(&research_def, research_filename, "autopsies".to_string());
                     }
                 }
             }

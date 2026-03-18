@@ -6,7 +6,7 @@ use {
     },
     eframe::egui,
     research_assets::ResearchDefinition,
-    std::path::Path,
+    std::{collections::HashMap, path::Path},
 };
 
 pub struct ResearchTabState {
@@ -33,6 +33,7 @@ impl ResearchTabState {
         existing_research_filenames: &[String],
         existing_monster_ids: &[String],
         existing_recipe_ids: &[String],
+        filename_to_subfolder: &HashMap<String, String>,
     ) {
         ui.heading("Research Definition");
         ui.add_space(4.0);
@@ -52,12 +53,22 @@ impl ResearchTabState {
                 ui.horizontal_wrapped(|ui| {
                     let mut load_filename = None;
                     for filename in existing_research_filenames {
-                        if ui.button(filename).clicked() {
+                        // Show subfolder prefix in button label
+                        let subfolder = filename_to_subfolder
+                            .get(filename.as_str())
+                            .map(|s| s.as_str())
+                            .unwrap_or("");
+                        let label = if subfolder.is_empty() {
+                            filename.clone()
+                        } else {
+                            format!("{}/{}", subfolder, filename)
+                        };
+                        if ui.button(&label).clicked() {
                             load_filename = Some(filename.clone());
                         }
                     }
                     if let Some(filename) = load_filename {
-                        self.load_research(assets_dir, status, &filename);
+                        self.load_research(assets_dir, status, &filename, filename_to_subfolder);
                     }
                 });
             }
@@ -82,6 +93,14 @@ impl ResearchTabState {
             ui.label(".research.ron");
         });
         ui.small("The file name on disk. Useful for ordering (e.g., \"01_basic_research\")");
+        ui.add_space(8.0);
+
+        // Subfolder
+        ui.horizontal(|ui| {
+            ui.label("Subfolder:");
+            ui.text_edit_singleline(&mut self.research_form.sub_folder);
+        });
+        ui.small("Subfolder under research/ (e.g., \"1-1\", \"1-2\"). Leave empty for root.");
         ui.add_space(8.0);
 
         // Display Name
@@ -192,9 +211,18 @@ impl ResearchTabState {
         ui.separator();
         ui.heading("Generated IDs (Preview)");
         ui.add_enabled_ui(false, |ui| {
+            let save_path = if self.research_form.sub_folder.is_empty() {
+                self.research_form.research_filename()
+            } else {
+                format!(
+                    "{}/{}",
+                    self.research_form.sub_folder,
+                    self.research_form.research_filename()
+                )
+            };
             ui.horizontal(|ui| {
                 ui.label("Research file:");
-                ui.monospace(self.research_form.research_filename());
+                ui.monospace(&save_path);
             });
             ui.horizontal(|ui| {
                 ui.label("Unlock file:");
@@ -258,12 +286,26 @@ impl ResearchTabState {
         assets_dir: Option<&Path>,
         status: &mut String,
         filename_stem: &str,
+        filename_to_subfolder: &HashMap<String, String>,
     ) {
         if let Some(assets_dir) = assets_dir {
-            // Construct research path
-            let research_path = assets_dir
-                .join("research")
-                .join(format!("{}.research.ron", filename_stem));
+            // Look up subfolder for this file
+            let subfolder = filename_to_subfolder
+                .get(filename_stem)
+                .cloned()
+                .unwrap_or_default();
+
+            // Construct research path using subfolder
+            let research_path = if subfolder.is_empty() {
+                assets_dir
+                    .join("research")
+                    .join(format!("{}.research.ron", filename_stem))
+            } else {
+                assets_dir
+                    .join("research")
+                    .join(&subfolder)
+                    .join(format!("{}.research.ron", filename_stem))
+            };
 
             // Read research file
             let research_content = match std::fs::read_to_string(&research_path) {
@@ -287,6 +329,7 @@ impl ResearchTabState {
             self.research_form = ResearchFormData::from_assets(
                 &research_def,
                 filename_stem.to_string(),
+                subfolder,
             );
             *status = format!(
                 "✓ Loaded research: {} (Internal ID: {})",
@@ -295,3 +338,4 @@ impl ResearchTabState {
         }
     }
 }
+

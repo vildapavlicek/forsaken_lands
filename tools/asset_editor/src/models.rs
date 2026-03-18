@@ -575,6 +575,8 @@ pub struct ResearchFormData {
     pub max_repeats: u32,
     /// The filename stem (without extension)
     pub filename: String,
+    /// Subfolder under research/ (e.g. "1-1", "autopsies", or "" for root)
+    pub sub_folder: String,
     /// Unlock condition
     pub unlock_condition: UnlockCondition,
     /// How many times this unlock can be triggered.
@@ -597,6 +599,7 @@ impl ResearchFormData {
             time_required: 30.0,
             max_repeats: 1,
             filename: "new_research".to_string(),
+            sub_folder: String::new(),
             unlock_condition: UnlockCondition::True,
             repeat_mode: unlocks_assets::RepeatMode::Once,
             tags: Vec::new(),
@@ -659,7 +662,7 @@ impl ResearchFormData {
         errors
     }
 
-    pub fn from_assets(research: &ResearchDefinition, filename: String) -> Self {
+    pub fn from_assets(research: &ResearchDefinition, filename: String, sub_folder: String) -> Self {
         let costs = research
             .cost
             .iter()
@@ -684,6 +687,7 @@ impl ResearchFormData {
             time_required: research.time_required,
             max_repeats: research.max_repeats,
             filename,
+            sub_folder,
             unlock_condition,
             repeat_mode,
             tags: research.tags.clone(),
@@ -1383,6 +1387,9 @@ impl AssetLoader for ResearchLoader {
     fn extract_id(&self, stem: &str, content: &str) -> Option<String> {
         extract_id_from_ron(content).or_else(|| Some(stem.to_string()))
     }
+    fn recursive(&self) -> bool {
+        true
+    }
 }
 
 pub struct DivinityLoader;
@@ -1440,7 +1447,7 @@ impl AssetLoader for RecipeLoader {
 pub struct AutopsyLoader;
 impl AssetLoader for AutopsyLoader {
     fn sub_path(&self) -> PathBuf {
-        PathBuf::from("research")
+        PathBuf::from("research").join("autopsies")
     }
     fn extension(&self) -> &str {
         ".research.ron"

@@ -30,8 +30,12 @@ pub fn save_research_files(
     // Generate content
     let research_content = generate_research_ron(data);
 
-    // Build paths
-    let research_dir = assets_dir.join("research");
+    // Build paths - use subfolder if specified
+    let research_dir = if data.sub_folder.is_empty() {
+        assets_dir.join("research")
+    } else {
+        assets_dir.join("research").join(&data.sub_folder)
+    };
 
     // Ensure directories exist
     std::fs::create_dir_all(&research_dir)?;
@@ -142,9 +146,9 @@ pub fn save_autopsy_files(
     std::fs::write(&research_unlock_path, research_unlock_content)?;
 
     // 2. Research Definition
-    // Saved to assets/research/autopsy_{monster_id}.research.ron
+    // Saved to assets/research/autopsies/autopsy_{monster_id}.research.ron
     let research_content = generate_autopsy_research_ron(data);
-    let research_dir = assets_dir.join("research");
+    let research_dir = assets_dir.join("research").join("autopsies");
     std::fs::create_dir_all(&research_dir)?;
     let research_path = research_dir.join(data.research_filename());
     std::fs::write(&research_path, research_content)?;
@@ -217,8 +221,10 @@ mod tests {
             time_required: 30.0,
             max_repeats: 5,
             filename: "test_research".to_string(),
+            sub_folder: String::new(),
             unlock_condition: UnlockCondition::True,
             repeat_mode: unlocks_assets::RepeatMode::Once,
+            tags: Vec::new(),
         };
 
         let ron = generate_research_ron(&data);
@@ -239,8 +245,10 @@ mod tests {
             time_required: 10.0,
             max_repeats: 1,
             filename: "free_research".to_string(),
+            sub_folder: String::new(),
             unlock_condition: UnlockCondition::True,
             repeat_mode: unlocks_assets::RepeatMode::Once,
+            tags: Vec::new(),
         };
 
         let ron = generate_research_ron(&data);

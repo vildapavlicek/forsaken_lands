@@ -51,20 +51,25 @@ impl OverviewState {
             return;
         }
 
-        // 1. Load all Research Definitions
+        // 1. Load all Research Definitions (recursively)
         let mut research_defs: HashMap<String, ResearchDefinition> = HashMap::new();
-        if let Ok(entries) = std::fs::read_dir(&research_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().map_or(false, |ext| ext == "ron") {
-                    if let Ok(content) = std::fs::read_to_string(&path) {
-                        if let Ok(def) = ron::from_str::<ResearchDefinition>(&content) {
-                            research_defs.insert(def.id.clone(), def);
+        fn scan_research_dir(dir: &Path, defs: &mut HashMap<String, ResearchDefinition>) {
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_dir() {
+                        scan_research_dir(&path, defs);
+                    } else if path.extension().map_or(false, |ext| ext == "ron") {
+                        if let Ok(content) = std::fs::read_to_string(&path) {
+                            if let Ok(def) = ron::from_str::<ResearchDefinition>(&content) {
+                                defs.insert(def.id.clone(), def);
+                            }
                         }
                     }
                 }
             }
         }
+        scan_research_dir(&research_dir, &mut research_defs);
 
         // 2. Load all Unlock Definitions to map dependencies
         // Map: ResearchID -> Required Condition Description AND ResearchID -> List of things it Unlocks

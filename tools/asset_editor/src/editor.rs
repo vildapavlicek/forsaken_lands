@@ -85,6 +85,8 @@ pub struct EditorState {
     existing_monster_ids: Vec<String>,
     /// Mapping of research internal ID to filename stem.
     research_id_to_file: HashMap<String, String>,
+    /// Mapping of research filename stem to subfolder.
+    research_filename_to_subfolder: HashMap<String, String>,
     /// Mapping of recipe internal ID to filename stem.
     recipe_id_to_file: HashMap<String, String>,
     /// Mapping of weapon internal ID to filename stem.
@@ -152,6 +154,7 @@ impl EditorState {
             existing_recipe_filenames: Vec::new(),
             existing_monster_ids: Vec::new(),
             research_id_to_file: HashMap::new(),
+            research_filename_to_subfolder: HashMap::new(),
             recipe_id_to_file: HashMap::new(),
             weapon_id_to_file: HashMap::new(),
             show_preview: false,
@@ -386,6 +389,7 @@ impl EditorState {
                     &self.existing_research_filenames,
                     &self.existing_monster_ids,
                     &self.existing_recipe_ids,
+                    &self.research_filename_to_subfolder,
                 ),
                 EditorTab::Weapon => self.show_weapon_form(ui),
                 EditorTab::Recipe => self.show_recipe_form(ui),
@@ -883,6 +887,7 @@ impl EditorState {
         self.existing_research_ids = research_assets.ids;
         self.existing_research_filenames = research_assets.filenames;
         self.research_id_to_file = research_assets.id_to_filename;
+        self.research_filename_to_subfolder = research_assets.filename_to_subfolder;
 
 
         // Load divinity unlock IDs
@@ -1476,7 +1481,7 @@ impl EditorState {
                     "⚠ Select assets directory first (File → Select Assets Directory)",
                 );
             } else if self.existing_autopsies.is_empty() {
-                ui.label("No autopsy research found in assets/research/autopsy_*.research.ron");
+                ui.label("No autopsy research found in assets/research/autopsies/autopsy_*.research.ron");
             } else {
                 ui.horizontal_wrapped(|ui| {
                     let mut load_id = None;
@@ -1854,9 +1859,9 @@ impl EditorState {
     }
     fn load_autopsy(&mut self, monster_id: &str) {
         if let Some(assets_dir) = &self.assets_dir {
-            // Path: Autopsy research is stored as autopsy_{monster_id}.research.ron
+            // Path: Autopsy research is stored in autopsies/ subfolder
             let research_filename = format!("autopsy_{}.research.ron", monster_id);
-            let research_path = assets_dir.join("research").join(&research_filename);
+            let research_path = assets_dir.join("research").join("autopsies").join(&research_filename);
 
             let content = match std::fs::read_to_string(&research_path) {
                 Ok(c) => c,
