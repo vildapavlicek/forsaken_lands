@@ -104,17 +104,34 @@ pub struct CompiledUnlock {
 // Generic Sensor Types
 // ============================================================================
 
-/// Comparison operators for numeric conditions.
+/// Defines how a `ValueSensor` evaluates its tracked numeric value against its target.
+///
+/// This enum determines the logical condition under which an unlock requirement is considered met.
+///
+/// # Usage
+/// - **Unlocks System**: Queried by the `on_value_changed` observer (in the `unlocks` crate)
+///   when processing events (e.g., `IncreaseKills`, `AddResource`). The observer reads this operator
+///   from a `ValueSensor` to compare the new global state against the sensor's target value.
 #[derive(
     Debug, Clone, Copy, Default, PartialEq, Eq, Reflect, serde::Deserialize, serde::Serialize,
 )]
 pub enum ComparisonOp {
+    /// The tracked value must be greater than or equal to the target.
+    /// Used for accumulation goals (e.g., "Kill 10 or more Goblins").
     #[default]
-    Ge, // >=
-    Le, // <=
-    Eq, // ==
-    Gt, // >
-    Lt, // <
+    Ge,
+    /// The tracked value must be less than or equal to the target.
+    /// Used for restriction challenges (e.g., "Complete level with 5 or fewer deaths").
+    Le,
+    /// The tracked value must exactly match the target.
+    /// Used for precise sequence or state checks (e.g., "Maintain exactly 3 active wards").
+    Eq,
+    /// The tracked value must be strictly greater than the target.
+    /// Used when a threshold must be exceeded.
+    Gt,
+    /// The tracked value must be strictly less than the target.
+    /// Used for strict restriction challenges.
+    Lt,
 }
 
 /// A sensor that tracks a numeric value against a target.
