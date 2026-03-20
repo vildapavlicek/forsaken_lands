@@ -40,6 +40,18 @@ pub struct Weapon;
 
 // === Definition components (reconstructed from .weapon.ron, no Reflect needed) ===
 
+/// Marker component that designates a weapon entity as a ranged weapon.
+///
+/// This component classifies the weapon for the combat system, enabling ranged-specific
+/// logic such as projectile instantiation and ranged targeting evaluation.
+///
+/// # Usage
+/// - **Combat Execution**: The `hero_projectile_spawn_system` queries for entities with this marker
+///   to process `AttackIntent` events, spawning a projectile instead of checking for melee arcs.
+/// - **Targeting**: It implicitly requires the `ProjectileSpeed` component to be available when
+///   spawning the associated `Projectile`.
+/// - **Asset Loading**: This component is automatically inserted when a weapon with type `Ranged`
+///   is loaded from a `.weapon.ron` asset.
 #[derive(Component, Default)]
 pub struct RangedWeapon;
 
