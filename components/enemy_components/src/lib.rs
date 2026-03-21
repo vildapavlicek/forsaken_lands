@@ -23,6 +23,15 @@ pub struct Enemy;
 #[reflect(Component)]
 pub struct Dead;
 
+/// Defines the travel velocity of an entity.
+///
+/// This component represents the scalar speed magnitude at which an entity moves through the world.
+///
+/// # Usage
+/// - **Movement**: Queried by the `move_enemy` system (in `PortalsPlugin`) to update entity positions based on their target destination.
+///
+/// # Units
+/// - Speed in **logical pixels per second**.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct MovementSpeed(pub f32);
