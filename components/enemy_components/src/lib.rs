@@ -23,6 +23,17 @@ pub struct Enemy;
 #[reflect(Component)]
 pub struct Dead;
 
+/// Defines the travel velocity of an entity.
+///
+/// This component determines how fast an entity moves through the world, serving as
+/// a core pacing mechanic for enemy encounters.
+///
+/// # Usage
+/// - **Movement**: Queried by the `move_enemy` system (in `PortalsPlugin`) to update
+///   entity positions by calculating displacement over time.
+///
+/// # Units
+/// - Speed in **logical pixels per second**.
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
 pub struct MovementSpeed(pub f32);
