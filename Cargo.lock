@@ -2303,6 +2303,7 @@ dependencies = [
  "unlocks_events",
  "unlocks_resources",
  "village_components",
+ "wallet",
  "weapon_factory_events",
 ]
 

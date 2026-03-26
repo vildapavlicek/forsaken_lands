@@ -1,0 +1,6 @@
+(
+    id: "resource_pile_of_bone_dust_unlock",
+    display_name: Some("Pile of Bone Dust Resource"),
+    reward_id: "resource:pile_of_bone_dust",
+    condition: True,
+)

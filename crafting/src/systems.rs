@@ -4,7 +4,8 @@ use {
     crafting_events::StartCraftingRequest,
     crafting_resources::RecipeMap,
     recipes_assets::{CONSTRUCTION_TOPIC_PREFIX, RecipeDefinition},
-    unlocks_events::StatusCompleted,
+    unlocks_events::{StatusCompleted, ValueChanged},
+    wallet::Wallet,
 };
 
 /// Observer that handles StartCraftingRequest events.
@@ -83,6 +84,7 @@ pub fn on_recipe_unlock_achieved(
 pub fn update_crafting_progress(
     mut commands: Commands,
     time: Res<Time>,
+    mut wallet: ResMut<Wallet>,
     mut query: Query<(Entity, &mut CraftingInProgress)>,
 ) {
     for (entity, mut crafting) in query.iter_mut() {
@@ -90,6 +92,35 @@ pub fn update_crafting_progress(
 
         if crafting.timer.is_finished() {
             info!(%crafting.recipe_id, ?crafting.category, "Crafting complete" );
+
+            // Process outcomes
+            for outcome in &crafting.outcomes {
+                match outcome {
+                    recipes_assets::CraftingOutcome::AddResource { id, amount } => {
+                        let current = wallet.resources.entry(id.clone()).or_insert(0);
+                        *current += amount;
+                        let new_val = *current;
+
+                        // Notify that a resource was produced/changed
+                        // The unlock system will trigger UnlockAchieved if conditions are met
+                        commands.trigger(StatusCompleted {
+                            topic: format!("resource:{}", id),
+                        });
+
+                        commands.trigger(ValueChanged {
+                            topic: format!("resource:{}", id),
+                            value: new_val as f32,
+                        });
+                        info!("Added {} {} to wallet via crafting", amount, id);
+                    }
+                    recipes_assets::CraftingOutcome::UnlockFeature(feature) => {
+                        commands.trigger(StatusCompleted {
+                            topic: format!("feature:{}", feature),
+                        });
+                        info!("Signaled feature completion: {} via crafting", feature);
+                    }
+                }
+            }
 
             // Despawn the crafting entity
             commands.entity(entity).despawn();

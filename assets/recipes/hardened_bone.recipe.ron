@@ -1,0 +1,20 @@
+(
+    id: "hardened_bone",
+    display_name: "Harden Bone",
+    category: Transformation,
+    craft_time: 0.0,
+    cost: {
+        "bones": 10,
+        "bone_dust": 2,
+    },
+    outcomes: [
+        AddResource(id: "hardened_bone", amount: 1),
+    ],
+    unlock: Some((
+        id: "recipe_hardened_bone_unlock",
+        display_name: Some("Hardened Bone"),
+        condition: True,
+        reward_id: "recipe:hardened_bone",
+        repeat_mode: Once,
+    )),
+)

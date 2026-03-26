@@ -222,6 +222,14 @@ fn spawn_crafting_content(parent: &mut ChildSpawnerCommands, data: CraftingData)
                 );
                 spawn_tab_button(
                     tabs,
+                    "Transformation",
+                    data.active_tab == RecipeCategory::Transformation,
+                    RecipeTabButton {
+                        category: RecipeCategory::Transformation,
+                    },
+                );
+                spawn_tab_button(
+                    tabs,
                     "Construction",
                     data.active_tab == RecipeCategory::Construction,
                     RecipeTabButton {

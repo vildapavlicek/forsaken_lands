@@ -1,0 +1,6 @@
+(
+    id: "resource_hardened_bone_unlock",
+    display_name: Some("Hardened Bone Resource"),
+    reward_id: "resource:hardened_bone",
+    condition: True,
+)

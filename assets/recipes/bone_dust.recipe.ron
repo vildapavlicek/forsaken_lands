@@ -1,0 +1,19 @@
+(
+    id: "pile_of_bone_dust",
+    display_name: "Pile of Bone Dust",
+    category: Transformation,
+    craft_time: 0.0,
+    cost: {
+        "bones": 10,
+    },
+    outcomes: [
+        AddResource(id: "pile_of_bone_dust", amount: 1),
+    ],
+    unlock: Some((
+        id: "recipe_pile_of_bone_dust_unlock",
+        display_name: Some("Pile of Bone Dust"),
+        condition: True,
+        reward_id: "recipe:pile_of_bone_dust",
+        repeat_mode: Once,
+    )),
+)

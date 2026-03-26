@@ -55,12 +55,13 @@ pub enum RecipeCategory {
     Weapons,
     Idols,
     Construction,
+    Transformation,
 }
 
 impl RecipeCategory {
     pub fn as_topic_prefix(&self) -> &str {
         match self {
-            Self::Weapons | Self::Idols => CRAFTING_TOPIC_PREFIX,
+            Self::Weapons | Self::Idols | Self::Transformation => CRAFTING_TOPIC_PREFIX,
             Self::Construction => CONSTRUCTION_TOPIC_PREFIX,
         }
     }
